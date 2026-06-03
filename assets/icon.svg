@@ -1,6 +1,15 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stint">
-  <rect width="32" height="32" rx="8" fill="#18181B"/>
-  <rect x="6" y="9"  width="20" height="3.6" rx="1.8" fill="#FFFFFF"/>
-  <rect x="6" y="14.8" width="11" height="3.6" rx="1.8" fill="#16A34A"/>
-  <rect x="6" y="20.6" width="16" height="3.6" rx="1.8" fill="#FFFFFF" fill-opacity="0.72"/>
+  <style>
+    .stroke { stroke: #18181b; }
+    .fill { fill: #18181b; }
+    @media (prefers-color-scheme: dark) {
+      .stroke { stroke: #f3f3f5; }
+      .fill { fill: #f3f3f5; }
+    }
+  </style>
+  <g class="stroke" stroke-width="2.4" stroke-linecap="round">
+    <circle cx="16" cy="16" r="12.6" />
+    <line x1="16" y1="16" x2="19.5" y2="9.9" />
+  </g>
+  <circle class="fill" cx="16" cy="16" r="1.5" />
 </svg>

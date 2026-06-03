@@ -5,7 +5,7 @@
    ============================================================================ */
 
 /* ---------- Header / logo / wordmark ---------- */
-.logo { border-radius: 7px; display: block; flex-shrink: 0; }
+.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; color: var(--text); }
 .wordmark {
   font-family: var(--font-display);
   font-weight: 600;
