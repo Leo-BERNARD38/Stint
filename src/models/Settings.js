@@ -12,6 +12,7 @@ export class Settings {
     this.lunchEnd = data.lunchEnd ?? d.lunchEnd;
     this.departure = data.departure ?? d.departure;
     this.jira = {
+      auto: data.jira?.auto ?? d.jira.auto,
       hoursPerDay: data.jira?.hoursPerDay ?? d.jira.hoursPerDay,
       daysPerWeek: data.jira?.daysPerWeek ?? d.jira.daysPerWeek,
     };
@@ -24,6 +25,14 @@ export class Settings {
 
   isWorkDay(isoDow) {
     return this.workDays.includes(isoDow);
+  }
+
+  /** Durée ouvrée théorique d'une journée (minutes) = matin + après-midi. */
+  scheduleMinutesPerDay() {
+    const toMin = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
+    const morning = Math.max(0, toMin(this.lunchStart) - toMin(this.arrival));
+    const afternoon = Math.max(0, toMin(this.departure) - toMin(this.lunchEnd));
+    return morning + afternoon;
   }
 
   toggleWorkDay(isoDow) {

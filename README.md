@@ -37,8 +37,10 @@ Le fichier `.nojekyll` désactive le traitement Jekyll (inutile ici).
 | **Play / Pause** | `Espace` | Démarre / met en pause le chrono de la tâche active |
 | **Nouvelle tâche** | `N` | Crée une tâche et la démarre immédiatement |
 | **Reprise** | `R` | Reprend une tâche **en cours** (ni terminée ni archivée) |
+| **Terminer** | `T` | Ferme la tâche active (la retire de « Reprise ») |
 
-Règle : **une seule tâche active à la fois**.
+Règle : **une seule tâche active à la fois**. Les **réglages** s'ouvrent depuis
+l'engrenage du header.
 
 ### Cycle de vie d'une tâche
 
@@ -75,6 +77,10 @@ sont thémés via l'attribut `[data-theme]` (`light` / `dark` / `system`).
 Icônes : pack [Lucide](https://lucide.dev) (licence ISC), embarqué localement en SVG
 inline (`src/ui/icons.js`) — aucune dépendance réseau, se thème via `currentColor`.
 
+Typographie : **Fraunces** (titres), **Inter** (corps), et **Bitcount Grid Single**
+réservée aux afficheurs numériques (chronomètre, total du jour) pour un rendu
+« display à points » lisible et rétro.
+
 ## Format de données
 
 Schéma **versionné** (`version: 2`), monté automatiquement depuis les versions
@@ -84,8 +90,10 @@ compatible avec une future migration vers Vite + React.
 
 ## Format Jira
 
-Dans Jira, `1d` ≠ 24 h : c'est `hoursPerDay` (8 par défaut) et `1w` = `daysPerWeek`
-jours (5 par défaut). Ces deux valeurs sont paramétrables dans **Réglages**.
+Dans Jira, `1d` ≠ 24 h : c'est `hoursPerDay` et `1w` = `daysPerWeek` jours. Par défaut
+ces unités sont **calculées automatiquement** depuis vos horaires (durée ouvrée d'une
+journée et nombre de jours travaillés) — inutile de les ressaisir. On peut repasser en
+**saisie manuelle** dans Réglages pour s'aligner sur une config Jira différente.
 
 ## Données & vie privée
 

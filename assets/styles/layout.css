@@ -26,22 +26,21 @@ header {
 .control {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-6) 0 var(--sp-2);
+  gap: var(--sp-4);
+  padding: var(--sp-7) 0 var(--sp-3);
 }
 .control-buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-3);
 }
-@media (min-width: 820px) {
-  .control { flex-direction: row; align-items: stretch; gap: var(--sp-4); }
-  .active-card { flex: 1; }
-  .control-buttons { grid-template-columns: repeat(3, 156px); }
+@media (min-width: 720px) {
+  .control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
 }
 
 /* ---------- Onglets ---------- */
-.tabs { display: flex; gap: var(--sp-1); margin: var(--sp-6) 0 var(--sp-6); }
+.tabs { display: flex; gap: var(--sp-1); margin: var(--sp-7) 0 var(--sp-7); }
+.page-head { margin-bottom: var(--sp-6); }
 .tab-panel { animation: fade .2s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 

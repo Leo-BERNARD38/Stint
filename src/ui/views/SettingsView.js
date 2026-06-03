@@ -1,7 +1,7 @@
 import { el, createEl } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
 
-/** Réglages : horaires ouvrés, conversion Jira, arrondi. */
+/** Réglages : horaires ouvrés, conversion Jira (auto ou manuelle), arrondi. */
 export class SettingsView {
   constructor(app) {
     this.app = app;
@@ -16,6 +16,8 @@ export class SettingsView {
     for (const [id, key] of Object.entries(simple)) {
       el(id).addEventListener("change", (e) => store.updateSettings((s) => { s[key] = e.target.value; }));
     }
+    el("setJiraAuto").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.jira.auto = e.target.checked; }));
     el("setHpd").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.jira.hoursPerDay = Math.max(0.5, parseFloat(e.target.value) || 8); }));
     el("setDpw").addEventListener("change", (e) =>
@@ -26,6 +28,7 @@ export class SettingsView {
 
   render() {
     const s = this.app.store.settings;
+    const fmt = this.app.formatter;
     el("setArrival").value = s.arrival;
     el("setLunchStart").value = s.lunchStart;
     el("setLunchEnd").value = s.lunchEnd;
@@ -33,6 +36,16 @@ export class SettingsView {
     el("setHpd").value = s.jira.hoursPerDay;
     el("setDpw").value = s.jira.daysPerWeek;
     el("setRounding").value = s.rounding;
+
+    // mode auto Jira : affiche le calcul, masque la saisie manuelle
+    el("setJiraAuto").checked = s.jira.auto;
+    el("jiraManual").style.display = s.jira.auto ? "none" : "";
+    const info = el("jiraAutoInfo");
+    info.style.display = s.jira.auto ? "" : "none";
+    if (s.jira.auto) {
+      const h = parseFloat(fmt.effHoursPerDay().toFixed(2));
+      info.textContent = `1d = ${h} h · 1w = ${fmt.effDaysPerWeek()} jours (depuis vos horaires)`;
+    }
 
     const wd = el("weekdays");
     wd.innerHTML = "";

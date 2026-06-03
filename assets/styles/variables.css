@@ -20,6 +20,8 @@
   /* Polices : Fraunces (serif) pour le wordmark/titres ; Inter pour le corps et les chiffres. */
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  /* Afficheur à grille de points — usage stratégique : chronomètre, totaux. */
+  --font-mono: "Bitcount Grid Single", "Courier New", ui-monospace, monospace;
 
   /* Ombres réservées aux surfaces flottantes (modale, toast, menus). */
   --shadow-pop: 0 12px 40px rgba(17, 17, 19, .14), 0 2px 8px rgba(17, 17, 19, .08);
@@ -49,6 +51,7 @@
   --stop: #e1463c;
   --new: #2f6df6;
   --resume: #7c4dff;
+  --finish: #0d9488;
 
   --warn-bg: #fdf3d6;
   --warn-text: #8a6212;
@@ -120,6 +123,7 @@
     --stop: #f0584d;
     --new: #5b8bff;
     --resume: #9b78ff;
+    --finish: #2dd4bf;
 
     --warn-bg: #3a2f12;
     --warn-text: #f4cf6b;

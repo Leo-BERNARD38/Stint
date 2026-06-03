@@ -1,14 +1,14 @@
 import { el, escapeHtml } from "../../utils/dom.js";
 import { icon } from "../icons.js";
 
-/** Barre de contrôle : carte de tâche active (timer live + Terminer) + 3 boutons. */
+/** Barre de contrôle : carte de tâche active + 4 boutons (Play/Pause, Nouvelle, Reprise, Terminer). */
 export class HeroView {
   constructor(app) {
     this.app = app;
     this.playBtn = el("btnPlay");
     this.playGlyph = el("playGlyph");
     this.playLabel = el("playLabel");
-    this.finishBtn = el("btnFinish");
+    this.endBtn = el("btnEnd");
     this.dot = el("activeDot");
     this.name = el("activeName");
     this.timer = el("activeTimer");
@@ -16,11 +16,7 @@ export class HeroView {
 
   bind() {
     this.playBtn.addEventListener("click", () => this.app.togglePlayStop());
-    this.finishBtn.innerHTML = icon("check", { size: 18 });
-    this.finishBtn.addEventListener("click", () => {
-      const t = this.app.store.activeTask();
-      if (t) this.app.store.closeTask(t.id);
-    });
+    this.endBtn.addEventListener("click", () => this.app.finishActive());
     el("btnNew").addEventListener("click", () => this.app.openNewTask());
     el("btnResume").addEventListener("click", () => this.app.openResume());
   }
@@ -41,7 +37,7 @@ export class HeroView {
         (task.jiraKey ? ' <span class="jira">' + escapeHtml(task.jiraKey) + "</span>" : "") +
         '<span class="live-dot"></span>';
       this.timer.classList.remove("idle");
-      this.finishBtn.hidden = false;
+      this.endBtn.disabled = false;
     } else {
       this.playBtn.classList.remove("is-running");
       this.playBtn.classList.add("is-stopped");
@@ -52,7 +48,7 @@ export class HeroView {
       this.name.textContent = "Aucune tâche en cours";
       this.timer.classList.add("idle");
       this.timer.textContent = "0:00:00";
-      this.finishBtn.hidden = true;
+      this.endBtn.disabled = true; // Terminer inactif sans tâche en cours
     }
     this.tick();
   }

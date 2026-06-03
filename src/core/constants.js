@@ -31,6 +31,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
   lunchStart: "12:30",
   lunchEnd: "13:30",
   departure: "18:00",
-  jira: { hoursPerDay: 8, daysPerWeek: 5 },
+  jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
   rounding: "none",
 });

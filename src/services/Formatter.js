@@ -25,12 +25,28 @@ export class Formatter {
     return String(parseFloat(hours.toFixed(2)));
   }
 
+  /**
+   * Unités Jira effectives. En mode auto, `1d` = durée ouvrée d'une journée
+   * (horaires − pause) et `1w` = nombre de jours travaillés ; sinon valeurs
+   * saisies. Évite de ressaisir une info déjà décrite par les horaires.
+   */
+  effHoursPerDay() {
+    const j = this.s.jira;
+    if (j.auto) { const m = this.s.scheduleMinutesPerDay(); return m > 0 ? m / 60 : (j.hoursPerDay || 8); }
+    return j.hoursPerDay;
+  }
+  effDaysPerWeek() {
+    const j = this.s.jira;
+    if (j.auto) return this.s.workDays.length || j.daysPerWeek;
+    return j.daysPerWeek;
+  }
+
   /** Jira : "2w 4d 6h 45m" en omettant les zéros. */
   jira(minutes) {
     let rest = Math.round(this.round(minutes));
     if (rest <= 0) return "0m";
-    const dayUnit = this.s.jira.hoursPerDay * 60;
-    const weekUnit = dayUnit * this.s.jira.daysPerWeek;
+    const dayUnit = this.effHoursPerDay() * 60;
+    const weekUnit = dayUnit * this.effDaysPerWeek();
     const w = Math.floor(rest / weekUnit); rest -= w * weekUnit;
     const d = Math.floor(rest / dayUnit); rest -= d * dayUnit;
     const h = Math.floor(rest / 60); rest -= h * 60;

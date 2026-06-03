@@ -22,7 +22,7 @@
   <!-- §7.1 Typographie : Fraunces (serif, wordmark/titres) + Inter (corps & chiffres) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Feuilles de style découpées -->
   <link rel="stylesheet" href="assets/styles/variables.css" />
@@ -46,6 +46,7 @@
           <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
         </button>
         <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
+        <button id="settingsBtn" class="icon-btn" data-icon="settings" aria-label="Réglages" title="Réglages"></button>
       </div>
     </div>
   </header>
@@ -60,7 +61,6 @@
           <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
         </div>
         <div class="active-timer idle" id="activeTimer">0:00:00</div>
-        <button id="btnFinish" class="icon-btn finish-btn" title="Terminer la tâche" aria-label="Terminer la tâche" hidden></button>
       </div>
 
       <div class="control-buttons">
@@ -79,6 +79,11 @@
           <span class="label">Reprise</span>
           <span class="kbd">R</span>
         </button>
+        <button id="btnEnd" class="big-btn btn-end" aria-label="Terminer la tâche active">
+          <span class="glyph" data-icon="check" data-icon-size="26"></span>
+          <span class="label">Terminer</span>
+          <span class="kbd">T</span>
+        </button>
       </div>
     </div>
 
@@ -86,7 +91,6 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
       <button class="tab" data-tab="segments" role="tab">Segments</button>
-      <button class="tab" data-tab="reglages" role="tab">Réglages</button>
     </nav>
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
@@ -146,8 +150,9 @@
       </div>
     </section>
 
-    <!-- ---------------------------- Onglet : Réglages ---------------------------- -->
+    <!-- ---------------------------- Réglages (ouvert depuis le header) ---------------------------- -->
     <section class="tab-panel" data-panel="reglages" hidden>
+      <div class="page-head"><h2 class="page-title">Réglages</h2></div>
       <div class="settings-grid">
         <div class="settings-block full">
           <div class="block-title">Apparence</div>
@@ -177,18 +182,23 @@
 
         <div class="settings-block">
           <div class="block-title">Conversion Jira & arrondi</div>
-          <div class="field-grid">
-            <div class="field"><label>Heures / jour</label><input type="number" id="setHpd" min="1" max="24" step="0.5"></div>
-            <div class="field"><label>Jours / semaine</label><input type="number" id="setDpw" min="1" max="7" step="1"></div>
-            <div class="field">
-              <label>Arrondi</label>
-              <select id="setRounding">
-                <option value="none">Aucun</option>
-                <option value="1m">1 minute</option>
-                <option value="5m">5 minutes</option>
-                <option value="15m">15 minutes</option>
-              </select>
-            </div>
+          <label class="switch-row">
+            <input type="checkbox" id="setJiraAuto">
+            <span>Calculer les unités Jira depuis mes horaires</span>
+          </label>
+          <div class="auto-info" id="jiraAutoInfo"></div>
+          <div class="field-grid" id="jiraManual">
+            <div class="field"><label>Heures / jour (1d)</label><input type="number" id="setHpd" min="1" max="24" step="0.5"></div>
+            <div class="field"><label>Jours / semaine (1w)</label><input type="number" id="setDpw" min="1" max="7" step="1"></div>
+          </div>
+          <div class="field" style="margin-top:18px; max-width:220px;">
+            <label>Arrondi</label>
+            <select id="setRounding">
+              <option value="none">Aucun</option>
+              <option value="1m">1 minute</option>
+              <option value="5m">5 minutes</option>
+              <option value="15m">15 minutes</option>
+            </select>
           </div>
         </div>
 

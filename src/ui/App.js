@@ -90,6 +90,12 @@ export class App {
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
 
+  /** Termine (ferme) la tâche active. */
+  finishActive() {
+    const t = this.store.activeTask();
+    if (t) this.store.closeTask(t.id);
+  }
+
   /* ----------------- thème ----------------- */
   setTheme(value) {
     this.store.updateSettings((s) => { s.theme = value; }); // persiste + re-render (ThemeView applique)
@@ -187,6 +193,7 @@ export class App {
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }
       else if (e.key === "n" || e.key === "N") { e.preventDefault(); this.openNewTask(); }
       else if (e.key === "r" || e.key === "R") { e.preventDefault(); this.openResume(); }
+      else if (e.key === "t" || e.key === "T") { e.preventDefault(); this.finishActive(); }
     });
   }
 
