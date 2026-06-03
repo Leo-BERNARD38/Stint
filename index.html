@@ -52,6 +52,8 @@
   </header>
 
   <main class="wrap">
+    <!-- ===================== ÉCRAN APPLICATION ===================== -->
+    <div id="appScreen">
     <!-- ============================ BARRE DE CONTRÔLE (toujours visible) ============================ -->
     <div class="control">
       <div class="active-card">
@@ -149,10 +151,14 @@
         </table>
       </div>
     </section>
+    </div><!-- /#appScreen -->
 
-    <!-- ---------------------------- Réglages (ouvert depuis le header) ---------------------------- -->
-    <section class="tab-panel" data-panel="reglages" hidden>
-      <div class="page-head"><h2 class="page-title">Réglages</h2></div>
+    <!-- ===================== ÉCRAN RÉGLAGES (page à part) ===================== -->
+    <section id="settingsScreen" class="settings-screen" hidden>
+      <div class="page-head">
+        <button id="settingsBack" class="btn-back" data-icon="chevron-left" aria-label="Retour"></button>
+        <h2 class="page-title">Réglages</h2>
+      </div>
       <div class="settings-grid">
         <div class="settings-block full">
           <div class="block-title">Apparence</div>

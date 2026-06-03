@@ -70,6 +70,7 @@ export class App {
     this.views.forEach((v) => v.bind?.());
     Object.values(this.modals).forEach((m) => m.bind());
     this.#bindIO();
+    this.#bindNav();
     this.#bindKeyboard();
     this.#bindLifecycle();
     this.store.on("change", () => this.render());
@@ -89,6 +90,21 @@ export class App {
   openNewTask() { this.modals.newTask.open(); }
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
+
+  /* ----------------- écran Réglages (page à part) ----------------- */
+  get settingsOpen() { return !el("settingsScreen").hidden; }
+  openSettings() {
+    el("appScreen").hidden = true;
+    el("settingsScreen").hidden = false;
+    el("settingsBtn").classList.add("active");
+    window.scrollTo({ top: 0 });
+  }
+  closeSettings() {
+    el("settingsScreen").hidden = true;
+    el("appScreen").hidden = false;
+    el("settingsBtn").classList.remove("active");
+  }
+  toggleSettings() { this.settingsOpen ? this.closeSettings() : this.openSettings(); }
 
   /** Termine (ferme) la tâche active. */
   finishActive() {
@@ -182,14 +198,22 @@ export class App {
     el("resetAll").addEventListener("click", () => this.resetAll());
   }
 
+  #bindNav() {
+    el("settingsBtn").addEventListener("click", () => this.toggleSettings());
+    el("settingsBack").addEventListener("click", () => this.closeSettings());
+  }
+
   #bindKeyboard() {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        qsa(".modal-backdrop.open").forEach((m) => m.classList.remove("open"));
+        const open = qsa(".modal-backdrop.open");
+        if (open.length) open.forEach((m) => m.classList.remove("open"));
+        else if (this.settingsOpen) this.closeSettings();
         return;
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
+      if (this.settingsOpen) return; // raccourcis d'action désactivés dans les réglages
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }
       else if (e.key === "n" || e.key === "N") { e.preventDefault(); this.openNewTask(); }
       else if (e.key === "r" || e.key === "R") { e.preventDefault(); this.openResume(); }
