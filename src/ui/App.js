@@ -7,6 +7,7 @@ import { Timer } from "./Timer.js";
 
 import { HeaderView } from "./views/HeaderView.js";
 import { HeroView } from "./views/HeroView.js";
+import { TabsView } from "./views/TabsView.js";
 import { DayNavView } from "./views/DayNavView.js";
 import { TimelineView } from "./views/TimelineView.js";
 import { TotalsView } from "./views/TotalsView.js";
@@ -43,9 +44,14 @@ export class App {
       resume: new ResumeModal(this),
       editTask: new EditTaskModal(this),
     };
+    // Références nommées (évite toute fragilité d'index) puis liste de rendu.
+    this.header = new HeaderView(this);
+    this.hero = new HeroView(this);
+    this.tabs = new TabsView(this);
     this.views = [
-      new HeaderView(this),
-      new HeroView(this),
+      this.header,
+      this.hero,
+      this.tabs,
       new DayNavView(this),
       new TimelineView(this),
       new TotalsView(this),
@@ -53,7 +59,6 @@ export class App {
       new SegmentTableView(this),
       new SettingsView(this),
     ];
-    this.hero = this.views[1];
   }
 
   start() {

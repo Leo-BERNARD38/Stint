@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stint — Chronométrage des tâches</title>
   <meta name="description" content="Chronomètre personnel de tâches, prêt à reporter dans Jira." />
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
 
-  <!-- §7.1 Typographie : Space Grotesk (wordmark/titres) + Inter (corps) -->
+  <!-- §7.1 Typographie : Fraunces (serif, wordmark/titres) + Inter (corps & chiffres) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Feuilles de style découpées -->
   <link rel="stylesheet" href="assets/styles/variables.css" />
@@ -24,6 +25,7 @@
   <!-- ============================ HEADER ============================ -->
   <header>
     <div class="header-inner">
+      <img class="logo" src="assets/icon.svg" alt="" width="28" height="28" />
       <input id="wordmark" class="wordmark" value="Stint" aria-label="Nom de l'application"
              spellcheck="false" autocomplete="off" />
       <div class="header-spacer"></div>
@@ -34,8 +36,8 @@
   </header>
 
   <main class="wrap">
-    <!-- ============================ HÉROS : 3 boutons ============================ -->
-    <div class="hero">
+    <!-- ============================ BARRE DE CONTRÔLE (toujours visible) ============================ -->
+    <div class="control">
       <div class="active-card">
         <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
         <div class="active-meta">
@@ -45,7 +47,7 @@
         <div class="active-timer idle" id="activeTimer">0:00:00</div>
       </div>
 
-      <div class="buttons">
+      <div class="control-buttons">
         <button id="btnPlay" class="big-btn is-stopped" aria-label="Démarrer ou arrêter">
           <span class="glyph" id="playGlyph">▶</span>
           <span class="label" id="playLabel">Play</span>
@@ -64,51 +66,53 @@
       </div>
     </div>
 
-    <!-- ============================ NAVIGATION JOUR ============================ -->
-    <section>
-      <div class="daynav">
-        <button id="dayPrev" aria-label="Jour précédent">←</button>
-        <div class="date" id="dayLabel">—</div>
-        <button id="dayNext" aria-label="Jour suivant">→</button>
-        <button id="dayToday">Aujourd'hui</button>
+    <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="journee" role="tab">Journée</button>
+      <button class="tab" data-tab="segments" role="tab">Segments</button>
+      <button class="tab" data-tab="reglages" role="tab">Réglages</button>
+    </nav>
+
+    <!-- ---------------------------- Onglet : Journée ---------------------------- -->
+    <section class="tab-panel" data-panel="journee">
+      <div class="day-head">
+        <div class="daynav">
+          <button id="dayPrev" aria-label="Jour précédent">←</button>
+          <div class="date" id="dayLabel">—</div>
+          <button id="dayNext" aria-label="Jour suivant">→</button>
+        </div>
+        <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
         <span class="today-badge" id="todayBadge"></span>
       </div>
-    </section>
 
-    <!-- ============================ TIMELINE ============================ -->
-    <section>
-      <div class="section-head">
-        <h2>Journée</h2>
-        <span class="hint">survol = nom + durée · les trous signalent du temps non tracé</span>
-      </div>
-      <div class="timeline-box">
+      <div class="timeline-wrap">
+        <div class="block-title">Timeline <span class="hint">survol = nom + durée · les trous = temps non tracé</span></div>
         <div class="timeline" id="timeline"></div>
         <div class="tl-axis" id="tlAxis"></div>
         <div class="gaps-list" id="gapsList"></div>
       </div>
+
+      <div class="journee-grid">
+        <div class="journee-main">
+          <div class="block-title">Tâches du jour</div>
+          <div class="task-list" id="taskList"></div>
+        </div>
+        <aside class="journee-aside">
+          <div class="block-title">Totaux</div>
+          <div class="totals" id="totalsGrid"></div>
+        </aside>
+      </div>
     </section>
 
-    <!-- ============================ TOTAUX ============================ -->
-    <section>
-      <div class="section-head"><h2>Totaux</h2><span class="hint">temps ouvré · format selon réglages</span></div>
-      <div class="totals-grid" id="totalsGrid"></div>
-    </section>
-
-    <!-- ============================ TÂCHES ============================ -->
-    <section>
-      <div class="section-head"><h2>Tâches du jour</h2><span class="grow"></span></div>
-      <div class="task-list" id="taskList"></div>
-    </section>
-
-    <!-- ============================ SEGMENTS ============================ -->
-    <section>
-      <div class="section-head">
-        <h2>Segments</h2>
+    <!-- ---------------------------- Onglet : Segments ---------------------------- -->
+    <section class="tab-panel" data-panel="segments" hidden>
+      <div class="block-title">
+        Segments
         <span class="hint">éditer heures, tâche, mode brut · ou ajouter une saisie manuelle</span>
         <span class="grow"></span>
         <button class="mini-btn" id="addSegment">＋ Segment manuel</button>
       </div>
-      <div class="panel" style="padding:8px 12px; overflow-x:auto;">
+      <div class="table-scroll">
         <table class="seg-table" id="segTable">
           <thead>
             <tr>
@@ -126,13 +130,12 @@
       </div>
     </section>
 
-    <!-- ============================ RÉGLAGES ============================ -->
-    <section>
-      <details class="collapsible">
-        <summary>⚙︎ Réglages</summary>
-        <div class="details-body">
-          <h3 style="font-size:14px; margin:8px 0 10px;">Horaires de travail</h3>
-          <div class="field" style="margin-bottom:14px;">
+    <!-- ---------------------------- Onglet : Réglages ---------------------------- -->
+    <section class="tab-panel" data-panel="reglages" hidden>
+      <div class="settings-grid">
+        <div class="settings-block">
+          <div class="block-title">Horaires de travail</div>
+          <div class="field" style="margin-bottom:16px;">
             <label>Jours travaillés</label>
             <div class="weekdays" id="weekdays"></div>
           </div>
@@ -142,8 +145,10 @@
             <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
             <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
           </div>
+        </div>
 
-          <h3 style="font-size:14px; margin:22px 0 10px;">Conversion Jira & arrondi</h3>
+        <div class="settings-block">
+          <div class="block-title">Conversion Jira & arrondi</div>
           <div class="field-grid">
             <div class="field"><label>Heures / jour</label><input type="number" id="setHpd" min="1" max="24" step="0.5"></div>
             <div class="field"><label>Jours / semaine</label><input type="number" id="setDpw" min="1" max="7" step="1"></div>
@@ -158,15 +163,10 @@
             </div>
           </div>
         </div>
-      </details>
-    </section>
 
-    <!-- ============================ SAUVEGARDE & DONNÉES ============================ -->
-    <section>
-      <details class="collapsible">
-        <summary>⇆ Sauvegarde & données</summary>
-        <div class="details-body">
-          <p style="font-size:13.5px; color:var(--text-soft); margin-top:8px;">
+        <div class="settings-block">
+          <div class="block-title">Sauvegarde & données</div>
+          <p class="muted">
             Les données vivent dans ce navigateur (<code>localStorage</code>) et peuvent être effacées
             par un nettoyage de cache. <strong>Exportez régulièrement le JSON</strong> comme sauvegarde maître.
           </p>
@@ -179,7 +179,7 @@
           </div>
           <input type="file" id="fileInput" accept="application/json" style="display:none">
         </div>
-      </details>
+      </div>
     </section>
   </main>
 
