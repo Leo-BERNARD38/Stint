@@ -82,6 +82,9 @@ header {
   .tabs { margin: var(--sp-6) 0 var(--sp-6); }
   .seg-table .col-date { display: none; }
   .daynav .date { min-width: 0; font-size: 14px; }
+  /* les actions de tâche passent sur leur propre ligne (évite le débordement) */
+  .task-row { flex-wrap: wrap; }
+  .task-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
 }
 
 @media (max-width: 520px) {
