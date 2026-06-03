@@ -18,6 +18,7 @@
   padding: 2px 4px;
   border-radius: var(--radius-xs);
   max-width: 240px;
+  min-width: 0; /* autorise le rétrécissement en flex (évite le débordement du header) */
 }
 .wordmark:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 

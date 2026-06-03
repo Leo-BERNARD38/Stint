@@ -20,7 +20,7 @@ header {
 }
 @media (min-width: 1500px) { .header-inner { max-width: 1320px; } }
 .header-spacer { flex: 1; }
-.header-tools { display: flex; align-items: center; gap: var(--sp-2); }
+.header-tools { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
 
 /* ---------- Barre de contrôle (héros toujours visible) ---------- */
 .control {
@@ -76,6 +76,8 @@ header {
 @media (max-width: 640px) {
   .wrap { padding: 0 var(--sp-4) 96px; }
   .header-inner { padding: 10px var(--sp-4); gap: var(--sp-2); }
+  .backup-pill #backupText { display: none; }  /* garde juste la pastille */
+  .backup-pill { padding: 7px; }
   .control { padding-top: var(--sp-5); }
   .tabs { margin: var(--sp-6) 0 var(--sp-6); }
   .seg-table .col-date { display: none; }
@@ -84,8 +86,6 @@ header {
 
 @media (max-width: 520px) {
   .wordmark { max-width: 130px; font-size: 20px; }
-  .backup-pill #backupText { display: none; }   /* garde juste la pastille */
-  .backup-pill { padding: 7px; }
   .active-timer { font-size: 34px; }
   .active-card { padding: var(--sp-4); gap: var(--sp-3); }
   .big-btn { padding: var(--sp-3) var(--sp-2); }
