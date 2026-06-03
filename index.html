@@ -1,11 +1,23 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="system">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stint — Chronométrage des tâches</title>
   <meta name="description" content="Chronomètre personnel de tâches, prêt à reporter dans Jira." />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+
+  <!-- Applique le thème enregistré avant le premier rendu (évite tout flash). -->
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem("stint.v1");
+        var t = raw && JSON.parse(raw).settings && JSON.parse(raw).settings.theme;
+        document.documentElement.dataset.theme =
+          (t === "light" || t === "dark" || t === "system") ? t : "system";
+      } catch (e) { document.documentElement.dataset.theme = "system"; }
+    })();
+  </script>
 
   <!-- §7.1 Typographie : Fraunces (serif, wordmark/titres) + Inter (corps & chiffres) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,9 +41,12 @@
       <input id="wordmark" class="wordmark" value="Stint" aria-label="Nom de l'application"
              spellcheck="false" autocomplete="off" />
       <div class="header-spacer"></div>
-      <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
-        <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
-      </button>
+      <div class="header-tools">
+        <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
+          <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
+      </div>
     </div>
   </header>
 
@@ -133,6 +148,18 @@
     <!-- ---------------------------- Onglet : Réglages ---------------------------- -->
     <section class="tab-panel" data-panel="reglages" hidden>
       <div class="settings-grid">
+        <div class="settings-block full">
+          <div class="block-title">Apparence</div>
+          <div class="field">
+            <label>Thème</label>
+            <div class="segmented" id="themeSeg" role="group" aria-label="Thème">
+              <button data-theme-val="system">Système</button>
+              <button data-theme-val="light">Clair</button>
+              <button data-theme-val="dark">Sombre</button>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-block">
           <div class="block-title">Horaires de travail</div>
           <div class="field" style="margin-bottom:16px;">

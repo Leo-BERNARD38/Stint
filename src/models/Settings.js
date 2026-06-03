@@ -5,6 +5,7 @@ export class Settings {
   constructor(data = {}) {
     const d = DEFAULT_SETTINGS;
     this.appName = data.appName ?? d.appName;
+    this.theme = data.theme ?? d.theme;
     this.workDays = Array.isArray(data.workDays) ? [...data.workDays] : [...d.workDays];
     this.arrival = data.arrival ?? d.arrival;
     this.lunchStart = data.lunchStart ?? d.lunchStart;
@@ -34,6 +35,7 @@ export class Settings {
   toJSON() {
     return {
       appName: this.appName,
+      theme: this.theme,
       workDays: [...this.workDays],
       arrival: this.arrival,
       lunchStart: this.lunchStart,

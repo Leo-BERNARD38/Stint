@@ -55,6 +55,14 @@ Règle : **une seule tâche active à la fois**.
 - **Édition a posteriori** : heures, dates, réaffectation de tâche, saisie manuelle.
 - **Persistance locale** (`localStorage`) + **export/import JSON** (format maître) et
   **export CSV** des segments, avec rappel de sauvegarde.
+- **Thème** clair / sombre / système, paramétrable (bouton du header ou réglages),
+  appliqué sans flash au chargement.
+
+## Design
+
+Interface **flat** : pas de bordures structurelles, des surfaces et de l'espace pour
+hiérarchiser. Tous les jetons de couleur vivent dans `assets/styles/variables.css` et
+sont thémés via l'attribut `[data-theme]` (`light` / `dark` / `system`).
 
 ## Format Jira
 

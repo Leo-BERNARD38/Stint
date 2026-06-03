@@ -6,9 +6,15 @@ body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.55;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Transition douce lors d'un changement de thème (mais pas au chargement). */
+body, .active-card, .big-btn, .settings-block, .seg-table td, .total-hero, input, select {
+  transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
 
 h1, h2, h3 {
@@ -17,13 +23,10 @@ h1, h2, h3 {
   letter-spacing: -0.01em;
 }
 
-button { font-family: inherit; cursor: pointer; }
+button { font-family: inherit; cursor: pointer; color: inherit; }
 input, select { font-family: inherit; font-size: 14px; }
 a { color: inherit; }
 
-.empty {
-  color: var(--text-faint);
-  text-align: center;
-  padding: 26px;
-  font-size: 14px;
-}
+::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+.empty { color: var(--text-faint); text-align: center; padding: var(--sp-6); font-size: 14px; }

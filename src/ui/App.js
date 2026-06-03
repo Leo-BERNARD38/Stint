@@ -6,6 +6,7 @@ import { DataTransfer } from "../services/DataTransfer.js";
 import { Timer } from "./Timer.js";
 
 import { HeaderView } from "./views/HeaderView.js";
+import { ThemeView } from "./views/ThemeView.js";
 import { HeroView } from "./views/HeroView.js";
 import { TabsView } from "./views/TabsView.js";
 import { DayNavView } from "./views/DayNavView.js";
@@ -46,10 +47,12 @@ export class App {
     };
     // Références nommées (évite toute fragilité d'index) puis liste de rendu.
     this.header = new HeaderView(this);
+    this.theme = new ThemeView(this);
     this.hero = new HeroView(this);
     this.tabs = new TabsView(this);
     this.views = [
       this.header,
+      this.theme,
       this.hero,
       this.tabs,
       new DayNavView(this),
@@ -84,6 +87,11 @@ export class App {
   openNewTask() { this.modals.newTask.open(); }
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
+
+  /* ----------------- thème ----------------- */
+  setTheme(value) {
+    this.store.updateSettings((s) => { s.theme = value; }); // persiste + re-render (ThemeView applique)
+  }
 
   /* ----------------- navigation jour ----------------- */
   setViewDay(d) { this.viewDay = startOfDay(d); this.render(); }

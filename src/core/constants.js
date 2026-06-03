@@ -21,8 +21,11 @@ export const TASK_TYPES = ["dev", "support", "autre"];
 export const ROUNDING_MODES = ["none", "1m", "5m", "15m"];
 
 /** Réglages par défaut (cf. §8 du cahier des charges). */
+export const THEMES = ["system", "light", "dark"];
+
 export const DEFAULT_SETTINGS = Object.freeze({
   appName: "Stint",
+  theme: "system",
   workDays: [1, 2, 3, 4, 5],
   arrival: "09:00",
   lunchStart: "12:30",

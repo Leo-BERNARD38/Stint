@@ -1,46 +1,133 @@
-/* Jetons de design : couleurs, rayons, ombres, polices (clair + sombre). */
+/* ============================================================================
+   Jetons de design — système de thèmes.
+   Thème piloté par l'attribut [data-theme] sur <html> : "light" | "dark" | "system".
+   "system" suit prefers-color-scheme. Toute la sémantique de couleur vit ici ;
+   les composants n'utilisent que des variables (aucune couleur en dur ailleurs).
+   Esthétique : flat. On s'appuie sur des surfaces et l'espace, pas sur des bordures.
+   ============================================================================ */
+
 :root {
-  --bg: #ffffff;
-  --bg-soft: #f7f7f8;
-  --bg-sunk: #f0f0f2;
-  --border: #e6e6e9;
-  --border-strong: #d4d4d8;
-  --text: #18181b;
-  --text-soft: #52525b;
-  --text-faint: #a1a1aa;
-  --accent: #18181b;
-  --accent-text: #ffffff;
-  --play: #16a34a;
-  --stop: #dc2626;
-  --new: #2563eb;
-  --resume: #7c3aed;
-  --warn-bg: #fef3c7;
-  --warn-text: #92400e;
-  --radius: 14px;
-  --radius-sm: 9px;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 4px 16px rgba(0, 0, 0, .06);
-  --shadow-lg: 0 10px 40px rgba(0, 0, 0, .12);
-  /* Fraunces (serif) pour le wordmark et les titres ; Inter pour le corps et les chiffres. */
+  /* Échelle d'espacement (multiples de 4) — pour un rythme vertical régulier. */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+
+  --maxw: 1180px;
+
+  /* Polices : Fraunces (serif) pour le wordmark/titres ; Inter pour le corps et les chiffres. */
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
-  --maxw: 1180px;
+
+  /* Ombres réservées aux surfaces flottantes (modale, toast, menus). */
+  --shadow-pop: 0 12px 40px rgba(17, 17, 19, .14), 0 2px 8px rgba(17, 17, 19, .08);
 }
 
+/* ---------------------- Thème clair (défaut) ---------------------- */
+:root,
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f5f5f6;       /* zones douces : inputs, boutons secondaires, aside */
+  --surface-2: #ececee;     /* enfoncé : piste timeline, survols */
+  --surface-hover: #efeff1;
+
+  --text: #18181b;
+  --text-soft: #5b5b63;
+  --text-faint: #9a9aa3;
+
+  --accent: #18181b;        /* primaire (presque noir) */
+  --accent-text: #ffffff;
+  --accent-soft: #f0f0f1;
+
+  --hairline: rgba(24, 24, 27, .07); /* filet ultra-léger, usage rare */
+  --ring: rgba(24, 24, 27, .28);     /* anneau de focus */
+
+  --play: #15a34a;
+  --stop: #e1463c;
+  --new: #2f6df6;
+  --resume: #7c4dff;
+
+  --warn-bg: #fdf3d6;
+  --warn-text: #8a6212;
+
+  --type-dev-bg: #e2ecff;   --type-dev-text: #2451c4;
+  --type-support-bg: #ffe1e1; --type-support-text: #b23434;
+  --type-autre-bg: #ececee; --type-autre-text: #5b5b63;
+  --dot-dev: #2f6df6; --dot-support: #e1463c; --dot-autre: #b8b8c0;
+
+  color-scheme: light;
+}
+
+/* ---------------------- Thème sombre ---------------------- */
+:root[data-theme="dark"] {
+  --bg: #0c0c0e;
+  --surface: #161619;
+  --surface-2: #1f1f23;
+  --surface-hover: #222227;
+
+  --text: #f3f3f5;
+  --text-soft: #a6a6ae;
+  --text-faint: #6b6b74;
+
+  --accent: #f3f3f5;
+  --accent-text: #0c0c0e;
+  --accent-soft: #1c1c20;
+
+  --hairline: rgba(255, 255, 255, .08);
+  --ring: rgba(255, 255, 255, .35);
+
+  --play: #25b35c;
+  --stop: #f0584d;
+  --new: #5b8bff;
+  --resume: #9b78ff;
+
+  --warn-bg: #3a2f12;
+  --warn-text: #f4cf6b;
+
+  --type-dev-bg: #1b3052;   --type-dev-text: #9cc0ff;
+  --type-support-bg: #4d1f1f; --type-support-text: #ff9f9f;
+  --type-autre-bg: #26262b; --type-autre-text: #a6a6ae;
+  --dot-dev: #5b8bff; --dot-support: #f0584d; --dot-autre: #6b6b74;
+
+  --shadow-pop: 0 12px 44px rgba(0, 0, 0, .55), 0 2px 10px rgba(0, 0, 0, .4);
+  color-scheme: dark;
+}
+
+/* ---------------------- "system" : suit l'OS ---------------------- */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d0d0f;
-    --bg-soft: #161618;
-    --bg-sunk: #1d1d20;
-    --border: #2a2a2e;
-    --border-strong: #3a3a40;
-    --text: #f4f4f5;
-    --text-soft: #a1a1aa;
-    --text-faint: #71717a;
-    --accent: #f4f4f5;
-    --accent-text: #0d0d0f;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 4px 16px rgba(0, 0, 0, .4);
-    --shadow-lg: 0 10px 40px rgba(0, 0, 0, .6);
+  :root[data-theme="system"] {
+    --bg: #0c0c0e;
+    --surface: #161619;
+    --surface-2: #1f1f23;
+    --surface-hover: #222227;
+
+    --text: #f3f3f5;
+    --text-soft: #a6a6ae;
+    --text-faint: #6b6b74;
+
+    --accent: #f3f3f5;
+    --accent-text: #0c0c0e;
+    --accent-soft: #1c1c20;
+
+    --hairline: rgba(255, 255, 255, .08);
+    --ring: rgba(255, 255, 255, .35);
+
+    --play: #25b35c;
+    --stop: #f0584d;
+    --new: #5b8bff;
+    --resume: #9b78ff;
+
     --warn-bg: #3a2f12;
-    --warn-text: #fcd34d;
+    --warn-text: #f4cf6b;
+
+    --type-dev-bg: #1b3052;   --type-dev-text: #9cc0ff;
+    --type-support-bg: #4d1f1f; --type-support-text: #ff9f9f;
+    --type-autre-bg: #26262b; --type-autre-text: #a6a6ae;
+    --dot-dev: #5b8bff; --dot-support: #f0584d; --dot-autre: #6b6b74;
+
+    --shadow-pop: 0 12px 44px rgba(0, 0, 0, .55), 0 2px 10px rgba(0, 0, 0, .4);
+    color-scheme: dark;
   }
 }
