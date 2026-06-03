@@ -30,6 +30,17 @@ Le site est statique : un `push` suffit.
 
 Le fichier `.nojekyll` désactive le traitement Jekyll (inutile ici).
 
+## PWA (installation)
+
+Stint est une **Progressive Web App** : un service worker (`sw.js`) met en cache
+l'app shell et les polices, et un manifeste (`manifest.webmanifest`) la rend
+**installable** sur ordinateur (icône d'installation dans la barre d'adresse) comme
+sur mobile (« Ajouter à l'écran d'accueil »). Une fois installée, elle s'ouvre en
+fenêtre dédiée et fonctionne sans connexion.
+
+> Le service worker ne s'active qu'en HTTP(S) (GitHub Pages ou serveur local), pas
+> en `file://`. Après une mise à jour, bumper `CACHE` dans `sw.js`.
+
 ## Modèle d'interaction — 3 boutons
 
 | Bouton | Raccourci | Action |

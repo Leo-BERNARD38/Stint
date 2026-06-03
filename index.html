@@ -7,6 +7,14 @@
   <meta name="description" content="Chronomètre personnel de tâches, prêt à reporter dans Jira." />
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
 
+  <!-- PWA : installable sur PC et mobile, fonctionne hors-ligne -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Stint" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
   <!-- Applique le thème enregistré avant le premier rendu (évite tout flash). -->
   <script>
     (function () {

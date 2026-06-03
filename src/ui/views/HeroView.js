@@ -12,6 +12,7 @@ export class HeroView {
     this.dot = el("activeDot");
     this.name = el("activeName");
     this.timer = el("activeTimer");
+    this._playMode = null; // évite de ré-injecter (et ré-animer) le glyphe à chaque rendu
   }
 
   bind() {
@@ -24,12 +25,20 @@ export class HeroView {
   render() {
     const seg = this.app.store.activeSegment();
     const task = this.app.store.activeTask();
-    if (seg && task) {
-      // En cours : le gros bouton met en PAUSE (la tâche reste en cours).
-      this.playBtn.classList.add("is-running");
-      this.playBtn.classList.remove("is-stopped");
-      this.playGlyph.innerHTML = icon("pause", { size: 26, solid: true });
-      this.playLabel.textContent = "Pause";
+    const running = !!(seg && task);
+
+    // glyphe Play/Pause : (re)dessiné uniquement quand l'état change → l'anim joue à bon escient
+    const mode = running ? "pause" : "play";
+    if (mode !== this._playMode) {
+      this.playGlyph.innerHTML = icon(mode, { size: 26, solid: true });
+      this._playMode = mode;
+    }
+    this.playBtn.classList.toggle("is-running", running);
+    this.playBtn.classList.toggle("is-stopped", !running);
+    this.playLabel.textContent = running ? "Pause" : "Play";
+    this.endBtn.disabled = !running;
+
+    if (running) {
       this.dot.style.background = task.color;
       this.name.classList.remove("idle");
       this.name.innerHTML =
@@ -37,18 +46,12 @@ export class HeroView {
         (task.jiraKey ? ' <span class="jira">' + escapeHtml(task.jiraKey) + "</span>" : "") +
         '<span class="live-dot"></span>';
       this.timer.classList.remove("idle");
-      this.endBtn.disabled = false;
     } else {
-      this.playBtn.classList.remove("is-running");
-      this.playBtn.classList.add("is-stopped");
-      this.playGlyph.innerHTML = icon("play", { size: 26, solid: true });
-      this.playLabel.textContent = "Play";
       this.dot.style.background = "var(--text-faint)";
       this.name.classList.add("idle");
       this.name.textContent = "Aucune tâche en cours";
       this.timer.classList.add("idle");
       this.timer.textContent = "0:00:00";
-      this.endBtn.disabled = true; // Terminer inactif sans tâche en cours
     }
     this.tick();
   }

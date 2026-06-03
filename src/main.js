@@ -10,3 +10,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // Exposé pour le débogage en console (facultatif).
   window.stint = app;
 });
+
+// Service worker : installable + hors-ligne (ignoré sous file://).
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* sans incidence */ });
+  });
+}

@@ -30,3 +30,13 @@ a { color: inherit; }
 ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 .empty { color: var(--text-faint); text-align: center; padding: var(--sp-6); font-size: 14px; }
+
+/* Accessibilité : neutralise les animations si l'utilisateur le demande. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
