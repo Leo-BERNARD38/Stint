@@ -1,5 +1,5 @@
 import { el, createEl } from "../../utils/dom.js";
-import { DAY_MS, startOfDay, fmtClock } from "../../utils/datetime.js";
+import { DAY_MS, startOfDay, sameDay, fmtClock } from "../../utils/datetime.js";
 
 /** Timeline journalière (blocs colorés par tâche) + signalement du temps non tracé. */
 export class TimelineView {
@@ -51,29 +51,35 @@ export class TimelineView {
       this.timeline.appendChild(block);
     }
 
-    // temps non tracé
-    for (const [gs, ge] of calc.gapsForDay(viewDay)) {
+    // repère « maintenant » (uniquement aujourd'hui, dans la fenêtre)
+    const now = Date.now();
+    if (sameDay(viewDay, new Date()) && now >= winStart && now <= winEnd) {
       this.timeline.appendChild(createEl("div", {
-        className: "tl-gap",
-        attrs: { title: "Non tracé", style: `left:${pct(gs)}%;width:${Math.max(0.4, pct(ge) - pct(gs))}%` },
+        className: "tl-now",
+        attrs: { title: "Maintenant", style: `left:${pct(now)}%` },
       }));
-      const mins = Math.round((ge - gs) / 60000);
-      const item = createEl("div", {
-        className: "gap-item",
-        html: `⚠︎ ${mins} min non tracées entre ${fmtClock(new Date(gs))} et ${fmtClock(new Date(ge))}`,
-      });
-      item.appendChild(createEl("button", {
-        text: "Combler →",
-        on: { click: () => this.app.addManualSegment(new Date(gs), new Date(ge)) },
-      }));
-      this.gapsList.appendChild(item);
     }
 
-    // axe
+    // axe (début · milieu · fin)
     this.axis.append(
       createEl("span", { text: fmtClock(new Date(winStart)) }),
       createEl("span", { text: fmtClock(new Date(winStart + span / 2)) }),
       createEl("span", { text: fmtClock(new Date(winEnd)) }),
     );
+
+    // temps non tracé : signalé sobrement sous la timeline (plus de hachures dans la barre)
+    for (const [gs, ge] of calc.gapsForDay(viewDay)) {
+      const mins = Math.round((ge - gs) / 60000);
+      const item = createEl("div", {
+        className: "gap-item",
+        html: `<span class="gap-dot"></span><span>${fmtClock(new Date(gs))}–${fmtClock(new Date(ge))} · ${mins} min non tracées</span>`,
+      });
+      item.appendChild(createEl("button", {
+        className: "gap-fill",
+        text: "Combler",
+        on: { click: () => this.app.addManualSegment(new Date(gs), new Date(ge)) },
+      }));
+      this.gapsList.appendChild(item);
+    }
   }
 }

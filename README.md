@@ -77,9 +77,9 @@ sont thémés via l'attribut `[data-theme]` (`light` / `dark` / `system`).
 Icônes : pack [Lucide](https://lucide.dev) (licence ISC), embarqué localement en SVG
 inline (`src/ui/icons.js`) — aucune dépendance réseau, se thème via `currentColor`.
 
-Typographie : **Fraunces** (titres), **Inter** (corps), et **Bitcount Grid Single**
-réservée aux afficheurs numériques (chronomètre, total du jour) pour un rendu
-« display à points » lisible et rétro.
+Typographie : **deux polices** seulement. **Bitcount Grid Single** — la police
+« caractère », rendu display à points — pour le wordmark, les titres et les afficheurs
+(chronomètre, total du jour) ; **Inter** pour tout le corps et l'UI (lisibilité).
 
 ## Format de données
 

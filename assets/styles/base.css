@@ -20,7 +20,7 @@ body, .active-card, .big-btn, .settings-block, .seg-table td, .total-hero, input
 h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 button { font-family: inherit; cursor: pointer; color: inherit; }

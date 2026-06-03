@@ -17,11 +17,11 @@
 
   --maxw: 1180px;
 
-  /* Polices : Fraunces (serif) pour le wordmark/titres ; Inter pour le corps et les chiffres. */
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  /* Deux polices seulement :
+     - Bitcount Grid Single : la police « caractère » (wordmark, titres, afficheurs).
+     - Inter : la lisibilité (corps, UI, libellés). */
+  --font-display: "Bitcount Grid Single", "Courier New", ui-monospace, monospace;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
-  /* Afficheur à grille de points — usage stratégique : chronomètre, totaux. */
-  --font-mono: "Bitcount Grid Single", "Courier New", ui-monospace, monospace;
 
   /* Ombres réservées aux surfaces flottantes (modale, toast, menus). */
   --shadow-pop: 0 12px 40px rgba(17, 17, 19, .14), 0 2px 8px rgba(17, 17, 19, .08);
@@ -41,9 +41,7 @@
 
   --accent: #18181b;        /* primaire (presque noir) */
   --accent-text: #ffffff;
-  --accent-soft: #f0f0f1;
 
-  --hairline: rgba(24, 24, 27, .07); /* filet ultra-léger, usage rare */
   --ring: rgba(24, 24, 27, .28);     /* anneau de focus */
 
   --play: #15a34a;
@@ -77,15 +75,15 @@
 
   --accent: #f3f3f5;
   --accent-text: #0c0c0e;
-  --accent-soft: #1c1c20;
 
-  --hairline: rgba(255, 255, 255, .08);
   --ring: rgba(255, 255, 255, .35);
 
   --play: #25b35c;
+  --pause: #e8941f;
   --stop: #f0584d;
   --new: #5b8bff;
   --resume: #9b78ff;
+  --finish: #2dd4bf;
 
   --warn-bg: #3a2f12;
   --warn-text: #f4cf6b;
@@ -113,9 +111,7 @@
 
     --accent: #f3f3f5;
     --accent-text: #0c0c0e;
-    --accent-soft: #1c1c20;
 
-    --hairline: rgba(255, 255, 255, .08);
     --ring: rgba(255, 255, 255, .35);
 
     --play: #25b35c;

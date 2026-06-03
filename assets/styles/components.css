@@ -9,8 +9,8 @@
 .wordmark {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 23px;
-  letter-spacing: -0.01em;
+  font-size: 22px;
+  letter-spacing: 0;
   cursor: text;
   border: none;
   background: transparent;
@@ -43,8 +43,8 @@
 
 /* ---------- Titres de bloc ---------- */
 .block-title {
-  font-family: var(--font-display); font-weight: 600; font-size: 18.5px;
-  letter-spacing: -0.01em; margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3);
+  font-family: var(--font-display); font-weight: 600; font-size: 17px;
+  letter-spacing: 0; margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3);
 }
 .block-title .hint { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--text-faint); letter-spacing: 0; }
 .block-title .grow { flex: 1; }
@@ -72,7 +72,7 @@
 .active-label { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--text-faint); font-weight: 600; }
 .active-name { font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .active-name.idle { color: var(--text-faint); font-weight: 500; }
-.active-timer { font-family: var(--font-mono); font-weight: 400; font-size: 42px; line-height: 1; letter-spacing: .02em; }
+.active-timer { font-family: var(--font-display); font-weight: 400; font-size: 42px; line-height: 1; letter-spacing: .02em; }
 .active-timer.idle { color: var(--text-faint); }
 .live-dot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--play);
@@ -112,23 +112,26 @@
 .btn-ghost { border: none; background: transparent; border-radius: var(--radius-sm); padding: 7px 13px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
 .btn-ghost:hover { background: var(--surface); color: var(--text); }
 
-/* ---------- Timeline ---------- */
+/* ---------- Timeline (épurée) ---------- */
 .timeline-wrap { margin-bottom: var(--sp-6); }
-.timeline { position: relative; height: 50px; background: var(--surface-2); border-radius: 12px; overflow: hidden; }
-.tl-lunch { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 7px, var(--hairline) 7px, var(--hairline) 8px); }
-.tl-seg { position: absolute; top: 5px; bottom: 5px; border-radius: 6px; cursor: pointer; min-width: 2px; transition: filter .1s; }
-.tl-seg:hover { filter: brightness(1.08); outline: 2px solid var(--bg); }
-.tl-gap { position: absolute; top: 5px; bottom: 5px; border-radius: 6px; background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--warn-text) 22%, transparent), color-mix(in srgb, var(--warn-text) 22%, transparent) 5px, transparent 5px, transparent 10px); }
+.timeline { position: relative; height: 44px; background: var(--surface-2); border-radius: 10px; overflow: hidden; }
+.tl-lunch { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--bg) 45%, transparent); }
+.tl-seg { position: absolute; top: 6px; bottom: 6px; border-radius: 5px; cursor: pointer; min-width: 3px; transition: filter .12s; }
+.tl-seg:hover { filter: brightness(1.06); }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+.tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .tl-axis { display: flex; justify-content: space-between; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.gaps-list { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-1); }
-.gap-item { font-size: 13px; color: var(--warn-text); background: var(--warn-bg); border-radius: var(--radius-xs); padding: 7px 13px; display: flex; align-items: center; gap: var(--sp-2); }
-.gap-item button { margin-left: auto; border: none; background: transparent; color: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 12.5px; }
+.gaps-list { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
+.gap-item { font-size: 12.5px; color: var(--text-soft); padding: 6px 2px; display: flex; align-items: center; gap: var(--sp-2); font-variant-numeric: tabular-nums; }
+.gap-item .gap-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn-text); flex-shrink: 0; opacity: .75; }
+.gap-item .gap-fill { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-weight: 600; cursor: pointer; font-size: 12px; padding: 3px 9px; border-radius: 6px; }
+.gap-item .gap-fill:hover { background: var(--surface); color: var(--text); }
 
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
 .total-hero { background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
 .total-hero .k { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; opacity: .65; }
-.total-hero .v { font-family: var(--font-mono); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
+.total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }
 .total-line { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-1); }
 .total-line .tdot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
@@ -219,7 +222,7 @@
 .daynav button { display: inline-grid; place-items: center; line-height: 0; }
 
 /* Titre de page (Réglages, ouvert depuis le header) */
-.page-title { font-family: var(--font-display); font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -0.015em; }
+.page-title { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0; letter-spacing: 0; }
 
 /* Interrupteur (case + libellé) */
 .switch-row { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; user-select: none; }
