@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stint — Chronométrage des tâches</title>
+  <meta name="description" content="Chronomètre personnel de tâches, prêt à reporter dans Jira." />
+
+  <!-- §7.1 Typographie : Space Grotesk (wordmark/titres) + Inter (corps) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       Stint — feuille de style
+       Style épuré (OpenAI / Notion) : beaucoup de blanc, 3 boutons
+       en héros, le reste en dessous.
+       ============================================================ */
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #f7f7f8;
+      --bg-sunk: #f0f0f2;
+      --border: #e6e6e9;
+      --border-strong: #d4d4d8;
+      --text: #18181b;
+      --text-soft: #52525b;
+      --text-faint: #a1a1aa;
+      --accent: #18181b;
+      --accent-text: #ffffff;
+      --play: #16a34a;
+      --stop: #dc2626;
+      --new: #2563eb;
+      --resume: #7c3aed;
+      --warn-bg: #fef3c7;
+      --warn-text: #92400e;
+      --radius: 14px;
+      --radius-sm: 9px;
+      --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,.12);
+      --font-display: "Space Grotesk", system-ui, sans-serif;
+      --font-body: "Inter", system-ui, -apple-system, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d0d0f;
+        --bg-soft: #161618;
+        --bg-sunk: #1d1d20;
+        --border: #2a2a2e;
+        --border-strong: #3a3a40;
+        --text: #f4f4f5;
+        --text-soft: #a1a1aa;
+        --text-faint: #71717a;
+        --accent: #f4f4f5;
+        --accent-text: #0d0d0f;
+        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.4);
+        --shadow-lg: 0 10px 40px rgba(0,0,0,.6);
+        --warn-bg: #3a2f12;
+        --warn-text: #fcd34d;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      font-size: 15px;
+    }
+    h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+    button { font-family: inherit; cursor: pointer; }
+    input, select { font-family: inherit; font-size: 14px; }
+    a { color: inherit; }
+
+    .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px 120px; }
+
+    /* ---------- Header ---------- */
+    header {
+      position: sticky; top: 0; z-index: 20;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 920px; margin: 0 auto; padding: 14px 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .wordmark {
+      font-family: var(--font-display); font-weight: 700; font-size: 22px;
+      letter-spacing: -0.02em; cursor: text; border: none; background: transparent;
+      color: var(--text); padding: 2px 4px; border-radius: 6px; width: auto;
+      max-width: 240px;
+    }
+    .wordmark:focus { outline: 2px solid var(--accent); }
+    .header-spacer { flex: 1; }
+    .backup-pill {
+      font-size: 12.5px; color: var(--text-soft); background: var(--bg-soft);
+      border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px;
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+      white-space: nowrap;
+    }
+    .backup-pill.warn { background: var(--warn-bg); color: var(--warn-text); border-color: transparent; }
+    .backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--play); }
+    .backup-pill.warn .dot { background: var(--warn-text); }
+
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
+      border-radius: var(--radius-sm); width: 36px; height: 36px; display: grid;
+      place-items: center; font-size: 16px;
+    }
+    .icon-btn:hover { background: var(--bg-soft); }
+
+    /* ---------- Hero : 3 gros boutons ---------- */
+    .hero { padding: 40px 0 28px; }
+    .active-card {
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 22px; margin-bottom: 26px;
+      display: flex; align-items: center; gap: 16px; min-height: 78px;
+    }
+    .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .active-meta { flex: 1; min-width: 0; }
+    .active-label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); font-weight: 600; }
+    .active-name { font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .active-name.idle { color: var(--text-faint); font-weight: 500; }
+    .active-timer {
+      font-family: var(--font-display); font-weight: 600; font-size: 30px;
+      font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    }
+    .active-timer.idle { color: var(--text-faint); }
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--play); margin-left: 8px; vertical-align: middle;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+    .buttons { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; }
+    .big-btn {
+      border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius);
+      padding: 26px 18px; display: flex; flex-direction: column; align-items: center;
+      gap: 10px; transition: transform .06s ease, box-shadow .15s ease, border-color .15s ease;
+      box-shadow: var(--shadow); color: var(--text);
+    }
+    .big-btn:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    .big-btn:active { transform: translateY(0); }
+    .big-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .big-btn .glyph { font-size: 32px; line-height: 1; }
+    .big-btn .label { font-weight: 600; font-size: 16px; }
+    .big-btn .sub { font-size: 12px; color: var(--text-faint); }
+    .big-btn .kbd { font-size: 11px; color: var(--text-faint); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+
+    #btnPlay.is-running { background: var(--stop); border-color: var(--stop); color: #fff; }
+    #btnPlay.is-running .sub, #btnPlay.is-running .kbd { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.4); }
+    #btnPlay.is-stopped { background: var(--play); border-color: var(--play); color: #fff; }
+    #btnPlay.is-stopped .sub, #btnPlay.is-stopped .kbd { color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.4); }
+    #btnNew .glyph { color: var(--new); }
+    #btnResume .glyph { color: var(--resume); }
+
+    /* ---------- Sections ---------- */
+    section { margin-top: 34px; }
+    .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+    .section-head h2 { font-size: 16px; margin: 0; }
+    .section-head .hint { font-size: 13px; color: var(--text-faint); }
+    .section-head .grow { flex: 1; }
+
+    /* ---------- Day nav ---------- */
+    .daynav { display: flex; align-items: center; gap: 8px; }
+    .daynav button { border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm); padding: 6px 12px; color: var(--text); }
+    .daynav button:hover { background: var(--bg-soft); }
+    .daynav .date { font-weight: 600; min-width: 200px; text-align: center; font-variant-numeric: tabular-nums; }
+    .daynav .today-badge { font-size: 11px; color: var(--play); font-weight: 600; }
+
+    /* ---------- Timeline ---------- */
+    .timeline-box { background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .timeline {
+      position: relative; height: 46px; background: var(--bg-sunk);
+      border-radius: 8px; overflow: hidden; border: 1px solid var(--border);
+    }
+    .tl-lunch { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 6px, var(--border) 6px, var(--border) 7px); }
+    .tl-seg { position: absolute; top: 4px; bottom: 4px; border-radius: 5px; cursor: pointer; min-width: 2px; transition: filter .1s; }
+    .tl-seg:hover { filter: brightness(1.08); outline: 2px solid var(--bg); }
+    .tl-gap { position: absolute; top: 4px; bottom: 4px; border-radius: 5px; border: 1.5px dashed var(--warn-text); background: color-mix(in srgb, var(--warn-bg) 60%, transparent); }
+    .tl-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+    .gaps-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .gap-item { font-size: 13px; color: var(--warn-text); background: var(--warn-bg); border-radius: 8px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; }
+    .gap-item button { margin-left: auto; border: none; background: transparent; color: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 12.5px; }
+
+    /* ---------- Totaux ---------- */
+    .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .total-card { background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .total-card .k { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+    .total-card .v { font-family: var(--font-display); font-weight: 600; font-size: 24px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .total-card.day { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .total-card.day .k { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+    .copy-row { display: flex; gap: 6px; margin-top: 10px; }
+
+    /* ---------- Tâches ---------- */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+    }
+    .task-row.active { border-color: var(--play); box-shadow: 0 0 0 1px var(--play); }
+    .task-row.archived { opacity: .55; }
+    .swatch { width: 16px; height: 16px; border-radius: 5px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
+    .task-main { flex: 1; min-width: 0; }
+    .task-name { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .task-name .jira { font-size: 12px; font-weight: 600; color: var(--text-soft); background: var(--bg-sunk); border-radius: 5px; padding: 1px 7px; font-family: var(--font-display); }
+    .type-badge { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+    .type-dev { background: #dbeafe; color: #1e40af; }
+    .type-support { background: #fee2e2; color: #991b1b; }
+    .type-autre { background: var(--bg-sunk); color: var(--text-soft); }
+    @media (prefers-color-scheme: dark) {
+      .type-dev { background: #1e3a5f; color: #93c5fd; }
+      .type-support { background: #5f1e1e; color: #fca5a5; }
+      .type-dev, .type-support { }
+    }
+    .task-dur { font-family: var(--font-display); font-weight: 600; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .task-actions { display: flex; gap: 4px; }
+
+    .mini-btn {
+      border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
+      border-radius: 7px; padding: 5px 9px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .mini-btn:hover { background: var(--bg-soft); color: var(--text); }
+    .mini-btn.copied { background: var(--play); color: #fff; border-color: var(--play); }
+
+    /* ---------- Segments ---------- */
+    .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .seg-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .seg-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .seg-table tr.running td { background: color-mix(in srgb, var(--play) 7%, transparent); }
+    .seg-table input[type="time"], .seg-table input[type="date"], .seg-table select {
+      border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px 5px; color: var(--text);
+    }
+    .seg-table input:hover, .seg-table select:hover { border-color: var(--border); }
+    .seg-table input:focus, .seg-table select:focus { border-color: var(--accent); outline: none; background: var(--bg); }
+    .seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+    .raw-toggle { font-size: 11px; }
+    .empty { color: var(--text-faint); text-align: center; padding: 26px; font-size: 14px; }
+
+    /* ---------- Settings & I/O ---------- */
+    .panel { background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+    .field input, .field select {
+      border: 1px solid var(--border); background: var(--bg); border-radius: var(--radius-sm);
+      padding: 8px 10px; color: var(--text);
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+    .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
+    .weekdays button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; padding: 6px 11px; color: var(--text-soft); font-size: 13px; }
+    .weekdays button.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .io-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      border: 1px solid var(--border-strong); background: var(--bg); color: var(--text);
+      border-radius: var(--radius-sm); padding: 9px 16px; font-weight: 600; font-size: 14px;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn:hover { background: var(--bg-soft); }
+    .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+    .btn.danger { color: var(--stop); border-color: color-mix(in srgb, var(--stop) 40%, var(--border)); }
+    .btn.danger:hover { background: color-mix(in srgb, var(--stop) 10%, transparent); }
+
+    details.collapsible { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+    details.collapsible > summary {
+      list-style: none; cursor: pointer; padding: 14px 18px; font-family: var(--font-display);
+      font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 10px;
+    }
+    details.collapsible > summary::-webkit-details-marker { display: none; }
+    details.collapsible > summary::after { content: "›"; margin-left: auto; transition: transform .15s; font-size: 20px; color: var(--text-faint); }
+    details.collapsible[open] > summary::after { transform: rotate(90deg); }
+    details.collapsible > .details-body { padding: 0 18px 18px; }
+
+    /* ---------- Modal ---------- */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 460px; padding: 24px; border: 1px solid var(--border);
+      max-height: 86vh; overflow: auto;
+    }
+    .modal h3 { margin: 0 0 4px; font-size: 19px; }
+    .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+    .resume-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow: auto; }
+    .resume-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--bg); text-align: left; width: 100%;
+    }
+    .resume-item:hover { background: var(--bg-soft); border-color: var(--accent); }
+    .resume-item .nm { flex: 1; font-weight: 600; }
+    .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px;
+      font-weight: 600; font-size: 14px; box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 640px) {
+      .buttons { grid-template-columns: 1fr; }
+      .seg-table .col-date { display: none; }
+      .daynav .date { min-width: 0; font-size: 13px; }
+      .header-inner { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ============================ HEADER ============================ -->
+  <header>
+    <div class="header-inner">
+      <input id="wordmark" class="wordmark" value="Stint" aria-label="Nom de l'application"
+             spellcheck="false" autocomplete="off" />
+      <div class="header-spacer"></div>
+      <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
+        <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ============================ HERO ============================ -->
+    <div class="hero">
+      <div class="active-card">
+        <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
+        <div class="active-meta">
+          <div class="active-label">Tâche active</div>
+          <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
+        </div>
+        <div class="active-timer idle" id="activeTimer">0:00:00</div>
+      </div>
+
+      <div class="buttons">
+        <button id="btnPlay" class="big-btn is-stopped" aria-label="Démarrer ou arrêter">
+          <span class="glyph" id="playGlyph">▶</span>
+          <span class="label" id="playLabel">Play</span>
+          <span class="kbd">Espace</span>
+        </button>
+        <button id="btnNew" class="big-btn" aria-label="Nouvelle tâche">
+          <span class="glyph">＋</span>
+          <span class="label">Nouvelle tâche</span>
+          <span class="kbd">N</span>
+        </button>
+        <button id="btnResume" class="big-btn" aria-label="Reprendre une tâche">
+          <span class="glyph">↺</span>
+          <span class="label">Reprise</span>
+          <span class="kbd">R</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================ DAY NAV ============================ -->
+    <section id="dayNavSection">
+      <div class="daynav">
+        <button id="dayPrev" aria-label="Jour précédent">←</button>
+        <div class="date" id="dayLabel">—</div>
+        <button id="dayNext" aria-label="Jour suivant">→</button>
+        <button id="dayToday">Aujourd'hui</button>
+        <span class="today-badge" id="todayBadge"></span>
+      </div>
+    </section>
+
+    <!-- ============================ TIMELINE ============================ -->
+    <section>
+      <div class="section-head">
+        <h2>Journée</h2>
+        <span class="hint">survol = nom + durée · les trous signalent du temps non tracé</span>
+      </div>
+      <div class="timeline-box">
+        <div class="timeline" id="timeline"></div>
+        <div class="tl-axis" id="tlAxis"></div>
+        <div class="gaps-list" id="gapsList"></div>
+      </div>
+    </section>
+
+    <!-- ============================ TOTAUX ============================ -->
+    <section>
+      <div class="section-head"><h2>Totaux</h2><span class="hint">temps ouvré · format selon réglages</span></div>
+      <div class="totals-grid" id="totalsGrid"></div>
+    </section>
+
+    <!-- ============================ TÂCHES ============================ -->
+    <section>
+      <div class="section-head">
+        <h2>Tâches du jour</h2><span class="grow"></span>
+      </div>
+      <div class="task-list" id="taskList"></div>
+    </section>
+
+    <!-- ============================ SEGMENTS ============================ -->
+    <section>
+      <div class="section-head">
+        <h2>Segments</h2>
+        <span class="hint">éditer heures, tâche, mode brut · ou ajouter une saisie manuelle</span>
+        <span class="grow"></span>
+        <button class="mini-btn" id="addSegment">＋ Segment manuel</button>
+      </div>
+      <div class="panel" style="padding:8px 12px; overflow-x:auto;">
+        <table class="seg-table" id="segTable">
+          <thead>
+            <tr>
+              <th>Tâche</th>
+              <th class="col-date">Date</th>
+              <th>Début</th>
+              <th>Fin</th>
+              <th>Brut</th>
+              <th>Durée</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="segBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================ RÉGLAGES ============================ -->
+    <section>
+      <details class="collapsible" id="settingsPanel">
+        <summary>⚙︎ Réglages</summary>
+        <div class="details-body">
+          <h3 style="font-size:14px; margin:8px 0 10px;">Horaires de travail</h3>
+          <div class="field" style="margin-bottom:14px;">
+            <label>Jours travaillés</label>
+            <div class="weekdays" id="weekdays"></div>
+          </div>
+          <div class="field-grid">
+            <div class="field"><label>Arrivée</label><input type="time" id="setArrival"></div>
+            <div class="field"><label>Début pause déj.</label><input type="time" id="setLunchStart"></div>
+            <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
+            <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
+          </div>
+
+          <h3 style="font-size:14px; margin:22px 0 10px;">Conversion Jira & arrondi</h3>
+          <div class="field-grid">
+            <div class="field"><label>Heures / jour</label><input type="number" id="setHpd" min="1" max="24" step="0.5"></div>
+            <div class="field"><label>Jours / semaine</label><input type="number" id="setDpw" min="1" max="7" step="1"></div>
+            <div class="field">
+              <label>Arrondi</label>
+              <select id="setRounding">
+                <option value="none">Aucun</option>
+                <option value="1m">1 minute</option>
+                <option value="5m">5 minutes</option>
+                <option value="15m">15 minutes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ============================ IMPORT / EXPORT ============================ -->
+    <section>
+      <details class="collapsible">
+        <summary>⇆ Sauvegarde & données</summary>
+        <div class="details-body">
+          <p style="font-size:13.5px; color:var(--text-soft); margin-top:8px;">
+            Les données vivent dans ce navigateur (<code>localStorage</code>) et peuvent être effacées
+            par un nettoyage de cache. <strong>Exportez régulièrement le JSON</strong> comme sauvegarde maître.
+          </p>
+          <div class="io-buttons">
+            <button class="btn primary" id="exportJson">⬇ Exporter JSON</button>
+            <button class="btn" id="importJson">⬆ Importer JSON</button>
+            <button class="btn" id="exportCsv">⬇ Exporter CSV (segments)</button>
+            <span class="grow" style="flex:1"></span>
+            <button class="btn danger" id="resetAll">Tout effacer</button>
+          </div>
+          <input type="file" id="fileInput" accept="application/json" style="display:none">
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- ============================ MODALS ============================ -->
+  <div class="modal-backdrop" id="newTaskModal">
+    <div class="modal">
+      <h3>Nouvelle tâche</h3>
+      <p class="modal-sub">Elle démarre immédiatement. Le nom et la clé Jira sont facultatifs.</p>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Nom</label>
+        <input type="text" id="ntName" placeholder="ex. Support — client Y" autocomplete="off">
+      </div>
+      <div class="field-grid">
+        <div class="field"><label>Clé Jira (option.)</label><input type="text" id="ntJira" placeholder="MOD-123" autocomplete="off"></div>
+        <div class="field">
+          <label>Type</label>
+          <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" data-close>Annuler</button>
+        <button class="btn primary" id="ntCreate">Créer & démarrer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="resumeModal">
+    <div class="modal">
+      <h3>Reprendre une tâche</h3>
+      <p class="modal-sub">Reprend la tâche choisie (arrête l'active, relance un segment).</p>
+      <div class="resume-list" id="resumeList"></div>
+      <div class="modal-actions"><button class="btn" data-close>Fermer</button></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="editTaskModal">
+    <div class="modal">
+      <h3>Éditer la tâche</h3>
+      <p class="modal-sub" id="etSub"></p>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Nom</label><input type="text" id="etName" autocomplete="off">
+      </div>
+      <div class="field-grid">
+        <div class="field"><label>Clé Jira</label><input type="text" id="etJira" autocomplete="off"></div>
+        <div class="field"><label>Type</label>
+          <select id="etType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+        </div>
+        <div class="field"><label>Couleur</label><input type="color" id="etColor"></div>
+      </div>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button class="btn danger" id="etDelete">Supprimer</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" id="etArchive">Archiver</button>
+          <button class="btn primary" id="etSave">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   STINT — logique applicative
+   Organisation :
+     1. Constantes & valeurs par défaut
+     2. État + persistance (localStorage)
+     3. Utilitaires (id, temps, dates)
+     4. Calculs (temps ouvré, arrondi, formats décimal / Jira)
+     5. Moteur chrono (play/stop, nouvelle tâche, reprise)
+     6. Rendu (header, hero, timeline, totaux, tâches, segments)
+     7. Réglages
+     8. Import / Export
+     9. Évènements & init
+   Modèle de données : voir §8 du cahier des charges. Conçu pour migrer
+   vers Vite + React sans réécriture des données.
+   ============================================================================ */
+(function () {
+  "use strict";
+
+  /* ---------- 1. Constantes ---------- */
+  const STORAGE_KEY = "stint.v1";
+  const DAY_MS = 86400000;
+  const PALETTE = [
+    "#4F46E5", "#0891B2", "#16A34A", "#CA8A04", "#DC2626",
+    "#DB2777", "#7C3AED", "#2563EB", "#059669", "#EA580C",
+    "#9333EA", "#0D9488", "#65A30D", "#E11D48", "#475569",
+  ];
+  const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]; // index 0 -> ISO 1
+  const TYPE_LABELS = { dev: "dev", support: "support", autre: "autre" };
+
+  function defaultState() {
+    return {
+      version: 1,
+      settings: {
+        appName: "Stint",
+        workDays: [1, 2, 3, 4, 5],
+        arrival: "09:00",
+        lunchStart: "12:30",
+        lunchEnd: "13:30",
+        departure: "18:00",
+        jira: { hoursPerDay: 8, daysPerWeek: 5 },
+        rounding: "none",
+      },
+      tasks: [],
+      segments: [],
+      meta: { lastExport: null },
+    };
+  }
+
+  /* ---------- 2. État + persistance ---------- */
+  let state = defaultState();
+  let viewDay = startOfDay(new Date()); // jour affiché
+  let tickHandle = null;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      // fusion défensive : on garantit toutes les clés attendues
+      state = mergeState(defaultState(), parsed);
+    } catch (e) {
+      console.warn("Stint: lecture localStorage impossible", e);
+    }
+  }
+  function mergeState(base, incoming) {
+    if (!incoming || typeof incoming !== "object") return base;
+    const s = { ...base, ...incoming };
+    s.settings = { ...base.settings, ...(incoming.settings || {}) };
+    s.settings.jira = { ...base.settings.jira, ...((incoming.settings || {}).jira || {}) };
+    s.meta = { ...base.meta, ...(incoming.meta || {}) };
+    s.tasks = Array.isArray(incoming.tasks) ? incoming.tasks : [];
+    s.segments = Array.isArray(incoming.segments) ? incoming.segments : [];
+    return s;
+  }
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("Stint: écriture localStorage impossible", e);
+    }
+  }
+  /** Sauvegarde + re-rendu : à appeler après toute modification. */
+  function commit() { save(); renderAll(); }
+
+  /* ---------- 3. Utilitaires ---------- */
+  let _idCounter = 0;
+  function uid(prefix) {
+    _idCounter++;
+    return prefix + Date.now().toString(36) + _idCounter.toString(36);
+  }
+  function startOfDay(d) { const n = new Date(d); n.setHours(0, 0, 0, 0); return n; }
+  function isoDow(d) { const g = d.getDay(); return g === 0 ? 7 : g; } // 1=lundi..7=dimanche
+  function sameDay(a, b) { return startOfDay(a).getTime() === startOfDay(b).getTime(); }
+
+  /** Date du jour `dayDate` à l'heure "HH:MM". */
+  function atTime(dayDate, hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    const d = new Date(dayDate);
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function fmtClock(d) { return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+  function fmtDateInput(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function parseDateInput(str) { const [y, m, dd] = str.split("-").map(Number); return new Date(y, m - 1, dd); }
+
+  /** Combine une date (Date) et une heure "HH:MM" en timestamp local ISO avec offset. */
+  function toLocalISO(d) {
+    const off = -d.getTimezoneOffset();
+    const sign = off >= 0 ? "+" : "-";
+    const abs = Math.abs(off);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+      "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) +
+      sign + pad2(Math.floor(abs / 60)) + ":" + pad2(abs % 60);
+  }
+
+  /* ---------- 4. Calculs ---------- */
+
+  /** Plages ouvrées (matin, après-midi) pour un jour calendaire donné, ou [] si non travaillé. */
+  function workRangesForDay(dayDate, settings) {
+    if (!settings.workDays.includes(isoDow(dayDate))) return [];
+    const ranges = [
+      [atTime(dayDate, settings.arrival).getTime(), atTime(dayDate, settings.lunchStart).getTime()],
+      [atTime(dayDate, settings.lunchEnd).getTime(), atTime(dayDate, settings.departure).getTime()],
+    ];
+    return ranges.filter(([a, b]) => b > a);
+  }
+
+  function overlap(aStart, aEnd, bStart, bEnd) {
+    return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
+  }
+
+  /**
+   * Durée ouvrée d'un intervalle [startMs, endMs] (§9.1).
+   * Intersection avec les plages ouvrées, jour par jour (gère le multi-jours).
+   */
+  function workedMs(startMs, endMs, settings) {
+    if (endMs <= startMs) return 0;
+    let total = 0;
+    // itère du début de journée du start jusqu'au end
+    let cursor = startOfDay(new Date(startMs)).getTime();
+    const guard = startOfDay(new Date(endMs)).getTime();
+    let safety = 0;
+    while (cursor <= guard && safety < 400) {
+      const ranges = workRangesForDay(new Date(cursor), settings);
+      for (const [rs, re] of ranges) total += overlap(startMs, endMs, rs, re);
+      cursor += DAY_MS;
+      safety++;
+    }
+    return total;
+  }
+
+  /**
+   * Minutes comptées pour un segment, éventuellement bornées à une fenêtre [clampS, clampE].
+   * - raw  : temps réel écoulé (sans rognage ouvré)
+   * - sinon: temps ouvré (intersection plages)
+   */
+  function segmentMs(seg, clampS, clampE) {
+    const start = new Date(seg.start).getTime();
+    const end = seg.end ? new Date(seg.end).getTime() : Date.now();
+    let s = start, e = end;
+    if (clampS != null) s = Math.max(s, clampS);
+    if (clampE != null) e = Math.min(e, clampE);
+    if (e <= s) return 0;
+    return seg.raw ? (e - s) : workedMs(s, e, state.settings);
+  }
+
+  function applyRounding(minutes, mode) {
+    if (mode === "none" || !mode) return minutes;
+    const step = mode === "1m" ? 1 : mode === "5m" ? 5 : mode === "15m" ? 15 : 0;
+    if (!step) return minutes;
+    return Math.round(minutes / step) * step;
+  }
+
+  /** §9.2 décimal : 90 min -> "1.5" */
+  function fmtDecimal(minutes) {
+    const rounded = applyRounding(minutes, state.settings.rounding);
+    const h = rounded / 60;
+    return String(parseFloat(h.toFixed(2)));
+  }
+
+  /** §9.3 Jira "w d h m" en omettant les zéros. */
+  function fmtJira(minutes) {
+    let rest = Math.round(applyRounding(minutes, state.settings.rounding));
+    if (rest <= 0) return "0m";
+    const dayUnit = state.settings.jira.hoursPerDay * 60;
+    const weekUnit = dayUnit * state.settings.jira.daysPerWeek;
+    const w = Math.floor(rest / weekUnit); rest -= w * weekUnit;
+    const d = Math.floor(rest / dayUnit); rest -= d * dayUnit;
+    const h = Math.floor(rest / 60); rest -= h * 60;
+    const m = rest;
+    const parts = [];
+    if (w) parts.push(w + "w");
+    if (d) parts.push(d + "d");
+    if (h) parts.push(h + "h");
+    if (m) parts.push(m + "m");
+    return parts.length ? parts.join(" ") : "0m";
+  }
+
+  /** Horloge h:mm:ss pour le timer live et durées brutes. */
+  function fmtHMS(ms) {
+    const total = Math.floor(ms / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return h + ":" + pad2(m) + ":" + pad2(s);
+  }
+
+  /* ---------- Sélecteurs dérivés ---------- */
+  function activeSegment() { return state.segments.find((s) => !s.end) || null; }
+  function activeTask() { const seg = activeSegment(); return seg ? taskById(seg.taskId) : null; }
+  function taskById(id) { return state.tasks.find((t) => t.id === id) || null; }
+
+  /** Segments chevauchant la journée affichée [dayStart, dayEnd). */
+  function segmentsForDay(dayDate) {
+    const ds = startOfDay(dayDate).getTime();
+    const de = ds + DAY_MS;
+    return state.segments.filter((seg) => {
+      const s = new Date(seg.start).getTime();
+      const e = seg.end ? new Date(seg.end).getTime() : Date.now();
+      return s < de && e > ds;
+    });
+  }
+
+  /* ---------- 5. Moteur chrono ---------- */
+  function stopActive(atDate) {
+    const seg = activeSegment();
+    if (seg) seg.end = toLocalISO(atDate || new Date());
+  }
+
+  function nextColor() {
+    const used = new Set(state.tasks.map((t) => t.color));
+    const free = PALETTE.find((c) => !used.has(c));
+    return free || PALETTE[state.tasks.length % PALETTE.length];
+  }
+
+  function createTask({ name, jiraKey, type }) {
+    const task = {
+      id: uid("t_"),
+      name: name || "",
+      jiraKey: jiraKey || "",
+      type: type || "dev",
+      color: nextColor(),
+      archived: false,
+    };
+    state.tasks.push(task);
+    return task;
+  }
+
+  function startSegment(taskId, atDate) {
+    state.segments.push({
+      id: uid("s_"),
+      taskId,
+      start: toLocalISO(atDate || new Date()),
+      end: null,
+      raw: false,
+    });
+  }
+
+  /** Play/Stop sur la tâche active. */
+  function togglePlayStop() {
+    const seg = activeSegment();
+    if (seg) {
+      stopActive();
+    } else {
+      // reprend la dernière tâche utilisée (ou rien si aucune)
+      const last = lastUsedTask();
+      if (last) startSegment(last.id);
+      else openNewTask();
+    }
+    commit();
+  }
+
+  function lastUsedTask() {
+    for (let i = state.segments.length - 1; i >= 0; i--) {
+      const t = taskById(state.segments[i].taskId);
+      if (t && !t.archived) return t;
+    }
+    return state.tasks.find((t) => !t.archived) || null;
+  }
+
+  /** Nouvelle tâche : arrête l'active, crée, démarre. */
+  function commitNewTask({ name, jiraKey, type }) {
+    stopActive();
+    const task = createTask({ name, jiraKey, type });
+    startSegment(task.id);
+    commit();
+  }
+
+  /** Reprise : arrête l'active, relance un segment sur la tâche choisie. */
+  function resumeTask(taskId) {
+    stopActive();
+    startSegment(taskId);
+    commit();
+  }
+
+  /* ---------- 6. Rendu ---------- */
+  const $ = (id) => document.getElementById(id);
+
+  function renderAll() {
+    renderHeader();
+    renderHero();
+    renderDayNav();
+    renderTimeline();
+    renderTotals();
+    renderTasks();
+    renderSegments();
+  }
+
+  function renderHeader() {
+    // wordmark
+    const wm = $("wordmark");
+    if (document.activeElement !== wm) wm.value = state.settings.appName || "Stint";
+    document.title = (state.settings.appName || "Stint") + " — Chronométrage";
+
+    // rappel de sauvegarde
+    const pill = $("backupPill");
+    const txt = $("backupText");
+    const last = state.meta.lastExport ? new Date(state.meta.lastExport) : null;
+    if (!last) {
+      txt.textContent = state.segments.length ? "Jamais exporté — pensez à sauvegarder" : "Aucune donnée";
+      pill.classList.toggle("warn", state.segments.length > 0);
+    } else {
+      const days = Math.floor((Date.now() - last.getTime()) / DAY_MS);
+      txt.textContent = days === 0 ? "Sauvegardé aujourd'hui"
+        : days === 1 ? "Sauvegardé hier"
+        : "Dernière sauvegarde il y a " + days + " j";
+      pill.classList.toggle("warn", days >= 3);
+    }
+  }
+
+  function renderHero() {
+    const seg = activeSegment();
+    const task = activeTask();
+    const playBtn = $("btnPlay");
+    const dot = $("activeDot");
+    const name = $("activeName");
+    const timer = $("activeTimer");
+
+    if (seg && task) {
+      playBtn.classList.add("is-running");
+      playBtn.classList.remove("is-stopped");
+      $("playGlyph").textContent = "■";
+      $("playLabel").textContent = "Stop";
+      dot.style.background = task.color;
+      name.classList.remove("idle");
+      name.innerHTML = escapeHtml(task.name || "(sans nom)") +
+        (task.jiraKey ? ' <span class="jira">' + escapeHtml(task.jiraKey) + "</span>" : "") +
+        '<span class="live-dot"></span>';
+      timer.classList.remove("idle");
+    } else {
+      playBtn.classList.remove("is-running");
+      playBtn.classList.add("is-stopped");
+      $("playGlyph").textContent = "▶";
+      $("playLabel").textContent = "Play";
+      dot.style.background = "var(--text-faint)";
+      name.classList.add("idle");
+      name.textContent = "Aucune tâche en cours";
+      timer.classList.add("idle");
+      timer.textContent = "0:00:00";
+    }
+    renderLiveTimer();
+  }
+
+  /** Mise à jour du timer (appelée au tick 1 s). */
+  function renderLiveTimer() {
+    const seg = activeSegment();
+    const timer = $("activeTimer");
+    if (!seg) return;
+    const elapsed = Date.now() - new Date(seg.start).getTime();
+    timer.textContent = fmtHMS(elapsed);
+  }
+
+  function renderDayNav() {
+    const isToday = sameDay(viewDay, new Date());
+    $("dayLabel").textContent = viewDay.toLocaleDateString("fr-FR", {
+      weekday: "long", day: "numeric", month: "long", year: "numeric",
+    });
+    $("todayBadge").textContent = isToday ? "● aujourd'hui" : "";
+  }
+
+  function renderTimeline() {
+    const tl = $("timeline");
+    const axis = $("tlAxis");
+    const gapsList = $("gapsList");
+    tl.innerHTML = ""; axis.innerHTML = ""; gapsList.innerHTML = "";
+
+    const segs = segmentsForDay(viewDay);
+    const dayStart = startOfDay(viewDay).getTime();
+    const dayEnd = dayStart + DAY_MS;
+
+    // Fenêtre d'affichage : plages ouvrées du jour, élargies si des segments débordent.
+    const ranges = workRangesForDay(viewDay, state.settings);
+    let winStart, winEnd;
+    if (ranges.length) {
+      winStart = ranges[0][0];
+      winEnd = ranges[ranges.length - 1][1];
+    } else {
+      winStart = atTime(viewDay, state.settings.arrival).getTime();
+      winEnd = atTime(viewDay, state.settings.departure).getTime();
+    }
+    for (const seg of segs) {
+      const s = Math.max(new Date(seg.start).getTime(), dayStart);
+      const e = Math.min(seg.end ? new Date(seg.end).getTime() : Date.now(), dayEnd);
+      winStart = Math.min(winStart, s);
+      winEnd = Math.max(winEnd, e);
+    }
+    if (winEnd <= winStart) winEnd = winStart + 3600000;
+    const span = winEnd - winStart;
+    const pct = (ms) => ((ms - winStart) / span) * 100;
+
+    // bande de pause déjeuner
+    if (ranges.length === 2) {
+      const ls = ranges[0][1], le = ranges[1][0];
+      if (le > ls) {
+        const band = document.createElement("div");
+        band.className = "tl-lunch";
+        band.style.left = pct(ls) + "%";
+        band.style.width = (pct(le) - pct(ls)) + "%";
+        band.title = "Pause déjeuner";
+        tl.appendChild(band);
+      }
+    }
+
+    // segments
+    for (const seg of segs) {
+      const task = taskById(seg.taskId);
+      const s = Math.max(new Date(seg.start).getTime(), dayStart);
+      const e = Math.min(seg.end ? new Date(seg.end).getTime() : Date.now(), dayEnd);
+      const block = document.createElement("div");
+      block.className = "tl-seg";
+      block.style.left = pct(s) + "%";
+      block.style.width = Math.max(0.4, pct(e) - pct(s)) + "%";
+      block.style.background = task ? task.color : "var(--text-faint)";
+      const dur = segmentMs(seg, dayStart, dayEnd);
+      block.title = (task ? task.name || "(sans nom)" : "?") + " · " +
+        fmtClock(new Date(s)) + "–" + fmtClock(new Date(e)) + " · " + fmtDecimal(dur / 60000) + " h";
+      block.addEventListener("click", () => { scrollToSeg(seg.id); });
+      tl.appendChild(block);
+    }
+
+    // temps non suivi : trous dans les plages ouvrées non couverts par un segment
+    const covered = unionIntervals(segs.map((seg) => [
+      Math.max(new Date(seg.start).getTime(), dayStart),
+      Math.min(seg.end ? new Date(seg.end).getTime() : Date.now(), dayEnd),
+    ]));
+    const gaps = [];
+    for (const [rs, re] of ranges) {
+      subtractIntervals([rs, re], covered).forEach(([gs, ge]) => {
+        if (ge - gs >= 60000) gaps.push([gs, ge]); // ignore < 1 min
+      });
+    }
+    // n'affiche les trous que jusqu'à "maintenant" si on regarde aujourd'hui
+    const nowCap = sameDay(viewDay, new Date()) ? Date.now() : Infinity;
+    for (const [gs, ge] of gaps) {
+      const end = Math.min(ge, nowCap);
+      if (end - gs < 60000) continue;
+      const g = document.createElement("div");
+      g.className = "tl-gap";
+      g.style.left = pct(gs) + "%";
+      g.style.width = Math.max(0.4, pct(end) - pct(gs)) + "%";
+      g.title = "Non tracé";
+      tl.appendChild(g);
+
+      const mins = Math.round((end - gs) / 60000);
+      const item = document.createElement("div");
+      item.className = "gap-item";
+      item.innerHTML = "⚠︎ " + mins + " min non tracées entre " +
+        fmtClock(new Date(gs)) + " et " + fmtClock(new Date(end));
+      const btn = document.createElement("button");
+      btn.textContent = "Combler →";
+      btn.addEventListener("click", () => addManualSegment(new Date(gs), new Date(end)));
+      item.appendChild(btn);
+      gapsList.appendChild(item);
+    }
+
+    // axe
+    const startLbl = document.createElement("span");
+    startLbl.textContent = fmtClock(new Date(winStart));
+    const midLbl = document.createElement("span");
+    midLbl.textContent = fmtClock(new Date(winStart + span / 2));
+    const endLbl = document.createElement("span");
+    endLbl.textContent = fmtClock(new Date(winEnd));
+    axis.append(startLbl, midLbl, endLbl);
+  }
+
+  function renderTotals() {
+    const grid = $("totalsGrid");
+    grid.innerHTML = "";
+    const segs = segmentsForDay(viewDay);
+    const dayStart = startOfDay(viewDay).getTime();
+    const dayEnd = dayStart + DAY_MS;
+
+    const byType = { dev: 0, support: 0, autre: 0 };
+    let dayTotal = 0;
+    for (const seg of segs) {
+      const ms = segmentMs(seg, dayStart, dayEnd);
+      dayTotal += ms;
+      const t = taskById(seg.taskId);
+      const type = t ? t.type : "autre";
+      byType[type] = (byType[type] || 0) + ms;
+    }
+
+    // carte total journée (avec copie)
+    grid.appendChild(totalCard("Total journée", dayTotal / 60000, true));
+    ["dev", "support", "autre"].forEach((type) => {
+      if (byType[type] > 0) grid.appendChild(totalCard(TYPE_LABELS[type], byType[type] / 60000, false));
+    });
+    if (segs.length === 0) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.style.gridColumn = "1/-1";
+      e.textContent = "Rien de tracé ce jour.";
+      grid.appendChild(e);
+    }
+  }
+
+  function totalCard(label, minutes, isDay) {
+    const card = document.createElement("div");
+    card.className = "total-card" + (isDay ? " day" : "");
+    card.innerHTML =
+      '<div class="k">' + escapeHtml(label) + "</div>" +
+      '<div class="v">' + fmtDecimal(minutes) + " h</div>";
+    const row = document.createElement("div");
+    row.className = "copy-row";
+    row.appendChild(copyBtn(fmtDecimal(minutes), "Déc."));
+    row.appendChild(copyBtn(fmtJira(minutes), "Jira"));
+    card.appendChild(row);
+    return card;
+  }
+
+  function copyBtn(value, label) {
+    const b = document.createElement("button");
+    b.className = "mini-btn";
+    b.innerHTML = "⧉ " + label;
+    b.title = "Copier « " + value + " »";
+    b.addEventListener("click", () => copy(value, b));
+    return b;
+  }
+
+  function renderTasks() {
+    const list = $("taskList");
+    list.innerHTML = "";
+    const segs = segmentsForDay(viewDay);
+    const dayStart = startOfDay(viewDay).getTime();
+    const dayEnd = dayStart + DAY_MS;
+
+    // totaux par tâche pour le jour affiché
+    const totals = new Map();
+    for (const seg of segs) {
+      totals.set(seg.taskId, (totals.get(seg.taskId) || 0) + segmentMs(seg, dayStart, dayEnd));
+    }
+    // tâches présentes ce jour, triées par temps décroissant ; sinon toutes les non-archivées
+    let taskIds = [...totals.keys()];
+    if (taskIds.length === 0) {
+      taskIds = state.tasks.filter((t) => !t.archived).map((t) => t.id);
+    }
+    taskIds.sort((a, b) => (totals.get(b) || 0) - (totals.get(a) || 0));
+
+    const activeSeg = activeSegment();
+    if (taskIds.length === 0) {
+      list.innerHTML = '<div class="empty">Aucune tâche. Appuyez sur « Play » ou « Nouvelle tâche ».</div>';
+      return;
+    }
+
+    for (const id of taskIds) {
+      const t = taskById(id);
+      if (!t) continue;
+      const minutes = (totals.get(id) || 0) / 60000;
+      const isActive = activeSeg && activeSeg.taskId === id;
+
+      const row = document.createElement("div");
+      row.className = "task-row" + (isActive ? " active" : "") + (t.archived ? " archived" : "");
+
+      row.innerHTML =
+        '<button class="swatch" style="background:' + t.color + '" title="Couleur"></button>' +
+        '<div class="task-main"><div class="task-name">' +
+          escapeHtml(t.name || "(sans nom)") +
+          (t.jiraKey ? '<span class="jira">' + escapeHtml(t.jiraKey) + "</span>" : "") +
+          '<span class="type-badge type-' + t.type + '">' + t.type + "</span>" +
+        "</div></div>" +
+        '<div class="task-dur">' + fmtDecimal(minutes) + " h</div>";
+
+      // copie
+      const actions = document.createElement("div");
+      actions.className = "task-actions";
+      actions.appendChild(copyBtn(fmtDecimal(minutes), "Déc."));
+      actions.appendChild(copyBtn(fmtJira(minutes), "Jira"));
+
+      const resumeBtn = document.createElement("button");
+      resumeBtn.className = "mini-btn";
+      resumeBtn.innerHTML = isActive ? "■ Stop" : "▶ Reprendre";
+      resumeBtn.addEventListener("click", () => {
+        if (isActive) { stopActive(); commit(); } else { resumeTask(id); }
+      });
+      actions.appendChild(resumeBtn);
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "mini-btn";
+      editBtn.innerHTML = "✎";
+      editBtn.title = "Éditer";
+      editBtn.addEventListener("click", () => openEditTask(id));
+      actions.appendChild(editBtn);
+
+      row.appendChild(actions);
+
+      // couleur cliquable
+      row.querySelector(".swatch").addEventListener("click", () => openEditTask(id));
+
+      list.appendChild(row);
+    }
+  }
+
+  function renderSegments() {
+    const body = $("segBody");
+    body.innerHTML = "";
+    const segs = segmentsForDay(viewDay).slice().sort(
+      (a, b) => new Date(a.start) - new Date(b.start)
+    );
+    if (segs.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" class="empty">Aucun segment ce jour.</td></tr>';
+      return;
+    }
+    for (const seg of segs) {
+      const tr = document.createElement("tr");
+      if (!seg.end) tr.className = "running";
+      const start = new Date(seg.start);
+      const end = seg.end ? new Date(seg.end) : null;
+      const dur = segmentMs(seg, null, null);
+
+      // sélecteur de tâche
+      const taskSel = '<select data-seg="' + seg.id + '" data-field="taskId">' +
+        state.tasks.map((t) =>
+          '<option value="' + t.id + '"' + (t.id === seg.taskId ? " selected" : "") + ">" +
+          escapeHtml((t.name || "(sans nom)") + (t.jiraKey ? " · " + t.jiraKey : "")) + "</option>"
+        ).join("") + "</select>";
+
+      tr.innerHTML =
+        "<td>" + taskSel + "</td>" +
+        '<td class="col-date"><input type="date" data-seg="' + seg.id + '" data-field="startDate" value="' + fmtDateInput(start) + '"></td>' +
+        '<td><input type="time" data-seg="' + seg.id + '" data-field="startTime" value="' + fmtClock(start) + '"></td>' +
+        "<td>" + (end
+            ? '<input type="time" data-seg="' + seg.id + '" data-field="endTime" value="' + fmtClock(end) + '">'
+            : '<span style="color:var(--play); font-weight:600;">en cours</span>') + "</td>" +
+        '<td><input type="checkbox" class="raw-toggle" data-seg="' + seg.id + '" data-field="raw"' + (seg.raw ? " checked" : "") + ' title="Temps brut (sans rognage ouvré)"></td>' +
+        '<td class="seg-dur">' + fmtDecimal(dur / 60000) + " h</td>" +
+        '<td><button class="mini-btn" data-del="' + seg.id + '" title="Supprimer">🗑</button></td>';
+
+      body.appendChild(tr);
+    }
+  }
+
+  function scrollToSeg(segId) {
+    const el = document.querySelector('[data-seg="' + segId + '"]');
+    if (el) {
+      el.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus();
+    }
+  }
+
+  /* ---------- Intervalles (union / soustraction) ---------- */
+  function unionIntervals(intervals) {
+    const arr = intervals.filter(([s, e]) => e > s).sort((a, b) => a[0] - b[0]);
+    const out = [];
+    for (const [s, e] of arr) {
+      if (out.length && s <= out[out.length - 1][1]) {
+        out[out.length - 1][1] = Math.max(out[out.length - 1][1], e);
+      } else out.push([s, e]);
+    }
+    return out;
+  }
+  /** [s,e] moins une liste d'intervalles (triés, fusionnés) -> sous-intervalles restants. */
+  function subtractIntervals(range, subtract) {
+    let segments = [range.slice()];
+    for (const [ss, se] of subtract) {
+      const next = [];
+      for (const [s, e] of segments) {
+        if (se <= s || ss >= e) { next.push([s, e]); continue; }
+        if (ss > s) next.push([s, ss]);
+        if (se < e) next.push([se, e]);
+      }
+      segments = next;
+    }
+    return segments.filter(([s, e]) => e > s);
+  }
+
+  /* ---------- 7. Réglages ---------- */
+  function renderSettingsForm() {
+    const s = state.settings;
+    $("setArrival").value = s.arrival;
+    $("setLunchStart").value = s.lunchStart;
+    $("setLunchEnd").value = s.lunchEnd;
+    $("setDeparture").value = s.departure;
+    $("setHpd").value = s.jira.hoursPerDay;
+    $("setDpw").value = s.jira.daysPerWeek;
+    $("setRounding").value = s.rounding;
+    // jours
+    const wd = $("weekdays");
+    wd.innerHTML = "";
+    for (let iso = 1; iso <= 7; iso++) {
+      const b = document.createElement("button");
+      b.textContent = WEEKDAY_LABELS[iso - 1];
+      b.classList.toggle("on", s.workDays.includes(iso));
+      b.addEventListener("click", () => {
+        const set = new Set(state.settings.workDays);
+        if (set.has(iso)) set.delete(iso); else set.add(iso);
+        state.settings.workDays = [...set].sort((a, b) => a - b);
+        b.classList.toggle("on");
+        commit();
+      });
+      wd.appendChild(b);
+    }
+  }
+
+  function bindSettings() {
+    const map = {
+      setArrival: "arrival", setLunchStart: "lunchStart",
+      setLunchEnd: "lunchEnd", setDeparture: "departure",
+    };
+    Object.entries(map).forEach(([id, key]) => {
+      $(id).addEventListener("change", (e) => { state.settings[key] = e.target.value; commit(); });
+    });
+    $("setHpd").addEventListener("change", (e) => {
+      state.settings.jira.hoursPerDay = Math.max(0.5, parseFloat(e.target.value) || 8); commit();
+    });
+    $("setDpw").addEventListener("change", (e) => {
+      state.settings.jira.daysPerWeek = Math.max(1, Math.min(7, parseInt(e.target.value) || 5)); commit();
+    });
+    $("setRounding").addEventListener("change", (e) => { state.settings.rounding = e.target.value; commit(); });
+  }
+
+  /* ---------- 8. Import / Export ---------- */
+  function exportJson() {
+    const data = JSON.stringify(stripRuntime(state), null, 2);
+    download(data, "stint-" + fmtDateInput(new Date()) + ".json", "application/json");
+    state.meta.lastExport = new Date().toISOString();
+    commit();
+    toast("JSON exporté");
+  }
+  /** Retire les champs runtime éventuels, conserve le schéma §8. */
+  function stripRuntime(st) {
+    return {
+      version: st.version,
+      settings: st.settings,
+      tasks: st.tasks,
+      segments: st.segments,
+      meta: st.meta,
+    };
+  }
+
+  function importJsonFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== "object") throw new Error("format");
+        state = mergeState(defaultState(), parsed);
+        viewDay = startOfDay(new Date());
+        renderSettingsForm();
+        commit();
+        toast("Données importées");
+      } catch (e) {
+        toast("Import impossible : fichier invalide");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function exportCsv() {
+    const rows = [["segment_id", "task_id", "task_name", "jira_key", "type", "start", "end", "raw", "worked_minutes", "decimal_hours", "jira"]];
+    for (const seg of state.segments.slice().sort((a, b) => new Date(a.start) - new Date(b.start))) {
+      const t = taskById(seg.taskId);
+      const mins = segmentMs(seg, null, null) / 60000;
+      rows.push([
+        seg.id, seg.taskId, t ? t.name : "", t ? t.jiraKey : "", t ? t.type : "",
+        seg.start, seg.end || "", seg.raw ? "true" : "false",
+        Math.round(mins), fmtDecimal(mins), fmtJira(mins),
+      ]);
+    }
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+    download(csv, "stint-segments-" + fmtDateInput(new Date()) + ".csv", "text/csv");
+    toast("CSV exporté");
+  }
+  function csvCell(v) {
+    const s = String(v == null ? "" : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function download(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /* ---------- 9. Évènements & utilitaires UI ---------- */
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  let toastTimer = null;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 1900);
+  }
+  function copy(value, btn) {
+    const done = () => {
+      if (btn) {
+        const old = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = "✓ Copié";
+        setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = old; }, 1100);
+      }
+      toast("Copié : " + value);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done, () => fallbackCopy(value, done));
+    } else fallbackCopy(value, done);
+  }
+  function fallbackCopy(value, done) {
+    const ta = document.createElement("textarea");
+    ta.value = value; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) {}
+    ta.remove();
+  }
+
+  /* ---------- Modals ---------- */
+  function openModal(id) { $(id).classList.add("open"); }
+  function closeModal(id) { $(id).classList.remove("open"); }
+  function closeAllModals() { document.querySelectorAll(".modal-backdrop.open").forEach((m) => m.classList.remove("open")); }
+
+  function openNewTask() {
+    $("ntName").value = "";
+    $("ntJira").value = "";
+    $("ntType").value = "dev";
+    openModal("newTaskModal");
+    setTimeout(() => $("ntName").focus(), 50);
+  }
+
+  function openResume() {
+    const list = $("resumeList");
+    list.innerHTML = "";
+    // tâches du jour + en cours, non archivées
+    const segs = segmentsForDay(viewDay);
+    const dayStart = startOfDay(viewDay).getTime(), dayEnd = dayStart + DAY_MS;
+    const totals = new Map();
+    for (const seg of segs) totals.set(seg.taskId, (totals.get(seg.taskId) || 0) + segmentMs(seg, dayStart, dayEnd));
+    let ids = [...totals.keys()];
+    // ajoute aussi les tâches récentes non archivées si peu de tâches ce jour
+    state.tasks.filter((t) => !t.archived).forEach((t) => { if (!ids.includes(t.id)) ids.push(t.id); });
+    ids = ids.filter((id) => { const t = taskById(id); return t && !t.archived; });
+
+    if (ids.length === 0) {
+      list.innerHTML = '<div class="empty">Aucune tâche à reprendre. Créez-en une.</div>';
+    }
+    const activeSeg = activeSegment();
+    ids.sort((a, b) => (totals.get(b) || 0) - (totals.get(a) || 0));
+    for (const id of ids) {
+      const t = taskById(id);
+      const mins = (totals.get(id) || 0) / 60000;
+      const btn = document.createElement("button");
+      btn.className = "resume-item";
+      btn.innerHTML =
+        '<span class="swatch" style="background:' + t.color + '"></span>' +
+        '<span class="nm">' + escapeHtml(t.name || "(sans nom)") +
+          (t.jiraKey ? ' <span class="jira">' + escapeHtml(t.jiraKey) + "</span>" : "") + "</span>" +
+        '<span class="du">' + fmtDecimal(mins) + " h</span>";
+      if (activeSeg && activeSeg.taskId === id) {
+        btn.style.borderColor = "var(--play)";
+      }
+      btn.addEventListener("click", () => { resumeTask(id); closeModal("resumeModal"); });
+      list.appendChild(btn);
+    }
+    openModal("resumeModal");
+  }
+
+  let editingTaskId = null;
+  function openEditTask(id) {
+    const t = taskById(id);
+    if (!t) return;
+    editingTaskId = id;
+    $("etSub").textContent = "Renommer, retyper, recolorer, archiver ou supprimer.";
+    $("etName").value = t.name;
+    $("etJira").value = t.jiraKey || "";
+    $("etType").value = t.type;
+    $("etColor").value = t.color;
+    $("etArchive").textContent = t.archived ? "Désarchiver" : "Archiver";
+    openModal("editTaskModal");
+    setTimeout(() => $("etName").focus(), 50);
+  }
+
+  /* ---------- Édition de segments (délégation) ---------- */
+  function onSegInput(e) {
+    const el = e.target;
+    const segId = el.getAttribute("data-seg");
+    if (!segId) return;
+    const seg = state.segments.find((s) => s.id === segId);
+    if (!seg) return;
+    const field = el.getAttribute("data-field");
+
+    if (field === "taskId") { seg.taskId = el.value; commit(); return; }
+    if (field === "raw") { seg.raw = el.checked; commit(); return; }
+
+    // édition heures/date
+    const start = new Date(seg.start);
+    const end = seg.end ? new Date(seg.end) : null;
+    if (field === "startDate") {
+      const nd = parseDateInput(el.value);
+      start.setFullYear(nd.getFullYear(), nd.getMonth(), nd.getDate());
+      if (end) { end.setFullYear(nd.getFullYear(), nd.getMonth(), nd.getDate()); }
+      seg.start = toLocalISO(start);
+      if (end) seg.end = toLocalISO(end);
+    } else if (field === "startTime") {
+      const [h, m] = el.value.split(":").map(Number);
+      start.setHours(h, m, 0, 0);
+      seg.start = toLocalISO(start);
+    } else if (field === "endTime" && end) {
+      const [h, m] = el.value.split(":").map(Number);
+      end.setHours(h, m, 0, 0);
+      seg.end = toLocalISO(end);
+    }
+    // garde la cohérence : fin >= début
+    if (seg.end && new Date(seg.end) < new Date(seg.start)) {
+      // décale la fin au lendemain (cas chrono de nuit)
+      const fixed = new Date(seg.end);
+      fixed.setDate(fixed.getDate() + 1);
+      seg.end = toLocalISO(fixed);
+    }
+    commit();
+  }
+
+  function addManualSegment(startDate, endDate) {
+    const task = lastUsedTask() || createTask({ name: "", type: "dev" });
+    state.segments.push({
+      id: uid("s_"),
+      taskId: task.id,
+      start: toLocalISO(startDate),
+      end: toLocalISO(endDate),
+      raw: false,
+    });
+    commit();
+    toast("Segment ajouté");
+  }
+
+  function addManualSegmentDefault() {
+    // crée un segment d'1h sur le jour affiché, à éditer
+    const base = sameDay(viewDay, new Date()) ? new Date() : atTime(viewDay, state.settings.arrival);
+    const s = new Date(base); s.setSeconds(0, 0);
+    const e = new Date(s.getTime() + 3600000);
+    if (state.tasks.length === 0) { openNewTask(); return; }
+    addManualSegment(s, e);
+  }
+
+  /* ---------- Tick 1 s ---------- */
+  function startTick() {
+    stopTick();
+    tickHandle = setInterval(() => {
+      if (activeSegment()) {
+        renderLiveTimer();
+        // rafraîchit timeline/totaux toutes les ~15 s pour rester léger
+        if (Date.now() % 15000 < 1000 && sameDay(viewDay, new Date())) {
+          renderTimeline(); renderTotals(); renderTasks();
+        }
+      }
+    }, 1000);
+  }
+  function stopTick() { if (tickHandle) clearInterval(tickHandle); }
+
+  /* ---------- Bind global ---------- */
+  function bindEvents() {
+    $("btnPlay").addEventListener("click", togglePlayStop);
+    $("btnNew").addEventListener("click", openNewTask);
+    $("btnResume").addEventListener("click", openResume);
+
+    // day nav
+    $("dayPrev").addEventListener("click", () => { viewDay = new Date(viewDay.getTime() - DAY_MS); renderAll(); });
+    $("dayNext").addEventListener("click", () => { viewDay = new Date(viewDay.getTime() + DAY_MS); renderAll(); });
+    $("dayToday").addEventListener("click", () => { viewDay = startOfDay(new Date()); renderAll(); });
+
+    // wordmark
+    $("wordmark").addEventListener("input", (e) => {
+      state.settings.appName = e.target.value.trim() || "Stint";
+      save();
+      document.title = state.settings.appName + " — Chronométrage";
+    });
+    $("wordmark").addEventListener("blur", () => { if (!state.settings.appName) { state.settings.appName = "Stint"; } commit(); });
+
+    // backup pill -> export
+    $("backupPill").addEventListener("click", exportJson);
+
+    // new task modal
+    $("ntCreate").addEventListener("click", () => {
+      commitNewTask({ name: $("ntName").value.trim(), jiraKey: $("ntJira").value.trim(), type: $("ntType").value });
+      closeModal("newTaskModal");
+    });
+    $("ntName").addEventListener("keydown", (e) => { if (e.key === "Enter") $("ntCreate").click(); });
+
+    // edit task modal
+    $("etSave").addEventListener("click", () => {
+      const t = taskById(editingTaskId); if (!t) return;
+      t.name = $("etName").value.trim();
+      t.jiraKey = $("etJira").value.trim();
+      t.type = $("etType").value;
+      t.color = $("etColor").value;
+      closeModal("editTaskModal"); commit();
+    });
+    $("etArchive").addEventListener("click", () => {
+      const t = taskById(editingTaskId); if (!t) return;
+      t.archived = !t.archived;
+      // si on archive la tâche active, on l'arrête
+      const seg = activeSegment();
+      if (t.archived && seg && seg.taskId === t.id) stopActive();
+      closeModal("editTaskModal"); commit();
+    });
+    $("etDelete").addEventListener("click", () => {
+      const t = taskById(editingTaskId); if (!t) return;
+      const count = state.segments.filter((s) => s.taskId === t.id).length;
+      if (!confirm("Supprimer « " + (t.name || "(sans nom)") + " » et ses " + count + " segment(s) ?")) return;
+      state.segments = state.segments.filter((s) => s.taskId !== t.id);
+      state.tasks = state.tasks.filter((x) => x.id !== t.id);
+      closeModal("editTaskModal"); commit();
+    });
+
+    // segments edition (delegation)
+    $("segBody").addEventListener("change", onSegInput);
+    $("segBody").addEventListener("click", (e) => {
+      const del = e.target.getAttribute && e.target.getAttribute("data-del");
+      if (del) {
+        if (confirm("Supprimer ce segment ?")) {
+          state.segments = state.segments.filter((s) => s.id !== del);
+          commit();
+        }
+      }
+    });
+    $("addSegment").addEventListener("click", addManualSegmentDefault);
+
+    // I/O
+    $("exportJson").addEventListener("click", exportJson);
+    $("exportCsv").addEventListener("click", exportCsv);
+    $("importJson").addEventListener("click", () => $("fileInput").click());
+    $("fileInput").addEventListener("change", (e) => {
+      if (e.target.files[0]) importJsonFile(e.target.files[0]);
+      e.target.value = "";
+    });
+    $("resetAll").addEventListener("click", () => {
+      if (!confirm("Tout effacer (tâches, segments, réglages) ? Pensez à exporter avant.")) return;
+      state = defaultState();
+      viewDay = startOfDay(new Date());
+      renderSettingsForm(); commit();
+      toast("Données effacées");
+    });
+
+    // modals close
+    document.querySelectorAll("[data-close]").forEach((b) =>
+      b.addEventListener("click", () => closeModal(b.closest(".modal-backdrop").id)));
+    document.querySelectorAll(".modal-backdrop").forEach((m) =>
+      m.addEventListener("click", (e) => { if (e.target === m) closeModal(m.id); }));
+
+    // raccourcis clavier (§6.7)
+    document.addEventListener("keydown", (e) => {
+      const tag = (e.target.tagName || "").toLowerCase();
+      const typing = tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable;
+      if (e.key === "Escape") { closeAllModals(); return; }
+      if (typing) return;
+      if (e.code === "Space") { e.preventDefault(); togglePlayStop(); }
+      else if (e.key === "n" || e.key === "N") { e.preventDefault(); openNewTask(); }
+      else if (e.key === "r" || e.key === "R") { e.preventDefault(); openResume(); }
+    });
+
+    // recalcul à la reprise de focus (PC en veille, onglet rouvert)
+    window.addEventListener("focus", () => { renderAll(); });
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) renderAll(); });
+  }
+
+  /* ---------- Init ---------- */
+  function init() {
+    load();
+    renderSettingsForm();
+    bindSettings();
+    bindEvents();
+    renderAll();
+    startTick();
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
