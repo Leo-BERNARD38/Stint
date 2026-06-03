@@ -1,0 +1,70 @@
+/**
+ * Aides date/heure. Tout passe par des `Date` locales ; la sérialisation
+ * conserve l'offset (ISO local) pour rester lisible et fidèle au fuseau.
+ */
+import { DAY_MS } from "../core/constants.js";
+
+export { DAY_MS };
+
+export const pad2 = (n) => String(n).padStart(2, "0");
+
+export function startOfDay(d) {
+  const n = new Date(d);
+  n.setHours(0, 0, 0, 0);
+  return n;
+}
+
+export function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+/** Jour ISO : 1 = lundi … 7 = dimanche. */
+export function isoDow(d) {
+  const g = d.getDay();
+  return g === 0 ? 7 : g;
+}
+
+export function sameDay(a, b) {
+  return startOfDay(a).getTime() === startOfDay(b).getTime();
+}
+
+/** Date `dayDate` ramenée à l'heure "HH:MM". */
+export function atTime(dayDate, hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(dayDate);
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+export function fmtClock(d) {
+  return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+
+export function fmtDateInput(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+
+export function parseDateInput(str) {
+  const [y, m, dd] = str.split("-").map(Number);
+  return new Date(y, m - 1, dd);
+}
+
+/** Sérialise une `Date` en ISO local avec offset, ex. 2026-06-03T09:12:00+02:00. */
+export function toLocalISO(d) {
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? "+" : "-";
+  const abs = Math.abs(off);
+  return (
+    d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+    "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds()) +
+    sign + pad2(Math.floor(abs / 60)) + ":" + pad2(abs % 60)
+  );
+}
+
+export function formatLongDate(d) {
+  return d.toLocaleDateString("fr-FR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+}

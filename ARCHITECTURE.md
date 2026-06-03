@@ -1,0 +1,81 @@
+# Architecture
+
+Front pur, **modules ES natifs**, aucun build. L'organisation suit une séparation
+nette **domaine → services → UI**, pour rester lisible et faciliter les évolutions
+(y compris une migration ultérieure vers Vite + React).
+
+## Arborescence
+
+```
+index.html                 Squelette + points de montage, charge src/main.js (type=module)
+.nojekyll                  Désactive Jekyll sur GitHub Pages
+assets/styles/
+  variables.css            Jetons de design (couleurs, rayons, polices, thème sombre)
+  base.css                 Reset + typographie
+  layout.css               Mise en page (header, sections, grilles)
+  components.css           Composants (boutons, cartes, timeline, modales, toast)
+src/
+  main.js                  Point d'entrée : instancie et démarre App
+  core/
+    constants.js           Constantes + valeurs par défaut (aucune dépendance)
+    EventEmitter.js        Bus d'évènements minimal (on/off/emit)
+  utils/
+    datetime.js            Dates/heures, ISO local, jour ISO
+    intervals.js           overlap / union / soustraction d'intervalles
+    dom.js                 Sélecteurs, escapeHtml, createEl
+    clipboard.js           Copie presse-papier (avec repli)
+  models/                  DOMAINE
+    Settings.js            Réglages (horaires, Jira, arrondi)
+    Task.js                Tâche (nom, clé Jira, type, couleur, archivée)
+    Segment.js             Segment horodaté (start/end ISO, raw)
+    Store.js               Source de vérité : état + commandes + persistance + events
+  services/                LOGIQUE TRANSVERSE
+    Persistence.js         Adaptateur localStorage (remplaçable)
+    TimeCalculator.js      Temps ouvré (§9.1), agrégats, fenêtre timeline, trous
+    Formatter.js           Décimal (§9.2), Jira (§9.3), arrondi, horloge
+    DataTransfer.js        Export/import JSON, export CSV, téléchargement
+  ui/                      PRÉSENTATION
+    App.js                 Contrôleur racine : assemble tout, orchestre les flux
+    Timer.js               Tick 1 s (EventEmitter)
+    components/
+      Toast.js             Notification éphémère
+      CopyButton.js        Fabrique de bouton « copier »
+    views/                 Une vue = une région du DOM (bind + render)
+      HeaderView, HeroView, DayNavView, TimelineView,
+      TotalsView, TaskListView, SegmentTableView, SettingsView
+    modals/
+      Modal.js             Base (ouverture/fermeture)
+      NewTaskModal, ResumeModal, EditTaskModal
+```
+
+## Flux de données (unidirectionnel)
+
+```
+        commande (clic / raccourci)
+UI  ───────────────────────────────────▶  Store
+                                            │  mutation + persist()
+                                            │  emit("change")
+        render(viewDay)                     ▼
+UI  ◀───────────────────────────────────  App (écoute "change")
+```
+
+- **`Store`** est l'unique source de vérité. Ses commandes publiques (`toggle`,
+  `startNew`, `resume`, `updateSegment`, …) mutent l'état, persistent une fois, puis
+  émettent `change`. Les primitives privées (`#startSegment`, `#stopActive`, …) ne
+  committent pas : elles sont composées par les commandes pour éviter les doubles écritures.
+- **`App`** écoute `change` et appelle `render(viewDay)` sur chaque vue. Il détient le
+  seul état purement UI : le **jour affiché** (`viewDay`).
+- **Les vues** ne mutent jamais l'état directement : elles appellent des méthodes du
+  contrôleur (`app.*`) ou des commandes du `Store`. Elles relisent toujours l'état au
+  rendu — pas d'état dupliqué.
+
+## Principes
+
+- **Durées dérivées des timestamps** : aucune durée n'est stockée. À la reprise (veille,
+  onglet rouvert), `App` re-rend sur `focus`/`visibilitychange` et tout se recalcule.
+- **Calculs purs et testables** : `TimeCalculator` et `Formatter` ne touchent pas au DOM
+  et lisent `store.settings` en direct ; ils sont couverts par des tests d'intégration
+  Node (mêmes modules que le navigateur, persistance simulée).
+- **Persistance isolée** derrière `Persistence` : passer à IndexedDB ou à un backend ne
+  toucherait que ce fichier.
+- **Modèle versionné** (`version` dans le JSON) : base saine pour de futures migrations.
