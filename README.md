@@ -34,11 +34,19 @@ Le fichier `.nojekyll` désactive le traitement Jekyll (inutile ici).
 
 | Bouton | Raccourci | Action |
 |---|---|---|
-| **Play / Stop** | `Espace` | Démarre / arrête le chrono de la tâche active |
+| **Play / Pause** | `Espace` | Démarre / met en pause le chrono de la tâche active |
 | **Nouvelle tâche** | `N` | Crée une tâche et la démarre immédiatement |
-| **Reprise** | `R` | Reprend une tâche du jour / en cours |
+| **Reprise** | `R` | Reprend une tâche **en cours** (ni terminée ni archivée) |
 
 Règle : **une seule tâche active à la fois**.
+
+### Cycle de vie d'une tâche
+
+- **Pause** : arrête le chrono mais la tâche reste **en cours** → elle apparaît dans « Reprise ».
+- **Terminer** : ferme la tâche (depuis la carte active ou sa ligne). Elle quitte « Reprise »
+  mais reste comptée dans les totaux. **Rouvrir** la remet en cours.
+
+Ainsi « Reprise » ne liste que les tâches réellement en cours.
 
 ## Fonctionnalités
 
@@ -63,6 +71,16 @@ Règle : **une seule tâche active à la fois**.
 Interface **flat** : pas de bordures structurelles, des surfaces et de l'espace pour
 hiérarchiser. Tous les jetons de couleur vivent dans `assets/styles/variables.css` et
 sont thémés via l'attribut `[data-theme]` (`light` / `dark` / `system`).
+
+Icônes : pack [Lucide](https://lucide.dev) (licence ISC), embarqué localement en SVG
+inline (`src/ui/icons.js`) — aucune dépendance réseau, se thème via `currentColor`.
+
+## Format de données
+
+Schéma **versionné** (`version: 2`), monté automatiquement depuis les versions
+antérieures à l'ouverture (les champs ajoutés — `settings.theme`, `tasks[].done` —
+prennent leurs valeurs par défaut). Le JSON exporté est le format maître et reste
+compatible avec une future migration vers Vite + React.
 
 ## Format Jira
 

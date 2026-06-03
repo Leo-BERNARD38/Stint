@@ -17,16 +17,13 @@ export class ResumeModal extends Modal {
     const { store, calc } = this.app;
     this.list.innerHTML = "";
 
+    // Uniquement les tâches réellement en cours (ni terminées ni archivées).
     const { byTask } = calc.totalsForDay(this.app.viewDay);
-    const ids = [...byTask.keys()];
-    for (const t of store.tasks) {
-      if (!t.archived && !ids.includes(t.id)) ids.push(t.id);
-    }
-    const visible = ids.filter((id) => store.taskById(id) && !store.taskById(id).archived);
+    const visible = store.openTasks().map((t) => t.id);
     visible.sort((a, b) => (byTask.get(b) ?? 0) - (byTask.get(a) ?? 0));
 
     if (visible.length === 0) {
-      this.list.innerHTML = '<div class="empty">Aucune tâche à reprendre. Créez-en une.</div>';
+      this.list.innerHTML = '<div class="empty">Aucune tâche en cours. Créez-en une ou rouvrez-en une terminée.</div>';
     }
 
     const activeSeg = store.activeSegment();

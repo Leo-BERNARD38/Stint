@@ -92,8 +92,8 @@
 .big-btn .label { font-weight: 600; font-size: 15px; }
 .big-btn .kbd { font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; }
 
-#btnPlay.is-running { background: var(--stop); color: #fff; }
-#btnPlay.is-running:hover { background: color-mix(in srgb, var(--stop) 88%, #000); }
+#btnPlay.is-running { background: var(--pause); color: #fff; }
+#btnPlay.is-running:hover { background: color-mix(in srgb, var(--pause) 88%, #000); }
 #btnPlay.is-stopped { background: var(--play); color: #fff; }
 #btnPlay.is-stopped:hover { background: color-mix(in srgb, var(--play) 88%, #000); }
 #btnPlay.is-running .kbd, #btnPlay.is-stopped .kbd { color: rgba(255, 255, 255, .82); background: rgba(255, 255, 255, .16); }
@@ -208,6 +208,21 @@
 .resume-item:hover { background: var(--surface-hover); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
+
+/* ---------- Icônes ---------- */
+.icon { display: block; flex-shrink: 0; }
+.mini-btn .icon, .btn .icon, .big-btn .icon, .icon-btn .icon, .daynav .icon, .total-hero .icon { pointer-events: none; }
+.mini-btn.icon-only { padding: 6px; }
+.daynav button { display: inline-grid; place-items: center; line-height: 0; }
+
+/* Bouton Terminer dans la carte de tâche active */
+.finish-btn { background: var(--bg); color: var(--text-soft); flex-shrink: 0; }
+.finish-btn:hover { background: var(--play); color: #fff; }
+
+/* État « terminé » */
+.badge-done { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; background: var(--surface-2); color: var(--text-faint); }
+.task-row.done { opacity: .62; }
+.task-row.done .task-dur { color: var(--text-soft); }
 
 /* ---------- Toast ---------- */
 .toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 200; }

@@ -22,6 +22,7 @@ import { EditTaskModal } from "./modals/EditTaskModal.js";
 import { Toast } from "./components/Toast.js";
 
 import { el, qsa } from "../utils/dom.js";
+import { renderStaticIcons } from "./icons.js";
 import { copyText } from "../utils/clipboard.js";
 import { startOfDay, addDays, sameDay, atTime } from "../utils/datetime.js";
 
@@ -65,6 +66,7 @@ export class App {
   }
 
   start() {
+    renderStaticIcons(); // injecte les icônes statiques du HTML
     this.views.forEach((v) => v.bind?.());
     Object.values(this.modals).forEach((m) => m.bind());
     this.#bindIO();

@@ -45,6 +45,7 @@
   --ring: rgba(24, 24, 27, .28);     /* anneau de focus */
 
   --play: #15a34a;
+  --pause: #d97706;
   --stop: #e1463c;
   --new: #2f6df6;
   --resume: #7c4dff;
@@ -115,6 +116,7 @@
     --ring: rgba(255, 255, 255, .35);
 
     --play: #25b35c;
+    --pause: #e8941f;
     --stop: #f0584d;
     --new: #5b8bff;
     --resume: #9b78ff;

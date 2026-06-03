@@ -33,11 +33,21 @@ export class Store extends EventEmitter {
   }
 
   hydrate(raw) {
-    this.version = raw.version ?? SCHEMA_VERSION;
-    this.settings = Settings.fromJSON(raw.settings);
-    this.tasks = (raw.tasks ?? []).map(Task.fromJSON);
-    this.segments = (raw.segments ?? []).map(Segment.fromJSON);
-    this.meta = { lastExport: null, ...(raw.meta ?? {}) };
+    const data = this.#migrate(raw);
+    this.version = SCHEMA_VERSION; // toujours réécrit au format courant
+    this.settings = Settings.fromJSON(data.settings);
+    this.tasks = (data.tasks ?? []).map(Task.fromJSON);
+    this.segments = (data.segments ?? []).map(Segment.fromJSON);
+    this.meta = { lastExport: null, ...(data.meta ?? {}) };
+  }
+
+  /**
+   * Migration ascendante du format. Les champs ajoutés (settings.theme,
+   * task.done) ont des valeurs par défaut gérées par les modèles, donc la
+   * montée v1 → v2 ne nécessite aucune transformation explicite ici.
+   */
+  #migrate(raw) {
+    return raw ?? {};
   }
 
   toJSON() {
@@ -74,13 +84,18 @@ export class Store extends EventEmitter {
     return this.tasks.find((t) => t.id === id) ?? null;
   }
 
-  /** Dernière tâche non archivée réellement utilisée (sinon une au hasard). */
+  /** Dernière tâche en cours (ni archivée ni terminée) réellement utilisée. */
   lastUsedTask() {
     for (let i = this.segments.length - 1; i >= 0; i--) {
       const t = this.taskById(this.segments[i].taskId);
-      if (t && !t.archived) return t;
+      if (t && !t.archived && !t.done) return t;
     }
-    return this.tasks.find((t) => !t.archived) ?? null;
+    return this.tasks.find((t) => !t.archived && !t.done) ?? null;
+  }
+
+  /** Tâches en cours (résumables) : ni archivées ni terminées. */
+  openTasks() {
+    return this.tasks.filter((t) => !t.archived && !t.done);
   }
 
   /** Segments chevauchant la journée [00:00, lendemain 00:00). */
@@ -148,10 +163,38 @@ export class Store extends EventEmitter {
     return task;
   }
 
-  /** Reprise : arrête l'active, relance un segment sur la tâche choisie. */
+  /**
+   * Pause : arrête le chrono de la tâche active sans la terminer
+   * (elle reste « en cours » et résumable). Alias sémantique de stop().
+   */
+  pause() {
+    this.#stopActive();
+    this.#commit();
+  }
+
+  /** Reprise : met en pause l'active, rouvre si besoin, relance un segment. */
   resume(taskId) {
     this.#stopActive();
+    const t = this.taskById(taskId);
+    if (t) t.done = false; // reprendre une tâche la rouvre
     this.#startSegment(taskId);
+    this.#commit();
+  }
+
+  /** Terminer : met en pause si active, puis marque la tâche comme terminée. */
+  closeTask(taskId) {
+    const seg = this.activeSegment();
+    if (seg && seg.taskId === taskId) this.#stopActive();
+    const t = this.taskById(taskId);
+    if (t) t.done = true;
+    this.#commit();
+  }
+
+  /** Rouvrir une tâche terminée (la remet « en cours »). */
+  reopenTask(taskId) {
+    const t = this.taskById(taskId);
+    if (!t) return;
+    t.done = false;
     this.#commit();
   }
 

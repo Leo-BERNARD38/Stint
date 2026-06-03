@@ -60,21 +60,22 @@
           <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
         </div>
         <div class="active-timer idle" id="activeTimer">0:00:00</div>
+        <button id="btnFinish" class="icon-btn finish-btn" title="Terminer la tâche" aria-label="Terminer la tâche" hidden></button>
       </div>
 
       <div class="control-buttons">
-        <button id="btnPlay" class="big-btn is-stopped" aria-label="Démarrer ou arrêter">
-          <span class="glyph" id="playGlyph">▶</span>
+        <button id="btnPlay" class="big-btn is-stopped" aria-label="Démarrer ou mettre en pause">
+          <span class="glyph" id="playGlyph"></span>
           <span class="label" id="playLabel">Play</span>
           <span class="kbd">Espace</span>
         </button>
         <button id="btnNew" class="big-btn" aria-label="Nouvelle tâche">
-          <span class="glyph">＋</span>
+          <span class="glyph" data-icon="plus" data-icon-size="26"></span>
           <span class="label">Nouvelle tâche</span>
           <span class="kbd">N</span>
         </button>
         <button id="btnResume" class="big-btn" aria-label="Reprendre une tâche">
-          <span class="glyph">↺</span>
+          <span class="glyph" data-icon="rotate-ccw" data-icon-size="26"></span>
           <span class="label">Reprise</span>
           <span class="kbd">R</span>
         </button>
@@ -92,9 +93,9 @@
     <section class="tab-panel" data-panel="journee">
       <div class="day-head">
         <div class="daynav">
-          <button id="dayPrev" aria-label="Jour précédent">←</button>
+          <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
           <div class="date" id="dayLabel">—</div>
-          <button id="dayNext" aria-label="Jour suivant">→</button>
+          <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
         </div>
         <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
         <span class="today-badge" id="todayBadge"></span>
@@ -125,7 +126,7 @@
         Segments
         <span class="hint">éditer heures, tâche, mode brut · ou ajouter une saisie manuelle</span>
         <span class="grow"></span>
-        <button class="mini-btn" id="addSegment">＋ Segment manuel</button>
+        <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
       </div>
       <div class="table-scroll">
         <table class="seg-table" id="segTable">
@@ -198,11 +199,11 @@
             par un nettoyage de cache. <strong>Exportez régulièrement le JSON</strong> comme sauvegarde maître.
           </p>
           <div class="io-buttons">
-            <button class="btn primary" id="exportJson">⬇ Exporter JSON</button>
-            <button class="btn" id="importJson">⬆ Importer JSON</button>
-            <button class="btn" id="exportCsv">⬇ Exporter CSV (segments)</button>
+            <button class="btn primary" id="exportJson"><span data-icon="download" data-icon-size="16"></span> Exporter JSON</button>
+            <button class="btn" id="importJson"><span data-icon="upload" data-icon-size="16"></span> Importer JSON</button>
+            <button class="btn" id="exportCsv"><span data-icon="download" data-icon-size="16"></span> Exporter CSV (segments)</button>
             <span style="flex:1"></span>
-            <button class="btn danger" id="resetAll">Tout effacer</button>
+            <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
           </div>
           <input type="file" id="fileInput" accept="application/json" style="display:none">
         </div>

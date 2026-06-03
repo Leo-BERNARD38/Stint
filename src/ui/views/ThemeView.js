@@ -1,7 +1,8 @@
 import { el, qsa } from "../../utils/dom.js";
 import { THEMES } from "../../core/constants.js";
+import { icon } from "../icons.js";
 
-const ICONS = { system: "🖥", light: "☀", dark: "🌙" };
+const ICON_NAMES = { system: "monitor", light: "sun", dark: "moon" };
 const LABELS = { system: "Système", light: "Clair", dark: "Sombre" };
 
 /**
@@ -29,7 +30,7 @@ export class ThemeView {
   render() {
     const theme = this.app.store.settings.theme;
     document.documentElement.dataset.theme = theme;
-    this.toggle.textContent = ICONS[theme] ?? "🖥";
+    this.toggle.innerHTML = icon(ICON_NAMES[theme] ?? "monitor", { size: 17 });
     this.toggle.title = "Thème : " + (LABELS[theme] ?? theme);
     this.segButtons.forEach((b) => b.classList.toggle("on", b.dataset.themeVal === theme));
   }
