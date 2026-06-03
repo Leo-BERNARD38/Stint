@@ -38,6 +38,7 @@ export class App {
     this.formatter = new Formatter(this.store);
     this.timer = new Timer();
     this.viewDay = startOfDay(new Date());
+    this.screen = "app"; // app | settings | guide
     this._ticksSinceRefresh = 0;
 
     this.toast = new Toast();
@@ -91,20 +92,19 @@ export class App {
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
 
-  /* ----------------- écran Réglages (page à part) ----------------- */
-  get settingsOpen() { return !el("settingsScreen").hidden; }
-  openSettings() {
-    el("appScreen").hidden = true;
-    el("settingsScreen").hidden = false;
-    el("settingsBtn").classList.add("active");
+  /* ----------------- écrans (app / réglages / guide) ----------------- */
+  showScreen(name) {
+    this.screen = name;
+    el("appScreen").hidden = name !== "app";
+    el("settingsScreen").hidden = name !== "settings";
+    el("guideScreen").hidden = name !== "guide";
+    el("settingsBtn").classList.toggle("active", name === "settings");
+    el("helpBtn").classList.toggle("active", name === "guide");
     window.scrollTo({ top: 0 });
   }
-  closeSettings() {
-    el("settingsScreen").hidden = true;
-    el("appScreen").hidden = false;
-    el("settingsBtn").classList.remove("active");
-  }
-  toggleSettings() { this.settingsOpen ? this.closeSettings() : this.openSettings(); }
+  backToApp() { this.showScreen("app"); }
+  toggleSettings() { this.showScreen(this.screen === "settings" ? "app" : "settings"); }
+  toggleGuide() { this.showScreen(this.screen === "guide" ? "app" : "guide"); }
 
   /** Termine (ferme) la tâche active. */
   finishActive() {
@@ -200,7 +200,9 @@ export class App {
 
   #bindNav() {
     el("settingsBtn").addEventListener("click", () => this.toggleSettings());
-    el("settingsBack").addEventListener("click", () => this.closeSettings());
+    el("helpBtn").addEventListener("click", () => this.toggleGuide());
+    el("settingsBack").addEventListener("click", () => this.backToApp());
+    el("guideBack").addEventListener("click", () => this.backToApp());
   }
 
   #bindKeyboard() {
@@ -208,12 +210,12 @@ export class App {
       if (e.key === "Escape") {
         const open = qsa(".modal-backdrop.open");
         if (open.length) open.forEach((m) => m.classList.remove("open"));
-        else if (this.settingsOpen) this.closeSettings();
+        else if (this.screen !== "app") this.backToApp();
         return;
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
-      if (this.settingsOpen) return; // raccourcis d'action désactivés dans les réglages
+      if (this.screen !== "app") return; // raccourcis d'action désactivés hors de l'écran principal
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }
       else if (e.key === "n" || e.key === "N") { e.preventDefault(); this.openNewTask(); }
       else if (e.key === "r" || e.key === "R") { e.preventDefault(); this.openResume(); }

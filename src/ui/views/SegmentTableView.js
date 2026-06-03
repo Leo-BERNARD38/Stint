@@ -1,5 +1,6 @@
 import { el, escapeHtml } from "../../utils/dom.js";
 import { fmtClock, fmtDateInput, parseDateInput, toLocalISO } from "../../utils/datetime.js";
+import { icon } from "../icons.js";
 
 /**
  * Tableau des segments éditables (heures, date, tâche, mode brut) + suppression.
@@ -14,8 +15,8 @@ export class SegmentTableView {
   bind() {
     this.body.addEventListener("change", (e) => this.#onChange(e));
     this.body.addEventListener("click", (e) => {
-      const id = e.target.getAttribute?.("data-del");
-      if (id && confirm("Supprimer ce segment ?")) this.app.store.deleteSegment(id);
+      const btn = e.target.closest?.("[data-del]");
+      if (btn && confirm("Supprimer ce segment ?")) this.app.store.deleteSegment(btn.getAttribute("data-del"));
     });
     el("addSegment").addEventListener("click", () => this.app.addManualSegmentDefault());
   }
@@ -53,7 +54,7 @@ export class SegmentTableView {
         : '<span style="color:var(--play);font-weight:600">en cours</span>'}</td>` +
       `<td><input type="checkbox" class="raw-toggle" data-seg="${seg.id}" data-field="raw"${seg.raw ? " checked" : ""} title="Temps brut (sans rognage ouvré)"></td>` +
       `<td class="seg-dur">${this.app.formatter.decimal(minutes)} h</td>` +
-      `<td><button class="mini-btn" data-del="${seg.id}" title="Supprimer">🗑</button></td>`;
+      `<td><button class="mini-btn icon-only" data-del="${seg.id}" title="Supprimer">${icon("trash", { size: 15 })}</button></td>`;
     return tr;
   }
 

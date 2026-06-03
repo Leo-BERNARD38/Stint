@@ -59,6 +59,7 @@
           <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
         </button>
         <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
+        <button id="helpBtn" class="icon-btn" data-icon="help" aria-label="Guide" title="Guide"></button>
         <button id="settingsBtn" class="icon-btn" data-icon="settings" aria-label="Réglages" title="Réglages"></button>
       </div>
     </div>
@@ -155,7 +156,7 @@
               <th class="col-date">Date</th>
               <th>Début</th>
               <th>Fin</th>
-              <th>Brut</th>
+              <th title="Temps brut : compte le temps réel écoulé, sans rognage sur les horaires de travail (nuits, heures sup).">Brut&nbsp;ⓘ</th>
               <th>Durée</th>
               <th></th>
             </tr>
@@ -235,6 +236,95 @@
             <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
           </div>
           <input type="file" id="fileInput" accept="application/json" style="display:none">
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ÉCRAN GUIDE (page à part) ===================== -->
+    <section id="guideScreen" class="guide-screen" hidden>
+      <div class="page-head">
+        <button id="guideBack" class="btn-back" data-icon="chevron-left" aria-label="Retour"></button>
+        <h2 class="page-title">Guide</h2>
+      </div>
+      <div class="guide">
+        <p class="guide-intro">
+          Stint découpe ta journée en <strong>segments</strong> horodatés, une tâche à la fois,
+          et te donne le temps prêt à coller dans Jira. Tout reste en local dans ton navigateur.
+        </p>
+
+        <div class="guide-block">
+          <h3>Les 4 boutons</h3>
+          <ul class="guide-actions">
+            <li>
+              <span class="ga-icon play" data-icon="play" data-icon-size="20"></span>
+              <div><b>Play / Pause</b> <kbd>Espace</kbd><p>Démarre ou met en pause le chrono de la tâche active.</p></div>
+            </li>
+            <li>
+              <span class="ga-icon new" data-icon="plus" data-icon-size="20"></span>
+              <div><b>Nouvelle tâche</b> <kbd>N</kbd><p>Crée une tâche et la démarre aussitôt — le réflexe quand un ticket tombe.</p></div>
+            </li>
+            <li>
+              <span class="ga-icon resume" data-icon="rotate-ccw" data-icon-size="20"></span>
+              <div><b>Reprise</b> <kbd>R</kbd><p>Reprend une tâche déjà en cours (la liste ne montre que les tâches non terminées).</p></div>
+            </li>
+            <li>
+              <span class="ga-icon finish" data-icon="check" data-icon-size="20"></span>
+              <div><b>Terminer</b> <kbd>T</kbd><p>Clôt la tâche active : elle quitte « Reprise » mais reste comptée dans les totaux.</p></div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="guide-block">
+          <h3>Pause ou Terminer&nbsp;?</h3>
+          <p><b>Pause</b> — je m'arrête un moment, je reprendrai : la tâche reste « en cours ».</p>
+          <p><b>Terminer</b> — c'est fini pour cette tâche : ça garde la liste « Reprise » propre.</p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Temps « ouvré » et case « brut »</h3>
+          <p>
+            Par défaut, Stint ne compte que le temps passé <b>dans tes horaires de travail</b>
+            (réglés dans Réglages, pause déjeuner comprise). Un chrono oublié du vendredi soir au
+            lundi matin ne compte donc <i>pas</i> le week-end.
+          </p>
+          <p>
+            La case <b>Brut</b> d'un segment désactive ce rognage : on compte le <b>temps réel
+            écoulé</b>, pratique pour une session de nuit ou des heures sup.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Timeline & temps non tracé</h3>
+          <p>
+            La barre représente ta journée, chaque bloc une tâche. Les vides entre les blocs sont
+            du <b>temps non tracé</b> : le raccourci « Combler » t'aide à le rattraper. Le trait
+            vertical marque l'heure actuelle.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Copier pour Jira</h3>
+          <p>
+            Chaque tâche et le total du jour ont deux boutons de copie : <b>Déc.</b> (décimal,
+            ex. <code>1.5</code>) et <b>Jira</b> (ex. <code>1h 30m</code>). Les unités Jira
+            (<code>1d</code>, <code>1w</code>) sont calculées depuis tes horaires — modifiable dans Réglages.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Sauvegarde</h3>
+          <p>
+            Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
+            (Réglages › Sauvegarde) ; l'indicateur en haut à droite te rappelle la dernière sauvegarde.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Installer l'application</h3>
+          <p>
+            Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,
+            ou « Ajouter à l'écran d'accueil »), puis fonctionne hors-ligne.
+          </p>
         </div>
       </div>
     </section>
