@@ -61,12 +61,19 @@ export class TimelineView {
       }));
     }
 
-    // axe (début · milieu · fin)
-    this.axis.append(
-      createEl("span", { text: fmtClock(new Date(winStart)) }),
-      createEl("span", { text: fmtClock(new Date(winStart + span / 2)) }),
-      createEl("span", { text: fmtClock(new Date(winEnd)) }),
-    );
+    // axe : les bornes des plages ouvrées (entrée, début/fin de pause, sortie)
+    // positionnées à leur emplacement réel, + les extrémités de la fenêtre.
+    const bounds = new Set([winStart, winEnd]);
+    for (const [rs, re] of ranges) { bounds.add(rs); bounds.add(re); }
+    const ticks = [...bounds].filter((t) => t >= winStart && t <= winEnd).sort((a, b) => a - b);
+    ticks.forEach((t, i) => {
+      const tick = createEl("span", { className: "tl-tick", text: fmtClock(new Date(t)) });
+      tick.style.left = pct(t) + "%";
+      tick.style.transform = i === 0 ? "translateX(0)"
+        : i === ticks.length - 1 ? "translateX(-100%)"
+        : "translateX(-50%)";
+      this.axis.appendChild(tick);
+    });
 
     // temps non tracé : signalé sobrement sous la timeline (plus de hachures dans la barre)
     for (const [gs, ge] of calc.gapsForDay(viewDay)) {
