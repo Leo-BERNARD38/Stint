@@ -1,4 +1,4 @@
-import { DAY_MS, startOfDay, atTime, isoDow, sameDay } from "../utils/datetime.js";
+import { DAY_MS, startOfDay, atTime, sameDay } from "../utils/datetime.js";
 import { overlap, unionIntervals, subtractIntervals } from "../utils/intervals.js";
 
 /**
@@ -14,15 +14,11 @@ export class TimeCalculator {
     return this.store.settings;
   }
 
-  /** Plages ouvrées [matin, après-midi] d'un jour, ou [] si non travaillé. */
+  /** Plages ouvrées (en ms) d'un jour selon le planning résolu (base/jour/date). */
   workRangesForDay(day) {
-    const s = this.settings;
-    if (!s.isWorkDay(isoDow(day))) return [];
-    const ranges = [
-      [atTime(day, s.arrival).getTime(), atTime(day, s.lunchStart).getTime()],
-      [atTime(day, s.lunchEnd).getTime(), atTime(day, s.departure).getTime()],
-    ];
-    return ranges.filter(([a, b]) => b > a);
+    return this.settings.blocksFor(day)
+      .map(([a, b]) => [atTime(day, a).getTime(), atTime(day, b).getTime()])
+      .filter(([a, b]) => b > a);
   }
 
   /** Durée ouvrée (ms) d'un intervalle, jour par jour (gère le multi-jours). */

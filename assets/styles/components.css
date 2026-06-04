@@ -203,6 +203,29 @@
 .btn.danger { color: var(--stop); background: transparent; }
 .btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
 
+/* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
+.ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
+.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 9px 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; }
+.ov-item:hover { background: var(--surface-hover); }
+.ov-name { font-weight: 600; text-transform: capitalize; min-width: 96px; }
+.ov-sum { color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
+.ov-sum.off { color: var(--text-faint); font-style: italic; }
+.ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
+.ov-rm:hover { background: var(--surface-2); color: var(--stop); }
+.ov-empty { color: var(--text-faint); font-size: 13.5px; padding: 2px; margin-bottom: var(--sp-3); }
+.ov-editor { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.ov-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
+.ov-editor .field select, .ov-editor .field input { background: var(--bg); }
+
+/* Éditeur de planning d'une journée */
+.sched { display: flex; flex-direction: column; gap: var(--sp-2); }
+.se-body { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 2px; }
+.se-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.se-lab { font-size: 12px; font-weight: 600; color: var(--text-soft); min-width: 72px; }
+.se-dash { color: var(--text-faint); }
+.sched input[type="time"] { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
+.sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, #000 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
 .modal-backdrop.open { display: flex; }

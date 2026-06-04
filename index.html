@@ -186,8 +186,9 @@
           </div>
         </div>
 
-        <div class="settings-block">
-          <div class="block-title">Horaires de travail</div>
+        <div class="settings-block full">
+          <div class="block-title">Horaires de base</div>
+          <p class="muted">Appliqués à tous les jours travaillés, sauf exception ci-dessous.</p>
           <div class="field" style="margin-bottom:16px;">
             <label>Jours travaillés</label>
             <div class="weekdays" id="weekdays"></div>
@@ -197,6 +198,40 @@
             <div class="field"><label>Début pause déj.</label><input type="time" id="setLunchStart"></div>
             <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
             <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
+          </div>
+        </div>
+
+        <div class="settings-block full">
+          <div class="block-title">Horaires par jour de la semaine</div>
+          <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
+          <div class="ov-list" id="weekdayOvList"></div>
+          <div class="ov-editor">
+            <div class="field" style="max-width:200px;">
+              <label>Jour</label>
+              <select id="wdaySelect"></select>
+            </div>
+            <div id="wdayEditorMount"></div>
+            <div class="ov-actions">
+              <button class="btn" id="wdayReset">Revenir à la base</button>
+              <button class="btn primary" id="wdaySave">Enregistrer ce jour</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-block full">
+          <div class="block-title">Dates spécifiques</div>
+          <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
+          <div class="ov-list" id="dateOvList"></div>
+          <div class="ov-editor">
+            <div class="field" style="max-width:200px;">
+              <label>Date</label>
+              <input type="date" id="dateSelect">
+            </div>
+            <div id="dateEditorMount"></div>
+            <div class="ov-actions">
+              <button class="btn danger" id="dateRemove">Supprimer cette date</button>
+              <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+            </div>
           </div>
         </div>
 
@@ -290,6 +325,11 @@
           <p>
             La case <b>Brut</b> d'un segment désactive ce rognage : on compte le <b>temps réel
             écoulé</b>, pratique pour une session de nuit ou des heures sup.
+          </p>
+          <p>
+            Tes horaires se règlent sur 3 niveaux : des <b>horaires de base</b>, des exceptions
+            <b>par jour de la semaine</b> (ex. le vendredi) et des exceptions <b>par date</b>
+            (roulement, congé). La plus précise l'emporte.
           </p>
         </div>
 

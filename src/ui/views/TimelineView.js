@@ -22,14 +22,15 @@ export class TimelineView {
     const span = winEnd - winStart;
     const pct = (ms) => ((ms - winStart) / span) * 100;
 
-    // bande pause déjeuner
+    // bandes de pause : intervalles entre créneaux ouvrés consécutifs
     const ranges = calc.workRangesForDay(viewDay);
-    if (ranges.length === 2) {
-      const [ls, le] = [ranges[0][1], ranges[1][0]];
+    for (let i = 0; i < ranges.length - 1; i++) {
+      const ls = ranges[i][1];
+      const le = ranges[i + 1][0];
       if (le > ls) {
         this.timeline.appendChild(createEl("div", {
           className: "tl-lunch",
-          attrs: { title: "Pause déjeuner", style: `left:${pct(ls)}%;width:${pct(le) - pct(ls)}%` },
+          attrs: { title: "Pause", style: `left:${pct(ls)}%;width:${pct(le) - pct(ls)}%` },
         }));
       }
     }

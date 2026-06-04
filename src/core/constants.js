@@ -4,7 +4,7 @@
  */
 
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const DAY_MS = 86_400_000;
 
 /** Palette assignée automatiquement aux tâches (cyclique). */
@@ -27,10 +27,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   appName: "Stint",
   theme: "system",
   workDays: [1, 2, 3, 4, 5],
-  arrival: "09:00",
+  arrival: "08:30",
   lunchStart: "12:30",
   lunchEnd: "13:30",
-  departure: "18:00",
+  departure: "17:00",
+  weekdayHours: {},  // exceptions par jour de semaine : { "5": [["08:30","12:50"]] }
+  dateHours: {},     // exceptions par date : { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }
   jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
   rounding: "none",
 });
