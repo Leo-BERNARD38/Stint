@@ -1,6 +1,5 @@
 import { el } from "../../utils/dom.js";
 import { DAY_MS } from "../../core/constants.js";
-import { storageInfo, CRIT } from "../../services/StorageInfo.js";
 
 /** En-tête : wordmark éditable (= nom de l'app) + pastille de statut. */
 export class HeaderView {
@@ -32,15 +31,7 @@ export class HeaderView {
 
     this.pill.classList.remove("warn", "crit");
 
-    // Priorité : alerte de stockage (rouge) quand c'est presque plein.
-    const storage = storageInfo();
-    if (storage.percent >= CRIT) {
-      this.pillText.textContent = `Stockage presque plein · ${Math.round(storage.percent)} %`;
-      this.pill.classList.add("crit");
-      return;
-    }
-
-    // Sinon : rappel de sauvegarde.
+    // Rappel de sauvegarde.
     const last = meta.lastExport ? new Date(meta.lastExport) : null;
     if (!last) {
       this.pillText.textContent = segments.length

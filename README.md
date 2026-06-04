@@ -74,7 +74,8 @@ Ainsi « Reprise » ne liste que les tâches réellement en cours.
 - **Conversions & copie** : décimal (`1.5`) et Jira (`2w 4d 6h 45m`), arrondi
   paramétrable (aucun / 1 / 5 / 15 min).
 - **Édition a posteriori** : heures, dates, réaffectation de tâche, saisie manuelle.
-- **Persistance locale** (`localStorage`) + **export/import JSON** (format maître) et
+- **Persistance locale double zone** (IndexedDB pour l'historique complet + miroir
+  localStorage des 30 derniers jours) + **export/import JSON** (format maître) et
   **export CSV** des segments, avec rappel de sauvegarde.
 - **Thème** clair / sombre / système, paramétrable (bouton du header ou réglages),
   appliqué sans flash au chargement.

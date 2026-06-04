@@ -260,12 +260,14 @@
         <div class="settings-block full">
           <div class="block-title">Sauvegarde & données</div>
           <p class="muted">
-            Les données vivent dans ce navigateur (<code>localStorage</code>) et peuvent être effacées
-            par un nettoyage de cache. <strong>Exportez régulièrement le JSON</strong> comme sauvegarde maître.
+            Les données sont stockées dans ce navigateur : l'<strong>historique complet</strong> dans
+            IndexedDB, et un <strong>miroir des 30 derniers jours</strong> dans <code>localStorage</code>
+            (redondance + démarrage instantané). Un nettoyage de cache peut tout effacer :
+            <strong>exportez régulièrement le JSON</strong> comme sauvegarde maître.
           </p>
 
           <div class="storage">
-            <div class="storage-head"><span>Stockage local</span><span id="storageText">—</span></div>
+            <div class="storage-head"><span>Espace de stockage</span><span id="storageText">…</span></div>
             <div class="storage-track"><div class="storage-bar" id="storageBar"></div></div>
           </div>
 

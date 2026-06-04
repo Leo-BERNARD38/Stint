@@ -68,8 +68,12 @@ export class App {
     ];
   }
 
-  start() {
+  async start() {
     renderStaticIcons(); // injecte les icônes statiques du HTML
+    this.render();        // rendu instantané depuis le miroir local (non interactif)
+
+    await this.store.ready(); // charge l'historique complet (IndexedDB) + migration
+
     this.views.forEach((v) => v.bind?.());
     Object.values(this.modals).forEach((m) => m.bind());
     this.#bindIO();
@@ -78,7 +82,7 @@ export class App {
     this.#bindLifecycle();
     this.store.on("change", () => this.render());
     this.timer.on("tick", () => this.#onTick());
-    this.render();
+    this.render();        // re-rendu avec l'historique complet
     this.timer.start();
   }
 

@@ -1,7 +1,7 @@
 import { el } from "../../utils/dom.js";
-import { storageInfo, formatBytes, WARN, CRIT } from "../../services/StorageInfo.js";
+import { storageSnapshot, refreshStorage, formatBytes } from "../../services/StorageInfo.js";
 
-/** Jauge de stockage local (réglages) + actions de maintenance. */
+/** Jauge d'espace de stockage (réglages) + actions de maintenance. */
 export class StorageView {
   constructor(app) {
     this.app = app;
@@ -15,11 +15,16 @@ export class StorageView {
   }
 
   render() {
-    const { used, budget, percent } = storageInfo();
-    const pctStr = percent < 1 ? percent.toFixed(1) : String(Math.round(percent));
-    this.text.textContent = `${formatBytes(used)} · ${pctStr}% de ${formatBytes(budget)}`;
-    this.bar.style.width = Math.max(2, percent) + "%";
-    this.bar.classList.toggle("warn", percent >= WARN && percent < CRIT);
-    this.bar.classList.toggle("crit", percent >= CRIT);
+    this.#paint(storageSnapshot());
+    refreshStorage().then((s) => this.#paint(s));
+  }
+
+  #paint(s) {
+    if (!s) { this.text.textContent = "…"; this.bar.style.width = "2%"; return; }
+    const pct = s.percent < 1 ? s.percent.toFixed(1) : String(Math.round(s.percent));
+    this.text.textContent = `${formatBytes(s.used)} · ${pct}% de ${formatBytes(s.quota)}`;
+    this.bar.style.width = Math.max(2, s.percent) + "%";
+    this.bar.classList.toggle("warn", s.percent >= 70 && s.percent < 90);
+    this.bar.classList.toggle("crit", s.percent >= 90);
   }
 }

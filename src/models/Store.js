@@ -21,17 +21,25 @@ export class Store extends EventEmitter {
     this.segments = [];
     this.meta = { lastExport: null };
     this.#idSeq = 0;
-    this.load();
+    this._hadLocal = false;
+    const local = this.persistence.loadSync();
+    if (local) { this.hydrate(local); this._hadLocal = true; } // affichage instantané (miroir récent)
   }
 
   #idSeq;
 
-  /* ----------------- (dé)sérialisation ----------------- */
-  load() {
-    const raw = this.persistence.load();
-    if (raw) {
-      this.hydrate(raw);
-      this.persist(); // normalise le stockage au format courant (purge jiraKey, etc.)
+  /**
+   * Charge l'historique complet depuis IndexedDB une fois prêt, et migre les
+   * anciennes données (localStorage seul) vers IndexedDB si nécessaire.
+   * À appeler une fois au démarrage, avant de câbler les interactions.
+   */
+  async ready() {
+    await this.persistence.init();
+    const full = await this.persistence.loadFull();
+    if (full) {
+      this.hydrate(full);                 // historique complet (IndexedDB fait foi)
+    } else if (this._hadLocal) {
+      this.persist();                     // IndexedDB vide : on y migre l'état local
     }
   }
 

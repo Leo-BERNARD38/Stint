@@ -30,7 +30,7 @@ src/
     Segment.js             Segment horodaté (start/end ISO, raw)
     Store.js               Source de vérité : état + commandes + persistance + events
   services/                LOGIQUE TRANSVERSE
-    Persistence.js         Adaptateur localStorage (remplaçable)
+    Persistence.js         Stockage double zone : IndexedDB (complet) + miroir localStorage (30 j)
     TimeCalculator.js      Temps ouvré (§9.1), agrégats, fenêtre timeline, trous
     Formatter.js           Décimal (§9.2), Jira (§9.3), arrondi, horloge
     DataTransfer.js        Export/import JSON, export CSV, téléchargement
