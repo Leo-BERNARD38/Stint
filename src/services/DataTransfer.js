@@ -32,7 +32,7 @@ export class DataTransfer {
   /** Exporte un CSV des segments (durées calculées via `calc`/`formatter`). */
   static exportCSV(store, calc, formatter) {
     const header = [
-      "segment_id", "task_id", "task_name", "jira_key", "type",
+      "segment_id", "task_id", "task_name", "type",
       "start", "end", "raw", "worked_minutes", "decimal_hours", "jira",
     ];
     const rows = [header];
@@ -41,7 +41,7 @@ export class DataTransfer {
       const t = store.taskById(seg.taskId);
       const minutes = calc.segmentMs(seg) / 60000;
       rows.push([
-        seg.id, seg.taskId, t?.name ?? "", t?.jiraKey ?? "", t?.type ?? "",
+        seg.id, seg.taskId, t?.name ?? "", t?.type ?? "",
         seg.start, seg.end ?? "", seg.raw ? "true" : "false",
         Math.round(minutes), formatter.decimal(minutes), formatter.jira(minutes),
       ]);

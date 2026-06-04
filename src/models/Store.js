@@ -29,7 +29,10 @@ export class Store extends EventEmitter {
   /* ----------------- (dé)sérialisation ----------------- */
   load() {
     const raw = this.persistence.load();
-    if (raw) this.hydrate(raw);
+    if (raw) {
+      this.hydrate(raw);
+      this.persist(); // normalise le stockage au format courant (purge jiraKey, etc.)
+    }
   }
 
   hydrate(raw) {
@@ -42,12 +45,25 @@ export class Store extends EventEmitter {
   }
 
   /**
-   * Migration ascendante du format. Les champs ajoutés (settings.theme,
-   * task.done) ont des valeurs par défaut gérées par les modèles, donc la
-   * montée v1 → v2 ne nécessite aucune transformation explicite ici.
+   * Migration ascendante du format. La plupart des champs ajoutés ont des
+   * valeurs par défaut gérées par les modèles. Cas explicite v3 → v4 :
+   * suppression de `task.jiraKey`, replié dans le nom pour ne rien perdre.
    */
   #migrate(raw) {
-    return raw ?? {};
+    if (!raw) return {};
+    if (Array.isArray(raw.tasks)) {
+      for (const t of raw.tasks) {
+        if (!t || !t.jiraKey) continue;
+        const key = String(t.jiraKey).trim();
+        if (key) {
+          const name = (t.name || "").trim();
+          if (!name) t.name = key;
+          else if (!name.includes(key)) t.name = `${name} ${key}`;
+        }
+        delete t.jiraKey;
+      }
+    }
+    return raw;
   }
 
   toJSON() {
@@ -116,8 +132,8 @@ export class Store extends EventEmitter {
     return PALETTE.find((c) => !used.has(c)) ?? PALETTE[this.tasks.length % PALETTE.length];
   }
 
-  #createTask({ name, jiraKey, type }) {
-    const task = new Task({ id: this.#uid("t_"), name, jiraKey, type, color: this.#nextColor() });
+  #createTask({ name, type }) {
+    const task = new Task({ id: this.#uid("t_"), name, type, color: this.#nextColor() });
     this.tasks.push(task);
     return task;
   }
@@ -155,9 +171,9 @@ export class Store extends EventEmitter {
   }
 
   /** Nouvelle tâche : arrête l'active, crée, démarre. */
-  startNew({ name, jiraKey, type }) {
+  startNew({ name, type }) {
     this.#stopActive();
-    const task = this.#createTask({ name, jiraKey, type });
+    const task = this.#createTask({ name, type });
     this.#startSegment(task.id);
     this.#commit();
     return task;

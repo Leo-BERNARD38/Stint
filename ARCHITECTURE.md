@@ -26,7 +26,7 @@ src/
     clipboard.js           Copie presse-papier (avec repli)
   models/                  DOMAINE
     Settings.js            Réglages (horaires, Jira, arrondi)
-    Task.js                Tâche (nom, clé Jira, type, couleur, archivée)
+    Task.js                Tâche (nom, type, couleur, état terminé/archivé)
     Segment.js             Segment horodaté (start/end ISO, raw)
     Store.js               Source de vérité : état + commandes + persistance + events
   services/                LOGIQUE TRANSVERSE

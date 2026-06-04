@@ -4,7 +4,7 @@
  */
 
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const DAY_MS = 86_400_000;
 
 /** Palette assignée automatiquement aux tâches (cyclique). */

@@ -16,7 +16,6 @@ export class NewTaskModal extends Modal {
 
   open() {
     el("ntName").value = "";
-    el("ntJira").value = "";
     el("ntType").value = "dev";
     super.open();
     setTimeout(() => el("ntName").focus(), 50);
@@ -25,7 +24,6 @@ export class NewTaskModal extends Modal {
   #create() {
     this.app.store.startNew({
       name: el("ntName").value.trim(),
-      jiraKey: el("ntJira").value.trim(),
       type: el("ntType").value,
     });
     this.close();

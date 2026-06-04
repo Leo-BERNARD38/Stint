@@ -46,7 +46,6 @@ export class TaskListView {
         `<button class="swatch" style="background:${task.color}" title="Éditer"></button>` +
         `<div class="task-main"><div class="task-name">${escapeHtml(task.displayName)}` +
           (isActive ? `<span class="live-dot"></span>` : "") +
-          (task.jiraKey ? `<span class="jira">${escapeHtml(task.jiraKey)}</span>` : "") +
           `<span class="type-badge type-${task.type}">${task.type}</span>` +
           (task.done ? `<span class="badge-done">terminé</span>` : "") +
         `</div></div>` +

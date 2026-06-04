@@ -42,7 +42,7 @@ export class SegmentTableView {
 
     const options = store.tasks.map((t) =>
       `<option value="${t.id}"${t.id === seg.taskId ? " selected" : ""}>` +
-      escapeHtml(t.displayName + (t.jiraKey ? " · " + t.jiraKey : "")) + "</option>"
+      escapeHtml(t.displayName) + "</option>"
     ).join("");
 
     tr.innerHTML =

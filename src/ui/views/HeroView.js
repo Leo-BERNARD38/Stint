@@ -42,9 +42,7 @@ export class HeroView {
       this.dot.style.background = task.color;
       this.name.classList.remove("idle");
       this.name.innerHTML =
-        escapeHtml(task.displayName) +
-        (task.jiraKey ? ' <span class="jira">' + escapeHtml(task.jiraKey) + "</span>" : "") +
-        '<span class="live-dot"></span>';
+        escapeHtml(task.displayName) + '<span class="live-dot"></span>';
       this.timer.classList.remove("idle");
     } else {
       this.dot.style.background = "var(--text-faint)";

@@ -21,7 +21,6 @@ export class EditTaskModal extends Modal {
     if (!t) return;
     this.taskId = taskId;
     el("etName").value = t.name;
-    el("etJira").value = t.jiraKey;
     el("etType").value = t.type;
     el("etColor").value = t.color;
     el("etArchive").textContent = t.archived ? "Désarchiver" : "Archiver";
@@ -32,7 +31,6 @@ export class EditTaskModal extends Modal {
   #save() {
     this.app.store.updateTask(this.taskId, {
       name: el("etName").value.trim(),
-      jiraKey: el("etJira").value.trim(),
       type: el("etType").value,
       color: el("etColor").value,
     });

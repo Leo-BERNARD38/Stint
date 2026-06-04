@@ -317,7 +317,7 @@
             </li>
             <li>
               <span class="ga-icon new" data-icon="plus" data-icon-size="20"></span>
-              <div><b>Nouvelle tâche</b> <kbd>N</kbd><p>Crée une tâche et la démarre aussitôt — le réflexe quand un ticket tombe.</p></div>
+              <div><b>Nouvelle tâche</b> <kbd>N</kbd><p>Crée une tâche et la démarre aussitôt — le réflexe quand un ticket tombe. Pour Jira, mets la clé comme nom (ex. MOD-123).</p></div>
             </li>
             <li>
               <span class="ga-icon resume" data-icon="rotate-ccw" data-icon-size="20"></span>
@@ -399,17 +399,14 @@
   <div class="modal-backdrop" id="newTaskModal">
     <div class="modal">
       <h3>Nouvelle tâche</h3>
-      <p class="modal-sub">Elle démarre immédiatement. Le nom et la clé Jira sont facultatifs.</p>
+      <p class="modal-sub">Elle démarre immédiatement. Pour une tâche Jira, mets la clé comme nom (ex. MOD-123).</p>
       <div class="field" style="margin-bottom:12px;">
         <label>Nom</label>
-        <input type="text" id="ntName" placeholder="ex. Support — client Y" autocomplete="off">
+        <input type="text" id="ntName" placeholder="ex. MOD-123 ou « Support client Y »" autocomplete="off">
       </div>
-      <div class="field-grid">
-        <div class="field"><label>Clé Jira (option.)</label><input type="text" id="ntJira" placeholder="MOD-123" autocomplete="off"></div>
-        <div class="field">
-          <label>Type</label>
-          <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
-        </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
       </div>
       <div class="modal-actions">
         <button class="btn" data-close>Annuler</button>
@@ -435,7 +432,6 @@
         <label>Nom</label><input type="text" id="etName" autocomplete="off">
       </div>
       <div class="field-grid">
-        <div class="field"><label>Clé Jira</label><input type="text" id="etJira" autocomplete="off"></div>
         <div class="field"><label>Type</label>
           <select id="etType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
         </div>

@@ -34,8 +34,7 @@ export class ResumeModal extends Modal {
         className: "resume-item",
         html:
           `<span class="swatch" style="background:${t.color}"></span>` +
-          `<span class="nm">${escapeHtml(t.displayName)}` +
-            (t.jiraKey ? ` <span class="jira">${escapeHtml(t.jiraKey)}</span>` : "") + `</span>` +
+          `<span class="nm">${escapeHtml(t.displayName)}</span>` +
           `<span class="du">${this.app.formatter.clock(minutes)}</span>`,
         on: { click: () => { store.resume(id); this.close(); } },
       });
