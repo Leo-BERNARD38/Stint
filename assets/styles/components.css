@@ -203,6 +203,30 @@
 .btn.danger { color: var(--stop); background: transparent; }
 .btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
 
+/* ---------- Alerte de stockage (haut de page) ---------- */
+.top-alert { display: flex; align-items: center; gap: var(--sp-3); background: var(--warn-bg); color: var(--warn-text); border-radius: var(--radius-sm); padding: 10px 14px; margin-top: var(--sp-4); font-size: 13.5px; font-weight: 500; }
+.top-alert-ic { display: flex; flex-shrink: 0; }
+.top-alert .alert-btn { margin-left: auto; border: none; background: color-mix(in srgb, var(--warn-text) 16%, transparent); color: var(--warn-text); font-weight: 600; border-radius: 6px; padding: 6px 13px; cursor: pointer; font-size: 12.5px; flex-shrink: 0; }
+.top-alert .alert-btn:hover { background: color-mix(in srgb, var(--warn-text) 26%, transparent); }
+
+/* ---------- Jauge de stockage ---------- */
+.storage { margin: var(--sp-2) 0 var(--sp-5); }
+.storage-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-soft); margin-bottom: 7px; }
+.storage-head #storageText { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+.storage-track { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.storage-bar { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .35s var(--ease), background-color .2s; }
+.storage-bar.warn { background: var(--pause); }
+.storage-bar.crit { background: var(--stop); }
+
+/* ---------- Maintenance des données ---------- */
+.data-maint { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
+.purge-row { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.purge-lab { font-size: 13.5px; color: var(--text-soft); }
+.purge-row select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
+.purge-row select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.maint-danger { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+#clearEntries .hint { font-weight: 400; color: var(--text-faint); }
+
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
 .ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
 .ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 9px 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; }

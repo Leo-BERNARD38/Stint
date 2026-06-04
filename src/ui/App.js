@@ -15,6 +15,7 @@ import { TotalsView } from "./views/TotalsView.js";
 import { TaskListView } from "./views/TaskListView.js";
 import { SegmentTableView } from "./views/SegmentTableView.js";
 import { SettingsView } from "./views/SettingsView.js";
+import { StorageView } from "./views/StorageView.js";
 
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
@@ -63,6 +64,7 @@ export class App {
       new TaskListView(this),
       new SegmentTableView(this),
       new SettingsView(this),
+      new StorageView(this),
     ];
   }
 
@@ -184,6 +186,17 @@ export class App {
     this.store.reset();
     this.viewDay = startOfDay(new Date());
     this.toast.show("Données effacées");
+  }
+  clearEntries() {
+    if (!confirm("Vider toutes les tâches et tous les segments ? Les réglages sont conservés.")) return;
+    this.store.clearEntries();
+    this.viewDay = startOfDay(new Date());
+    this.toast.show("Tâches et segments vidés (réglages conservés)");
+  }
+  purgeOld(days) {
+    if (!confirm(`Supprimer les segments terminés il y a plus de ${days} jours ?`)) return;
+    const n = this.store.purgeSegmentsOlderThan(days);
+    this.toast.show(n ? `${n} segment(s) supprimé(s)` : "Aucun segment assez ancien");
   }
 
   /* ----------------- liaisons privées ----------------- */

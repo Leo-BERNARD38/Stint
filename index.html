@@ -66,6 +66,13 @@
   </header>
 
   <main class="wrap">
+    <!-- Alerte de stockage (masquée tant que ce n'est pas presque plein) -->
+    <div id="storageAlert" class="top-alert" role="alert" hidden>
+      <span class="top-alert-ic" data-icon="alert" data-icon-size="18"></span>
+      <span id="storageAlertText"></span>
+      <button id="storageAlertBtn" class="alert-btn">Gérer</button>
+    </div>
+
     <!-- ===================== ÉCRAN APPLICATION ===================== -->
     <div id="appScreen">
     <!-- ============================ BARRE DE CONTRÔLE (toujours visible) ============================ -->
@@ -257,18 +264,39 @@
           </div>
         </div>
 
-        <div class="settings-block">
+        <div class="settings-block full">
           <div class="block-title">Sauvegarde & données</div>
           <p class="muted">
             Les données vivent dans ce navigateur (<code>localStorage</code>) et peuvent être effacées
             par un nettoyage de cache. <strong>Exportez régulièrement le JSON</strong> comme sauvegarde maître.
           </p>
+
+          <div class="storage">
+            <div class="storage-head"><span>Stockage local</span><span id="storageText">—</span></div>
+            <div class="storage-track"><div class="storage-bar" id="storageBar"></div></div>
+          </div>
+
           <div class="io-buttons">
             <button class="btn primary" id="exportJson"><span data-icon="download" data-icon-size="16"></span> Exporter JSON</button>
             <button class="btn" id="importJson"><span data-icon="upload" data-icon-size="16"></span> Importer JSON</button>
             <button class="btn" id="exportCsv"><span data-icon="download" data-icon-size="16"></span> Exporter CSV (segments)</button>
-            <span style="flex:1"></span>
-            <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
+          </div>
+
+          <div class="data-maint">
+            <div class="purge-row">
+              <span class="purge-lab">Supprimer les segments de plus de</span>
+              <select id="purgeDays">
+                <option value="7">7 jours</option>
+                <option value="15">15 jours</option>
+                <option value="30" selected>30 jours</option>
+                <option value="90">90 jours</option>
+              </select>
+              <button class="btn" id="purgeBtn">Supprimer</button>
+            </div>
+            <div class="maint-danger">
+              <button class="btn" id="clearEntries">Vider tâches & segments <span class="hint">(garde les réglages)</span></button>
+              <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
+            </div>
           </div>
           <input type="file" id="fileInput" accept="application/json" style="display:none">
         </div>
@@ -356,6 +384,10 @@
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
             (Réglages › Sauvegarde) ; l'indicateur en haut à droite te rappelle la dernière sauvegarde.
+          </p>
+          <p>
+            Réglages › Sauvegarde affiche aussi le <b>stockage utilisé</b> et permet de <b>purger les
+            vieux segments</b> ou de <b>vider les données</b> en gardant tes réglages.
           </p>
         </div>
 

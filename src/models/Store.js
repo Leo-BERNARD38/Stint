@@ -287,4 +287,21 @@ export class Store extends EventEmitter {
     this.meta = { lastExport: null };
     this.#commit();
   }
+
+  /** Vide tâches et segments en conservant les réglages et le méta. */
+  clearEntries() {
+    this.tasks = [];
+    this.segments = [];
+    this.#commit();
+  }
+
+  /** Supprime les segments terminés avant (maintenant − N jours). Renvoie le nb retiré. */
+  purgeSegmentsOlderThan(days) {
+    const cutoff = Date.now() - days * DAY_MS;
+    const before = this.segments.length;
+    this.segments = this.segments.filter((s) => s.isRunning || s.endMs() >= cutoff);
+    const removed = before - this.segments.length;
+    if (removed) this.#commit();
+    return removed;
+  }
 }
