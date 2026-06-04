@@ -25,6 +25,12 @@ export class Formatter {
     return String(parseFloat(hours.toFixed(2)));
   }
 
+  /** Horloge H:mm pour l'affichage : 90 min → "1:30", 75 → "1:15". */
+  clock(minutes) {
+    const total = Math.max(0, Math.round(this.round(minutes)));
+    return Math.floor(total / 60) + ":" + pad2(total % 60);
+  }
+
   /**
    * Unités Jira effectives. En mode auto, `1d` = durée ouvrée d'une journée
    * (horaires − pause) et `1w` = nombre de jours travaillés ; sinon valeurs

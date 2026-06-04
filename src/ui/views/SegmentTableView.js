@@ -53,7 +53,7 @@ export class SegmentTableView {
         ? `<input type="time" data-seg="${seg.id}" data-field="endTime" value="${fmtClock(end)}">`
         : '<span style="color:var(--play);font-weight:600">en cours</span>'}</td>` +
       `<td><input type="checkbox" class="raw-toggle" data-seg="${seg.id}" data-field="raw"${seg.raw ? " checked" : ""} title="Temps brut (sans rognage ouvré)"></td>` +
-      `<td class="seg-dur">${this.app.formatter.decimal(minutes)} h</td>` +
+      `<td class="seg-dur">${this.app.formatter.clock(minutes)}</td>` +
       `<td><button class="mini-btn icon-only" data-del="${seg.id}" title="Supprimer">${icon("trash", { size: 15 })}</button></td>`;
     return tr;
   }

@@ -17,7 +17,7 @@ export class TotalsView {
     // total journée, mis en avant
     const hero = createEl("div", {
       className: "total-hero",
-      html: `<div class="k">Total journée</div><div class="v">${fmt.decimal(total / 60000)} h</div>`,
+      html: `<div class="k">Total journée</div><div class="v">${fmt.clock(total / 60000)}</div>`,
     });
     const copyRow = createEl("div", { className: "copy-row" });
     copyRow.append(
@@ -35,7 +35,7 @@ export class TotalsView {
         html:
           `<span class="tdot ${type}"></span>` +
           `<span class="tname">${escapeHtml(type)}</span>` +
-          `<span class="tamt">${fmt.decimal(byType[type] / 60000)} h</span>`,
+          `<span class="tamt">${fmt.clock(byType[type] / 60000)}</span>`,
       }));
     }
 

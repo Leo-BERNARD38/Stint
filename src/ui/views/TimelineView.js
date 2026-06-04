@@ -45,7 +45,7 @@ export class TimelineView {
         className: "tl-seg",
         attrs: {
           style: `left:${pct(s)}%;width:${Math.max(0.4, pct(e) - pct(s))}%;background:${task ? task.color : "var(--text-faint)"}`,
-          title: `${task ? task.displayName : "?"} · ${fmtClock(new Date(s))}–${fmtClock(new Date(e))} · ${this.app.formatter.decimal(minutes)} h`,
+          title: `${task ? task.displayName : "?"} · ${fmtClock(new Date(s))}–${fmtClock(new Date(e))} · ${this.app.formatter.clock(minutes)}`,
         },
         on: { click: () => this.app.scrollToSegment(seg.id) },
       });

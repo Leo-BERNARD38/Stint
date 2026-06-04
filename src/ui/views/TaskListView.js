@@ -50,7 +50,7 @@ export class TaskListView {
           `<span class="type-badge type-${task.type}">${task.type}</span>` +
           (task.done ? `<span class="badge-done">terminé</span>` : "") +
         `</div></div>` +
-        `<div class="task-dur">${fmt.decimal(minutes)} h</div>`,
+        `<div class="task-dur">${fmt.clock(minutes)}</div>`,
     });
 
     const actions = createEl("div", { className: "task-actions" });

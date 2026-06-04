@@ -36,7 +36,7 @@ export class ResumeModal extends Modal {
           `<span class="swatch" style="background:${t.color}"></span>` +
           `<span class="nm">${escapeHtml(t.displayName)}` +
             (t.jiraKey ? ` <span class="jira">${escapeHtml(t.jiraKey)}</span>` : "") + `</span>` +
-          `<span class="du">${this.app.formatter.decimal(minutes)} h</span>`,
+          `<span class="du">${this.app.formatter.clock(minutes)}</span>`,
         on: { click: () => { store.resume(id); this.close(); } },
       });
       if (activeSeg?.taskId === id) btn.style.borderColor = "var(--play)";
