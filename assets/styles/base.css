@@ -27,6 +27,10 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 input, select { font-family: inherit; font-size: 14px; }
 a { color: inherit; }
 
+/* Garde-fou : l'attribut `hidden` doit toujours masquer, même si un composant
+   définit `display` (sinon un élément en flex/grid resterait visible). */
+[hidden] { display: none !important; }
+
 ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 .empty { color: var(--text-faint); text-align: center; padding: var(--sp-6); font-size: 14px; }

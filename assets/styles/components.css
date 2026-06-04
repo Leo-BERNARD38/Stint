@@ -29,8 +29,10 @@
 }
 .backup-pill:hover { background: var(--surface-hover); }
 .backup-pill.warn { background: var(--warn-bg); color: var(--warn-text); }
+.backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop); }
 .backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--play); }
 .backup-pill.warn .dot { background: var(--warn-text); }
+.backup-pill.crit .dot { background: var(--stop); }
 
 /* ---------- Boutons icône (thème, etc.) ---------- */
 .icon-btn {
@@ -202,12 +204,6 @@
 .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--bg)); }
 .btn.danger { color: var(--stop); background: transparent; }
 .btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
-
-/* ---------- Alerte de stockage (haut de page) ---------- */
-.top-alert { display: flex; align-items: center; gap: var(--sp-3); background: var(--warn-bg); color: var(--warn-text); border-radius: var(--radius-sm); padding: 10px 14px; margin-top: var(--sp-4); font-size: 13.5px; font-weight: 500; }
-.top-alert-ic { display: flex; flex-shrink: 0; }
-.top-alert .alert-btn { margin-left: auto; border: none; background: color-mix(in srgb, var(--warn-text) 16%, transparent); color: var(--warn-text); font-weight: 600; border-radius: 6px; padding: 6px 13px; cursor: pointer; font-size: 12.5px; flex-shrink: 0; }
-.top-alert .alert-btn:hover { background: color-mix(in srgb, var(--warn-text) 26%, transparent); }
 
 /* ---------- Jauge de stockage ---------- */
 .storage { margin: var(--sp-2) 0 var(--sp-5); }

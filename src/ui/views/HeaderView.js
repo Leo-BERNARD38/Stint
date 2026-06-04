@@ -1,7 +1,8 @@
 import { el } from "../../utils/dom.js";
 import { DAY_MS } from "../../core/constants.js";
+import { storageInfo, CRIT } from "../../services/StorageInfo.js";
 
-/** En-tête : wordmark éditable (= nom de l'app) + rappel de sauvegarde. */
+/** En-tête : wordmark éditable (= nom de l'app) + pastille de statut. */
 export class HeaderView {
   constructor(app) {
     this.app = app;
@@ -29,12 +30,23 @@ export class HeaderView {
     document.title = name + " — Chronométrage";
     if (document.activeElement !== this.wordmark) this.wordmark.value = name;
 
+    this.pill.classList.remove("warn", "crit");
+
+    // Priorité : alerte de stockage (rouge) quand c'est presque plein.
+    const storage = storageInfo();
+    if (storage.percent >= CRIT) {
+      this.pillText.textContent = `Stockage presque plein · ${Math.round(storage.percent)} %`;
+      this.pill.classList.add("crit");
+      return;
+    }
+
+    // Sinon : rappel de sauvegarde.
     const last = meta.lastExport ? new Date(meta.lastExport) : null;
     if (!last) {
       this.pillText.textContent = segments.length
         ? "Jamais exporté — pensez à sauvegarder"
         : "Aucune donnée";
-      this.pill.classList.toggle("warn", segments.length > 0);
+      if (segments.length) this.pill.classList.add("warn");
       return;
     }
     const days = Math.floor((Date.now() - last.getTime()) / DAY_MS);
@@ -42,6 +54,6 @@ export class HeaderView {
       days === 0 ? "Sauvegardé aujourd'hui"
       : days === 1 ? "Sauvegardé hier"
       : "Dernière sauvegarde il y a " + days + " j";
-    this.pill.classList.toggle("warn", days >= 3);
+    if (days >= 3) this.pill.classList.add("warn");
   }
 }

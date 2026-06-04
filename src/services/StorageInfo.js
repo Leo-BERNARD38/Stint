@@ -7,6 +7,10 @@ import { STORAGE_KEY } from "../core/constants.js";
  */
 export const STORAGE_BUDGET = 5 * 1024 * 1024;
 
+/** Seuils d'occupation (%) : barre ambre puis rouge ; CRIT déclenche l'alerte. */
+export const WARN = 70;
+export const CRIT = 85;
+
 export function usedBytes() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || "";
