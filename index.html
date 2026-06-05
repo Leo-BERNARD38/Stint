@@ -174,63 +174,67 @@
         <h2 class="page-title">Réglages</h2>
       </div>
       <div class="settings-grid">
-        <div class="settings-block full">
+        <div class="settings-block">
           <div class="block-title">Apparence</div>
-          <div class="field">
+          <div class="field" style="max-width:240px;">
             <label>Thème</label>
-            <div class="segmented" id="themeSeg" role="group" aria-label="Thème">
-              <button data-theme-val="system">Système</button>
-              <button data-theme-val="light">Clair</button>
-              <button data-theme-val="dark">Sombre</button>
-            </div>
+            <select id="themeSelect">
+              <option value="system">Système</option>
+              <option value="light">Clair</option>
+              <option value="dark">Sombre</option>
+            </select>
           </div>
         </div>
 
-        <div class="settings-block full">
-          <div class="block-title">Horaires de base</div>
-          <p class="muted">Appliqués à tous les jours travaillés, sauf exception ci-dessous.</p>
-          <div class="field" style="margin-bottom:16px;">
-            <label>Jours travaillés</label>
-            <div class="weekdays" id="weekdays"></div>
-          </div>
-          <div class="field-grid">
-            <div class="field"><label>Arrivée</label><input type="time" id="setArrival"></div>
-            <div class="field"><label>Début pause déj.</label><input type="time" id="setLunchStart"></div>
-            <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
-            <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
-          </div>
-        </div>
+        <div class="settings-block">
+          <div class="block-title">Horaires</div>
 
-        <div class="settings-block full">
-          <div class="block-title">Horaires par jour de la semaine</div>
-          <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
-          <div class="ov-list" id="weekdayOvList"></div>
-          <div class="ov-editor">
-            <div class="field" style="max-width:200px;">
-              <label>Jour</label>
-              <select id="wdaySelect"></select>
+          <div class="settings-sub">
+            <div class="sub-title">De base</div>
+            <p class="muted">Appliqués à tous les jours travaillés, sauf exception ci-dessous.</p>
+            <div class="field" style="margin-bottom:16px;">
+              <label>Jours travaillés</label>
+              <div class="weekdays" id="weekdays"></div>
             </div>
-            <div id="wdayEditorMount"></div>
-            <div class="ov-actions">
-              <button class="btn" id="wdayReset">Revenir à la base</button>
-              <button class="btn primary" id="wdaySave">Enregistrer ce jour</button>
+            <div class="field-grid">
+              <div class="field"><label>Arrivée</label><input type="time" id="setArrival"></div>
+              <div class="field"><label>Début pause déj.</label><input type="time" id="setLunchStart"></div>
+              <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
+              <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
             </div>
           </div>
-        </div>
 
-        <div class="settings-block full">
-          <div class="block-title">Dates spécifiques</div>
-          <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
-          <div class="ov-list" id="dateOvList"></div>
-          <div class="ov-editor">
-            <div class="field" style="max-width:200px;">
-              <label>Date</label>
-              <input type="date" id="dateSelect">
+          <div class="settings-sub">
+            <div class="sub-title">Par jour de la semaine</div>
+            <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
+            <div class="ov-list" id="weekdayOvList"></div>
+            <div class="ov-editor">
+              <div class="field" style="max-width:200px;">
+                <label>Jour</label>
+                <select id="wdaySelect"></select>
+              </div>
+              <div id="wdayEditorMount"></div>
+              <div class="ov-actions">
+                <button class="btn" id="wdayReset">Revenir à la base</button>
+                <button class="btn primary" id="wdaySave">Enregistrer ce jour</button>
+              </div>
             </div>
-            <div id="dateEditorMount"></div>
-            <div class="ov-actions">
-              <button class="btn danger" id="dateRemove">Supprimer cette date</button>
-              <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+          </div>
+
+          <div class="settings-sub">
+            <div class="sub-title">Dates spécifiques</div>
+            <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
+            <div class="ov-list" id="dateOvList"></div>
+            <div class="ov-editor">
+              <div class="field" style="max-width:200px;">
+                <label>Date</label>
+                <input type="date" id="dateSelect">
+              </div>
+              <div id="dateEditorMount"></div>
+              <div class="ov-actions">
+                <button class="btn danger" id="dateRemove">Supprimer cette date</button>
+                <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+              </div>
             </div>
           </div>
         </div>

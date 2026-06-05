@@ -5,7 +5,7 @@
  *   - assets même origine + Google Fonts : stale-while-revalidate.
  * Bumper CACHE à chaque release pour purger l'ancien cache.
  */
-const CACHE = "stint-v5";
+const CACHE = "stint-v6";
 
 const CORE = [
   "./",

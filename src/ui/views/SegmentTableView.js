@@ -22,6 +22,9 @@ export class SegmentTableView {
   }
 
   render(viewDay) {
+    // Ne pas reconstruire le tableau pendant qu'on édite une cellule : cela
+    // volerait le focus (notamment sur les champs date/heure).
+    if (this.body.contains(document.activeElement)) return;
     const { store } = this.app;
     this.body.innerHTML = "";
     const segs = store.segmentsForDay(viewDay).sort((a, b) => a.startMs() - b.startMs());
@@ -87,5 +90,10 @@ export class SegmentTableView {
     }
 
     this.app.store.updateSegment(segId, patch);
+
+    // Le re-rendu est ignoré tant que le focus reste dans le tableau : on met
+    // donc à jour la durée de la ligne à la main pour un retour immédiat.
+    const durCell = row.querySelector(".seg-dur");
+    if (durCell) durCell.textContent = this.app.formatter.clock(this.app.calc.segmentMs(seg) / 60000);
   }
 }

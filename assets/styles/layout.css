@@ -63,8 +63,7 @@ header {
 }
 
 /* ---------- Réglages ---------- */
-.settings-grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-5); }
-@media (min-width: 820px) { .settings-grid { grid-template-columns: 1fr 1fr; } .settings-block.full { grid-column: 1 / -1; } }
+.settings-grid { display: flex; flex-direction: column; gap: var(--sp-5); max-width: 820px; }
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-4); }
 
 /* ============================ Responsive ============================ */
