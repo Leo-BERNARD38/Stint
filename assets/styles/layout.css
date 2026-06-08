@@ -39,7 +39,7 @@ header {
 }
 
 /* ---------- Onglets ---------- */
-.tabs { display: flex; gap: var(--sp-1); margin: var(--sp-7) 0 var(--sp-7); }
+.tabs { display: flex; gap: var(--sp-1); margin: 0 0 var(--sp-6); }
 
 /* ---------- Écrans (application / réglages) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); }
@@ -47,8 +47,8 @@ header {
 .tab-panel { animation: fade .2s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-/* ---------- En-tête de journée ---------- */
-.day-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+/* ---------- Sélecteur de jour (commun aux onglets Journée et Segments) ---------- */
+.day-head { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-5) 0 var(--sp-4); }
 
 /* ---------- Grille de la journée ---------- */
 .journee-grid {
@@ -78,7 +78,7 @@ header {
   .backup-pill #backupText { display: none; }  /* garde juste la pastille */
   .backup-pill { padding: 7px; }
   .control { padding-top: var(--sp-5); }
-  .tabs { margin: var(--sp-6) 0 var(--sp-6); }
+  .day-head { margin: var(--sp-4) 0 var(--sp-3); }
   .seg-table .col-date { display: none; }
   .daynav .date { min-width: 0; font-size: 14px; }
   /* les actions de tâche passent sur leur propre ligne (évite le débordement) */

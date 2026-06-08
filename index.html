@@ -103,6 +103,17 @@
       </div>
     </div>
 
+    <!-- Sélecteur de jour : commun aux onglets Journée et Segments -->
+    <div class="day-head">
+      <div class="daynav">
+        <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
+        <div class="date" id="dayLabel">—</div>
+        <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
+      </div>
+      <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
+      <span class="today-badge" id="todayBadge"></span>
+    </div>
+
     <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
@@ -111,16 +122,6 @@
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
     <section class="tab-panel" data-panel="journee">
-      <div class="day-head">
-        <div class="daynav">
-          <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
-          <div class="date" id="dayLabel">—</div>
-          <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
-        </div>
-        <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
-        <span class="today-badge" id="todayBadge"></span>
-      </div>
-
       <div class="timeline-wrap">
         <div class="block-title">Timeline <span class="hint">survol = nom + durée · les trous = temps non tracé</span></div>
         <div class="timeline" id="timeline"></div>
