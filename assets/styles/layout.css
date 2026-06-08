@@ -38,12 +38,23 @@ header {
   .control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
 }
 
-/* ---------- Onglets (piste de la pilule segmentée) ---------- */
+/* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ---------- */
 .tabs {
-  display: inline-flex; gap: 2px; width: fit-content;
-  background: var(--surface); border-radius: 999px; padding: 4px;
+  position: relative;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  width: 360px; max-width: 100%;
+  background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
   margin: var(--sp-5) 0 var(--sp-4);
 }
+/* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
+.tabs::before {
+  content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
+  width: calc((100% - 8px) / 3); height: calc(100% - 8px);
+  border-radius: var(--radius-pill); background: var(--accent);
+  transition: transform .34s var(--ease-spring);
+}
+.tabs:has([data-tab="segments"].active)::before { transform: translateX(100%); }
+.tabs:has([data-tab="taches"].active)::before { transform: translateX(200%); }
 
 /* ---------- Écrans (application / réglages / guide) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); margin-inline: auto; }

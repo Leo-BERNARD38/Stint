@@ -11,9 +11,13 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
 
-  --radius: 16px;
-  --radius-sm: 10px;
-  --radius-xs: 8px;
+  /* Rayons — volontairement proches les uns des autres (langage « pilule »
+     Nothing) : les cartes partagent un grand rayon, les petits éléments sont
+     des pilules pleines (--radius-pill). */
+  --radius: 18px;
+  --radius-sm: 14px;
+  --radius-xs: 11px;
+  --radius-pill: 999px;
 
   --maxw: 1180px;
 

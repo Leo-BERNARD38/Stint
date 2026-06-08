@@ -53,14 +53,15 @@
 .block-title .grow { flex: 1; }
 .muted { font-size: 13.5px; color: var(--text-soft); margin: 0 0 var(--sp-4); line-height: 1.6; }
 
-/* ---------- Onglets (contrôle segmenté en pilule, façon Nothing OS) ---------- */
+/* ---------- Onglets (texte au-dessus du curseur glissant) ---------- */
 .tab {
-  border: none; background: transparent; padding: 8px 18px; font-weight: 600;
-  font-size: 14.5px; color: var(--text-faint); border-radius: 999px; position: relative;
+  position: relative; z-index: 1; border: none; background: transparent;
+  padding: 9px 8px; font-weight: 600; font-size: 14.5px; color: var(--text-faint);
+  border-radius: var(--radius-pill); text-align: center;
+  transition: color .22s var(--ease) .08s; /* léger délai : le texte s'allume quand le curseur arrive */
 }
-.tab:hover { color: var(--text); background: var(--surface-hover); }
-.tab.active { color: var(--accent-text); background: var(--accent); }
-.tab.active:hover { background: var(--accent); color: var(--accent-text); }
+.tab:hover { color: var(--text); transition-delay: 0s; }
+.tab.active { color: var(--accent-text); }
 
 /* ---------- Carte tâche active ---------- */
 .active-card {
@@ -125,13 +126,13 @@
 .tl-seg { position: absolute; top: 6px; bottom: 6px; border-radius: 5px; cursor: pointer; min-width: 3px; transition: filter .12s; }
 .tl-seg:hover { filter: brightness(1.06); }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
-.tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease) infinite; }
 .tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .tl-tick { position: absolute; top: 0; white-space: nowrap; }
 .gaps-list { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
 .gap-item { font-size: 12.5px; color: var(--text-soft); padding: 6px 2px; display: flex; align-items: center; gap: var(--sp-2); font-variant-numeric: tabular-nums; }
 .gap-item .gap-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn-text); flex-shrink: 0; opacity: .75; }
-.gap-item .gap-fill { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-weight: 600; cursor: pointer; font-size: 12px; padding: 3px 9px; border-radius: 6px; }
+.gap-item .gap-fill { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-weight: 600; cursor: pointer; font-size: 12px; padding: 4px 11px; border-radius: var(--radius-pill); }
 .gap-item .gap-fill:hover { background: var(--surface); color: var(--text); }
 
 /* ---------- Totaux (aside) ---------- */
@@ -165,7 +166,7 @@
 .task-dur { font-family: var(--font-body); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .task-actions { display: flex; gap: 4px; }
 
-.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-xs); padding: 6px 10px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
 .mini-btn:hover { background: var(--surface-hover); color: var(--text); }
 .mini-btn.copied { background: var(--play); color: #fff; }
 .task-row:not(:hover):not(.active) .task-actions .mini-btn { background: transparent; }
@@ -214,7 +215,7 @@
 .field input, .field select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
 .field input:focus, .field select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
-.weekdays button { border: none; background: var(--bg); border-radius: var(--radius-xs); padding: 7px 12px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
+.weekdays button { border: none; background: var(--bg); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
 .weekdays button:hover { color: var(--text); }
 .weekdays button.on { background: var(--accent); color: var(--accent-text); }
 
@@ -224,7 +225,7 @@
 .sub-title { font-family: var(--font-body); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); margin: 0 0 var(--sp-3); }
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm); padding: 10px 16px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
+.btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
 .btn:hover { background: var(--surface-hover); }
 .btn.primary { background: var(--accent); color: var(--accent-text); }
 .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--bg)); }
@@ -344,6 +345,8 @@
 @keyframes popIn { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
 @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+/* Glyphe dot-matrix : éclosion façon « points qui s'allument ». */
+@keyframes dotIn { from { opacity: 0; transform: scale(.4); } 60% { opacity: 1; transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
 
 /* Transitions douces sur tout ce qui réagit */
 .mini-btn, .btn, .icon-btn, .daynav button, .btn-ghost, .btn-back, .weekdays button,
@@ -353,9 +356,13 @@
 }
 
 /* Feedback tactile (enfoncement) */
-.big-btn { transition: background-color .16s var(--ease), transform .14s var(--ease), box-shadow .2s var(--ease); }
+.big-btn { transition: background-color .16s var(--ease), transform .16s var(--ease-spring), box-shadow .2s var(--ease); }
 .big-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
 .big-btn:active { transform: translateY(0) scale(.97); box-shadow: none; }
+/* Le glyphe respire avec le bouton : léger zoom au survol, rebond à l'appui. */
+.big-btn .glyph { transition: transform .2s var(--ease-spring); }
+.big-btn:hover .glyph { transform: scale(1.1); }
+.big-btn:active .glyph { transform: scale(.86); }
 .mini-btn:active, .btn:active, .icon-btn:active, .daynav button:active, .btn-ghost:active,
 .btn-back:active, .weekdays button:active, .gap-fill:active,
 .backup-pill:active { transform: scale(.92); }
@@ -367,7 +374,8 @@
 /* Petites récompenses */
 .mini-btn.copied { animation: pop .35s var(--ease-spring); }
 #themeToggle .icon { animation: popIn .28s var(--ease-spring); }
-#playGlyph .icon { animation: popIn .24s var(--ease-spring); }
+/* Éclosion des glyphes dot-matrix des 4 gros boutons (entrée + bascule play/pause). */
+.big-btn .dot-icon { animation: dotIn .32s var(--ease-spring); }
 
 /* Entrée des écrans & modales */
 #appScreen, .settings-screen { animation: fade .22s var(--ease); }

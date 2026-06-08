@@ -156,8 +156,16 @@ Notes :
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
   (`--surface`, `--surface-2`) et **espace**. Échelle d'espacement `--sp-1..8`.
 - **Esthétique « Nothing OS »** : **filets pointillés** (`--dot`), **grille de
-  points** sur la timeline (`--dot-grid`), **pilules** (sélecteur de jour, onglets
-  segmentés, « Aujourd'hui »), point « live » rouge.
+  points** sur la timeline (`--dot-grid`), **pilules** partout (rayon
+  `--radius-pill` ; petits boutons, badges, sélecteur de jour, « Aujourd'hui »),
+  point « live » rouge. **Rayons volontairement proches** (`--radius` 18 /
+  `--radius-sm` 14 / `--radius-xs` 11) : cartes au grand rayon, petits éléments en
+  pilule. Sélecteur de jour **en couleurs inversées** (comme « Total du jour »).
+- **Onglets = contrôle segmenté** avec **curseur glissant** : une pilule `::before`
+  sur `.tabs` translatée via `:has([data-tab=…].active)` (3 colonnes égales).
+- **Motion** : flat mais fluide — survol des gros boutons (translation + zoom du
+  glyphe), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
+  « maintenant » de la timeline. Tout est neutralisé sous `prefers-reduced-motion`.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
