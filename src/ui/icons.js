@@ -119,17 +119,80 @@ export function dotIcon(name, { size = 24 } = {}) {
 
 /* ============================================================================
    Glyphe « moment de la journée » — un vrai élément (lever de soleil, soleil,
-   coucher, lune) choisi selon l'heure, dessiné en points jointifs (r=0.5, comme
-   les icônes) sur une grille 7×7. Points éteints = non dessinés (100 % éteints).
-   Vit dans « Total journée » avec une animation lente et sobre (CSS).
+   coucher, lune) choisi selon l'heure, en points jointifs (r=0.5, comme les
+   icônes) sur une grille 9×9. Points éteints = non dessinés (100 % éteints).
+   Vraie animation **image par image** : chaque glyphe fournit plusieurs frames
+   (bitmaps) que `DayGlyphAnimator` fait défiler à bas FPS. Pas d'animation CSS.
    ============================================================================ */
-const TIME_GLYPHS = {
-  sunrise: ["...#...", "..#.#..", ".......", "..###..", ".#####.", "#######", "......."],
-  sun:     ["...#...", ".#...#.", "..###..", "#.###.#", "..###..", ".#...#.", "...#..."],
-  sunset:  [".......", "..###..", ".#####.", "#######", ".......", "..#.#..", "...#..."],
-  moon:    ["..##...", ".##....", "##.....", "##.....", "##.....", ".##....", "..##..."],
+const DAY_N = 9;
+const DAY_LABELS = { sunrise: "Matinée", sun: "Journée", sunset: "Soirée", moon: "Nuit" };
+
+const gNew = () => Array.from({ length: DAY_N }, () => Array(DAY_N).fill(0));
+const gDot = (g, x, y) => { if (x >= 0 && x < DAY_N && y >= 0 && y < DAY_N) g[y][x] = 1; };
+const gDisc = (g, cx, cy, r) => {
+  const r2 = r * r;
+  for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) {
+    const dx = x - cx, dy = y - cy;
+    if (dx * dx + dy * dy <= r2) g[y][x] = 1;
+  }
 };
-const TIME_LABELS = { sunrise: "Matinée", sun: "Journée", sunset: "Soirée", moon: "Nuit" };
+/** Bitmap (0/1) → balisage des cercles allumés (points jointifs). */
+const gBake = (g) => {
+  let b = "";
+  for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) {
+    if (g[y][x]) b += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5"/>`;
+  }
+  return b;
+};
+
+/** Soleil : étoile à 8 branches dont les rayons « respirent » (petit→grand→petit). */
+function framesSun() {
+  const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+  const reach = [[2, 2], [3, 2], [3, 3], [3, 2]]; // [cardMax, diagMax] par frame
+  return reach.map(([cm, dm]) => {
+    const g = gNew();
+    gDisc(g, 4, 4, 1.6);
+    for (const [dx, dy] of card) for (let d = 2; d <= cm; d++) gDot(g, 4 + dx * d, 4 + dy * d);
+    for (const [dx, dy] of diag) for (let d = 2; d <= dm; d++) gDot(g, 4 + dx * d, 4 + dy * d);
+    return g;
+  });
+}
+
+/** Demi-soleil sur l'horizon + rayons qui montent (lever) ou descendent (coucher). */
+function framesHorizon(rising) {
+  const horizon = 6;
+  const rayYs = rising ? [2, 1, 0] : [0, 1, 2];
+  return [0, 1, 2, 3].map((f) => {
+    const g = gNew();
+    gDisc(g, 4, 5, 2.1);
+    for (let x = 0; x < DAY_N; x++) for (let y = horizon; y < DAY_N; y++) g[y][x] = 0; // sous l'horizon = masqué
+    for (let x = 1; x <= 7; x++) g[horizon][x] = 1;                                    // ligne d'horizon
+    if (f < 3) for (const x of [2, 4, 6]) gDot(g, x, rayYs[f]);                         // rayons (4ᵉ frame = pause)
+    return g;
+  });
+}
+
+/** Lune en croissant + petite étoile qui scintille. */
+function framesMoon() {
+  const big = gNew(); gDisc(big, 3.4, 4, 3.3);
+  const cut = gNew(); gDisc(cut, 6, 4, 3.5);
+  const base = gNew();
+  for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) base[y][x] = (big[y][x] && !cut[y][x]) ? 1 : 0;
+  const star = [[], [[7, 1]], [[7, 1], [6, 1], [8, 1], [7, 0], [7, 2]], [[7, 1]]];
+  return star.map((dots) => {
+    const g = base.map((r) => r.slice());
+    for (const [x, y] of dots) gDot(g, x, y);
+    return g;
+  });
+}
+
+const FRAME_BUILDERS = {
+  sunrise: () => framesHorizon(true),
+  sunset: () => framesHorizon(false),
+  sun: framesSun,
+  moon: framesMoon,
+};
 
 /** Nom du glyphe selon l'heure : matin (6-9), journée (9-18), soir (18-21), nuit. */
 export function dayGlyphName(date = new Date()) {
@@ -141,24 +204,20 @@ export function dayGlyphName(date = new Date()) {
 }
 
 /**
- * Glyphe dot-matrix du moment de la journée (points jointifs, monochrome).
- * @param {string} name  sunrise | sun | sunset | moon
- * @param {{size?:number}} opts
+ * Frames d'animation d'un glyphe : tableau de contenus SVG (chacun = `<title>` +
+ * cercles). Consommé par `DayGlyphAnimator` pour le défilé image par image.
  */
+export function dayGlyphFrames(name = dayGlyphName()) {
+  const build = FRAME_BUILDERS[name] ?? FRAME_BUILDERS.sun;
+  const title = `<title>${DAY_LABELS[name] ?? ""}</title>`;
+  return { label: DAY_LABELS[name] ?? "", frames: build().map((g) => title + gBake(g)) };
+}
+
+/** Glyphe dot-matrix du moment de la journée (1ʳᵉ frame, pour le rendu initial). */
 export function dayGlyph(name = dayGlyphName(), { size = 46 } = {}) {
-  const rows = TIME_GLYPHS[name] ?? TIME_GLYPHS.sun;
-  const N = rows.length;
-  let body = `<title>${TIME_LABELS[name] ?? ""}</title>`;
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < rows[y].length; x++) {
-      if (rows[y][x] === "#") {
-        const delay = ((x + y) * 0.1).toFixed(2);
-        body += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" style="--d:${delay}s"/>`;
-      }
-    }
-  }
+  const { frames } = dayGlyphFrames(name);
   return `<svg class="day-glyph" data-glyph="${name}" width="${size}" height="${size}" ` +
-    `viewBox="0 0 ${N} ${N}" fill="currentColor" aria-hidden="true">${body}</svg>`;
+    `viewBox="0 0 ${DAY_N} ${DAY_N}" fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
 }
 
 /** Remplit tous les `[data-icon]` d'un sous-arbre (icônes statiques du HTML). */

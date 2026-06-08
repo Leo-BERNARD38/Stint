@@ -22,6 +22,7 @@ import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
 import { EditTaskModal } from "./modals/EditTaskModal.js";
 import { Toast } from "./components/Toast.js";
+import { DayGlyphAnimator } from "./DayGlyphAnimator.js";
 
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
@@ -39,6 +40,7 @@ export class App {
     this.calc = new TimeCalculator(this.store);
     this.formatter = new Formatter(this.store);
     this.timer = new Timer();
+    this.dayGlyphAnimator = new DayGlyphAnimator();
     this.viewDay = startOfDay(new Date());
     this.screen = "app"; // app | settings | guide
     this._ticksSinceRefresh = 0;
@@ -86,6 +88,7 @@ export class App {
     this.timer.on("tick", () => this.#onTick());
     this.render();        // re-rendu avec l'historique complet
     this.timer.start();
+    this.dayGlyphAnimator.start(); // anime le glyphe « moment de la journée »
   }
 
   render() {
