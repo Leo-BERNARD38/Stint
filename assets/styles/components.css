@@ -69,7 +69,7 @@
 }
 .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 .active-meta { flex: 1; min-width: 0; }
-.active-label { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 500; }
+.active-label { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
 .active-name { font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .active-name.idle { color: var(--text-faint); font-weight: 500; }
 .active-timer { font-family: var(--font-display); font-weight: 400; font-size: 42px; line-height: 1; letter-spacing: .02em; }
@@ -92,7 +92,7 @@
 /* Icône : monochrome, grille de points, calée à gauche. */
 .big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--text); flex-shrink: 0; }
 .big-btn .label { font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
-.big-btn .kbd { font-family: var(--font-display); font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; flex-shrink: 0; }
+.big-btn .kbd { font-family: var(--font-body); font-weight: 600; font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; flex-shrink: 0; }
 
 #btnPlay.is-running { background: var(--pause); color: #fff; }
 #btnPlay.is-running:hover { background: color-mix(in srgb, var(--pause) 88%, #000); }
@@ -137,7 +137,7 @@
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
 .total-hero { background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
-.total-hero .k { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 500; opacity: .65; }
+.total-hero .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .7; }
 .total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }
 .total-line { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-1); }
@@ -172,7 +172,7 @@
 
 /* ---------- Onglet « Tâches » : liste par date d'ouverture ---------- */
 .all-tasks { display: flex; flex-direction: column; }
-.at-date { font-family: var(--font-display); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); margin: var(--sp-5) 0 var(--sp-2); }
+.at-date { font-family: var(--font-body); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); margin: var(--sp-5) 0 var(--sp-2); }
 .at-date:first-child { margin-top: 0; }
 .at-task { border-radius: var(--radius-sm); }
 .at-head { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer; border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
@@ -196,7 +196,7 @@
 /* ---------- Segments (table flat : zébrage, pas de bordures) ---------- */
 .table-scroll { overflow-x: auto; border-radius: var(--radius); }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.seg-table th { text-align: left; font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 500; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
+.seg-table th { text-align: left; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 600; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
 .seg-table td { padding: 10px 14px; vertical-align: middle; }
 .seg-table tbody tr { border-radius: var(--radius-sm); }
 .seg-table tbody tr:nth-child(even) td { background: var(--surface); }
@@ -221,7 +221,7 @@
 /* Contrôle segmenté (ex. thème) */
 /* Sous-sections d'une carte de réglages (ex. Horaires) */
 .settings-sub + .settings-sub { margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px dotted var(--dot); }
-.sub-title { font-family: var(--font-display); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); margin: 0 0 var(--sp-3); }
+.sub-title { font-family: var(--font-body); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); margin: 0 0 var(--sp-3); }
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm); padding: 10px 16px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
@@ -323,7 +323,7 @@
 .guide-block p { margin: 0 0 var(--sp-2); color: var(--text-soft); line-height: 1.65; font-size: 14.5px; }
 .guide-block p:last-child { margin-bottom: 0; }
 .guide-block b { color: var(--text); font-weight: 600; }
-.guide kbd { font-family: var(--font-display); font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; margin-left: 6px; }
+.guide kbd { font-family: var(--font-body); font-weight: 600; font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; margin-left: 6px; }
 .guide code { font-family: var(--font-body); font-size: 13px; background: var(--surface-2); border-radius: 5px; padding: 1px 6px; }
 .guide-actions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
 .guide-actions li { display: flex; gap: var(--sp-3); align-items: flex-start; }

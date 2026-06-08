@@ -155,12 +155,19 @@ Notes :
   committer du CSS, vérifier que tout `var(--x)` est défini (cf. §9).
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
   (`--surface`, `--surface-2`) et **espace**. Échelle d'espacement `--sp-1..8`.
-- **Esthétique « Nothing OS »** : micro-labels en capitales **Bitcount**
-  (`--font-display`), **filets pointillés** (`--dot`), **grille de points** sur la
-  timeline (`--dot-grid`), point « live » rouge.
+- **Esthétique « Nothing OS »** : **filets pointillés** (`--dot`), **grille de
+  points** sur la timeline (`--dot-grid`), **pilules** (sélecteur de jour, onglets
+  segmentés, « Aujourd'hui »), point « live » rouge.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
-  wordmark, titres, afficheurs, micro-labels) ; `--font-body` = **Inter** (corps).
-  **Pas de serif.** Les chiffres de durée sont en `tabular-nums`.
+  wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
+  `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
+  comprises — pour la lisibilité). **Pas de serif.** Durées en `tabular-nums`.
+- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 5×6**
+  (points jointifs, même rendu que la police), via `dotIcon()` dans `ui/icons.js`.
+  Le reste de l'UI garde les silhouettes Lucide (`icon()`).
+- **Couleurs des tâches** : 3 palettes **par catégorie** (`PALETTES` dans
+  `constants.js`) — dev = froides, support = chaudes, autre = neutres. Attribution
+  cyclique au sein de la catégorie (`Store.#nextColor(type)`).
 - Thème appliqué sans flash par un petit script inline dans `<head>` (lit le thème
   stocké avant le 1ᵉʳ rendu). `ThemeView` met aussi à jour `<meta name="theme-color">`.
 
