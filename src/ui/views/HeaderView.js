@@ -14,7 +14,7 @@ export class HeaderView {
     this.wordmark.addEventListener("input", (e) => {
       const name = e.target.value.trim();
       this.app.store.setAppName(name);
-      document.title = (name || "Stint") + " — Chronométrage";
+      document.title = name || "Stint";
     });
     this.wordmark.addEventListener("blur", () => {
       if (!this.wordmark.value.trim()) this.app.store.setAppName("Stint");
@@ -26,7 +26,7 @@ export class HeaderView {
   render() {
     const { settings, segments, meta } = this.app.store;
     const name = settings.appName || "Stint";
-    document.title = name + " — Chronométrage";
+    document.title = name;
     if (document.activeElement !== this.wordmark) this.wordmark.value = name;
 
     this.pill.classList.remove("warn", "crit");
