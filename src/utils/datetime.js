@@ -51,6 +51,18 @@ export function parseDateInput(str) {
   return new Date(y, m - 1, dd);
 }
 
+/** Valeur d'un <input type="datetime-local"> : "YYYY-MM-DDTHH:MM". */
+export function fmtDateTimeLocal(d) {
+  return fmtDateInput(d) + "T" + fmtClock(d);
+}
+
+export function parseDateTimeLocal(str) {
+  const [datePart, timePart] = String(str).split("T");
+  const [y, m, dd] = datePart.split("-").map(Number);
+  const [h, mi] = (timePart || "00:00").split(":").map(Number);
+  return new Date(y, m - 1, dd, h, mi, 0, 0);
+}
+
 /** Sérialise une `Date` en ISO local avec offset, ex. 2026-06-03T09:12:00+02:00. */
 export function toLocalISO(d) {
   const off = -d.getTimezoneOffset();

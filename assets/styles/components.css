@@ -175,7 +175,7 @@
 .seg-table tbody tr:nth-child(even) td { background: var(--surface); }
 .seg-table tbody tr:hover td { background: var(--surface-hover); }
 .seg-table tbody tr.running td { background: color-mix(in srgb, var(--play) 10%, transparent); }
-.seg-table input[type="time"], .seg-table input[type="date"], .seg-table select { border: none; background: transparent; border-radius: 6px; padding: 4px 6px; color: var(--text); }
+.seg-table input[type="time"], .seg-table input[type="date"], .seg-table input[type="datetime-local"], .seg-table select { border: none; background: transparent; border-radius: 6px; padding: 4px 6px; color: var(--text); }
 .seg-table input:hover, .seg-table select:hover { background: var(--bg); }
 .seg-table input:focus, .seg-table select:focus { outline: none; background: var(--bg); box-shadow: 0 0 0 2px var(--ring); }
 .seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
@@ -248,8 +248,12 @@
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, #000 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
 .modal-backdrop.open { display: flex; }
-.modal { background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
-.modal h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 21px; font-weight: 600; }
+.modal { position: relative; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
+.modal h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 21px; font-weight: 600; padding-right: 34px; }
+.modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border: none; border-radius: var(--radius-xs); background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; transition: background-color .15s var(--ease), color .15s var(--ease); }
+.modal-close:hover { background: var(--surface); color: var(--text); }
+.modal-close:active { transform: scale(.92); }
+.modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }

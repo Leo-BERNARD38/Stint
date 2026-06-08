@@ -153,7 +153,6 @@
           <thead>
             <tr>
               <th>Tâche</th>
-              <th class="col-date">Date</th>
               <th>Début</th>
               <th>Fin</th>
               <th title="Temps brut : compte le temps réel écoulé, sans rognage sur les horaires de travail (nuits, heures sup).">Brut&nbsp;ⓘ</th>
@@ -404,6 +403,7 @@
   <!-- ============================ MODALES ============================ -->
   <div class="modal-backdrop" id="newTaskModal">
     <div class="modal">
+      <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3>Nouvelle tâche</h3>
       <p class="modal-sub">Elle démarre immédiatement. Pour une tâche Jira, mets la clé comme nom (ex. MOD-123).</p>
       <div class="field" style="margin-bottom:12px;">
@@ -423,15 +423,16 @@
 
   <div class="modal-backdrop" id="resumeModal">
     <div class="modal">
+      <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3>Reprendre une tâche</h3>
       <p class="modal-sub">Reprend la tâche choisie (arrête l'active, relance un segment).</p>
       <div class="resume-list" id="resumeList"></div>
-      <div class="modal-actions"><button class="btn" data-close>Fermer</button></div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="editTaskModal">
     <div class="modal">
+      <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3>Éditer la tâche</h3>
       <p class="modal-sub">Renommer, retyper, recolorer, archiver ou supprimer.</p>
       <div class="field" style="margin-bottom:12px;">

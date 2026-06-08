@@ -1,5 +1,5 @@
 import { el, escapeHtml } from "../../utils/dom.js";
-import { fmtClock, fmtDateInput, parseDateInput, toLocalISO } from "../../utils/datetime.js";
+import { fmtDateTimeLocal, parseDateTimeLocal, toLocalISO } from "../../utils/datetime.js";
 import { icon } from "../icons.js";
 
 /**
@@ -29,7 +29,7 @@ export class SegmentTableView {
     this.body.innerHTML = "";
     const segs = store.segmentsForDay(viewDay).sort((a, b) => a.startMs() - b.startMs());
     if (segs.length === 0) {
-      this.body.innerHTML = '<tr><td colspan="7" class="empty">Aucun segment ce jour.</td></tr>';
+      this.body.innerHTML = '<tr><td colspan="6" class="empty">Aucun segment ce jour.</td></tr>';
       return;
     }
     for (const seg of segs) this.body.appendChild(this.#row(seg));
@@ -50,10 +50,9 @@ export class SegmentTableView {
 
     tr.innerHTML =
       `<td><select data-seg="${seg.id}" data-field="taskId">${options}</select></td>` +
-      `<td class="col-date"><input type="date" data-seg="${seg.id}" data-field="startDate" value="${fmtDateInput(start)}"></td>` +
-      `<td><input type="time" data-seg="${seg.id}" data-field="startTime" value="${fmtClock(start)}"></td>` +
+      `<td><input type="datetime-local" data-seg="${seg.id}" data-field="start" value="${fmtDateTimeLocal(start)}"></td>` +
       `<td>${end
-        ? `<input type="time" data-seg="${seg.id}" data-field="endTime" value="${fmtClock(end)}">`
+        ? `<input type="datetime-local" data-seg="${seg.id}" data-field="end" value="${fmtDateTimeLocal(end)}">`
         : '<span style="color:var(--play);font-weight:600">en cours</span>'}</td>` +
       `<td><input type="checkbox" class="raw-toggle" data-seg="${seg.id}" data-field="raw"${seg.raw ? " checked" : ""} title="Temps brut (sans rognage ouvré)"></td>` +
       `<td class="seg-dur">${this.app.formatter.clock(minutes)}</td>` +
@@ -71,23 +70,11 @@ export class SegmentTableView {
 
     const patch = { taskId: field("taskId").value, raw: field("raw").checked };
 
-    const dateInput = field("startDate");
-    const day = dateInput ? parseDateInput(dateInput.value) : new Date(seg.start);
+    const startInput = field("start");
+    if (startInput && startInput.value) patch.start = toLocalISO(parseDateTimeLocal(startInput.value));
 
-    const start = new Date(seg.start);
-    start.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
-    const [sh, sm] = field("startTime").value.split(":").map(Number);
-    start.setHours(sh, sm, 0, 0);
-    patch.start = toLocalISO(start);
-
-    const endInput = field("endTime");
-    if (endInput) {
-      const end = new Date(seg.end);
-      end.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
-      const [eh, em] = endInput.value.split(":").map(Number);
-      end.setHours(eh, em, 0, 0);
-      patch.end = toLocalISO(end);
-    }
+    const endInput = field("end");
+    if (endInput && endInput.value) patch.end = toLocalISO(parseDateTimeLocal(endInput.value));
 
     this.app.store.updateSegment(segId, patch);
 
