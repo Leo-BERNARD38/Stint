@@ -44,68 +44,66 @@ export function icon(name, { size = 18, solid = false } = {}) {
 
 /* ============================================================================
    Icônes « grille de points » (esthétique Nothing OS / police dot-matrix).
-   Glyphes monochromes dessinés sur une grille fixe 5×6, points jointifs (sans
-   espace) pour retrouver exactement le rendu de la police Bitcount. Réservés
-   aux gros boutons d'action ; le reste de l'UI garde les silhouettes Lucide.
+   Glyphes monochromes dessinés sur une grille carrée 6×6, points jointifs
+   (sans espace) pour retrouver exactement le rendu de la police Bitcount.
+   Réservés aux gros boutons d'action ; le reste de l'UI garde les Lucide.
    ============================================================================ */
 
-/** Glyphes en bitmap 5 colonnes × 6 rangées — un '#' = un point allumé. */
+/** Glyphes en bitmap 6×6 — un '#' = un point allumé. */
 const DOT_GLYPHS = {
   plus: [
-    "..#..",
-    "..#..",
-    "#####",
-    "#####",
-    "..#..",
-    "..#..",
+    "..##..",
+    "..##..",
+    "######",
+    "######",
+    "..##..",
+    "..##..",
   ],
   pause: [
-    "##.##",
-    "##.##",
-    "##.##",
-    "##.##",
-    "##.##",
-    "##.##",
+    "##..##",
+    "##..##",
+    "##..##",
+    "##..##",
+    "##..##",
+    "##..##",
   ],
   play: [
-    "#....",
-    "###..",
-    "#####",
-    "#####",
-    "###..",
-    "#....",
+    "#.....",
+    "###...",
+    "#####.",
+    "#####.",
+    "###...",
+    "#.....",
   ],
   check: [
-    ".....",
-    "....#",
-    "...#.",
-    "#.#..",
-    ".#...",
-    ".....",
+    "......",
+    ".....#",
+    "#...#.",
+    ".#.#..",
+    "..#...",
+    "......",
   ],
-  "rotate-ccw": [
-    ".#...",
-    "###..",
-    "#..#.",
-    "#...#",
-    "#...#",
-    ".###.",
+  // « Reprise » : barre + triangle (reprendre la lecture d'une tâche).
+  resume: [
+    "#.#...",
+    "#.##..",
+    "#.###.",
+    "#.###.",
+    "#.##..",
+    "#.#...",
   ],
 };
 
-const DOT_COLS = 5;   // largeur de la grille
-const DOT_ROWS = 6;   // hauteur de la grille
-const DOT_BOX = 6;    // viewBox carré (grille 5 centrée → marge de 0.5 à gauche/droite)
+const DOT_BOX = 6;    // grille 6×6 = viewBox carré
 
 /** Points d'un bitmap : pitch 1, rayon 0.5 ⇒ points jointifs (aucun espace). */
 function dotsFromBitmap(rows) {
-  const padX = (DOT_BOX - DOT_COLS) / 2;
   let out = "";
   for (let y = 0; y < rows.length; y++) {
     const row = rows[y];
     for (let x = 0; x < row.length; x++) {
       if (row[x] === "#") {
-        out += `<circle cx="${(padX + x + 0.5).toFixed(2)}" cy="${(y + 0.5).toFixed(2)}" r="0.5"/>`;
+        out += `<circle cx="${(x + 0.5).toFixed(1)}" cy="${(y + 0.5).toFixed(1)}" r="0.5"/>`;
       }
     }
   }
@@ -114,7 +112,7 @@ function dotsFromBitmap(rows) {
 
 /**
  * Renvoie le balisage SVG d'une icône en grille de points (monochrome).
- * @param {string} name  plus | pause | play | check | rotate-ccw
+ * @param {string} name  plus | pause | play | check | resume
  * @param {{size?:number}} opts
  */
 export function dotIcon(name, { size = 24 } = {}) {
