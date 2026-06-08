@@ -170,8 +170,9 @@ Notes :
   `grid-template-rows 0fr→1fr`). Dans « Total journée », **glyphe `dayGlyph`**
   (lever de soleil / soleil / coucher / lune selon l'heure, grille 13×13, points
   jointifs ; soleil = vrai cercle + rayons isolés) animé **image par image** par
-  `DayGlyphAnimator` (vraie animation de points en JS, 500 ms/frame, pas de CSS).
-  Timeline = carte au grand rayon,
+  `DayGlyphAnimator` (vraie animation de points en JS, 1 s/frame, pas de CSS).
+  Timeline = carte au grand rayon, **infobulle maison** (`.tl-tip`, suit le
+  curseur ; pas de `title` natif),
   points en fond, blocs arrondis **affleurant le container** (sans marge). Tout
   est neutralisé sous `prefers-reduced-motion`.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
