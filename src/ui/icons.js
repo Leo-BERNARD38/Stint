@@ -42,12 +42,119 @@ export function icon(name, { size = 18, solid = false } = {}) {
     `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }
 
+/* ============================================================================
+   Icônes « grille de points » (esthétique Nothing OS / police dot-matrix).
+   Glyphes monochromes composés de points, sur une grille 7×7. Réservés aux
+   gros boutons d'action ; le reste de l'UI garde les silhouettes Lucide.
+   ============================================================================ */
+
+/** Glyphes en bitmap 7×7 — un '#' = un point allumé. */
+const DOT_GLYPHS = {
+  plus: [
+    "...#...",
+    "...#...",
+    "...#...",
+    "#######",
+    "...#...",
+    "...#...",
+    "...#...",
+  ],
+  pause: [
+    ".##.##.",
+    ".##.##.",
+    ".##.##.",
+    ".##.##.",
+    ".##.##.",
+    ".##.##.",
+    ".##.##.",
+  ],
+  play: [
+    "##.....",
+    "####...",
+    "######.",
+    "#######",
+    "######.",
+    "####...",
+    "##.....",
+  ],
+  check: [
+    ".......",
+    "......#",
+    ".....#.",
+    "#...#..",
+    ".#.#...",
+    "..#....",
+    ".......",
+  ],
+};
+
+const DOT_GRID = 7;          // 7×7
+const DOT_R = 1.25;          // rayon d'un point (viewBox 24)
+
+/** Un point centré sur la cellule (col,row) d'une grille DOT_GRID dans 24×24. */
+function dot(col, row) {
+  const cell = 24 / DOT_GRID;
+  const cx = (col + 0.5) * cell;
+  const cy = (row + 0.5) * cell;
+  return `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${DOT_R}"/>`;
+}
+
+/** Points d'un bitmap (rangées de chaînes, '#' = point). */
+function dotsFromBitmap(rows) {
+  let out = "";
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] === "#") out += dot(x, y);
+    }
+  });
+  return out;
+}
+
+/**
+ * Flèche circulaire en points (glyphe « rotate-ccw » / Reprise). Tracée par
+ * trigonométrie pour une courbe propre, avec une pointe de flèche au bout.
+ */
+function dotsRotate() {
+  const cx = 12, cy = 12, R = 7.4, n = 12;
+  const a0 = -70, a1 = 250;               // arc ~320°, ouverture en haut
+  const rad = (d) => (d * Math.PI) / 180;
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    const a = rad(a0 + ((a1 - a0) * i) / (n - 1));
+    out += `<circle cx="${(cx + R * Math.cos(a)).toFixed(2)}" cy="${(cy + R * Math.sin(a)).toFixed(2)}" r="${DOT_R}"/>`;
+  }
+  // Pointe de flèche au bout de l'arc (a1), orientée selon la tangente.
+  const tip = rad(a1);
+  const tx = cx + R * Math.cos(tip), ty = cy + R * Math.sin(tip);
+  const dir = tip + Math.PI / 2;          // tangente (sens de parcours)
+  const L = 3.4;
+  for (const off of [rad(150), -rad(150)]) {
+    const bx = tx + L * Math.cos(dir + off);
+    const by = ty + L * Math.sin(dir + off);
+    out += `<circle cx="${bx.toFixed(2)}" cy="${by.toFixed(2)}" r="${DOT_R}"/>`;
+  }
+  return out;
+}
+
+/**
+ * Renvoie le balisage SVG d'une icône en grille de points (monochrome).
+ * @param {string} name  plus | pause | play | check | rotate-ccw
+ * @param {{size?:number}} opts
+ */
+export function dotIcon(name, { size = 24 } = {}) {
+  const body = name === "rotate-ccw"
+    ? dotsRotate()
+    : dotsFromBitmap(DOT_GLYPHS[name] ?? []);
+  return `<svg class="icon dot-icon" width="${size}" height="${size}" viewBox="0 0 24 24" ` +
+    `fill="currentColor" stroke="none" aria-hidden="true">${body}</svg>`;
+}
+
 /** Remplit tous les `[data-icon]` d'un sous-arbre (icônes statiques du HTML). */
 export function renderStaticIcons(root = document) {
   root.querySelectorAll("[data-icon]").forEach((node) => {
-    node.innerHTML = icon(node.dataset.icon, {
-      size: node.dataset.iconSize ? Number(node.dataset.iconSize) : 18,
-      solid: node.dataset.iconSolid === "true",
-    });
+    const size = node.dataset.iconSize ? Number(node.dataset.iconSize) : 18;
+    node.innerHTML = node.dataset.dot === "true"
+      ? dotIcon(node.dataset.icon, { size })
+      : icon(node.dataset.icon, { size, solid: node.dataset.iconSolid === "true" });
   });
 }

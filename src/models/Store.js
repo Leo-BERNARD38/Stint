@@ -1,5 +1,5 @@
 import { EventEmitter } from "../core/EventEmitter.js";
-import { SCHEMA_VERSION, PALETTE, DAY_MS } from "../core/constants.js";
+import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS } from "../core/constants.js";
 import { Settings } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
@@ -135,13 +135,20 @@ export class Store extends EventEmitter {
     return prefix + Date.now().toString(36) + this.#idSeq.toString(36);
   }
 
-  #nextColor() {
-    const used = new Set(this.tasks.map((t) => t.color));
-    return PALETTE.find((c) => !used.has(c)) ?? PALETTE[this.tasks.length % PALETTE.length];
+  /**
+   * Couleur suivante pour une tâche, **dans la famille de son type**.
+   * On prend la première teinte encore libre de la catégorie (variation maximale
+   * entre tâches d'un même type) ; une fois la palette épuisée, on cycle.
+   */
+  #nextColor(type) {
+    const pal = PALETTES[type] ?? PALETTE;
+    const sameType = this.tasks.filter((t) => t.type === type);
+    const used = new Set(sameType.map((t) => t.color));
+    return pal.find((c) => !used.has(c)) ?? pal[sameType.length % pal.length];
   }
 
   #createTask({ name, type }) {
-    const task = new Task({ id: this.#uid("t_"), name, type, color: this.#nextColor() });
+    const task = new Task({ id: this.#uid("t_"), name, type, color: this.#nextColor(type) });
     this.tasks.push(task);
     return task;
   }

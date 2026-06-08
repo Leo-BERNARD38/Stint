@@ -1,5 +1,5 @@
 import { el, escapeHtml } from "../../utils/dom.js";
-import { icon } from "../icons.js";
+import { dotIcon } from "../icons.js";
 
 /** Barre de contrôle : carte de tâche active + 4 boutons (Play/Pause, Nouvelle, Reprise, Terminer). */
 export class HeroView {
@@ -30,7 +30,7 @@ export class HeroView {
     // glyphe Play/Pause : (re)dessiné uniquement quand l'état change → l'anim joue à bon escient
     const mode = running ? "pause" : "play";
     if (mode !== this._playMode) {
-      this.playGlyph.innerHTML = icon(mode, { size: 26, solid: true });
+      this.playGlyph.innerHTML = dotIcon(mode, { size: 26 });
       this._playMode = mode;
     }
     this.playBtn.classList.toggle("is-running", running);

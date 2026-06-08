@@ -38,8 +38,12 @@ header {
   .control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
 }
 
-/* ---------- Onglets ---------- */
-.tabs { display: flex; gap: var(--sp-1); margin: var(--sp-5) 0 var(--sp-4); }
+/* ---------- Onglets (piste de la pilule segmentée) ---------- */
+.tabs {
+  display: inline-flex; gap: 2px; width: fit-content;
+  background: var(--surface); border-radius: 999px; padding: 4px;
+  margin: var(--sp-5) 0 var(--sp-4);
+}
 
 /* ---------- Écrans (application / réglages / guide) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); margin-inline: auto; }
