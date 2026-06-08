@@ -103,7 +103,14 @@
       </div>
     </div>
 
-    <!-- Sélecteur de jour : commun aux onglets Journée et Segments -->
+    <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="journee" role="tab">Journée</button>
+      <button class="tab" data-tab="segments" role="tab">Segments</button>
+      <button class="tab" data-tab="taches" role="tab">Tâches</button>
+    </nav>
+
+    <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
     <div class="day-head" id="dayHead">
       <div class="daynav">
         <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
@@ -113,13 +120,6 @@
       <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
       <span class="today-badge" id="todayBadge"></span>
     </div>
-
-    <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
-    <nav class="tabs" role="tablist">
-      <button class="tab active" data-tab="journee" role="tab">Journée</button>
-      <button class="tab" data-tab="segments" role="tab">Segments</button>
-      <button class="tab" data-tab="taches" role="tab">Tâches</button>
-    </nav>
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
     <section class="tab-panel" data-panel="journee">
