@@ -88,7 +88,6 @@
   text-align: left; color: var(--text); transition: background-color .14s ease, transform .06s ease;
 }
 .big-btn:hover { background: var(--surface-hover); }
-.big-btn:active { transform: translateY(1px); }
 .big-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Icône : monochrome, grille de points, calée à gauche. */
 .big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--text); flex-shrink: 0; }
@@ -367,14 +366,10 @@
               transform .12s var(--ease), box-shadow .15s var(--ease);
 }
 
-/* Feedback tactile (enfoncement) */
-.big-btn { transition: background-color .16s var(--ease), transform .16s var(--ease-spring), box-shadow .2s var(--ease); }
-.big-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
-.big-btn:active { transform: translateY(0) scale(.97); box-shadow: none; }
-/* Le glyphe respire avec le bouton : léger zoom au survol, rebond à l'appui. */
-.big-btn .glyph { transition: transform .2s var(--ease-spring); }
-.big-btn:hover .glyph { transform: scale(1.1); }
-.big-btn:active .glyph { transform: scale(.86); }
+/* Feedback sobre, cohérent avec le reste : survol = changement de fond (défini
+   plus haut), appui = léger enfoncement. Pas d'élévation ni de zoom du glyphe. */
+.big-btn { transition: background-color .16s var(--ease), transform .12s var(--ease); }
+.big-btn:active { transform: scale(.97); }
 .mini-btn:active, .btn:active, .icon-btn:active, .daynav button:active, .btn-ghost:active,
 .btn-back:active, .weekdays button:active, .gap-fill:active,
 .backup-pill:active { transform: scale(.92); }

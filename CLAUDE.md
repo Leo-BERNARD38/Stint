@@ -164,8 +164,8 @@ Notes :
   pilule. Sélecteur de jour **en couleurs inversées** (comme « Total du jour »).
 - **Onglets = contrôle segmenté** avec **curseur glissant** : une pilule `::before`
   sur `.tabs` translatée via `:has([data-tab=…].active)` (3 colonnes égales).
-- **Motion** : flat mais fluide — survol des gros boutons (translation + zoom du
-  glyphe), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
+- **Motion** : flat mais fluide — survol sobre des gros boutons (changement de
+  fond, sans élévation), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
   `grid-template-rows 0fr→1fr`). Dans « Total journée », **glyphe `dayGlyph`**
   (lever de soleil / soleil / coucher / lune selon l'heure, grille 13×13, points
@@ -178,7 +178,7 @@ Notes :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
   comprises — pour la lisibilité). **Pas de serif.** Durées en `tabular-nums`.
-- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 5×5**
+- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 7×7**
   (carrée, points jointifs, traits 1 point pour « + » et « pause » ; même rendu
   que la police), via `dotIcon()` dans `ui/icons.js`. « Reprise » = barre +
   triangle (clé `resume`).
