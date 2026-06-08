@@ -7,12 +7,36 @@ export const STORAGE_KEY = "stint.v1";
 export const SCHEMA_VERSION = 4;
 export const DAY_MS = 86_400_000;
 
-/** Palette assignée automatiquement aux tâches (cyclique). */
-export const PALETTE = [
-  "#4F46E5", "#0891B2", "#16A34A", "#CA8A04", "#DC2626",
-  "#DB2777", "#7C3AED", "#2563EB", "#059669", "#EA580C",
-  "#9333EA", "#0D9488", "#65A30D", "#E11D48", "#475569",
-];
+/**
+ * Palettes de couleurs assignées automatiquement aux tâches, **par catégorie**.
+ * Chaque type a sa propre famille chromatique : on distingue ainsi les catégories
+ * au premier coup d'œil, tandis que les petites variations au sein d'une famille
+ * permettent de différencier les tâches entre elles. Généreuses et **cycliques**
+ * (on repart au début une fois la palette épuisée).
+ *   - dev     → froides (indigo, bleu, cyan, sarcelle)
+ *   - support → chaudes (rouge, orange, ambre, rose)
+ *   - autre   → neutres (ardoise, gris, pierre, zinc)
+ */
+export const PALETTES = {
+  dev: [
+    "#4F46E5", "#2563EB", "#0EA5E9", "#0891B2", "#0D9488",
+    "#6366F1", "#1D4ED8", "#0284C7", "#0E7490", "#0F766E",
+    "#3B82F6", "#4338CA",
+  ],
+  support: [
+    "#DC2626", "#EA580C", "#F59E0B", "#E11D48", "#DB2777",
+    "#B91C1C", "#C2410C", "#D97706", "#BE123C", "#BE185D",
+    "#F43F5E", "#EF4444",
+  ],
+  autre: [
+    "#475569", "#64748B", "#334155", "#525252", "#737373",
+    "#57534E", "#78716C", "#52525B", "#6B7280", "#404040",
+    "#44403C", "#3F3F46",
+  ],
+};
+
+/** Palette à plat (toutes catégories confondues) — repli générique. */
+export const PALETTE = [...PALETTES.dev, ...PALETTES.support, ...PALETTES.autre];
 
 /** Libellés des jours, indexés sur ISO (1 = lundi … 7 = dimanche). */
 export const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
