@@ -28,9 +28,18 @@ export class AllTasksView {
     });
   }
 
+  /**
+   * Plie/déplie une tâche en agissant sur le DOM vivant (pas de re-render
+   * complet) pour que la transition CSS hauteur + chevron puisse jouer.
+   */
   #toggle(id) {
-    this.expanded.has(id) ? this.expanded.delete(id) : this.expanded.add(id);
-    this.render();
+    const willOpen = !this.expanded.has(id);
+    willOpen ? this.expanded.add(id) : this.expanded.delete(id);
+    const head = this.root.querySelector(`[data-task-toggle="${CSS.escape(id)}"]`);
+    const card = head?.closest(".at-task");
+    if (!card) { this.render(); return; }
+    card.classList.toggle("open", willOpen);
+    head.setAttribute("aria-expanded", String(willOpen));
   }
 
   render() {
@@ -86,15 +95,17 @@ export class AllTasksView {
         `<span class="at-total">${fmt.clock(total / 60000)}</span>`,
     }));
 
-    if (open) {
-      const list = createEl("div", { className: "at-segs" });
-      if (segs.length === 0) {
-        list.appendChild(createEl("div", { className: "at-empty", text: "Aucun segment." }));
-      } else {
-        for (const s of segs) list.appendChild(this.#segLine(s));
-      }
-      card.appendChild(list);
+    // La liste est toujours dans le DOM (repliée en hauteur 0 via CSS) : c'est
+    // ce qui permet d'animer l'ouverture/fermeture sans reconstruire la carte.
+    const wrap = createEl("div", { className: "at-segs-wrap" });
+    const list = createEl("div", { className: "at-segs" });
+    if (segs.length === 0) {
+      list.appendChild(createEl("div", { className: "at-empty", text: "Aucun segment." }));
+    } else {
+      for (const s of segs) list.appendChild(this.#segLine(s));
     }
+    wrap.appendChild(list);
+    card.appendChild(wrap);
     return card;
   }
 

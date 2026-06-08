@@ -117,6 +117,24 @@ export function dotIcon(name, { size = 24 } = {}) {
     `fill="currentColor" stroke="none" aria-hidden="true">${body}</svg>`;
 }
 
+/**
+ * Widget décoratif « grille de points » : une matrice de points qui ondulent en
+ * diagonale (animation pilotée par CSS via `--d` = délai par point). Pensé pour
+ * vivre dans le bloc « Total journée » et battre plus fort quand une tâche tourne.
+ * @param {{cols?:number, rows?:number, size?:number}} opts
+ */
+export function dotWave({ cols = 6, rows = 6, size = 46 } = {}) {
+  let body = "";
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const delay = ((x + y) * 0.09).toFixed(2);
+      body += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.4" style="--d:${delay}s"/>`;
+    }
+  }
+  return `<svg class="dot-wave" width="${size}" height="${size}" viewBox="0 0 ${cols} ${rows}" ` +
+    `fill="currentColor" aria-hidden="true">${body}</svg>`;
+}
+
 /** Remplit tous les `[data-icon]` d'un sous-arbre (icônes statiques du HTML). */
 export function renderStaticIcons(root = document) {
   root.querySelectorAll("[data-icon]").forEach((node) => {
