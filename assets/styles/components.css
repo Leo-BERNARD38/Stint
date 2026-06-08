@@ -128,8 +128,8 @@
   background-size: 11px 11px; background-position: center;
 }
 .tl-lunch { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--bg) 45%, transparent); }
-.tl-seg { position: absolute; top: 9px; bottom: 9px; border-radius: var(--radius-pill); cursor: pointer; min-width: 6px; transition: filter .14s var(--ease), transform .14s var(--ease-spring); }
-.tl-seg:hover { filter: brightness(1.08); transform: scaleY(1.12); }
+.tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; transition: filter .14s var(--ease); }
+.tl-seg:hover { filter: brightness(1.08); }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
 .tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease) infinite; }
 .tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
@@ -143,12 +143,10 @@
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
 .total-hero { position: relative; overflow: hidden; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
-/* Widget de points animés (coin haut-droit) : ondulation diagonale, plus vive en activité. */
-.total-hero .dot-wave { position: absolute; top: var(--sp-4); right: var(--sp-4); width: 46px; height: 46px; color: var(--accent-text); pointer-events: none; --peak: .5; }
-.total-hero.is-live .dot-wave { --peak: 1; }
-.dot-wave circle { transform-box: fill-box; transform-origin: center; opacity: .16; animation: dotWave 2.4s var(--ease) infinite; animation-delay: var(--d, 0s); }
-.total-hero.is-live .dot-wave circle { animation-duration: 1.5s; }
-@keyframes dotWave { 0%, 100% { opacity: .16; transform: scale(.6); } 50% { opacity: var(--peak); transform: scale(1); } }
+/* Glyphe « moment de la journée » (coin haut-droit) : points jointifs, scintillement lent et sobre. */
+.total-hero .day-glyph { position: absolute; top: var(--sp-4); right: var(--sp-4); width: 46px; height: 46px; color: var(--accent-text); pointer-events: none; }
+.day-glyph circle { opacity: 1; animation: dayBreath 4.2s var(--ease) infinite; animation-delay: var(--d, 0s); }
+@keyframes dayBreath { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 .total-hero .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .7; }
 .total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }

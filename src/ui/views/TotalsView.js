@@ -1,7 +1,7 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { TASK_TYPES } from "../../core/constants.js";
 import { createCopyButton } from "../components/CopyButton.js";
-import { dotWave } from "../icons.js";
+import { dayGlyph } from "../icons.js";
 
 /** Totaux du jour : total mis en avant (avec copie) + ventilation par type. */
 export class TotalsView {
@@ -15,13 +15,12 @@ export class TotalsView {
     const { total, byType, segments } = this.app.calc.totalsForDay(viewDay);
     this.root.innerHTML = "";
 
-    // total journée, mis en avant. Le widget de points bat plus fort quand une
-    // tâche tourne (repère vivant de l'activité en cours).
-    const running = !!this.app.store.activeSegment();
+    // total journée, mis en avant. Le glyphe « moment de la journée » (lever de
+    // soleil / soleil / coucher / lune) reflète l'heure et s'anime sobrement.
     const hero = createEl("div", {
-      className: "total-hero" + (running ? " is-live" : ""),
+      className: "total-hero",
       html:
-        dotWave({ cols: 6, rows: 6, size: 46 }) +
+        dayGlyph(undefined, { size: 46 }) +
         `<div class="k">Total journée</div><div class="v">${fmt.clock(total / 60000)}</div>`,
     });
     const copyRow = createEl("div", { className: "copy-row" });

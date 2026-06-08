@@ -117,22 +117,48 @@ export function dotIcon(name, { size = 24 } = {}) {
     `fill="currentColor" stroke="none" aria-hidden="true">${body}</svg>`;
 }
 
+/* ============================================================================
+   Glyphe « moment de la journée » — un vrai élément (lever de soleil, soleil,
+   coucher, lune) choisi selon l'heure, dessiné en points jointifs (r=0.5, comme
+   les icônes) sur une grille 7×7. Points éteints = non dessinés (100 % éteints).
+   Vit dans « Total journée » avec une animation lente et sobre (CSS).
+   ============================================================================ */
+const TIME_GLYPHS = {
+  sunrise: ["...#...", "..#.#..", ".......", "..###..", ".#####.", "#######", "......."],
+  sun:     ["...#...", ".#...#.", "..###..", "#.###.#", "..###..", ".#...#.", "...#..."],
+  sunset:  [".......", "..###..", ".#####.", "#######", ".......", "..#.#..", "...#..."],
+  moon:    ["..##...", ".##....", "##.....", "##.....", "##.....", ".##....", "..##..."],
+};
+const TIME_LABELS = { sunrise: "Matinée", sun: "Journée", sunset: "Soirée", moon: "Nuit" };
+
+/** Nom du glyphe selon l'heure : matin (6-9), journée (9-18), soir (18-21), nuit. */
+export function dayGlyphName(date = new Date()) {
+  const h = date.getHours();
+  if (h >= 6 && h < 9) return "sunrise";
+  if (h >= 9 && h < 18) return "sun";
+  if (h >= 18 && h < 21) return "sunset";
+  return "moon";
+}
+
 /**
- * Widget décoratif « grille de points » : une matrice de points qui ondulent en
- * diagonale (animation pilotée par CSS via `--d` = délai par point). Pensé pour
- * vivre dans le bloc « Total journée » et battre plus fort quand une tâche tourne.
- * @param {{cols?:number, rows?:number, size?:number}} opts
+ * Glyphe dot-matrix du moment de la journée (points jointifs, monochrome).
+ * @param {string} name  sunrise | sun | sunset | moon
+ * @param {{size?:number}} opts
  */
-export function dotWave({ cols = 6, rows = 6, size = 46 } = {}) {
-  let body = "";
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      const delay = ((x + y) * 0.09).toFixed(2);
-      body += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.4" style="--d:${delay}s"/>`;
+export function dayGlyph(name = dayGlyphName(), { size = 46 } = {}) {
+  const rows = TIME_GLYPHS[name] ?? TIME_GLYPHS.sun;
+  const N = rows.length;
+  let body = `<title>${TIME_LABELS[name] ?? ""}</title>`;
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      if (rows[y][x] === "#") {
+        const delay = ((x + y) * 0.1).toFixed(2);
+        body += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5" style="--d:${delay}s"/>`;
+      }
     }
   }
-  return `<svg class="dot-wave" width="${size}" height="${size}" viewBox="0 0 ${cols} ${rows}" ` +
-    `fill="currentColor" aria-hidden="true">${body}</svg>`;
+  return `<svg class="day-glyph" data-glyph="${name}" width="${size}" height="${size}" ` +
+    `viewBox="0 0 ${N} ${N}" fill="currentColor" aria-hidden="true">${body}</svg>`;
 }
 
 /** Remplit tous les `[data-icon]` d'un sous-arbre (icônes statiques du HTML). */

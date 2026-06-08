@@ -166,10 +166,11 @@ Notes :
 - **Motion** : flat mais fluide — survol des gros boutons (translation + zoom du
   glyphe), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
-  `grid-template-rows 0fr→1fr`), **widget `dotWave`** (points ondulants) dans
-  « Total journée », plus vif quand une tâche tourne (`.total-hero.is-live`).
-  Timeline = carte au grand rayon, points en fond, blocs en pilule. Tout est
-  neutralisé sous `prefers-reduced-motion`.
+  `grid-template-rows 0fr→1fr`). Dans « Total journée », **glyphe `dayGlyph`**
+  (lever de soleil / soleil / coucher / lune selon l'heure, points jointifs,
+  scintillement lent et sobre `dayBreath`). Timeline = carte au grand rayon,
+  points en fond, blocs arrondis **affleurant le container** (sans marge). Tout
+  est neutralisé sous `prefers-reduced-motion`.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
