@@ -168,9 +168,10 @@ Notes :
   glyphe), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
   `grid-template-rows 0fr→1fr`). Dans « Total journée », **glyphe `dayGlyph`**
-  (lever de soleil / soleil / coucher / lune selon l'heure, grille 9×9, points
-  jointifs) animé **image par image** par `DayGlyphAnimator` (vraie animation de
-  points en JS, ~4-5 fps, pas de CSS). Timeline = carte au grand rayon,
+  (lever de soleil / soleil / coucher / lune selon l'heure, grille 13×13, points
+  jointifs ; soleil = vrai cercle + rayons isolés) animé **image par image** par
+  `DayGlyphAnimator` (vraie animation de points en JS, 500 ms/frame, pas de CSS).
+  Timeline = carte au grand rayon,
   points en fond, blocs arrondis **affleurant le container** (sans marge). Tout
   est neutralisé sous `prefers-reduced-motion`.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :

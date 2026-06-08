@@ -20,7 +20,7 @@ export class TotalsView {
     const hero = createEl("div", {
       className: "total-hero",
       html:
-        dayGlyph(undefined, { size: 46 }) +
+        dayGlyph(undefined, { size: 52 }) +
         `<div class="k">Total journée</div><div class="v">${fmt.clock(total / 60000)}</div>`,
     });
     const copyRow = createEl("div", { className: "copy-row" });

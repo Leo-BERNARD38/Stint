@@ -10,7 +10,7 @@ import { dayGlyphName, dayGlyphFrames } from "./icons.js";
  * - Respecte `prefers-reduced-motion` : laisse la 1ʳᵉ frame, sans défilé.
  */
 export class DayGlyphAnimator {
-  constructor({ interval = 230, selector = ".day-glyph" } = {}) {
+  constructor({ interval = 500, selector = ".day-glyph" } = {}) {
     this.interval = interval;
     this.selector = selector;
     this.name = null;

@@ -124,7 +124,7 @@ export function dotIcon(name, { size = 24 } = {}) {
    Vraie animation **image par image** : chaque glyphe fournit plusieurs frames
    (bitmaps) que `DayGlyphAnimator` fait défiler à bas FPS. Pas d'animation CSS.
    ============================================================================ */
-const DAY_N = 9;
+const DAY_N = 13;
 const DAY_LABELS = { sunrise: "Matinée", sun: "Journée", sunset: "Soirée", moon: "Nuit" };
 
 const gNew = () => Array.from({ length: DAY_N }, () => Array(DAY_N).fill(0));
@@ -145,41 +145,37 @@ const gBake = (g) => {
   return b;
 };
 
-/** Soleil : étoile à 8 branches dont les rayons « respirent » (petit→grand→petit). */
+/** Soleil : un vrai cercle plein + 8 rayons (points isolés, à 1 cellule du cercle)
+ *  qui tournent doucement (cardinaux → tous → diagonaux → tous). */
 function framesSun() {
   const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
-  const reach = [[2, 2], [3, 2], [3, 3], [3, 2]]; // [cardMax, diagMax] par frame
-  return reach.map(([cm, dm]) => {
-    const g = gNew();
-    gDisc(g, 4, 4, 1.6);
-    for (const [dx, dy] of card) for (let d = 2; d <= cm; d++) gDot(g, 4 + dx * d, 4 + dy * d);
-    for (const [dx, dy] of diag) for (let d = 2; d <= dm; d++) gDot(g, 4 + dx * d, 4 + dy * d);
-    return g;
-  });
+  const ray = (g, dx, dy) => { const off = (dx === 0 || dy === 0) ? 5 : 4; gDot(g, 6 + dx * off, 6 + dy * off); };
+  const make = (dirs) => { const g = gNew(); gDisc(g, 6, 6, 3.5); for (const [dx, dy] of dirs) ray(g, dx, dy); return g; };
+  return [make(card), make([...card, ...diag]), make(diag), make([...card, ...diag])];
 }
 
-/** Demi-soleil sur l'horizon + rayons qui montent (lever) ou descendent (coucher). */
+/** Demi-cercle plein sur l'horizon + 3 rayons (points) qui montent (lever) ou descendent (coucher). */
 function framesHorizon(rising) {
-  const horizon = 6;
-  const rayYs = rising ? [2, 1, 0] : [0, 1, 2];
+  const horizon = 9;
+  const rayYs = rising ? [4, 3, 2] : [2, 3, 4];
   return [0, 1, 2, 3].map((f) => {
     const g = gNew();
-    gDisc(g, 4, 5, 2.1);
+    gDisc(g, 6, 8, 3.4);
     for (let x = 0; x < DAY_N; x++) for (let y = horizon; y < DAY_N; y++) g[y][x] = 0; // sous l'horizon = masqué
-    for (let x = 1; x <= 7; x++) g[horizon][x] = 1;                                    // ligne d'horizon
-    if (f < 3) for (const x of [2, 4, 6]) gDot(g, x, rayYs[f]);                         // rayons (4ᵉ frame = pause)
+    for (let x = 2; x <= 10; x++) g[horizon][x] = 1;                                    // ligne d'horizon
+    if (f < 3) for (const x of [4, 6, 8]) gDot(g, x, rayYs[f]);                          // rayons (4ᵉ frame = pause)
     return g;
   });
 }
 
-/** Lune en croissant + petite étoile qui scintille. */
+/** Lune en croissant (grand cercle moins un cercle décalé) + petite étoile qui scintille. */
 function framesMoon() {
-  const big = gNew(); gDisc(big, 3.4, 4, 3.3);
-  const cut = gNew(); gDisc(cut, 6, 4, 3.5);
+  const big = gNew(); gDisc(big, 5, 6, 4.2);
+  const cut = gNew(); gDisc(cut, 8.2, 6, 4.4);
   const base = gNew();
   for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) base[y][x] = (big[y][x] && !cut[y][x]) ? 1 : 0;
-  const star = [[], [[7, 1]], [[7, 1], [6, 1], [8, 1], [7, 0], [7, 2]], [[7, 1]]];
+  const star = [[], [[10, 2]], [[10, 2], [9, 2], [11, 2], [10, 1], [10, 3]], [[10, 2]]];
   return star.map((dots) => {
     const g = base.map((r) => r.slice());
     for (const [x, y] of dots) gDot(g, x, y);
@@ -214,7 +210,7 @@ export function dayGlyphFrames(name = dayGlyphName()) {
 }
 
 /** Glyphe dot-matrix du moment de la journée (1ʳᵉ frame, pour le rendu initial). */
-export function dayGlyph(name = dayGlyphName(), { size = 46 } = {}) {
+export function dayGlyph(name = dayGlyphName(), { size = 52 } = {}) {
   const { frames } = dayGlyphFrames(name);
   return `<svg class="day-glyph" data-glyph="${name}" width="${size}" height="${size}" ` +
     `viewBox="0 0 ${DAY_N} ${DAY_N}" fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
