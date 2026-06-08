@@ -1,4 +1,4 @@
-import { qsa } from "../../utils/dom.js";
+import { qsa, el } from "../../utils/dom.js";
 
 /** Onglets de l'écran application (Journée / Segments). État d'UI pur. */
 export class TabsView {
@@ -18,6 +18,8 @@ export class TabsView {
     this.active = name;
     this.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
     this.panels.forEach((p) => { p.hidden = p.dataset.panel !== name; });
+    // « Tâches » est une vue tout-temps : le sélecteur de jour ne s'y applique pas.
+    el("dayHead").hidden = name === "taches";
   }
 
   render() { /* déclaratif : rien à re-rendre sur changement de données */ }

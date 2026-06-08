@@ -104,7 +104,7 @@
     </div>
 
     <!-- Sélecteur de jour : commun aux onglets Journée et Segments -->
-    <div class="day-head">
+    <div class="day-head" id="dayHead">
       <div class="daynav">
         <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
         <div class="date" id="dayLabel">—</div>
@@ -118,6 +118,7 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
       <button class="tab" data-tab="segments" role="tab">Segments</button>
+      <button class="tab" data-tab="taches" role="tab">Tâches</button>
     </nav>
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
@@ -164,6 +165,15 @@
           <tbody id="segBody"></tbody>
         </table>
       </div>
+    </section>
+
+    <!-- ---------------------------- Onglet : Tâches (toutes, par date d'ouverture) ---------------------------- -->
+    <section class="tab-panel" data-panel="taches" hidden>
+      <div class="block-title">
+        Toutes les tâches
+        <span class="hint">par date d'ouverture · cliquez une tâche pour voir ses segments</span>
+      </div>
+      <div class="all-tasks" id="allTasks"></div>
     </section>
     </div><!-- /#appScreen -->
 

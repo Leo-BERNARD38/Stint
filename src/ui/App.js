@@ -14,6 +14,7 @@ import { TimelineView } from "./views/TimelineView.js";
 import { TotalsView } from "./views/TotalsView.js";
 import { TaskListView } from "./views/TaskListView.js";
 import { SegmentTableView } from "./views/SegmentTableView.js";
+import { AllTasksView } from "./views/AllTasksView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 
@@ -25,7 +26,7 @@ import { Toast } from "./components/Toast.js";
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
 import { copyText } from "../utils/clipboard.js";
-import { startOfDay, addDays, sameDay, atTime } from "../utils/datetime.js";
+import { startOfDay, addDays, sameDay, atTime, parseDateInput } from "../utils/datetime.js";
 
 /**
  * Contrôleur racine : assemble modèle (Store), services (calc, formatter),
@@ -63,6 +64,7 @@ export class App {
       new TotalsView(this),
       new TaskListView(this),
       new SegmentTableView(this),
+      new AllTasksView(this),
       new SettingsView(this),
       new StorageView(this),
     ];
@@ -127,6 +129,12 @@ export class App {
   setViewDay(d) { this.viewDay = startOfDay(d); this.render(); }
   shiftDay(n) { this.setViewDay(addDays(this.viewDay, n)); }
   goToday() { this.setViewDay(new Date()); }
+
+  /** Depuis « Tâches » : ouvre un jour ("YYYY-MM-DD") dans l'onglet Segments. */
+  goToDaySegments(dayKey) {
+    this.setViewDay(parseDateInput(dayKey));
+    this.tabs.select("segments");
+  }
 
   /* ----------------- segments manuels ----------------- */
   addManualSegment(start, end) {
