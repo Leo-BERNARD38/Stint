@@ -31,6 +31,10 @@
   --ease: cubic-bezier(.4, 0, .2, 1);
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+
+  /* Filets pointillés (esthétique Nothing). Résolus au point d'usage → suivent le thème. */
+  --dot: color-mix(in srgb, var(--text) 24%, transparent);
+  --dot-grid: color-mix(in srgb, var(--text) 9%, transparent);
 }
 
 /* ---------------------- Thème clair (défaut) ---------------------- */
