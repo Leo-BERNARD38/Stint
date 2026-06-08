@@ -162,9 +162,10 @@ Notes :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
   comprises — pour la lisibilité). **Pas de serif.** Durées en `tabular-nums`.
-- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 6×6**
-  (carrée, points jointifs, même rendu que la police), via `dotIcon()` dans
-  `ui/icons.js`. « Reprise » = barre + triangle (clé `resume`).
+- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 5×5**
+  (carrée, points jointifs, traits 1 point pour « + » et « pause » ; même rendu
+  que la police), via `dotIcon()` dans `ui/icons.js`. « Reprise » = barre +
+  triangle (clé `resume`).
   Le reste de l'UI garde les silhouettes Lucide (`icon()`).
 - **Couleurs des tâches** : 3 palettes **par catégorie** (`PALETTES` dans
   `constants.js`) — dev = froides, support = chaudes, autre = neutres. Attribution

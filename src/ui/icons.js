@@ -44,57 +44,53 @@ export function icon(name, { size = 18, solid = false } = {}) {
 
 /* ============================================================================
    Icônes « grille de points » (esthétique Nothing OS / police dot-matrix).
-   Glyphes monochromes dessinés sur une grille carrée 6×6, points jointifs
+   Glyphes monochromes dessinés sur une grille carrée 5×5, points jointifs
    (sans espace) pour retrouver exactement le rendu de la police Bitcount.
-   Réservés aux gros boutons d'action ; le reste de l'UI garde les Lucide.
+   Traits fins (1 point) pour « + » et « pause ». Réservés aux gros boutons
+   d'action ; le reste de l'UI garde les silhouettes Lucide.
    ============================================================================ */
 
-/** Glyphes en bitmap 6×6 — un '#' = un point allumé. */
+/** Glyphes en bitmap 5×5 — un '#' = un point allumé. */
 const DOT_GLYPHS = {
   plus: [
-    "..##..",
-    "..##..",
-    "######",
-    "######",
-    "..##..",
-    "..##..",
+    "..#..",
+    "..#..",
+    "#####",
+    "..#..",
+    "..#..",
   ],
   pause: [
-    "##..##",
-    "##..##",
-    "##..##",
-    "##..##",
-    "##..##",
-    "##..##",
+    ".#.#.",
+    ".#.#.",
+    ".#.#.",
+    ".#.#.",
+    ".#.#.",
   ],
   play: [
-    "#.....",
-    "###...",
-    "#####.",
-    "#####.",
-    "###...",
-    "#.....",
+    "#....",
+    "###..",
+    "#####",
+    "###..",
+    "#....",
   ],
   check: [
-    "......",
-    ".....#",
-    "#...#.",
-    ".#.#..",
-    "..#...",
-    "......",
+    ".....",
+    "....#",
+    "...#.",
+    "#.#..",
+    ".#...",
   ],
   // « Reprise » : barre + triangle (reprendre la lecture d'une tâche).
   resume: [
-    "#.#...",
-    "#.##..",
-    "#.###.",
-    "#.###.",
-    "#.##..",
-    "#.#...",
+    "#.#..",
+    "#.##.",
+    "#.###",
+    "#.##.",
+    "#.#..",
   ],
 };
 
-const DOT_BOX = 6;    // grille 6×6 = viewBox carré
+const DOT_BOX = 5;    // grille 5×5 = viewBox carré
 
 /** Points d'un bitmap : pitch 1, rayon 0.5 ⇒ points jointifs (aucun espace). */
 function dotsFromBitmap(rows) {
