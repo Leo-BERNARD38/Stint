@@ -180,13 +180,11 @@ function sunPhase(hour) {
  * sur l'arc : seule la position change, jamais la forme.
  */
 const SUN_CORE = [
-  "..###..",
-  ".#####.",
-  "#######",
-  "#######",
-  "#######",
-  ".#####.",
-  "..###..",
+  ".###.",
+  "#####",
+  "#####",
+  "#####",
+  ".###.",
 ];
 
 /** Soleil rond posé sur un arc (est → ouest, haut au zénith) + rayons tournants,
