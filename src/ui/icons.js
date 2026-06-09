@@ -142,11 +142,11 @@ const SUN_DAY_END = 20;   // …à 20h (au-delà : lune)
 
 const gNew = () => Array.from({ length: DAY_N }, () => Array(DAY_N).fill(0));
 const gDot = (g, x, y) => { if (x >= 0 && x < DAY_N && y >= 0 && y < DAY_N) g[y][x] = 1; };
-const gDisc = (g, cx, cy, r) => {
-  const r2 = r * r;
-  for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) {
-    const dx = x - cx, dy = y - cy;
-    if (dx * dx + dy * dy <= r2) g[y][x] = 1;
+/** Pose un bitmap ASCII (tableau de lignes, `#` = point allumé) centré en (cx, cy). */
+const gStamp = (g, art, cx, cy) => {
+  const ox = cx - (art[0].length >> 1), oy = cy - (art.length >> 1);
+  for (let sy = 0; sy < art.length; sy++) for (let sx = 0; sx < art[sy].length; sx++) {
+    if (art[sy][sx] === "#") gDot(g, ox + sx, oy + sy);
   }
 };
 /** Bitmap (0/1) → balisage des cercles allumés (points jointifs). */
@@ -174,21 +174,32 @@ function sunPhase(hour) {
   return { t, label };
 }
 
-/** Soleil plein sur un arc (est → ouest, haut au zénith) + rayons tournants, au-dessus
- *  d'une ligne d'horizon ; sous l'horizon est masqué (le soleil s'y lève / couche). */
+/**
+ * Disque du soleil — dessiné à la main (donc parfaitement rond), modifiable ici.
+ * `#` = point allumé, `.` = éteint. Il est posé tel quel à la position calculée
+ * sur l'arc : seule la position change, jamais la forme.
+ */
+const SUN_CORE = [
+  "..###..",
+  ".#####.",
+  "#######",
+  "#######",
+  "#######",
+  ".#####.",
+  "..###..",
+];
+
+/** Soleil rond posé sur un arc (est → ouest, haut au zénith) + rayons tournants,
+ *  au-dessus d'une ligne d'horizon ; sous l'horizon est masqué (lever / coucher). */
 function framesSunArc(t) {
-  const cx = 2 + t * 8;                                    // est → ouest
-  const cy = SUN_HORIZON - 2 - 5.5 * Math.sin(Math.PI * t); // bas au lever/coucher, haut au zénith
-  const R = 2.2;
+  const cx = Math.round(3 + t * 6);                  // est → ouest (3 → 9), centre entier = rond
+  const cy = Math.round(7 - 4 * Math.sin(Math.PI * t)); // bas au lever/coucher (7), haut au zénith (3)
   const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
-  const ray = (g, dx, dy) => {
-    const off = (dx === 0 || dy === 0) ? 3.4 : 2.5;
-    gDot(g, Math.round(cx + dx * off), Math.round(cy + dy * off));
-  };
+  const ray = (g, dx, dy) => { const off = (dx === 0 || dy === 0) ? 4 : 3; gDot(g, cx + dx * off, cy + dy * off); };
   return [card, [...card, ...diag], diag, [...card, ...diag]].map((dirs) => {
     const g = gNew();
-    gDisc(g, cx, cy, R);
+    gStamp(g, SUN_CORE, cx, cy);
     for (const [dx, dy] of dirs) ray(g, dx, dy);
     for (let x = 0; x < DAY_N; x++) for (let y = SUN_HORIZON; y < DAY_N; y++) g[y][x] = 0; // sous l'horizon
     for (let x = 1; x <= 11; x++) g[SUN_HORIZON][x] = 1;                                    // ligne de sol
@@ -196,12 +207,24 @@ function framesSunArc(t) {
   });
 }
 
-/** Lune en croissant au-dessus de l'horizon + étoiles qui scintillent. */
+/**
+ * Croissant de lune — dessiné à la main, modifiable ici (`#` allumé, `.` éteint).
+ * Ouverture vers la droite ; posé en haut à gauche du ciel.
+ */
+const MOON_CORE = [
+  "..##...",
+  ".###...",
+  ".##....",
+  ".##....",
+  ".##....",
+  ".###...",
+  "..##...",
+];
+
+/** Croissant de lune au-dessus de l'horizon + étoiles qui scintillent. */
 function framesMoon() {
-  const big = gNew(); gDisc(big, 5, 5, 3.9);
-  const cut = gNew(); gDisc(cut, 7.8, 4.4, 4.0);
   const base = gNew();
-  for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) base[y][x] = (big[y][x] && !cut[y][x]) ? 1 : 0;
+  gStamp(base, MOON_CORE, 4, 5);
   for (let x = 1; x <= 11; x++) base[SUN_HORIZON][x] = 1; // ligne de sol (cohérence avec le jour)
   const star = [
     [[10, 8]],
