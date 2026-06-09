@@ -128,14 +128,17 @@ export function dotIcon(name, { size = 24 } = {}) {
 }
 
 /* ============================================================================
-   Glyphe « moment de la journée » — un vrai élément (lever de soleil, soleil,
-   coucher, lune) choisi selon l'heure, en points jointifs (r=0.5, comme les
-   icônes) sur une grille 9×9. Points éteints = non dessinés (100 % éteints).
+   Glyphe « moment de la journée » — un soleil qui parcourt un arc d'est en
+   ouest selon l'heure (une position distincte par heure, de 6h à 20h), puis la
+   lune la nuit. En points jointifs (r=0.5, comme les icônes) sur une grille
+   13×13, au-dessus d'une ligne d'horizon. Points éteints = non dessinés.
    Vraie animation **image par image** : chaque glyphe fournit plusieurs frames
    (bitmaps) que `DayGlyphAnimator` fait défiler à bas FPS. Pas d'animation CSS.
    ============================================================================ */
 const DAY_N = 13;
-const DAY_LABELS = { sunrise: "Matinée", sun: "Journée", sunset: "Soirée", moon: "Nuit" };
+const SUN_HORIZON = 10;   // ligne de sol (rangée)
+const SUN_DAY_START = 6;  // le soleil est visible de 6h…
+const SUN_DAY_END = 20;   // …à 20h (au-delà : lune)
 
 const gNew = () => Array.from({ length: DAY_N }, () => Array(DAY_N).fill(0));
 const gDot = (g, x, y) => { if (x >= 0 && x < DAY_N && y >= 0 && y < DAY_N) g[y][x] = 1; };
@@ -155,37 +158,57 @@ const gBake = (g) => {
   return b;
 };
 
-/** Soleil : un vrai cercle plein + 8 rayons (points isolés, à 1 cellule du cercle)
- *  qui tournent doucement (cardinaux → tous → diagonaux → tous). */
-function framesSun() {
-  const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-  const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
-  const ray = (g, dx, dy) => { const off = (dx === 0 || dy === 0) ? 5 : 4; gDot(g, 6 + dx * off, 6 + dy * off); };
-  const make = (dirs) => { const g = gNew(); gDisc(g, 6, 6, 3.5); for (const [dx, dy] of dirs) ray(g, dx, dy); return g; };
-  return [make(card), make([...card, ...diag]), make(diag), make([...card, ...diag])];
+/**
+ * Phase du jour (0 = lever, 0,5 = zénith, 1 = coucher) et libellé, dérivés de
+ * l'heure. Le soleil parcourt un arc d'est en ouest : une position distincte par
+ * tranche horaire, qu'on voit donc évoluer tout au long d'une journée de travail.
+ */
+function sunPhase(hour) {
+  const mid = hour + 0.5; // milieu de la tranche horaire
+  const t = Math.min(1, Math.max(0, (mid - SUN_DAY_START) / (SUN_DAY_END - SUN_DAY_START)));
+  let label = "Après-midi";
+  if (t < 0.12) label = "Lever du soleil";
+  else if (t < 0.4) label = "Matinée";
+  else if (t < 0.6) label = "Plein midi";
+  else if (t >= 0.88) label = "Coucher du soleil";
+  return { t, label };
 }
 
-/** Demi-cercle plein sur l'horizon + 3 rayons (points) qui montent (lever) ou descendent (coucher). */
-function framesHorizon(rising) {
-  const horizon = 9;
-  const rayYs = rising ? [4, 3, 2] : [2, 3, 4];
-  return [0, 1, 2, 3].map((f) => {
+/** Soleil plein sur un arc (est → ouest, haut au zénith) + rayons tournants, au-dessus
+ *  d'une ligne d'horizon ; sous l'horizon est masqué (le soleil s'y lève / couche). */
+function framesSunArc(t) {
+  const cx = 2 + t * 8;                                    // est → ouest
+  const cy = SUN_HORIZON - 2 - 5.5 * Math.sin(Math.PI * t); // bas au lever/coucher, haut au zénith
+  const R = 2.2;
+  const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+  const ray = (g, dx, dy) => {
+    const off = (dx === 0 || dy === 0) ? 3.4 : 2.5;
+    gDot(g, Math.round(cx + dx * off), Math.round(cy + dy * off));
+  };
+  return [card, [...card, ...diag], diag, [...card, ...diag]].map((dirs) => {
     const g = gNew();
-    gDisc(g, 6, 8, 3.4);
-    for (let x = 0; x < DAY_N; x++) for (let y = horizon; y < DAY_N; y++) g[y][x] = 0; // sous l'horizon = masqué
-    for (let x = 2; x <= 10; x++) g[horizon][x] = 1;                                    // ligne d'horizon
-    if (f < 3) for (const x of [4, 6, 8]) gDot(g, x, rayYs[f]);                          // rayons (4ᵉ frame = pause)
+    gDisc(g, cx, cy, R);
+    for (const [dx, dy] of dirs) ray(g, dx, dy);
+    for (let x = 0; x < DAY_N; x++) for (let y = SUN_HORIZON; y < DAY_N; y++) g[y][x] = 0; // sous l'horizon
+    for (let x = 1; x <= 11; x++) g[SUN_HORIZON][x] = 1;                                    // ligne de sol
     return g;
   });
 }
 
-/** Lune en croissant (grand cercle moins un cercle décalé) + petite étoile qui scintille. */
+/** Lune en croissant au-dessus de l'horizon + étoiles qui scintillent. */
 function framesMoon() {
-  const big = gNew(); gDisc(big, 5, 6, 4.2);
-  const cut = gNew(); gDisc(cut, 8.2, 6, 4.4);
+  const big = gNew(); gDisc(big, 5, 5, 3.9);
+  const cut = gNew(); gDisc(cut, 7.8, 4.4, 4.0);
   const base = gNew();
   for (let y = 0; y < DAY_N; y++) for (let x = 0; x < DAY_N; x++) base[y][x] = (big[y][x] && !cut[y][x]) ? 1 : 0;
-  const star = [[], [[10, 2]], [[10, 2], [9, 2], [11, 2], [10, 1], [10, 3]], [[10, 2]]];
+  for (let x = 1; x <= 11; x++) base[SUN_HORIZON][x] = 1; // ligne de sol (cohérence avec le jour)
+  const star = [
+    [[10, 8]],
+    [[10, 8], [11, 4]],
+    [[10, 8], [11, 4], [8, 2]],
+    [[11, 4], [8, 2]],
+  ];
   return star.map((dots) => {
     const g = base.map((r) => r.slice());
     for (const [x, y] of dots) gDot(g, x, y);
@@ -193,20 +216,16 @@ function framesMoon() {
   });
 }
 
-const FRAME_BUILDERS = {
-  sunrise: () => framesHorizon(true),
-  sunset: () => framesHorizon(false),
-  sun: framesSun,
-  moon: framesMoon,
-};
-
-/** Nom du glyphe selon l'heure : matin (6-9), journée (9-18), soir (18-21), nuit. */
+/**
+ * Nom du glyphe selon l'heure : une position de soleil par heure le jour
+ * (6h → 20h), la lune la nuit. Le nom encode la tranche horaire — l'animateur
+ * reconstruit le glyphe à chaque changement d'heure, d'où l'évolution visible
+ * au fil de la journée.
+ */
 export function dayGlyphName(date = new Date()) {
   const h = date.getHours();
-  if (h >= 6 && h < 9) return "sunrise";
-  if (h >= 9 && h < 18) return "sun";
-  if (h >= 18 && h < 21) return "sunset";
-  return "moon";
+  if (h < SUN_DAY_START || h >= SUN_DAY_END) return "moon";
+  return "sun:" + h;
 }
 
 /**
@@ -214,9 +233,14 @@ export function dayGlyphName(date = new Date()) {
  * cercles). Consommé par `DayGlyphAnimator` pour le défilé image par image.
  */
 export function dayGlyphFrames(name = dayGlyphName()) {
-  const build = FRAME_BUILDERS[name] ?? FRAME_BUILDERS.sun;
-  const title = `<title>${DAY_LABELS[name] ?? ""}</title>`;
-  return { label: DAY_LABELS[name] ?? "", frames: build().map((g) => title + gBake(g)) };
+  if (name === "moon") {
+    const title = "<title>Nuit</title>";
+    return { label: "Nuit", frames: framesMoon().map((g) => title + gBake(g)) };
+  }
+  const hour = Number(name.split(":")[1]);
+  const { t, label } = sunPhase(Number.isFinite(hour) ? hour : 12);
+  const title = `<title>${label}</title>`;
+  return { label, frames: framesSunArc(t).map((g) => title + gBake(g)) };
 }
 
 /** Glyphe dot-matrix du moment de la journée (1ʳᵉ frame, pour le rendu initial). */
