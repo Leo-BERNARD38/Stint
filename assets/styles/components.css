@@ -155,12 +155,12 @@
 
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
-.total-hero { position: relative; overflow: hidden; display: flex; align-items: stretch; gap: var(--sp-4); background: var(--accent); color: var(--accent-text); border-radius: var(--radius); margin-bottom: var(--sp-3); }
-.total-hero .hero-text { flex: 1 1 auto; min-width: 0; padding: var(--sp-4) 0 var(--sp-4) var(--sp-5); }
-/* Scène « moment de la journée » : calée à droite, à hauteur de carte (la hauteur
-   pilote la taille, la largeur suit le ratio ; collée au bord droit). Animée image
-   par image en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
-.total-hero .day-glyph { flex: 0 0 auto; align-self: stretch; width: auto; aspect-ratio: 15 / 13; color: var(--accent-text); pointer-events: none; }
+.total-hero { position: relative; overflow: hidden; display: flex; align-items: center; gap: var(--sp-4); background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
+.total-hero .hero-text { flex: 1 1 auto; min-width: 0; }
+/* Scène « moment de la journée » : petit format fixe, à droite du texte, centré
+   verticalement (n'influence pas la taille de la carte). Animée image par image
+   en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
+.total-hero .day-glyph { flex: 0 0 auto; height: 52px; width: auto; aspect-ratio: 15 / 13; color: var(--accent-text); pointer-events: none; }
 .total-hero .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .7; }
 .total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }
