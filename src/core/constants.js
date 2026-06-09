@@ -8,6 +8,13 @@ export const SCHEMA_VERSION = 4;
 export const DAY_MS = 86_400_000;
 
 /**
+ * Seuil de fusion des micro-pauses : reprendre la même tâche dans cet intervalle
+ * après une pause rouvre le segment précédent au lieu d'en créer un nouveau.
+ * Évite de fragmenter la base et garde une timeline lisible. (2 minutes)
+ */
+export const SEGMENT_MERGE_GAP_MS = 120_000;
+
+/**
  * Palettes de couleurs assignées automatiquement aux tâches, **par catégorie**.
  * Chaque type a sa propre famille chromatique : on distingue ainsi les catégories
  * au premier coup d'œil, tandis que les petites variations au sein d'une famille

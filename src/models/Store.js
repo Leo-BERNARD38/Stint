@@ -1,5 +1,5 @@
 import { EventEmitter } from "../core/EventEmitter.js";
-import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS } from "../core/constants.js";
+import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS, SEGMENT_MERGE_GAP_MS } from "../core/constants.js";
 import { Settings } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
@@ -157,6 +157,27 @@ export class Store extends EventEmitter {
     this.segments.push(new Segment({ id: this.#uid("s_"), taskId, start: toLocalISO(at) }));
   }
 
+  /**
+   * Reprend le segment juste mis en pause s'il s'agit de la même tâche et que
+   * l'écart est inférieur au seuil (micro-pause) ; sinon démarre un nouveau
+   * segment. Évite de fragmenter la base / la timeline pour des pauses brèves.
+   * À n'appeler qu'après #stopActive() (aucun segment ne doit être en cours).
+   */
+  #startOrResume(taskId, at = new Date()) {
+    // Segment terminé le plus récemment, toutes tâches confondues : c'est la
+    // dernière activité. On ne fusionne que si c'est bien la tâche reprise.
+    let last = null;
+    for (const s of this.segments) {
+      if (s.isRunning) continue;
+      if (!last || s.endMs() > last.endMs()) last = s;
+    }
+    if (last && last.taskId === taskId && at.getTime() - last.endMs() <= SEGMENT_MERGE_GAP_MS) {
+      last.end = null; // rouvre le segment : la micro-pause est absorbée
+      return;
+    }
+    this.#startSegment(taskId, at);
+  }
+
   #stopActive(at = new Date()) {
     const seg = this.activeSegment();
     if (seg) seg.end = toLocalISO(at);
@@ -173,7 +194,7 @@ export class Store extends EventEmitter {
     }
     const last = this.lastUsedTask();
     if (last) {
-      this.#startSegment(last.id);
+      this.#startOrResume(last.id);
       this.#commit();
       return "started";
     }
@@ -208,7 +229,7 @@ export class Store extends EventEmitter {
     this.#stopActive();
     const t = this.taskById(taskId);
     if (t) t.done = false; // reprendre une tâche la rouvre
-    this.#startSegment(taskId);
+    this.#startOrResume(taskId);
     this.#commit();
   }
 

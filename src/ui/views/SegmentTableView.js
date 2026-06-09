@@ -16,7 +16,12 @@ export class SegmentTableView {
     this.body.addEventListener("change", (e) => this.#onChange(e));
     this.body.addEventListener("click", (e) => {
       const btn = e.target.closest?.("[data-del]");
-      if (btn && confirm("Supprimer ce segment ?")) this.app.store.deleteSegment(btn.getAttribute("data-del"));
+      if (!btn || !confirm("Supprimer ce segment ?")) return;
+      // Le bouton est dans la table : tant qu'il garde le focus, render() ignore
+      // la reconstruction (garde-fou anti-vol de focus) et la ligne resterait
+      // affichée. On libère le focus pour que la table se reconstruise aussitôt.
+      btn.blur();
+      this.app.store.deleteSegment(btn.getAttribute("data-del"));
     });
     el("addSegment").addEventListener("click", () => this.app.addManualSegmentDefault());
   }
