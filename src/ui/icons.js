@@ -138,7 +138,7 @@ export function dotIcon(name, { size = 24 } = {}) {
    tournent / étoiles qui clignotent). Tout est réglable ci-dessous : bitmaps des
    astres, pics des montagnes, fenêtres horaires.
    ============================================================================ */
-const SCENE_W = 15, SCENE_H = 13, SCENE_GROUND = SCENE_H - 1;
+const SCENE_W = 38, SCENE_H = 30, SCENE_GROUND = SCENE_H - 1;
 const SUN_RISE = 6, SUN_SET = 20; // soleil visible de 6h à 20h ; lune sinon
 
 // --- grille binaire (0 = éteint, 1 = allumé) ---
@@ -172,19 +172,37 @@ const ridge = (peaks, slope) => {
 const fillRange = (g, top) => {
   for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, top[x]); y <= SCENE_GROUND; y++) sSet(g, x, y);
 };
-const RIDGE = ridge([[3, 9], [8, 6], [13, 8]], 0.85); // trois sommets, le central plus haut
+const RIDGE = ridge([[5, 23], [13, 18], [21, 22], [29, 17], [36, 21]], 0.8); // plusieurs sommets
 
 // --- astres (bitmaps modifiables : `#` allumé, `.` éteint) ---
-const SUN_CORE = [".###.", "#####", "#####", "#####", ".###."]; // disque rond 5×5
-const MOON_CORE = ["..##.", ".##..", ".#...", ".##..", "..##."]; // croissant 5×5
-const STARS = [[2, 2], [6, 1], [10, 2], [13, 4], [4, 4], [11, 5]];
+const SUN_CORE = [ // disque rond 9×9
+  "..#####..",
+  ".#######.",
+  "#########",
+  "#########",
+  "#########",
+  "#########",
+  "#########",
+  ".#######.",
+  "..#####..",
+];
+const MOON_CORE = [ // croissant 7×7
+  "..###..",
+  ".##....",
+  "##.....",
+  "##.....",
+  "##.....",
+  ".##....",
+  "..###..",
+];
+const STARS = [[3, 4], [9, 2], [15, 5], [20, 3], [26, 2], [31, 5], [35, 3], [6, 8], [24, 7], [33, 9], [12, 9], [18, 1]];
 
 /** Soleil (disque rond + rayons tournants détachés) à la position (cx, cy), frame f. */
 function drawSun(g, cx, cy, f) {
   const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
   const dirs = [card, [...card, ...diag], diag, [...card, ...diag]][f % 4];
-  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 4 : 3; sSet(g, cx + dx * off, cy + dy * off); }
+  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 6 : 5; sSet(g, cx + dx * off, cy + dy * off); }
   sStamp(g, SUN_CORE, cx, cy);
 }
 /** Étoiles qui scintillent : chaque frame éteint un sous-ensemble différent. */
@@ -208,15 +226,15 @@ function scenePhase(slot) {
 /** Construit les 4 frames de la scène pour une tranche horaire (label + balisage SVG). */
 function sceneFrames(slot) {
   const { body, t, label } = scenePhase(slot);
-  const cx = Math.round(2 + t * (SCENE_W - 5)); // gauche → droite au fil du temps
+  const cx = Math.round(4 + t * (SCENE_W - 8)); // gauche → droite au fil du temps
   const title = `<title>${label}</title>`;
   const frames = Array.from({ length: 4 }, (_, f) => {
     const g = sNew();
     if (body === "moon") {
       drawStars(g, f);
-      sStamp(g, MOON_CORE, cx, Math.round(8 - 6 * Math.sin(Math.PI * t)));
+      sStamp(g, MOON_CORE, cx, Math.round(22 - 18 * Math.sin(Math.PI * t)));
     } else {
-      drawSun(g, cx, Math.round(9 - 7 * Math.sin(Math.PI * t)), f);
+      drawSun(g, cx, Math.round(24 - 20 * Math.sin(Math.PI * t)), f);
     }
     fillRange(g, RIDGE); // montagnes par-dessus : le soleil se lève / couche derrière
     return title + sBake(g);
