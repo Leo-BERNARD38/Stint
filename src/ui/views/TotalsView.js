@@ -15,12 +15,13 @@ export class TotalsView {
     const { total, byType, segments } = this.app.calc.totalsForDay(viewDay);
     this.root.innerHTML = "";
 
-    // total journée, mis en avant. Le glyphe « moment de la journée » (lever de
-    // soleil / soleil / coucher / lune) reflète l'heure et s'anime sobrement.
+    // total journée, mis en avant. La scène « moment de la journée » (paysage
+    // dot-matrix : soleil/lune traversant un ciel au-dessus de montagnes) occupe
+    // le bas de la carte et évolue au fil de la journée (animée par DayGlyphAnimator).
     const hero = createEl("div", {
       className: "total-hero",
       html:
-        dayGlyph(undefined, { size: 52 }) +
+        dayGlyph() +
         `<div class="k">Total journée</div><div class="v">${fmt.clock(total / 60000)}</div>`,
     });
     const copyRow = createEl("div", { className: "copy-row" });

@@ -155,10 +155,11 @@
 
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
-.total-hero { position: relative; overflow: hidden; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
-/* Glyphe « moment de la journée » (coin haut-droit). Animé image par image en JS
-   (DayGlyphAnimator) : ici on ne gère que le placement, pas le mouvement. */
-.total-hero .day-glyph { position: absolute; top: var(--sp-3); right: var(--sp-4); width: 52px; height: 52px; color: var(--accent-text); pointer-events: none; }
+.total-hero { position: relative; overflow: hidden; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); padding-bottom: 92px; margin-bottom: var(--sp-3); }
+/* Scène « moment de la journée » : bandeau dot-matrix pleine largeur au bas de la
+   carte (bordé à ses coins arrondis via overflow:hidden). Animée image par image
+   en JS (DayGlyphAnimator) ; ici on ne gère que le placement, pas le mouvement. */
+.total-hero .day-glyph { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 86px; display: block; color: var(--accent-text); pointer-events: none; }
 .total-hero .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .7; }
 .total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }
