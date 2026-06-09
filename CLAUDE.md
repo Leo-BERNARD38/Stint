@@ -168,13 +168,15 @@ Notes :
   fond, sans élévation), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
   `grid-template-rows 0fr→1fr`). Dans « Total journée », **scène `dayGlyph`** :
-  petit **paysage dot-matrix panoramique** (grille `SCENE_W`×`SCENE_H`) en bandeau
-  pleine largeur au bas de la carte — montagnes (2 plans, opacité = profondeur),
-  **soleil qui traverse le ciel** (lever à gauche, zénith à midi, coucher à
-  droite) puis **lune + étoiles scintillantes** la nuit, sur un ciel pointillé.
-  Astres et montagnes sont des **bitmaps / pics réglables** dans `icons.js`. La
-  position évolue par tranche de 30 min (le nom `sky:<slot>` change ⇒ rebuild),
-  animé **image par image** par `DayGlyphAnimator` (points en JS, 1 s/frame, pas de CSS).
+  petit **paysage dot-matrix** (grille `SCENE_W`×`SCENE_H`) calé **à droite de la
+  carte, à hauteur de carte** (à côté du texte, pas dessous ; la hauteur pilote la
+  taille, `aspect-ratio` fixe la largeur, `preserveAspectRatio xMaxYMax`) — montagnes
+  en silhouette, **soleil qui traverse le ciel** (lever à gauche, zénith à midi,
+  coucher à droite) puis **lune + étoiles scintillantes** la nuit. Points
+  **allumés/éteints uniquement** (aucun gris). Astres et montagnes sont des
+  **bitmaps / pics réglables** dans `icons.js`. La position évolue par tranche de
+  30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par
+  `DayGlyphAnimator` (points en JS, 1 s/frame, pas de CSS).
   Timeline = carte au grand rayon, **infobulle maison** (`.tl-tip`, suit le
   curseur ; pas de `title` natif),
   points en fond, blocs arrondis **affleurant le container** (sans marge). Tout

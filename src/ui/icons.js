@@ -128,42 +128,39 @@ export function dotIcon(name, { size = 24 } = {}) {
 }
 
 /* ============================================================================
-   Scène « moment de la journée » — un petit paysage dot-matrix panoramique
-   (montagnes, soleil qui traverse le ciel, lune + étoiles la nuit), affiché en
-   bandeau au bas de la carte « Total du jour ». Vrai élément de design qui vit
-   au fil de la journée : le soleil se lève à gauche, culmine à midi et se couche
-   à droite ; la nuit, la lune traverse à son tour, étoiles scintillantes.
-   Rendu en points (r=0.5) d'opacité variable (= profondeur) ; animation image
-   par image par `DayGlyphAnimator` (rayons qui tournent / étoiles qui clignotent).
-   Tout est réglable ci-dessous : bitmaps des astres, pics des montagnes, fenêtres
-   horaires, opacités.
+   Scène « moment de la journée » — un petit paysage dot-matrix (montagnes,
+   soleil qui traverse le ciel, lune + étoiles la nuit), affiché à droite de la
+   carte « Total du jour », à hauteur de carte (à côté du texte, pas dessous).
+   Vrai élément de design qui vit au fil de la journée : le soleil se lève à
+   gauche, culmine à midi et se couche à droite ; la nuit, la lune traverse à
+   son tour, étoiles scintillantes. Points **allumés / éteints** uniquement
+   (aucun gris). Animation image par image par `DayGlyphAnimator` (rayons qui
+   tournent / étoiles qui clignotent). Tout est réglable ci-dessous : bitmaps des
+   astres, pics des montagnes, fenêtres horaires.
    ============================================================================ */
-const SCENE_W = 48, SCENE_H = 12, SCENE_GROUND = SCENE_H - 1;
-const SUN_RISE = 6, SUN_SET = 20;                                  // soleil visible de 6h à 20h ; lune sinon
-const OP_SKY = 0.14, OP_FAR = 0.45, OP_NEAR = 1, OP_STAR = 0.85;   // opacités (profondeur)
+const SCENE_W = 15, SCENE_H = 13, SCENE_GROUND = SCENE_H - 1;
+const SUN_RISE = 6, SUN_SET = 20; // soleil visible de 6h à 20h ; lune sinon
 
-// --- grille d'opacités (0 = point éteint) ---
+// --- grille binaire (0 = éteint, 1 = allumé) ---
 const sNew = () => Array.from({ length: SCENE_H }, () => Array(SCENE_W).fill(0));
-const sSet = (g, x, y, op = 1) => { if (x >= 0 && x < SCENE_W && y >= 0 && y < SCENE_H) g[y][x] = op; };
-/** Pose un bitmap ASCII (`#` = allumé, `.` = éteint) centré en (cx, cy), à l'opacité donnée. */
-const sStamp = (g, art, cx, cy, op = 1) => {
+const sSet = (g, x, y) => { if (x >= 0 && x < SCENE_W && y >= 0 && y < SCENE_H) g[y][x] = 1; };
+/** Pose un bitmap ASCII (`#` = allumé, `.` = éteint) centré en (cx, cy). */
+const sStamp = (g, art, cx, cy) => {
   const ox = cx - (art[0].length >> 1), oy = cy - (art.length >> 1);
   for (let sy = 0; sy < art.length; sy++) for (let sx = 0; sx < art[sy].length; sx++) {
-    if (art[sy][sx] === "#") sSet(g, ox + sx, oy + sy, op);
+    if (art[sy][sx] === "#") sSet(g, ox + sx, oy + sy);
   }
 };
-/** Grille d'opacités → cercles SVG (points jointifs ; opacité < 1 = profondeur). */
+/** Grille binaire → cercles SVG (points jointifs, tous pleins). */
 const sBake = (g) => {
   let b = "";
   for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) {
-    const op = g[y][x];
-    if (!op) continue;
-    b += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5"${op < 1 ? ` fill-opacity="${op}"` : ""}/>`;
+    if (g[y][x]) b += `<circle cx="${x + 0.5}" cy="${y + 0.5}" r="0.5"/>`;
   }
   return b;
 };
 
-// --- décor : deux chaînes de montagnes, silhouettes générées depuis des pics ---
+// --- décor : montagnes, silhouette pleine générée depuis des pics ---
 /** Pour chaque colonne, rangée du sommet = min sur les pics (pic + pente × distance). */
 const ridge = (peaks, slope) => {
   const top = Array(SCENE_W).fill(SCENE_H);
@@ -172,31 +169,27 @@ const ridge = (peaks, slope) => {
   }
   return top;
 };
-const fillRange = (g, top, op) => {
-  for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, top[x]); y <= SCENE_GROUND; y++) sSet(g, x, y, op);
+const fillRange = (g, top) => {
+  for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, top[x]); y <= SCENE_GROUND; y++) sSet(g, x, y);
 };
-const FAR_RIDGE = ridge([[6, 5], [17, 3], [29, 5], [40, 3], [46, 4]], 0.5);  // chaîne lointaine (haute, pâle)
-const NEAR_RIDGE = ridge([[10, 8], [22, 6], [33, 8], [44, 7]], 0.75);         // premier plan (bas, plein)
+const RIDGE = ridge([[3, 9], [8, 6], [13, 8]], 0.85); // trois sommets, le central plus haut
 
 // --- astres (bitmaps modifiables : `#` allumé, `.` éteint) ---
-const SUN_CORE = ["..###..", ".#####.", "#######", "#######", "#######", ".#####.", "..###.."]; // disque rond 7×7
-const MOON_CORE = ["..##...", ".###...", ".##....", ".##....", ".##....", ".###...", "..##..."]; // croissant
-const STARS = [[4, 2], [10, 1], [15, 3], [21, 2], [27, 1], [32, 3], [38, 1], [43, 2], [18, 4], [35, 4]];
+const SUN_CORE = [".###.", "#####", "#####", "#####", ".###."]; // disque rond 5×5
+const MOON_CORE = ["..##.", ".##..", ".#...", ".##..", "..##."]; // croissant 5×5
+const STARS = [[2, 2], [6, 1], [10, 2], [13, 4], [4, 4], [11, 5]];
 
 /** Soleil (disque rond + rayons tournants détachés) à la position (cx, cy), frame f. */
 function drawSun(g, cx, cy, f) {
   const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
   const dirs = [card, [...card, ...diag], diag, [...card, ...diag]][f % 4];
-  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 5 : 4; sSet(g, cx + dx * off, cy + dy * off, 1); }
-  sStamp(g, SUN_CORE, cx, cy, 1);
+  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 4 : 3; sSet(g, cx + dx * off, cy + dy * off); }
+  sStamp(g, SUN_CORE, cx, cy);
 }
-/** Étoiles qui scintillent : chaque frame éclaire un sous-ensemble à intensité variable. */
+/** Étoiles qui scintillent : chaque frame éteint un sous-ensemble différent. */
 function drawStars(g, f) {
-  STARS.forEach(([x, y], i) => {
-    const ph = (i + f) % 4;
-    sSet(g, x, y, ph === 0 ? 1 : ph === 2 ? 0.3 : OP_STAR);
-  });
+  STARS.forEach(([x, y], i) => { if ((i + f) % 3 !== 0) sSet(g, x, y); });
 }
 
 /** Corps céleste + phase (0..1) + libellé selon la tranche de 30 min (0..47). */
@@ -215,19 +208,17 @@ function scenePhase(slot) {
 /** Construit les 4 frames de la scène pour une tranche horaire (label + balisage SVG). */
 function sceneFrames(slot) {
   const { body, t, label } = scenePhase(slot);
-  const cx = Math.round(3 + t * (SCENE_W - 7)); // gauche → droite au fil du temps
+  const cx = Math.round(2 + t * (SCENE_W - 5)); // gauche → droite au fil du temps
   const title = `<title>${label}</title>`;
   const frames = Array.from({ length: 4 }, (_, f) => {
     const g = sNew();
-    for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < SCENE_W; x++) sSet(g, x, y, OP_SKY); // ciel pointillé
     if (body === "moon") {
       drawStars(g, f);
-      sStamp(g, MOON_CORE, cx, Math.round(7 - 5 * Math.sin(Math.PI * t)), 1);
+      sStamp(g, MOON_CORE, cx, Math.round(8 - 6 * Math.sin(Math.PI * t)));
     } else {
-      drawSun(g, cx, Math.round(8 - 6 * Math.sin(Math.PI * t)), f);
+      drawSun(g, cx, Math.round(9 - 7 * Math.sin(Math.PI * t)), f);
     }
-    fillRange(g, FAR_RIDGE, OP_FAR);   // montagnes par-dessus : le soleil se lève / couche derrière
-    fillRange(g, NEAR_RIDGE, OP_NEAR);
+    fillRange(g, RIDGE); // montagnes par-dessus : le soleil se lève / couche derrière
     return title + sBake(g);
   });
   return { label, frames };
@@ -251,10 +242,11 @@ export function dayGlyphFrames(name = dayGlyphName()) {
   return sceneFrames(Number.isFinite(slot) ? slot : 24);
 }
 
-/** Bandeau-scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). */
+/** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Calée en
+ *  bas-droite : la hauteur pilote la taille, la largeur suit le ratio. */
 export function dayGlyph(name = dayGlyphName()) {
   const { frames } = dayGlyphFrames(name);
-  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMidYMax meet" ` +
+  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMaxYMax meet" ` +
     `fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
 }
 
