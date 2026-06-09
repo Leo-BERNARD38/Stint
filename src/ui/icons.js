@@ -137,7 +137,7 @@ export function dotIcon(name, { size = 24 } = {}) {
    matrice fine (points ~2× plus petits). Animation image par image par
    `DayGlyphAnimator`. Tout est réglable ci-dessous : bitmaps, pics, fenêtres.
    ============================================================================ */
-const SCENE_W = 96, SCENE_H = 70, SCENE_GROUND = SCENE_H - 1;
+const SCENE_W = 96, SCENE_H = 40, SCENE_GROUND = SCENE_H - 1;
 const SUN_RISE = 6, SUN_SET = 20; // soleil visible de 6h à 20h ; lune sinon
 const SUN_X0 = Math.round(SCENE_W * 0.60), SUN_X1 = Math.round(SCENE_W * 0.90); // trajectoire confinée à droite
 
@@ -173,7 +173,7 @@ const fillRange = (g, top) => {
   for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, top[x]); y <= SCENE_GROUND; y++) sSet(g, x, y);
 };
 // montagnes basses (sommets vers le bas = grand y), sur toute la largeur
-const RIDGE = ridge([[12, 64], [30, 60], [48, 62], [66, 57], [84, 61], [95, 64]], 0.42);
+const RIDGE = ridge([[12, 36], [30, 33], [48, 35], [66, 32], [84, 34], [95, 37]], 0.38);
 
 // --- astres (bitmaps modifiables : `#` allumé, `.` éteint) ---
 const SUN_CORE = [ // disque rond 7×7
@@ -231,9 +231,9 @@ function sceneFrames(slot) {
     const g = sNew();
     if (body === "moon") {
       drawStars(g, f);
-      sStamp(g, MOON_CORE, cx, Math.round(50 - 40 * Math.sin(Math.PI * t)));
+      sStamp(g, MOON_CORE, cx, Math.round(28 - 22 * Math.sin(Math.PI * t)));
     } else {
-      drawSun(g, cx, Math.round(54 - 44 * Math.sin(Math.PI * t)), f);
+      drawSun(g, cx, Math.round(33 - 27 * Math.sin(Math.PI * t)), f);
     }
     fillRange(g, RIDGE); // montagnes par-dessus : le soleil se lève / couche derrière
     return title + sBake(g);
@@ -259,11 +259,12 @@ export function dayGlyphFrames(name = dayGlyphName()) {
   return sceneFrames(Number.isFinite(slot) ? slot : 24);
 }
 
-/** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Remplit
- *  tout le fond de la carte (slice, ancré en bas : montagnes affleurant le bas). */
+/** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Ancrée en
+ *  bas (montagnes affleurant le bas) ; `meet` ⇒ jamais rognée, le soleil reste
+ *  toujours visible (l'éventuel surplus est du ciel vide, invisible sur l'accent). */
 export function dayGlyph(name = dayGlyphName()) {
   const { frames } = dayGlyphFrames(name);
-  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMidYMax slice" ` +
+  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMidYMax meet" ` +
     `fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
 }
 

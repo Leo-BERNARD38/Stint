@@ -155,7 +155,7 @@
 
 /* ---------- Totaux (aside) ---------- */
 .totals { display: flex; flex-direction: column; }
-.total-hero { position: relative; overflow: hidden; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
+.total-hero { position: relative; overflow: hidden; min-height: 156px; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
 .total-hero .hero-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
 /* Scène « moment de la journée » : fond de carte pleine largeur (derrière le
    texte ; moitié gauche / haut gauche laissés vides par le dessin). Animée image
