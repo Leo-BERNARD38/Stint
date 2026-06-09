@@ -128,18 +128,18 @@ export function dotIcon(name, { size = 24 } = {}) {
 }
 
 /* ============================================================================
-   Scène « moment de la journée » — un petit paysage dot-matrix (montagnes,
-   soleil qui traverse le ciel, lune + étoiles la nuit), affiché à droite de la
-   carte « Total du jour », à hauteur de carte (à côté du texte, pas dessous).
-   Vrai élément de design qui vit au fil de la journée : le soleil se lève à
-   gauche, culmine à midi et se couche à droite ; la nuit, la lune traverse à
-   son tour, étoiles scintillantes. Points **allumés / éteints** uniquement
-   (aucun gris). Animation image par image par `DayGlyphAnimator` (rayons qui
-   tournent / étoiles qui clignotent). Tout est réglable ci-dessous : bitmaps des
-   astres, pics des montagnes, fenêtres horaires.
+   Scène « moment de la journée » — un paysage dot-matrix en **fond** de la carte
+   « Total du jour » (pleine largeur, derrière le texte). Montagnes basses sur
+   toute la largeur ; le soleil ne circule **que sur la moitié droite** (jamais
+   derrière le texte, qui occupe la gauche), culmine au centre-droit ; la nuit, la
+   lune traverse de même, étoiles scintillantes — la **moitié gauche / le haut
+   gauche restent vides**. Points **allumés / éteints** uniquement (aucun gris),
+   matrice fine (points ~2× plus petits). Animation image par image par
+   `DayGlyphAnimator`. Tout est réglable ci-dessous : bitmaps, pics, fenêtres.
    ============================================================================ */
-const SCENE_W = 38, SCENE_H = 30, SCENE_GROUND = SCENE_H - 1;
+const SCENE_W = 96, SCENE_H = 70, SCENE_GROUND = SCENE_H - 1;
 const SUN_RISE = 6, SUN_SET = 20; // soleil visible de 6h à 20h ; lune sinon
+const SUN_X0 = Math.round(SCENE_W * 0.60), SUN_X1 = Math.round(SCENE_W * 0.90); // trajectoire confinée à droite
 
 // --- grille binaire (0 = éteint, 1 = allumé) ---
 const sNew = () => Array.from({ length: SCENE_H }, () => Array(SCENE_W).fill(0));
@@ -172,37 +172,36 @@ const ridge = (peaks, slope) => {
 const fillRange = (g, top) => {
   for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, top[x]); y <= SCENE_GROUND; y++) sSet(g, x, y);
 };
-const RIDGE = ridge([[5, 23], [13, 18], [21, 22], [29, 17], [36, 21]], 0.8); // plusieurs sommets
+// montagnes basses (sommets vers le bas = grand y), sur toute la largeur
+const RIDGE = ridge([[12, 64], [30, 60], [48, 62], [66, 57], [84, 61], [95, 64]], 0.42);
 
 // --- astres (bitmaps modifiables : `#` allumé, `.` éteint) ---
-const SUN_CORE = [ // disque rond 9×9
-  "..#####..",
-  ".#######.",
-  "#########",
-  "#########",
-  "#########",
-  "#########",
-  "#########",
-  ".#######.",
-  "..#####..",
-];
-const MOON_CORE = [ // croissant 7×7
+const SUN_CORE = [ // disque rond 7×7
   "..###..",
-  ".##....",
-  "##.....",
-  "##.....",
-  "##.....",
-  ".##....",
+  ".#####.",
+  "#######",
+  "#######",
+  "#######",
+  ".#####.",
   "..###..",
 ];
-const STARS = [[3, 4], [9, 2], [15, 5], [20, 3], [26, 2], [31, 5], [35, 3], [6, 8], [24, 7], [33, 9], [12, 9], [18, 1]];
+const MOON_CORE = [ // croissant 7 de haut
+  "..##.",
+  ".##..",
+  "##...",
+  "##...",
+  "##...",
+  ".##..",
+  "..##.",
+];
+const STARS = [[58, 8], [68, 5], [78, 10], [86, 6], [64, 15], [82, 17], [74, 12], [90, 13]];
 
 /** Soleil (disque rond + rayons tournants détachés) à la position (cx, cy), frame f. */
 function drawSun(g, cx, cy, f) {
   const card = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   const diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
   const dirs = [card, [...card, ...diag], diag, [...card, ...diag]][f % 4];
-  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 6 : 5; sSet(g, cx + dx * off, cy + dy * off); }
+  for (const [dx, dy] of dirs) { const off = (dx === 0 || dy === 0) ? 5 : 4; sSet(g, cx + dx * off, cy + dy * off); }
   sStamp(g, SUN_CORE, cx, cy);
 }
 /** Étoiles qui scintillent : chaque frame éteint un sous-ensemble différent. */
@@ -226,15 +225,15 @@ function scenePhase(slot) {
 /** Construit les 4 frames de la scène pour une tranche horaire (label + balisage SVG). */
 function sceneFrames(slot) {
   const { body, t, label } = scenePhase(slot);
-  const cx = Math.round(4 + t * (SCENE_W - 8)); // gauche → droite au fil du temps
+  const cx = Math.round(SUN_X0 + t * (SUN_X1 - SUN_X0)); // uniquement sur la moitié droite
   const title = `<title>${label}</title>`;
   const frames = Array.from({ length: 4 }, (_, f) => {
     const g = sNew();
     if (body === "moon") {
       drawStars(g, f);
-      sStamp(g, MOON_CORE, cx, Math.round(22 - 18 * Math.sin(Math.PI * t)));
+      sStamp(g, MOON_CORE, cx, Math.round(50 - 40 * Math.sin(Math.PI * t)));
     } else {
-      drawSun(g, cx, Math.round(24 - 20 * Math.sin(Math.PI * t)), f);
+      drawSun(g, cx, Math.round(54 - 44 * Math.sin(Math.PI * t)), f);
     }
     fillRange(g, RIDGE); // montagnes par-dessus : le soleil se lève / couche derrière
     return title + sBake(g);
@@ -260,11 +259,11 @@ export function dayGlyphFrames(name = dayGlyphName()) {
   return sceneFrames(Number.isFinite(slot) ? slot : 24);
 }
 
-/** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Calée en
- *  bas-droite : la hauteur pilote la taille, la largeur suit le ratio. */
+/** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Remplit
+ *  tout le fond de la carte (slice, ancré en bas : montagnes affleurant le bas). */
 export function dayGlyph(name = dayGlyphName()) {
   const { frames } = dayGlyphFrames(name);
-  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMaxYMax meet" ` +
+  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMidYMax slice" ` +
     `fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
 }
 

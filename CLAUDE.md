@@ -167,12 +167,12 @@ Notes :
 - **Motion** : flat mais fluide — survol sobre des gros boutons (changement de
   fond, sans élévation), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
-  `grid-template-rows 0fr→1fr`). Dans « Total journée », **scène `dayGlyph`** :
-  petit **paysage dot-matrix** (grille `SCENE_W`×`SCENE_H`) calé **à droite de la
-  carte, à hauteur de carte** (à côté du texte, pas dessous ; la hauteur pilote la
-  taille, `aspect-ratio` fixe la largeur, `preserveAspectRatio xMaxYMax`) — montagnes
-  en silhouette, **soleil qui traverse le ciel** (lever à gauche, zénith à midi,
-  coucher à droite) puis **lune + étoiles scintillantes** la nuit. Points
+  `grid-template-rows 0fr→1fr`). Dans « Total journée », **scène `dayGlyph`** en
+  **fond de carte pleine largeur** (`position:absolute; inset:0`, derrière le
+  texte ; `preserveAspectRatio xMidYMax slice`) : paysage dot-matrix (grille
+  `SCENE_W`×`SCENE_H`, fine) — montagnes basses sur toute la largeur, **soleil qui
+  ne circule que sur la moitié droite** (`SUN_X0..SUN_X1`, jamais derrière le
+  texte) puis **lune + étoiles** la nuit ; la **moitié gauche reste vide**. Points
   **allumés/éteints uniquement** (aucun gris). Astres et montagnes sont des
   **bitmaps / pics réglables** dans `icons.js`. La position évolue par tranche de
   30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par
