@@ -520,3 +520,10 @@
 .st-timeline.year .st-track { height: 24px; }
 .st-row.weekend .st-track { opacity: .72; }
 .st-track .tl-seg { border-radius: 5px; min-width: 3px; }
+
+/* Segment net découpé (compté / non compté) : c'est la même tâche, donc on
+   n'arrondit que les bords extérieurs — jointures internes carrées (placé
+   après les règles de rayon des deux timelines pour l'emporter). */
+.tl-seg.seg-l { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.tl-seg.seg-r { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.tl-seg.seg-mid { border-radius: 0; }

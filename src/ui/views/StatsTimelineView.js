@@ -115,7 +115,10 @@ export class StatsTimelineView {
           color, key,
         };
         const parts = seg.raw ? [[s, e, true]] : workedParts(s, e, ranges);
-        for (const [from, to, counted] of parts) track.appendChild(this.#part(pct(from), pct(to), counted, data));
+        parts.forEach(([from, to, counted], i) => {
+          const edge = parts.length === 1 ? "" : i === 0 ? "seg-l" : i === parts.length - 1 ? "seg-r" : "seg-mid";
+          track.appendChild(this.#part(pct(from), pct(to), counted, data, edge));
+        });
       }
       const now = Date.now();
       if (isToday && now >= winStart && now <= winEnd) {
@@ -175,9 +178,9 @@ export class StatsTimelineView {
   }
 
   /** Morceau de segment (vue Mois) : `counted=false` ⇒ estompé (hors horaires). */
-  #part(left, right, counted, data) {
+  #part(left, right, counted, data, edge) {
     return createEl("div", {
-      className: "tl-seg" + (counted ? "" : " uncounted"),
+      className: "tl-seg" + (counted ? "" : " uncounted") + (edge ? " " + edge : ""),
       attrs: {
         style: `left:${left}%;width:${Math.max(0.6, right - left)}%;background:${data.color}`,
         "data-name": data.name, "data-range": data.range, "data-dur": data.dur,

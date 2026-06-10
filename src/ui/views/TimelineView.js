@@ -85,13 +85,14 @@ export class TimelineView {
         "data-color": color,
       };
       const parts = seg.raw ? [[s, e, true]] : workedParts(s, e, ranges);
-      for (const [from, to, counted] of parts) {
+      parts.forEach(([from, to, counted], i) => {
+        const edge = parts.length === 1 ? "" : i === 0 ? " seg-l" : i === parts.length - 1 ? " seg-r" : " seg-mid";
         this.timeline.appendChild(createEl("div", {
-          className: "tl-seg" + (counted ? "" : " uncounted"),
+          className: "tl-seg" + (counted ? "" : " uncounted") + edge,
           attrs: { style: `left:${pct(from)}%;width:${Math.max(0.4, pct(to) - pct(from))}%;background:${color}`, ...data },
           on: { click: () => this.app.scrollToSegment(seg.id) },
         }));
-      }
+      });
     }
 
     // repère « maintenant » (uniquement aujourd'hui, dans la fenêtre)
