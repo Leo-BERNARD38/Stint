@@ -18,8 +18,8 @@ export class TabsView {
     this.active = name;
     this.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
     this.panels.forEach((p) => { p.hidden = p.dataset.panel !== name; });
-    // « Tâches » est une vue tout-temps : le sélecteur de jour ne s'y applique pas.
-    el("dayHead").hidden = name === "taches";
+    // « Tâches » et « Stats » sont des vues tout-temps : pas de sélecteur de jour.
+    el("dayHead").hidden = name === "taches" || name === "stats";
   }
 
   render() { /* déclaratif : rien à re-rendre sur changement de données */ }

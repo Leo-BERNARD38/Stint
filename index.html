@@ -105,10 +105,11 @@
     </div>
 
     <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
-    <nav class="tabs" role="tablist">
+    <nav class="tabs tabs-4" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
       <button class="tab" data-tab="segments" role="tab">Segments</button>
       <button class="tab" data-tab="taches" role="tab">Tâches</button>
+      <button class="tab" data-tab="stats" role="tab">Stats</button>
     </nav>
 
     <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
@@ -171,28 +172,11 @@
     <!-- ---------------------------- Onglet : Tâches (toutes, par date d'ouverture) ---------------------------- -->
     <section class="tab-panel" data-panel="taches" hidden>
       <div class="block-title">
-        Activité
-        <span class="hint">temps travaillé par jour · cliquez une case pour ouvrir le jour</span>
-      </div>
-      <div class="heatmap" id="heatmap"></div>
-
-      <div class="block-title">
         Toutes les tâches
-        <span class="hint">par date d'ouverture · cliquez une tâche pour voir ses segments</span>
+        <span class="hint">recherchez, filtrez, et regroupez par jour · semaine · mois</span>
       </div>
 
       <div class="at-controls">
-        <div class="chip-group" id="atPeriod" role="group" aria-label="Période">
-          <button class="chip active" data-period="all">Tout</button>
-          <button class="chip" data-period="week">Semaine</button>
-          <button class="chip" data-period="month">Mois</button>
-          <button class="chip" data-period="custom">Perso</button>
-        </div>
-        <div class="at-custom" id="atCustom" hidden>
-          <input type="date" id="atFrom" aria-label="Date de début">
-          <span class="at-arrow">→</span>
-          <input type="date" id="atTo" aria-label="Date de fin">
-        </div>
         <div class="at-controls-row">
           <input type="search" id="atSearch" class="at-search" placeholder="Rechercher (nom, clé Jira)…" autocomplete="off" spellcheck="false">
           <div class="chip-group" id="atTypes" role="group" aria-label="Type">
@@ -200,17 +184,51 @@
             <button class="chip is-type active" data-type="support">support</button>
             <button class="chip is-type active" data-type="autre">autre</button>
           </div>
-          <select id="atState" class="at-state" aria-label="État">
-            <option value="all">Tous les états</option>
-            <option value="open">En cours</option>
-            <option value="done">Terminées</option>
-            <option value="archived">Archivées</option>
-          </select>
+          <div class="select-wrap">
+            <select id="atState" class="at-state" aria-label="État">
+              <option value="all">Tous les états</option>
+              <option value="open">En cours</option>
+              <option value="done">Terminées</option>
+              <option value="archived">Archivées</option>
+            </select>
+            <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+          </div>
+        </div>
+        <div class="at-groupby">
+          <span class="at-groupby-label">Grouper par</span>
+          <div class="chip-group" id="atGroup" role="group" aria-label="Regroupement">
+            <button class="chip active" data-group="day">Jour</button>
+            <button class="chip" data-group="week">Semaine</button>
+            <button class="chip" data-group="month">Mois</button>
+          </div>
         </div>
       </div>
 
-      <div class="at-recap" id="atRecap" hidden></div>
       <div class="all-tasks" id="allTasks"></div>
+    </section>
+
+    <!-- ---------------------------- Onglet : Stats (vue d'ensemble, tout-temps) ---------------------------- -->
+    <section class="tab-panel" data-panel="stats" hidden>
+      <div class="block-title">
+        Vue d'ensemble
+        <span class="hint">tout l'historique</span>
+      </div>
+      <div class="stats-cards" id="statsCards"></div>
+
+      <div class="block-title">Répartition par type</div>
+      <div class="stats-types" id="statsTypes"></div>
+
+      <div class="block-title">
+        Activité
+        <span class="hint">temps travaillé par jour · cliquez une case pour ouvrir le jour</span>
+      </div>
+      <div class="heatmap" id="heatmap"></div>
+
+      <div class="block-title">
+        Par semaine
+        <span class="hint">16 dernières semaines</span>
+      </div>
+      <div class="stats-bars" id="statsBars"></div>
     </section>
     </div><!-- /#appScreen -->
 
