@@ -188,6 +188,12 @@ export class AllTasksView {
     actions.append(
       createCopyButton(this.app, fmt.decimal(mins), "Déc."),
       createCopyButton(this.app, fmt.jira(mins), "Jira"),
+      createEl("button", {
+        className: "mini-btn icon-only",
+        html: icon("pencil", { size: 15 }),
+        attrs: { title: "Éditer la tâche", "aria-label": "Éditer la tâche" },
+        on: { click: () => this.app.openEditTask(task.id) },
+      }),
     );
     head.appendChild(actions);
     card.appendChild(head);
