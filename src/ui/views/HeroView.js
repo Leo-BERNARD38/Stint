@@ -58,6 +58,8 @@ export class HeroView {
   tick() {
     const seg = this.app.store.activeSegment();
     if (!seg) return;
-    this.timer.textContent = this.app.formatter.hms(Date.now() - seg.startMs());
+    // Vrai temps de la tâche en cours : somme de tous ses segments, en
+    // respectant le statut brut/net de chacun (pas seulement le segment actif).
+    this.timer.textContent = this.app.formatter.hms(this.app.calc.taskTotalMs(seg.taskId));
   }
 }

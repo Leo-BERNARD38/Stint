@@ -51,6 +51,15 @@ export class TimeCalculator {
     return seg.raw ? e - s : this.workedMs(s, e);
   }
 
+  /** Temps total (ms) d'une tâche, tous segments confondus (brut/net respecté). */
+  taskTotalMs(taskId) {
+    let total = 0;
+    for (const seg of this.store.segments) {
+      if (seg.taskId === taskId) total += this.segmentMs(seg);
+    }
+    return total;
+  }
+
   /** Agrégats d'une journée : total, par type, par tâche. */
   totalsForDay(day) {
     const segs = this.store.segmentsForDay(day);
