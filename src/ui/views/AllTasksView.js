@@ -1,5 +1,6 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { icon } from "../icons.js";
+import { createCopyButton } from "../components/CopyButton.js";
 import { sameDay, addDays, fmtClock, fmtDateInput } from "../../utils/datetime.js";
 
 /**
@@ -16,6 +17,9 @@ export class AllTasksView {
 
   bind() {
     this.root.addEventListener("click", (e) => {
+      // Les boutons de copie vivent dans l'en-tête : on les laisse agir sans
+      // déclencher le plier/déplier de la tâche.
+      if (e.target.closest(".at-actions")) return;
       const head = e.target.closest("[data-task-toggle]");
       if (head) { this.#toggle(head.dataset.taskToggle); return; }
       const seg = e.target.closest("[data-seg-day]");
@@ -23,6 +27,7 @@ export class AllTasksView {
     });
     this.root.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
+      if (e.target.closest(".at-actions")) return;
       const head = e.target.closest("[data-task-toggle]");
       if (head) { e.preventDefault(); this.#toggle(head.dataset.taskToggle); }
     });
@@ -81,7 +86,7 @@ export class AllTasksView {
     const open = this.expanded.has(task.id);
     const card = createEl("div", { className: "at-task" + (open ? " open" : "") });
 
-    card.appendChild(createEl("div", {
+    const head = createEl("div", {
       className: "at-head",
       attrs: { "data-task-toggle": task.id, role: "button", tabindex: "0", "aria-expanded": String(open) },
       html:
@@ -93,7 +98,17 @@ export class AllTasksView {
           (task.archived ? `<span class="badge-done">archivé</span>` : "") +
         `</div><div class="at-sub">${segs.length} segment${segs.length > 1 ? "s" : ""}</div></div>` +
         `<span class="at-total">${fmt.clock(total / 60000)}</span>`,
-    }));
+    });
+
+    // Copie du temps total de la tâche (brut/net déjà pris en compte dans `total`).
+    const mins = total / 60000;
+    const actions = createEl("div", { className: "at-actions" });
+    actions.append(
+      createCopyButton(this.app, fmt.decimal(mins), "Déc."),
+      createCopyButton(this.app, fmt.jira(mins), "Jira"),
+    );
+    head.appendChild(actions);
+    card.appendChild(head);
 
     // La liste est toujours dans le DOM (repliée en hauteur 0 via CSS) : c'est
     // ce qui permet d'animer l'ouverture/fermeture sans reconstruire la carte.
