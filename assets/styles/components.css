@@ -452,3 +452,42 @@
 .hm-future { visibility: hidden; }
 .hm-legend { display: flex; align-items: center; gap: 5px; margin-top: var(--sp-3); font-size: 11px; color: var(--text-faint); }
 .hm-legend .hm-cell { width: 11px; height: 11px; }
+
+/* ============================ Onglet Tâches : filtres & récap période ============================ */
+.at-controls { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.at-controls-row { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; }
+
+/* Pilules de filtre (période, type) — contrôle inversé une fois actif. */
+.chip-group { display: inline-flex; gap: var(--sp-2); flex-wrap: wrap; }
+.chip { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill);
+  padding: 7px 14px; font-size: 13px; font-weight: 600; transition: background-color .14s var(--ease), color .14s var(--ease); }
+.chip:hover { background: var(--surface-hover); color: var(--text); }
+.chip:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.chip.active { background: var(--accent); color: var(--accent-text); }
+.chip.is-type::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle; background: var(--dot-autre); }
+.chip.is-type[data-type="dev"]::before { background: var(--dot-dev); }
+.chip.is-type[data-type="support"]::before { background: var(--dot-support); }
+/* Type désactivé : pilule estompée (on voit qu'il est exclu). */
+.chip.is-type:not(.active) { opacity: .5; }
+
+.at-search, .at-state { border: none; background: var(--surface); color: var(--text); font-family: var(--font-body);
+  border-radius: var(--radius-pill); padding: 9px 14px; font-size: 13.5px; }
+.at-search { flex: 1; min-width: 180px; }
+.at-state { max-width: 190px; }
+.at-search:focus, .at-state:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.at-custom { display: flex; align-items: center; gap: var(--sp-3); }
+.at-custom input { border: none; background: var(--surface); color: var(--text); font-family: var(--font-body);
+  border-radius: var(--radius-sm); padding: 8px 12px; }
+.at-custom input:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.at-custom .at-arrow { color: var(--text-faint); }
+
+/* Récap période : total + ventilation par type + boutons de copie. */
+.at-recap { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-5); animation: fade .2s var(--ease); }
+.at-recap-head { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.at-recap-total { font-family: var(--font-display); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.at-recap-label { color: var(--text-faint); font-size: 13px; }
+.at-recap-types { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin-top: var(--sp-3);
+  font-size: 13px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.at-recap-actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }

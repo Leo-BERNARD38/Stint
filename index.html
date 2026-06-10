@@ -180,6 +180,36 @@
         Toutes les tâches
         <span class="hint">par date d'ouverture · cliquez une tâche pour voir ses segments</span>
       </div>
+
+      <div class="at-controls">
+        <div class="chip-group" id="atPeriod" role="group" aria-label="Période">
+          <button class="chip active" data-period="all">Tout</button>
+          <button class="chip" data-period="week">Semaine</button>
+          <button class="chip" data-period="month">Mois</button>
+          <button class="chip" data-period="custom">Perso</button>
+        </div>
+        <div class="at-custom" id="atCustom" hidden>
+          <input type="date" id="atFrom" aria-label="Date de début">
+          <span class="at-arrow">→</span>
+          <input type="date" id="atTo" aria-label="Date de fin">
+        </div>
+        <div class="at-controls-row">
+          <input type="search" id="atSearch" class="at-search" placeholder="Rechercher (nom, clé Jira)…" autocomplete="off" spellcheck="false">
+          <div class="chip-group" id="atTypes" role="group" aria-label="Type">
+            <button class="chip is-type active" data-type="dev">dev</button>
+            <button class="chip is-type active" data-type="support">support</button>
+            <button class="chip is-type active" data-type="autre">autre</button>
+          </div>
+          <select id="atState" class="at-state" aria-label="État">
+            <option value="all">Tous les états</option>
+            <option value="open">En cours</option>
+            <option value="done">Terminées</option>
+            <option value="archived">Archivées</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="at-recap" id="atRecap" hidden></div>
       <div class="all-tasks" id="allTasks"></div>
     </section>
     </div><!-- /#appScreen -->

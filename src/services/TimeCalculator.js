@@ -51,11 +51,14 @@ export class TimeCalculator {
     return seg.raw ? e - s : this.workedMs(s, e);
   }
 
-  /** Temps total (ms) d'une tâche, tous segments confondus (brut/net respecté). */
-  taskTotalMs(taskId) {
+  /**
+   * Temps total (ms) d'une tâche, tous segments confondus (brut/net respecté).
+   * Bornes optionnelles [clampS, clampE] pour ne compter qu'une fenêtre (période).
+   */
+  taskTotalMs(taskId, clampS = null, clampE = null) {
     let total = 0;
     for (const seg of this.store.segments) {
-      if (seg.taskId === taskId) total += this.segmentMs(seg);
+      if (seg.taskId === taskId) total += this.segmentMs(seg, clampS, clampE);
     }
     return total;
   }
