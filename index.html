@@ -209,26 +209,26 @@
 
     <!-- ---------------------------- Onglet : Stats (vue d'ensemble, tout-temps) ---------------------------- -->
     <section class="tab-panel" data-panel="stats" hidden>
-      <div class="block-title">
-        Vue d'ensemble
-        <span class="hint">tout l'historique</span>
-      </div>
       <div class="stats-cards" id="statsCards"></div>
 
-      <div class="block-title">Répartition par type</div>
-      <div class="stats-types" id="statsTypes"></div>
-
-      <div class="block-title">
-        Activité
-        <span class="hint">temps travaillé par jour · cliquez une case pour ouvrir le jour</span>
+      <div class="stat-block">
+        <div class="block-title">
+          Activité
+          <span class="hint">une case = un jour · l'intensité = le temps · cliquez pour ouvrir le jour</span>
+        </div>
+        <div class="heatmap" id="heatmap"></div>
       </div>
-      <div class="heatmap" id="heatmap"></div>
 
-      <div class="block-title">
-        Par semaine
-        <span class="hint">16 dernières semaines</span>
+      <div class="stats-grid">
+        <div class="stat-block">
+          <div class="block-title">Répartition par type</div>
+          <div class="stats-types" id="statsTypes"></div>
+        </div>
+        <div class="stat-block">
+          <div class="block-title">Par mois <span class="hint">12 derniers mois</span></div>
+          <div class="stats-bars" id="statsBars"></div>
+        </div>
       </div>
-      <div class="stats-bars" id="statsBars"></div>
     </section>
     </div><!-- /#appScreen -->
 
@@ -383,22 +383,23 @@
           <h3>Les 4 boutons</h3>
           <ul class="guide-actions">
             <li>
-              <span class="ga-icon play" data-icon="play" data-icon-size="20"></span>
+              <span class="ga-icon play" data-icon="play" data-dot="true" data-icon-size="22"></span>
               <div><b>Play / Pause</b> <kbd>Espace</kbd><p>Démarre ou met en pause le chrono de la tâche active.</p></div>
             </li>
             <li>
-              <span class="ga-icon new" data-icon="plus" data-icon-size="20"></span>
+              <span class="ga-icon new" data-icon="plus" data-dot="true" data-icon-size="22"></span>
               <div><b>Nouvelle tâche</b> <kbd>N</kbd><p>Crée une tâche et la démarre aussitôt — le réflexe quand un ticket tombe. Pour Jira, mets la clé comme nom (ex. MOD-123).</p></div>
             </li>
             <li>
-              <span class="ga-icon resume" data-icon="rotate-ccw" data-icon-size="20"></span>
+              <span class="ga-icon resume" data-icon="resume" data-dot="true" data-icon-size="22"></span>
               <div><b>Reprise</b> <kbd>R</kbd><p>Reprend une tâche déjà en cours (la liste ne montre que les tâches non terminées).</p></div>
             </li>
             <li>
-              <span class="ga-icon finish" data-icon="check" data-icon-size="20"></span>
+              <span class="ga-icon finish" data-icon="check" data-dot="true" data-icon-size="22"></span>
               <div><b>Terminer</b> <kbd>T</kbd><p>Clôt la tâche active : elle quitte « Reprise » mais reste comptée dans les totaux.</p></div>
             </li>
           </ul>
+          <p>La carte « Tâche active » en haut affiche le <b>temps total cumulé</b> de la tâche en cours (tous ses segments).</p>
         </div>
 
         <div class="guide-block">
@@ -426,20 +427,54 @@
         </div>
 
         <div class="guide-block">
-          <h3>Timeline & temps non tracé</h3>
+          <h3>Onglet Journée — timeline & temps non tracé</h3>
           <p>
             La barre représente ta journée, chaque bloc une tâche. Les vides entre les blocs sont
             du <b>temps non tracé</b> : le raccourci « Combler » t'aide à le rattraper. Le trait
-            vertical marque l'heure actuelle.
+            vertical marque l'heure actuelle. L'onglet <b>Segments</b> permet d'éditer les heures,
+            la tâche ou le mode brut, et d'ajouter une saisie manuelle.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Onglet Tâches — rechercher, filtrer, regrouper</h3>
+          <p>
+            Toutes tes tâches, avec <b>recherche</b> (nom ou clé Jira), <b>filtres</b> par type
+            (dev / support / autre) et par <b>état</b> (en cours, terminées, archivées).
+          </p>
+          <p>
+            Le sélecteur <b>Jour · Semaine · Mois</b> regroupe les tâches : chaque en-tête de groupe
+            indique son <b>total</b> et un bouton <b>Récap Jira</b> qui copie, en une fois, la liste
+            « tâche → durée » du groupe — pratique pour un report hebdo. Chaque tâche a aussi ses
+            copies <b>Déc.</b> et <b>Jira</b>.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Onglet Stats — vue d'ensemble</h3>
+          <p>
+            Le panorama de tout ton historique : <b>cartes de synthèse</b> (total, semaine, mois,
+            nombre de tâches, jours actifs), <b>répartition par type</b>, une <b>heatmap</b> façon
+            calendrier (une case par jour, intensité = temps travaillé — clique une case pour ouvrir
+            le jour) et l'<b>activité par mois</b>.
+          </p>
+        </div>
+
+        <div class="guide-block">
+          <h3>Outils <span class="kbd">clé ⚙</span></h3>
+          <p>
+            Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
+            copie en un clic) et un <b>calcul brut / net</b> entre deux dates — le temps réel et le
+            temps ouvré, pratique pour vérifier ou saisir un report a posteriori.
           </p>
         </div>
 
         <div class="guide-block">
           <h3>Copier pour Jira</h3>
           <p>
-            Chaque tâche et le total du jour ont deux boutons de copie : <b>Déc.</b> (décimal,
-            ex. <code>1.5</code>) et <b>Jira</b> (ex. <code>1h 30m</code>). Les unités Jira
-            (<code>1d</code>, <code>1w</code>) sont calculées depuis tes horaires — modifiable dans Réglages.
+            Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
+            (ex. <code>1h 30m</code>). Les unités Jira (<code>1d</code>, <code>1w</code>) sont calculées
+            depuis tes horaires — modifiable dans Réglages.
           </p>
         </div>
 
@@ -524,7 +559,10 @@
       </div>
       <div class="field">
         <label>Type</label>
-        <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+        <div class="select-wrap">
+          <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+          <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn" data-close>Annuler</button>
@@ -552,7 +590,10 @@
       </div>
       <div class="field-grid">
         <div class="field"><label>Type</label>
-          <select id="etType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+          <div class="select-wrap">
+            <select id="etType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
+            <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+          </div>
         </div>
         <div class="field"><label>Couleur</label><input type="color" id="etColor"></div>
       </div>

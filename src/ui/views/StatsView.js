@@ -2,7 +2,8 @@ import { el, createEl } from "../../utils/dom.js";
 import { startOfDay, addDays, isoDow, fmtDateInput } from "../../utils/datetime.js";
 
 const TYPES = ["dev", "support", "autre"];
-const NUM_WEEKS = 16; // barres « par semaine »
+const NUM_MONTHS = 12; // barres « par mois »
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Onglet Stats : vue d'ensemble tout-temps. Cartes de synthèse (total, semaine,
@@ -62,26 +63,25 @@ export class StatsView {
       }));
     }
 
-    // --- activité par semaine (barres) ---
-    const firstMon = addDays(monday, -7 * (NUM_WEEKS - 1));
-    const weeks = [];
-    for (let w = 0; w < NUM_WEEKS; w++) {
-      const ws = addDays(firstMon, 7 * w);
-      let ms = 0;
-      for (let d = 0; d < 7; d++) {
-        const day = addDays(ws, d);
-        if (day.getTime() <= today.getTime()) ms += calc.totalsForDay(day).total;
-      }
-      weeks.push({ ws, ms });
+    // --- activité par mois (barres étiquetées) ---
+    const base = new Date(today.getFullYear(), today.getMonth(), 1);
+    const months = [];
+    for (let i = NUM_MONTHS - 1; i >= 0; i--) {
+      const s = new Date(base.getFullYear(), base.getMonth() - i, 1);
+      const e = new Date(base.getFullYear(), base.getMonth() - i + 1, 1);
+      months.push({ d: s, ms: sumWin(s.getTime(), e.getTime()) });
     }
-    const maxW = Math.max(1, ...weeks.map((w) => w.ms));
+    const maxM = Math.max(1, ...months.map((m) => m.ms));
     this.bars.innerHTML = "";
-    for (const wk of weeks) {
-      const label = wk.ws.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    for (const m of months) {
+      const label = m.d.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
+      const full = cap(m.d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
       this.bars.appendChild(createEl("div", {
         className: "stat-wk",
-        attrs: { title: `Semaine du ${label} · ${wk.ms ? clock(wk.ms) : "rien"}` },
-        html: `<div class="stat-wk-bar" style="height:${Math.round(wk.ms / maxW * 100)}%"></div>`,
+        attrs: { title: `${full} · ${m.ms ? clock(m.ms) : "rien"}` },
+        html:
+          `<div class="stat-wk-track"><div class="stat-wk-bar" style="height:${Math.round(m.ms / maxM * 100)}%"></div></div>` +
+          `<span class="stat-wk-lab">${label}</span>`,
       }));
     }
   }

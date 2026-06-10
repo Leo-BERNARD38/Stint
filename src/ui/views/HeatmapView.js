@@ -1,7 +1,7 @@
 import { el, createEl } from "../../utils/dom.js";
 import { startOfDay, addDays, sameDay, isoDow, fmtDateInput, formatLongDate } from "../../utils/datetime.js";
 
-const NUM_WEEKS = 26; // ~6 mois d'historique
+const NUM_WEEKS = 53; // une année complète (remplit la carte façon graphe GitHub)
 
 /**
  * Construit la grille semaines × jours (lundi → dimanche), la plus ancienne à

@@ -484,6 +484,8 @@
 .select-wrap select:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .select-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   display: grid; place-items: center; color: var(--text-faint); pointer-events: none; }
+/* Dans un formulaire (.field), le select stylé prend toute la largeur. */
+.field .select-wrap, .field .select-wrap select { width: 100%; }
 
 /* En-tête de groupe : étiquette + total + récap Jira du groupe. */
 .at-date { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-5) 0 var(--sp-2); }
@@ -495,23 +497,35 @@
 
 /* ============================ Onglet Stats ============================ */
 /* Cartes de synthèse (afficheurs en police display). */
-.stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--sp-3);
-  margin-bottom: var(--sp-6); }
-.stat-card { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); }
+.stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--sp-3);
+  margin-bottom: var(--sp-4); }
+.stat-card { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5);
+  transition: background-color .15s var(--ease); }
+.stat-card:first-child { background: var(--accent); color: var(--accent-text); }
+.stat-card:first-child .stat-lab { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
 .stat-val { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-lab { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 
+/* Blocs Stats : cartes pleines (heatmap, type, mois) sur le fond de page. */
+.stat-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); margin-bottom: var(--sp-4); }
+.stat-block .block-title { margin-bottom: var(--sp-4); }
+.stat-block .heatmap { margin-bottom: 0; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-4); }
+.stats-grid .stat-block { margin-bottom: 0; }
+
 /* Répartition par type : badge + barre proportionnelle + durée. */
-.stats-types { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.stats-types { display: flex; flex-direction: column; gap: var(--sp-4); }
 .stat-type { display: flex; align-items: center; gap: var(--sp-3); }
 .stat-type .type-badge { min-width: 64px; text-align: center; }
 .stat-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Activité par semaine : barres alignées en bas. */
-.stats-bars { display: flex; align-items: flex-end; gap: 4px; height: 120px; }
-.stat-wk { flex: 1; height: 100%; display: flex; align-items: flex-end; }
-.stat-wk-bar { width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0;
+/* Activité par mois : barres étiquetées, alignées en bas. */
+.stats-bars { display: flex; align-items: flex-end; gap: var(--sp-2); }
+.stat-wk { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stat-wk-track { width: 100%; height: 110px; display: flex; align-items: flex-end; }
+.stat-wk-bar { width: 100%; min-height: 3px; background: var(--accent); border-radius: 5px 5px 0 0;
   transition: height .4s var(--ease-out); }
 .stat-wk:hover .stat-wk-bar { background: var(--text-soft); }
+.stat-wk-lab { font-size: 10.5px; color: var(--text-faint); white-space: nowrap; }
