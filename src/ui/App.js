@@ -17,6 +17,7 @@ import { SegmentTableView } from "./views/SegmentTableView.js";
 import { AllTasksView } from "./views/AllTasksView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
+import { ToolsView } from "./views/ToolsView.js";
 
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
@@ -42,7 +43,7 @@ export class App {
     this.timer = new Timer();
     this.dayGlyphAnimator = new DayGlyphAnimator();
     this.viewDay = startOfDay(new Date());
-    this.screen = "app"; // app | settings | guide
+    this.screen = "app"; // app | settings | guide | tools
     this._ticksSinceRefresh = 0;
 
     this.toast = new Toast();
@@ -69,6 +70,7 @@ export class App {
       new AllTasksView(this),
       new SettingsView(this),
       new StorageView(this),
+      new ToolsView(this),
     ];
   }
 
@@ -103,19 +105,22 @@ export class App {
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
 
-  /* ----------------- écrans (app / réglages / guide) ----------------- */
+  /* ----------------- écrans (app / réglages / guide / outils) ----------------- */
   showScreen(name) {
     this.screen = name;
     el("appScreen").hidden = name !== "app";
     el("settingsScreen").hidden = name !== "settings";
     el("guideScreen").hidden = name !== "guide";
+    el("toolsScreen").hidden = name !== "tools";
     el("settingsBtn").classList.toggle("active", name === "settings");
     el("helpBtn").classList.toggle("active", name === "guide");
+    el("toolsBtn").classList.toggle("active", name === "tools");
     window.scrollTo({ top: 0 });
   }
   backToApp() { this.showScreen("app"); }
   toggleSettings() { this.showScreen(this.screen === "settings" ? "app" : "settings"); }
   toggleGuide() { this.showScreen(this.screen === "guide" ? "app" : "guide"); }
+  toggleTools() { this.showScreen(this.screen === "tools" ? "app" : "tools"); }
 
   /** Termine (ferme) la tâche active. */
   finishActive() {
@@ -229,8 +234,10 @@ export class App {
   #bindNav() {
     el("settingsBtn").addEventListener("click", () => this.toggleSettings());
     el("helpBtn").addEventListener("click", () => this.toggleGuide());
+    el("toolsBtn").addEventListener("click", () => this.toggleTools());
     el("settingsBack").addEventListener("click", () => this.backToApp());
     el("guideBack").addEventListener("click", () => this.backToApp());
+    el("toolsBack").addEventListener("click", () => this.backToApp());
   }
 
   #bindKeyboard() {

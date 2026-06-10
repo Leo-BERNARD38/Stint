@@ -1,0 +1,152 @@
+import { el, createEl } from "../../utils/dom.js";
+import { createCopyButton } from "../components/CopyButton.js";
+import { startOfDay, atTime, fmtDateTimeLocal, parseDateTimeLocal } from "../../utils/datetime.js";
+
+/** Formats affichés par le convertisseur (clé interne → libellé). */
+const CONV_FORMATS = [
+  ["decimal", "Décimal"],
+  ["jira", "Jira"],
+  ["clock", "Horloge"],
+  ["hms", "H:mm:ss"],
+];
+
+/**
+ * Écran « Outils » : deux utilitaires sans état persistant qui réutilisent le
+ * domaine — un convertisseur de durée (tous formats + copie) et un calcul
+ * brut/net entre deux instants (TimeCalculator.workedMs exposé en UI).
+ */
+export class ToolsView {
+  constructor(app) {
+    this.app = app;
+    this.convInput = el("convInput");
+    this.convUnit = el("convUnit");
+    this.convOut = el("convOut");
+    this.bnStart = el("bnStart");
+    this.bnEnd = el("bnEnd");
+    this.bnOut = el("bnOut");
+    this._defaultsSet = false;
+  }
+
+  bind() {
+    this.convInput.addEventListener("input", () => this.#renderConv());
+    this.convUnit.addEventListener("change", () => this.#renderConv());
+    this.bnStart.addEventListener("input", () => this.#renderBrutNet());
+    this.bnEnd.addEventListener("input", () => this.#renderBrutNet());
+    this.#setDefaults();
+  }
+
+  /**
+   * (Re)calcule les sorties depuis les saisies courantes — sans jamais réécrire
+   * les champs : un changement de réglages (unités Jira, arrondi) se répercute
+   * donc sur les conversions affichées.
+   */
+  render() {
+    this.#renderConv();
+    this.#renderBrutNet();
+  }
+
+  /** Pré-remplit le calcul brut/net (arrivée du jour → maintenant) une seule fois. */
+  #setDefaults() {
+    if (this._defaultsSet) return;
+    const now = new Date();
+    const start = atTime(startOfDay(now), this.app.store.settings.arrival);
+    this.bnStart.value = fmtDateTimeLocal(start);
+    this.bnEnd.value = fmtDateTimeLocal(now);
+    this._defaultsSet = true;
+    this.#renderBrutNet();
+  }
+
+  /* ----------------- convertisseur ----------------- */
+  #renderConv() {
+    const fmt = this.app.formatter;
+    const ms = this.#parseToMs(this.convInput.value, this.convUnit.value);
+    this.convOut.innerHTML = "";
+    if (ms == null) {
+      this.convOut.appendChild(createEl("div", {
+        className: "conv-empty",
+        text: this.convInput.value.trim() ? "Valeur non reconnue." : "Saisissez une durée ci-dessus.",
+      }));
+      return;
+    }
+    const mins = ms / 60000;
+    const values = {
+      decimal: fmt.decimal(mins),
+      jira: fmt.jira(mins),
+      clock: fmt.clock(mins),
+      hms: fmt.hms(ms),
+    };
+    for (const [key, label] of CONV_FORMATS) {
+      const line = createEl("div", {
+        className: "conv-line",
+        html: `<span class="conv-lab">${label}</span><span class="conv-val">${values[key]}</span>`,
+      });
+      line.appendChild(createCopyButton(this.app, values[key], "Copier"));
+      this.convOut.appendChild(line);
+    }
+  }
+
+  /** Saisie d'un format → millisecondes (null si non reconnu). */
+  #parseToMs(value, unit) {
+    const v = (value || "").trim().replace(",", ".");
+    if (!v) return null;
+    if (unit === "decimal") {
+      const n = parseFloat(v);
+      return Number.isFinite(n) && n >= 0 ? Math.round(n * 3_600_000) : null;
+    }
+    if (unit === "clock" || unit === "hms") {
+      if (!/^\d+(:\d{1,2}){0,2}$/.test(v)) return null;
+      const [h = 0, m = 0, s = 0] = v.split(":").map((p) => parseInt(p, 10));
+      if (m >= 60 || s >= 60) return null;
+      return ((h * 60 + m) * 60 + s) * 1000;
+    }
+    if (unit === "jira") return this.#parseJiraToMs(v);
+    return null;
+  }
+
+  /** « 1w 2d 3h 4m » → ms, en suivant les unités Jira effectives (w/d). */
+  #parseJiraToMs(v) {
+    const fmt = this.app.formatter;
+    const hours = { w: fmt.effHoursPerDay() * fmt.effDaysPerWeek(), d: fmt.effHoursPerDay(), h: 1, m: 1 / 60 };
+    const re = /(\d+(?:\.\d+)?)\s*(w|d|h|m)/gi;
+    let total = 0, matched = false, mt;
+    while ((mt = re.exec(v))) { matched = true; total += parseFloat(mt[1]) * hours[mt[2].toLowerCase()]; }
+    if (!matched) {
+      const n = parseFloat(v); // un nombre seul est interprété en heures
+      if (!Number.isFinite(n)) return null;
+      total = n;
+    }
+    return total >= 0 ? Math.round(total * 3_600_000) : null;
+  }
+
+  /* ----------------- brut / net ----------------- */
+  #renderBrutNet() {
+    this.bnOut.innerHTML = "";
+    const sv = this.bnStart.value, ev = this.bnEnd.value;
+    if (!sv || !ev) { this.#bnHint("Renseignez un début et une fin."); return; }
+    const s = parseDateTimeLocal(sv).getTime();
+    const e = parseDateTimeLocal(ev).getTime();
+    if (!(e > s)) { this.#bnHint("La fin doit être après le début."); return; }
+    this.bnOut.appendChild(this.#bnCard("Brut", "temps réel écoulé", e - s));
+    this.bnOut.appendChild(this.#bnCard("Net", "temps ouvré (horaires)", this.app.calc.workedMs(s, e)));
+  }
+
+  #bnHint(text) {
+    this.bnOut.appendChild(createEl("div", { className: "conv-empty", text }));
+  }
+
+  #bnCard(title, sub, ms) {
+    const fmt = this.app.formatter;
+    const mins = ms / 60000;
+    const card = createEl("div", {
+      className: "bn-card",
+      html: `<div class="bn-title">${title}</div><div class="bn-sub">${sub}</div><div class="bn-val">${fmt.clock(mins)}</div>`,
+    });
+    const actions = createEl("div", { className: "bn-actions" });
+    actions.append(
+      createCopyButton(this.app, fmt.decimal(mins), "Déc."),
+      createCopyButton(this.app, fmt.jira(mins), "Jira"),
+    );
+    card.appendChild(actions);
+    return card;
+  }
+}
