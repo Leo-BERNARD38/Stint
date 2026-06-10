@@ -15,8 +15,8 @@ import { TotalsView } from "./views/TotalsView.js";
 import { TaskListView } from "./views/TaskListView.js";
 import { SegmentTableView } from "./views/SegmentTableView.js";
 import { AllTasksView } from "./views/AllTasksView.js";
-import { HeatmapView } from "./views/HeatmapView.js";
 import { StatsView } from "./views/StatsView.js";
+import { StatsTimelineView } from "./views/StatsTimelineView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
@@ -69,8 +69,8 @@ export class App {
       new TotalsView(this),
       new TaskListView(this),
       new SegmentTableView(this),
-      new HeatmapView(this),
       new StatsView(this),
+      new StatsTimelineView(this),
       new AllTasksView(this),
       new SettingsView(this),
       new StorageView(this),

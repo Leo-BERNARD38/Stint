@@ -429,27 +429,6 @@
   font-variant-numeric: tabular-nums; }
 .bn-actions { display: flex; gap: var(--sp-2); }
 
-/* ============================ Heatmap calendrier (onglet Tâches) ============================ */
-/* Façon GitHub : colonnes = semaines, lignes = jours (lun→dim). Monochrome,
-   intensité = temps travaillé. Aligné via une grille à colonnes fixes (13px). */
-.heatmap { margin-bottom: var(--sp-6); }
-.hm-scroll { overflow-x: auto; padding-bottom: var(--sp-2); scrollbar-width: thin; }
-.hm-inner { display: inline-block; }
-.hm-months { display: grid; grid-auto-flow: column; grid-auto-columns: 13px; gap: 3px; margin-bottom: 4px; }
-.hm-mon { font-size: 10px; line-height: 1; color: var(--text-faint); white-space: nowrap; overflow: visible; }
-.hm-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px); grid-auto-columns: 13px; gap: 3px; }
-.hm-cell { width: 13px; height: 13px; border-radius: 4px; background: var(--surface-2); }
-.hm-cell.l1 { background: color-mix(in srgb, var(--accent) 22%, var(--surface-2)); }
-.hm-cell.l2 { background: color-mix(in srgb, var(--accent) 45%, var(--surface-2)); }
-.hm-cell.l3 { background: color-mix(in srgb, var(--accent) 70%, var(--surface-2)); }
-.hm-cell.l4 { background: var(--accent); }
-.hm-cell.today { box-shadow: inset 0 0 0 2px var(--text-faint); }
-.hm-cell[data-day] { cursor: pointer; transition: box-shadow .12s var(--ease); }
-.hm-cell[data-day]:hover { box-shadow: 0 0 0 2px var(--ring); }
-.hm-cell[data-day]:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-.hm-future { visibility: hidden; }
-.hm-legend { display: flex; align-items: center; gap: 5px; margin-top: var(--sp-3); font-size: 11px; color: var(--text-faint); }
-.hm-legend .hm-cell { width: 11px; height: 11px; }
 
 /* ============================ Onglet Tâches : filtres & regroupement ============================ */
 .at-controls { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
@@ -506,12 +485,9 @@
 .stat-val { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-lab { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 
-/* Blocs Stats : cartes pleines (heatmap, type, mois) sur le fond de page. */
+/* Blocs Stats : cartes pleines sur le fond de page. */
 .stat-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); margin-bottom: var(--sp-4); }
 .stat-block .block-title { margin-bottom: var(--sp-4); }
-.stat-block .heatmap { margin-bottom: 0; }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-4); }
-.stats-grid .stat-block { margin-bottom: 0; }
 
 /* Répartition par type : badge + barre proportionnelle + durée. */
 .stats-types { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -521,11 +497,24 @@
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Activité par mois : barres étiquetées, alignées en bas. */
-.stats-bars { display: flex; align-items: flex-end; gap: var(--sp-2); }
-.stat-wk { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.stat-wk-track { width: 100%; height: 110px; display: flex; align-items: flex-end; }
-.stat-wk-bar { width: 100%; min-height: 3px; background: var(--accent); border-radius: 5px 5px 0 0;
-  transition: height .4s var(--ease-out); }
-.stat-wk:hover .stat-wk-bar { background: var(--text-soft); }
-.stat-wk-lab { font-size: 10.5px; color: var(--text-faint); white-space: nowrap; }
+/* ---------- Timeline d'historique (Mois / Année) ---------- */
+.st-nav { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.daynav-mini { border: none; background: var(--surface-2); color: var(--text-soft); width: 32px; height: 32px;
+  border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.daynav-mini:hover { background: var(--surface-hover); color: var(--text); }
+.st-nav-label { min-width: 132px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; text-transform: capitalize; }
+.st-nav .btn-ghost { margin-left: var(--sp-2); }
+.st-timeline { position: relative; }
+.st-axis { position: relative; height: 14px; margin-bottom: 6px; margin-left: calc(96px + var(--sp-3));
+  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.st-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.st-row { display: flex; align-items: center; gap: var(--sp-3); padding: 1.5px 0; }
+.st-row-label { width: 96px; flex-shrink: 0; font-size: 11.5px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap; text-transform: capitalize; }
+.st-row.weekend .st-row-label { color: var(--text-faint); }
+.st-row.today .st-row-label { color: var(--accent); font-weight: 700; }
+.st-track { position: relative; flex: 1; height: 17px; background: var(--surface-2); border-radius: 6px; overflow: hidden;
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px); background-size: 10px 10px; background-position: center; }
+.st-timeline.year .st-track { height: 24px; }
+.st-row.weekend .st-track { opacity: .72; }
+.st-track .tl-seg { border-radius: 5px; min-width: 3px; }

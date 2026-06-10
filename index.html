@@ -213,21 +213,26 @@
 
       <div class="stat-block">
         <div class="block-title">
-          Activité
-          <span class="hint">une case = un jour · l'intensité = le temps · cliquez pour ouvrir le jour</span>
+          Timeline
+          <span class="hint">les tâches dans le temps · survol = détail · clic = ouvrir le jour</span>
+          <span class="grow"></span>
+          <div class="chip-group" id="stScale" role="group" aria-label="Échelle">
+            <button class="chip active" data-scale="month">Mois</button>
+            <button class="chip" data-scale="year">Année</button>
+          </div>
         </div>
-        <div class="heatmap" id="heatmap"></div>
+        <div class="st-nav">
+          <button id="stPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Période précédente"></button>
+          <span class="st-nav-label" id="stLabel">—</span>
+          <button id="stNext" class="daynav-mini" data-icon="chevron-right" aria-label="Période suivante"></button>
+          <button id="stNow" class="btn-ghost">Aujourd'hui</button>
+        </div>
+        <div class="st-timeline" id="statsTimeline"></div>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-block">
-          <div class="block-title">Répartition par type</div>
-          <div class="stats-types" id="statsTypes"></div>
-        </div>
-        <div class="stat-block">
-          <div class="block-title">Par mois <span class="hint">12 derniers mois</span></div>
-          <div class="stats-bars" id="statsBars"></div>
-        </div>
+      <div class="stat-block">
+        <div class="block-title">Répartition par type</div>
+        <div class="stats-types" id="statsTypes"></div>
       </div>
     </section>
     </div><!-- /#appScreen -->

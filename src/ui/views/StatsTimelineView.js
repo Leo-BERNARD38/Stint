@@ -1,0 +1,209 @@
+import { el, createEl, escapeHtml } from "../../utils/dom.js";
+import { startOfDay, addDays, isoDow, sameDay, fmtClock, fmtDateInput, DAY_MS } from "../../utils/datetime.js";
+
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const toMin = (hhmm) => { const [h, m] = String(hhmm).split(":").map(Number); return h * 60 + (m || 0); };
+
+/**
+ * Timeline d'historique réutilisant le langage visuel de l'onglet Journée
+ * (blocs `.tl-seg` colorés + infobulle maison), à deux échelles :
+ *   - Mois : une ligne par jour, axe horaire **partagé** → on voit la journée
+ *     type et les tâches « avancer » d'un jour à l'autre ;
+ *   - Année : une ligne par mois, l'activité étalée sur les jours du mois.
+ * Un bloc cliqué ouvre son jour dans l'onglet Segments.
+ */
+export class StatsTimelineView {
+  constructor(app) {
+    this.app = app;
+    this.el = el("statsTimeline");
+    this.label = el("stLabel");
+    this.scale = "month";
+    this.anchor = startOfDay(new Date());
+    this.tip = null;
+    this._tipSeg = null;
+  }
+
+  bind() {
+    const scaleGroup = el("stScale");
+    scaleGroup.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-scale]");
+      if (!b) return;
+      this.scale = b.dataset.scale;
+      [...scaleGroup.children].forEach((c) => c.classList.toggle("active", c === b));
+      this.render();
+    });
+    el("stPrev").addEventListener("click", () => this.#shift(-1));
+    el("stNext").addEventListener("click", () => this.#shift(1));
+    el("stNow").addEventListener("click", () => { this.anchor = startOfDay(new Date()); this.render(); });
+    this.el.addEventListener("mousemove", (e) => this.#hover(e));
+    this.el.addEventListener("mouseleave", () => this.#hideTip());
+    this.el.addEventListener("click", (e) => {
+      const seg = e.target.closest(".tl-seg[data-day]");
+      if (seg) this.app.goToDaySegments(seg.dataset.day);
+    });
+  }
+
+  #shift(n) {
+    const d = new Date(this.anchor);
+    if (this.scale === "year") d.setFullYear(d.getFullYear() + n);
+    else d.setMonth(d.getMonth() + n);
+    this.anchor = startOfDay(d);
+    this.render();
+  }
+
+  render() {
+    this.scale === "year" ? this.#renderYear() : this.#renderMonth();
+  }
+
+  /* ----------------- vue Mois (1 ligne / jour, axe horaire partagé) ----------------- */
+  #renderMonth() {
+    const { store } = this.app;
+    const settings = store.settings;
+    const y = this.anchor.getFullYear(), m = this.anchor.getMonth();
+    this.label.textContent = cap(this.anchor.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
+    const days = new Date(y, m + 1, 0).getDate();
+
+    // Fenêtre horaire commune (minutes) : horaires de base, élargie par les
+    // plannings du mois et par tout segment qui déborde.
+    let winS = toMin(settings.arrival), winE = toMin(settings.departure);
+    for (let d = 1; d <= days; d++) {
+      const day = new Date(y, m, d);
+      for (const [a, b] of settings.blocksFor(day)) { winS = Math.min(winS, toMin(a)); winE = Math.max(winE, toMin(b)); }
+      const ds = startOfDay(day).getTime();
+      for (const seg of store.segmentsForDay(day)) {
+        winS = Math.min(winS, Math.floor((Math.max(seg.startMs(), ds) - ds) / 60000));
+        winE = Math.max(winE, Math.ceil((Math.min(seg.endMs(), ds + DAY_MS) - ds) / 60000));
+      }
+    }
+    winS = Math.max(0, Math.min(winS, 1440));
+    winE = Math.min(1440, Math.max(winE, winS + 60));
+
+    this.el.classList.remove("year");
+    this.el.innerHTML = "";
+    this.el.appendChild(this.#axis(winS, winE));
+
+    const today = new Date();
+    for (let d = 1; d <= days; d++) {
+      const day = new Date(y, m, d);
+      const ds = startOfDay(day).getTime();
+      const winStart = ds + winS * 60000, winEnd = ds + winE * 60000;
+      const isToday = sameDay(day, today);
+      const row = createEl("div", { className: "st-row" + (isoDow(day) >= 6 ? " weekend" : "") + (isToday ? " today" : "") });
+      row.appendChild(createEl("span", {
+        className: "st-row-label",
+        text: `${d} ${day.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}`,
+      }));
+      const track = createEl("div", { className: "st-track" });
+      const key = fmtDateInput(day);
+      for (const seg of store.segmentsForDay(day)) {
+        const blk = this.#block(seg, winStart, winEnd, key, (s, e) => `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`);
+        if (blk) track.appendChild(blk);
+      }
+      if (isToday) {
+        const nowMin = (Date.now() - ds) / 60000;
+        if (nowMin >= winS && nowMin <= winE) {
+          const nl = createEl("div", { className: "tl-now" });
+          nl.style.left = ((nowMin - winS) / (winE - winS) * 100) + "%";
+          track.appendChild(nl);
+        }
+      }
+      row.appendChild(track);
+      this.el.appendChild(row);
+    }
+    this.#attachTip();
+  }
+
+  #axis(winS, winE) {
+    const axis = createEl("div", { className: "st-axis" });
+    const span = winE - winS;
+    const step = span > 600 ? 2 : 1; // toutes les 2 h si large fenêtre
+    for (let h = Math.ceil(winS / 60); h * 60 <= winE; h += step) {
+      const tick = createEl("span", { className: "st-tick", text: h + "h" });
+      tick.style.left = ((h * 60 - winS) / span * 100) + "%";
+      axis.appendChild(tick);
+    }
+    return axis;
+  }
+
+  /* ----------------- vue Année (1 ligne / mois) ----------------- */
+  #renderYear() {
+    const { store } = this.app;
+    const y = this.anchor.getFullYear();
+    this.label.textContent = String(y);
+    this.el.classList.add("year");
+    this.el.innerHTML = "";
+
+    const today = new Date();
+    const shortDate = (d) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    for (let m = 0; m < 12; m++) {
+      const monthStart = new Date(y, m, 1).getTime();
+      const monthEnd = new Date(y, m + 1, 1).getTime();
+      const isCur = today.getFullYear() === y && today.getMonth() === m;
+      const row = createEl("div", { className: "st-row" + (isCur ? " today" : "") });
+      row.appendChild(createEl("span", {
+        className: "st-row-label",
+        text: cap(new Date(y, m, 1).toLocaleDateString("fr-FR", { month: "long" })),
+      }));
+      const track = createEl("div", { className: "st-track" });
+      for (const seg of store.segments) {
+        if (seg.startMs() >= monthEnd || seg.endMs() <= monthStart) continue;
+        const dayKey = fmtDateInput(new Date(Math.max(seg.startMs(), monthStart)));
+        const blk = this.#block(seg, monthStart, monthEnd, dayKey,
+          (s, e) => `${shortDate(new Date(s))} ${fmtClock(new Date(s))} – ${shortDate(new Date(e))} ${fmtClock(new Date(e))}`);
+        if (blk) track.appendChild(blk);
+      }
+      row.appendChild(track);
+      this.el.appendChild(row);
+    }
+    this.#attachTip();
+  }
+
+  /** Bloc positionné (couleur de tâche) borné à [winStart, winEnd]. */
+  #block(seg, winStart, winEnd, dayKey, rangeText) {
+    const { store, calc, formatter } = this.app;
+    const s = Math.max(seg.startMs(), winStart), e = Math.min(seg.endMs(), winEnd);
+    if (e <= s) return null;
+    const span = winEnd - winStart;
+    const task = store.taskById(seg.taskId);
+    const color = task ? task.color : "var(--text-faint)";
+    return createEl("div", {
+      className: "tl-seg",
+      attrs: {
+        style: `left:${(s - winStart) / span * 100}%;width:${Math.max(0.6, (e - s) / span * 100)}%;background:${color}`,
+        "data-name": task ? task.displayName : "?",
+        "data-range": rangeText(s, e),
+        "data-dur": formatter.clock(calc.segmentMs(seg, winStart, winEnd) / 60000),
+        "data-color": color,
+        "data-day": dayKey,
+      },
+    });
+  }
+
+  /* ----------------- infobulle maison (réutilise .tl-tip) ----------------- */
+  #attachTip() {
+    this.tip = createEl("div", { className: "tl-tip" });
+    this.el.appendChild(this.tip);
+    this._tipSeg = null;
+  }
+
+  #hover(e) {
+    const seg = e.target.closest(".tl-seg");
+    if (!seg || !this.tip) { this.#hideTip(); return; }
+    if (seg !== this._tipSeg) {
+      this._tipSeg = seg;
+      this.tip.innerHTML =
+        `<div class="nm"><span class="dot" style="background:${seg.dataset.color}"></span>${escapeHtml(seg.dataset.name)}</div>` +
+        `<div class="mt">${escapeHtml(seg.dataset.range)} · ${escapeHtml(seg.dataset.dur)}</div>`;
+    }
+    this.tip.classList.add("show");
+    const rect = this.el.getBoundingClientRect();
+    const w = this.tip.offsetWidth;
+    this.tip.style.left = Math.max(w / 2 + 4, Math.min(rect.width - w / 2 - 4, e.clientX - rect.left)) + "px";
+    this.tip.style.top = (seg.getBoundingClientRect().top - rect.top) + "px";
+  }
+
+  #hideTip() {
+    this._tipSeg = null;
+    this.tip?.classList.remove("show");
+  }
+}
