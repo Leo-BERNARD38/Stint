@@ -143,6 +143,8 @@
 .tl-lunch { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--bg) 45%, transparent); }
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; transition: filter .14s var(--ease); }
 .tl-seg:hover { filter: brightness(1.08); }
+/* Portion non comptée d'un segment net (hors heures de travail) : estompée. */
+.tl-seg.uncounted { opacity: .3; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
 .tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease) infinite; }
 .tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }

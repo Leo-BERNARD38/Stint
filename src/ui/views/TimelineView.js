@@ -1,5 +1,6 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { DAY_MS, startOfDay, sameDay, fmtClock } from "../../utils/datetime.js";
+import { workedParts } from "../../utils/intervals.js";
 
 /** Timeline journalière (blocs colorés par tâche) + signalement du temps non tracé. */
 export class TimelineView {
@@ -69,25 +70,28 @@ export class TimelineView {
       }
     }
 
-    // segments
+    // segments — découpés compté / non-compté : le hors-horaires d'un segment
+    // net (non comptabilisé) est estompé ; un segment brut reste plein.
     for (const seg of store.segmentsForDay(viewDay)) {
       const task = store.taskById(seg.taskId);
       const s = Math.max(seg.startMs(), ds);
       const e = Math.min(seg.endMs(), de);
-      const minutes = calc.segmentMs(seg, ds, de) / 60000;
+      if (e <= s) continue;
       const color = task ? task.color : "var(--text-faint)";
-      const block = createEl("div", {
-        className: "tl-seg",
-        attrs: {
-          style: `left:${pct(s)}%;width:${Math.max(0.4, pct(e) - pct(s))}%;background:${color}`,
-          "data-name": task ? task.displayName : "?",
-          "data-range": `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`,
-          "data-dur": this.app.formatter.clock(minutes),
-          "data-color": color,
-        },
-        on: { click: () => this.app.scrollToSegment(seg.id) },
-      });
-      this.timeline.appendChild(block);
+      const data = {
+        "data-name": task ? task.displayName : "?",
+        "data-range": `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`,
+        "data-dur": this.app.formatter.clock(calc.segmentMs(seg, ds, de) / 60000),
+        "data-color": color,
+      };
+      const parts = seg.raw ? [[s, e, true]] : workedParts(s, e, ranges);
+      for (const [from, to, counted] of parts) {
+        this.timeline.appendChild(createEl("div", {
+          className: "tl-seg" + (counted ? "" : " uncounted"),
+          attrs: { style: `left:${pct(from)}%;width:${Math.max(0.4, pct(to) - pct(from))}%;background:${color}`, ...data },
+          on: { click: () => this.app.scrollToSegment(seg.id) },
+        }));
+      }
     }
 
     // repère « maintenant » (uniquement aujourd'hui, dans la fenêtre)

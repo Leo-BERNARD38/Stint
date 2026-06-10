@@ -1,5 +1,6 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { startOfDay, addDays, isoDow, sameDay, fmtClock, fmtDateInput, DAY_MS } from "../../utils/datetime.js";
+import { workedParts } from "../../utils/intervals.js";
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const toMin = (hhmm) => { const [h, m] = String(hhmm).split(":").map(Number); return h * 60 + (m || 0); };
@@ -57,7 +58,7 @@ export class StatsTimelineView {
 
   /* ----------------- vue Mois (1 ligne / jour, axe horaire partagé) ----------------- */
   #renderMonth() {
-    const { store } = this.app;
+    const { store, calc, formatter } = this.app;
     const settings = store.settings;
     const y = this.anchor.getFullYear(), m = this.anchor.getMonth();
     this.label.textContent = cap(this.anchor.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
@@ -93,19 +94,34 @@ export class StatsTimelineView {
         className: "st-row-label",
         text: `${d} ${day.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "")}`,
       }));
+      const win = winEnd - winStart;
+      const pct = (t) => (t - winStart) / win * 100;
+      const ranges = calc.workRangesForDay(day);
       const track = createEl("div", { className: "st-track" });
+      // fonds non travaillés (pause midi, avant/après horaires) — moins visibles
+      for (const [from, to, counted] of workedParts(winStart, winEnd, ranges)) {
+        if (!counted) track.appendChild(createEl("div", { className: "tl-lunch", attrs: { style: `left:${pct(from)}%;width:${pct(to) - pct(from)}%` } }));
+      }
       const key = fmtDateInput(day);
       for (const seg of store.segmentsForDay(day)) {
-        const blk = this.#block(seg, winStart, winEnd, key, (s, e) => `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`);
-        if (blk) track.appendChild(blk);
+        const s = Math.max(seg.startMs(), winStart), e = Math.min(seg.endMs(), winEnd);
+        if (e <= s) continue;
+        const task = store.taskById(seg.taskId);
+        const color = task ? task.color : "var(--text-faint)";
+        const data = {
+          name: task ? task.displayName : "?",
+          range: `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`,
+          dur: formatter.clock(calc.segmentMs(seg, winStart, winEnd) / 60000),
+          color, key,
+        };
+        const parts = seg.raw ? [[s, e, true]] : workedParts(s, e, ranges);
+        for (const [from, to, counted] of parts) track.appendChild(this.#part(pct(from), pct(to), counted, data));
       }
-      if (isToday) {
-        const nowMin = (Date.now() - ds) / 60000;
-        if (nowMin >= winS && nowMin <= winE) {
-          const nl = createEl("div", { className: "tl-now" });
-          nl.style.left = ((nowMin - winS) / (winE - winS) * 100) + "%";
-          track.appendChild(nl);
-        }
+      const now = Date.now();
+      if (isToday && now >= winStart && now <= winEnd) {
+        const nl = createEl("div", { className: "tl-now" });
+        nl.style.left = pct(now) + "%";
+        track.appendChild(nl);
       }
       row.appendChild(track);
       this.el.appendChild(row);
@@ -156,6 +172,18 @@ export class StatsTimelineView {
       this.el.appendChild(row);
     }
     this.#attachTip();
+  }
+
+  /** Morceau de segment (vue Mois) : `counted=false` ⇒ estompé (hors horaires). */
+  #part(left, right, counted, data) {
+    return createEl("div", {
+      className: "tl-seg" + (counted ? "" : " uncounted"),
+      attrs: {
+        style: `left:${left}%;width:${Math.max(0.6, right - left)}%;background:${data.color}`,
+        "data-name": data.name, "data-range": data.range, "data-dur": data.dur,
+        "data-color": data.color, "data-day": data.key,
+      },
+    });
   }
 
   /** Bloc positionné (couleur de tâche) borné à [winStart, winEnd]. */

@@ -34,3 +34,24 @@ export function subtractIntervals(range, subtract) {
   }
   return parts.filter(([s, e]) => e > s);
 }
+
+/**
+ * Découpe [s, e] en morceaux ordonnés `[from, to, counted]` selon les plages
+ * ouvrées `ranges` : `counted=true` quand le morceau tombe dans une plage
+ * (temps compté en net), `false` sinon (hors horaires, non compté). Sert à
+ * estomper visuellement ce qui n'est pas comptabilisé dans un segment net.
+ */
+export function workedParts(s, e, ranges) {
+  const out = [];
+  let cursor = s;
+  for (const [rs, re] of [...ranges].sort((a, b) => a[0] - b[0])) {
+    if (re <= s || rs >= e) continue;
+    const cs = Math.max(rs, s), ce = Math.min(re, e);
+    if (cs > cursor) out.push([cursor, cs, false]);
+    out.push([cs, ce, true]);
+    cursor = ce;
+  }
+  if (cursor < e) out.push([cursor, e, false]);
+  return out;
+}
+
