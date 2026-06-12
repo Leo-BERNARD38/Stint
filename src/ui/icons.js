@@ -138,7 +138,7 @@ export function dotIcon(name, { size = 24 } = {}) {
    ============================================================================ */
 const SCENE_W = 96, SCENE_H = 40, SCENE_GROUND = SCENE_H - 1;
 const SUN_RISE = 6, SUN_SET = 20; // soleil visible de 6h à 20h ; lune sinon
-const SUN_X0 = Math.round(SCENE_W * 0.60), SUN_X1 = Math.round(SCENE_W * 0.90); // trajectoire confinée à droite
+const SUN_X0 = Math.round(SCENE_W * 0.33), SUN_X1 = Math.round(SCENE_W * 0.92); // trajectoire large : du premier tiers gauche jusqu'à droite
 
 // --- grille binaire (0 = éteint, 1 = allumé) ---
 const sNew = () => Array.from({ length: SCENE_H }, () => Array(SCENE_W).fill(0));
@@ -224,7 +224,7 @@ function scenePhase(slot) {
 /** Construit les 4 frames de la scène pour une tranche horaire (label + balisage SVG). */
 function sceneFrames(slot) {
   const { body, t, label } = scenePhase(slot);
-  const cx = Math.round(SUN_X0 + t * (SUN_X1 - SUN_X0)); // uniquement sur la moitié droite
+  const cx = Math.round(SUN_X0 + t * (SUN_X1 - SUN_X0)); // large traversée : premier tiers gauche → droite
   const title = `<title>${label}</title>`;
   const frames = Array.from({ length: 4 }, (_, f) => {
     const g = sNew();
@@ -232,7 +232,7 @@ function sceneFrames(slot) {
       drawStars(g, f);
       sStamp(g, MOON_CORE, cx, Math.round(28 - 22 * Math.sin(Math.PI * t)));
     } else {
-      drawSun(g, cx, Math.round(33 - 27 * Math.sin(Math.PI * t)), f);
+      drawSun(g, cx, Math.round(37 - 35 * Math.sin(Math.PI * t)), f);
     }
     fillRange(g, RIDGE); // montagnes par-dessus : le soleil se lève / couche derrière
     return title + sBake(g);
