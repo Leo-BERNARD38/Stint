@@ -19,7 +19,7 @@ export class StatsTimelineView {
     this.anchor = this.el;
     this.label = el("stLabel");
     this.scale = "month";
-    this.anchor = startOfDay(new Date());
+    this.refDate = startOfDay(new Date()); // mois / année affiché
     // Infobulle partagée, montée dans le conteneur re-rendu : chaque rendu la
     // détruit avec son contenu et doit la remonter (`this.tip.mount()`).
     this.tip = attachTimelineTip(this.el);
@@ -36,7 +36,7 @@ export class StatsTimelineView {
     });
     el("stPrev").addEventListener("click", () => this.#shift(-1));
     el("stNext").addEventListener("click", () => this.#shift(1));
-    el("stNow").addEventListener("click", () => { this.anchor = startOfDay(new Date()); this.render(); });
+    el("stNow").addEventListener("click", () => { this.refDate = startOfDay(new Date()); this.render(); });
     this.el.addEventListener("click", (e) => {
       const seg = e.target.closest(".tl-seg[data-day]");
       if (seg) this.app.goToDaySegments(seg.dataset.day);
@@ -44,10 +44,10 @@ export class StatsTimelineView {
   }
 
   #shift(n) {
-    const d = new Date(this.anchor);
+    const d = new Date(this.refDate);
     if (this.scale === "year") d.setFullYear(d.getFullYear() + n);
     else d.setMonth(d.getMonth() + n);
-    this.anchor = startOfDay(d);
+    this.refDate = startOfDay(d);
     this.render();
   }
 
@@ -59,8 +59,8 @@ export class StatsTimelineView {
   #renderMonth() {
     const { store, calc, formatter } = this.app;
     const settings = store.settings;
-    const y = this.anchor.getFullYear(), m = this.anchor.getMonth();
-    this.label.textContent = cap(this.anchor.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
+    const y = this.refDate.getFullYear(), m = this.refDate.getMonth();
+    this.label.textContent = cap(this.refDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
     const days = new Date(y, m + 1, 0).getDate();
 
     // Fenêtre horaire commune (minutes) : horaires de base, élargie par les
@@ -146,7 +146,7 @@ export class StatsTimelineView {
   /* ----------------- vue Année (1 ligne / mois) ----------------- */
   #renderYear() {
     const { store } = this.app;
-    const y = this.anchor.getFullYear();
+    const y = this.refDate.getFullYear();
     this.label.textContent = String(y);
     this.el.classList.add("year");
     this.el.innerHTML = "";
