@@ -23,8 +23,12 @@ Contraintes fortes (ne pas casser) :
 - Déploiement : `git push` sur `master` (GitHub Pages, dossier racine). `.nojekyll` présent.
 - Le service worker ne s'active qu'en HTTP(S).
 - **Après toute modif de fichier servi : bumper `CACHE` dans `sw.js`**
-  (`stint-vN` → `stint-vN+1`), sinon le cache SW ressert l'ancienne version
-  même après Ctrl+F5. (Valeur actuelle : voir `sw.js`.)
+  (`stint-vN` → `stint-vN+1`). (Valeur actuelle : voir `sw.js`.)
+- **Tout nouveau fichier servi doit être ajouté à `CORE` dans `sw.js`** : les
+  assets sont servis **cache-d'abord** depuis le précache (une version = un
+  cache cohérent). Le précache contourne le cache HTTP (`cache:"reload"`) et la
+  page se recharge seule quand une nouvelle version prend la main
+  (`controllerchange` dans `main.js`).
 
 ## 3. Architecture
 
@@ -43,7 +47,7 @@ src/
   core/
     constants.js        STORAGE_KEY, SCHEMA_VERSION, DAY_MS, PALETTE, DEFAULT_SETTINGS, THEMES…
     EventEmitter.js     on/off/emit (base du Store)
-  utils/                datetime · intervals · dom (el/qs/escapeHtml/createEl) · clipboard
+  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard
   models/               DOMAINE
     Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
     Task.js  Segment.js modèles (fromJSON/toJSON)
@@ -59,32 +63,39 @@ src/
     Timer.js            tick 1 s (EventEmitter)
     DayGlyphAnimator.js anime le glyphe « moment de la journée » image par image
     icons.js            pack d'icônes Lucide inline + glyphes dot-matrix (§8)
-    components/         Toast · CopyButton · ScheduleEditor (factory)
-    views/              une vue = bind() (1×) + render(viewDay) ; voir liste ci-dessous
+    components/         Toast · CopyButton · ScheduleEditor · TimelineTip (factories)
+    views/              une vue = bind() (1×, optionnel) + render(viewDay) ; voir liste ci-dessous
     modals/             Modal (base) · NewTask · Resume · EditTask
 ```
 
-Vues (toutes ajoutées à `App.views`, rendues à chaque changement d'état) :
+Vues (toutes ajoutées à `App.views`) :
 `HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView, TotalsView,
-TaskListView, SegmentTableView, AllTasksView, SettingsView, StorageView`.
+TaskListView, SegmentTableView, StatsView, StatsTimelineView, AllTasksView,
+SettingsView, StorageView, ToolsView`.
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
 - Constructeur `(app)` ; récupère ses éléments via `el("id")`.
 - `bind()` : câble les écouteurs **une seule fois** (appelé une fois au démarrage).
+  Optionnel pour une vue sans interaction (`v.bind?.()` dans `App.start`).
 - `render(viewDay)` : (re)dessine à partir de l'état ; **ne crée pas d'écouteurs**.
+- **`this.anchor`** = un élément de la région de la vue : `App.render()` **saute**
+  les vues dont l'anchor est sous un ancêtre `[hidden]` (autre onglet / écran) ;
+  elles sont rendues à la bascule (`TabsView.select()`, `showScreen()`). Les vues
+  toujours visibles (header, thème, hero) n'ont pas d'anchor.
 - Pas d'état dupliqué : on relit toujours `app.store` au rendu.
 - Les vues **ne mutent jamais** l'état : elles appellent des commandes du `Store`
   ou des méthodes de `App`.
 - Délégation d'évènements sur un conteneur stable quand le contenu est reconstruit.
 
 ### App (contrôleur)
-- Détient l'UI-state : `viewDay` (jour affiché) et `screen` (`app|settings|guide`).
-- Écrans : `#appScreen` (onglets Journée/Segments/Tâches) vs `#settingsScreen` /
-  `#guideScreen` (pages pleines, ouvertes via le header). `showScreen()`.
+- Détient l'UI-state : `viewDay` (jour affiché) et `screen` (`app|settings|guide|tools`).
+- Écrans : `#appScreen` (onglets Journée/Segments/Tâches/Stats) vs `#settingsScreen` /
+  `#guideScreen` / `#toolsScreen` (pages pleines, ouvertes via le header). `showScreen()`.
 - Onglets gérés par `TabsView` ; le sélecteur de jour (`#dayHead`) est masqué sur
-  l'onglet « Tâches » (vue tout-temps).
-- `App.start()` est **async** : rendu instantané (miroir local) → `await store.ready()`
-  (IndexedDB + migration) → câblage des interactions → re-render. Voir §6.
+  les onglets « Tâches » et « Stats » (vues tout-temps).
+- `App.start()` est **async** : rendu instantané (miroir local, retire le squelette
+  `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
+  interactions → re-render. Voir §6.
 
 ## 4. Modèle de données (schéma v4)
 
@@ -151,11 +162,13 @@ Notes :
 
 - 4 feuilles : `variables.css` (jetons + thèmes), `base.css` (reset),
   `layout.css` (structure), `components.css` (composants).
-- **Toute la sémantique de couleur est en variables**, thémée par `[data-theme]`
-  (`light|dark|system`). **Aucune couleur en dur** hors `variables.css`. Avant de
-  committer du CSS, vérifier que tout `var(--x)` est défini (cf. §9).
+- **Toute la sémantique de couleur est en variables**, chaque jeton défini **une
+  seule fois** via `light-dark(clair, sombre)` ; `[data-theme]`
+  (`light|dark|system`) ne pilote que `color-scheme`. **Aucune couleur en dur**
+  hors `variables.css`. Avant de committer du CSS, vérifier que tout `var(--x)`
+  est défini (cf. §9).
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
-  (`--surface`, `--surface-2`) et **espace**. Échelle d'espacement `--sp-1..8`.
+  (`--surface`, `--surface-2`) et **espace**. Échelle d'espacement `--sp-1..7`.
 - **Esthétique « Nothing OS »** : **filets pointillés** (`--dot`), **grille de
   points** sur la timeline (`--dot-grid`), **pilules** partout (rayon
   `--radius-pill` ; petits boutons, badges, sélecteur de jour, « Aujourd'hui »),
@@ -163,7 +176,8 @@ Notes :
   `--radius-sm` 14 / `--radius-xs` 11) : cartes au grand rayon, petits éléments en
   pilule. Sélecteur de jour **en couleurs inversées** (comme « Total du jour »).
 - **Onglets = contrôle segmenté** avec **curseur glissant** : une pilule `::before`
-  sur `.tabs` translatée via `:has([data-tab=…].active)` (3 colonnes égales).
+  sur `.tabs` translatée via `:has([data-tab=…].active)` (4 colonnes égales,
+  `.tabs-4`).
 - **Motion** : flat mais fluide — survol sobre des gros boutons (changement de
   fond, sans élévation), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
@@ -178,9 +192,10 @@ Notes :
   30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par
   `DayGlyphAnimator` (points en JS, 1 s/frame, pas de CSS).
   Timeline = carte au grand rayon, **infobulle maison** (`.tl-tip`, suit le
-  curseur ; pas de `title` natif),
-  points en fond, blocs arrondis **affleurant le container** (sans marge). Tout
-  est neutralisé sous `prefers-reduced-motion`.
+  curseur ; pas de `title` natif — factory `attachTimelineTip` partagée par les
+  deux timelines), points en fond, blocs arrondis **affleurant le container**
+  (sans marge). Au chargement, **squelette miroitant** (`body.booting`, retiré au
+  premier rendu). Tout est neutralisé sous `prefers-reduced-motion`.
 - **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales

@@ -39,7 +39,9 @@ sur mobile (« Ajouter à l'écran d'accueil »). Une fois installée, elle s'ou
 fenêtre dédiée et fonctionne sans connexion.
 
 > Le service worker ne s'active qu'en HTTP(S) (GitHub Pages ou serveur local), pas
-> en `file://`. Après une mise à jour, bumper `CACHE` dans `sw.js`.
+> en `file://`. Après une mise à jour, bumper `CACHE` dans `sw.js` : l'app précache
+> la nouvelle version complète puis se recharge seule — jamais de mélange entre
+> ancien CSS et nouveau HTML.
 
 ## Modèle d'interaction — 3 boutons
 
@@ -71,6 +73,10 @@ Ainsi « Reprise » ne liste que les tâches réellement en cours.
 - **Mode « temps brut »** activable par segment (nuit, heures sup, sans rognage).
 - **Timeline journalière** colorée par tâche + signalement du **temps non tracé**.
 - **Totaux** par tâche, par type (dev / support / autre) et pour la journée.
+- **Onglet Stats** : synthèse tout-temps (total, semaine, mois, jours actifs,
+  répartition par type) et **timeline d'historique** à l'échelle Mois / Année.
+- **Écran Outils** : convertisseur de durées (décimal / Jira / horloge) et
+  calcul brut ↔ net entre deux instants.
 - **Conversions & copie** : décimal (`1.5`) et Jira (`2w 4d 6h 45m`), arrondi
   paramétrable (aucun / 1 / 5 / 15 min).
 - **Édition a posteriori** : heures, dates, réaffectation de tâche, saisie manuelle.
@@ -95,9 +101,9 @@ Typographie : **deux polices** seulement. **Bitcount Grid Single** — la police
 
 ## Format de données
 
-Schéma **versionné** (`version: 2`), monté automatiquement depuis les versions
-antérieures à l'ouverture (les champs ajoutés — `settings.theme`, `tasks[].done` —
-prennent leurs valeurs par défaut). Le JSON exporté est le format maître et reste
+Schéma **versionné** (`version: 4`), migré automatiquement depuis les versions
+antérieures à l'ouverture (champs ajoutés avec valeurs par défaut, `jiraKey`
+replié dans le nom en v3→v4). Le JSON exporté est le format maître et reste
 compatible avec une future migration vers Vite + React.
 
 ## Format Jira
