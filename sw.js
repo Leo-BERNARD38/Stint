@@ -1,28 +1,84 @@
 /**
- * Service worker de Stint — rend l'app installable et utilisable hors-ligne.
+ * Service worker de Stint — rend l'app installable, hors-ligne et **cohérente** :
+ * une version = un cache complet, jamais de panachage ancien HTML / vieux CSS.
  * Stratégies :
- *   - navigation : réseau d'abord, repli sur l'app shell en cache ;
- *   - assets même origine + Google Fonts : stale-while-revalidate.
- * Bumper CACHE à chaque release pour purger l'ancien cache.
+ *   - install : précache de TOUTES les ressources en contournant le cache HTTP
+ *     (`cache: "reload"`, GitHub Pages sert avec un max-age de 10 min) ;
+ *   - assets même origine : cache d'abord (on sert la version précachée, le
+ *     réseau ne sert qu'aux ressources oubliées de CORE) ;
+ *   - navigation : réseau d'abord avec délai de garde, repli app shell en cache
+ *     (ouverture instantanée même sur réseau lent) ;
+ *   - polices Google : stale-while-revalidate (quasi immuables) ;
+ *   - nouvelle version : purge de l'ancien cache, prise de contrôle, puis la
+ *     page se recharge une fois sur "controllerchange" (voir main.js).
+ * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v44";
+const CACHE = "stint-v45";
+const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./assets/icon.svg",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
+  "./assets/apple-touch-icon.png",
   "./assets/styles/variables.css",
   "./assets/styles/base.css",
   "./assets/styles/layout.css",
   "./assets/styles/components.css",
   "./src/main.js",
+  "./src/core/EventEmitter.js",
+  "./src/core/constants.js",
+  "./src/models/Segment.js",
+  "./src/models/Settings.js",
+  "./src/models/Store.js",
+  "./src/models/Task.js",
+  "./src/services/DataTransfer.js",
+  "./src/services/Formatter.js",
+  "./src/services/Persistence.js",
+  "./src/services/StorageInfo.js",
+  "./src/services/TimeCalculator.js",
+  "./src/ui/App.js",
+  "./src/ui/DayGlyphAnimator.js",
+  "./src/ui/Timer.js",
+  "./src/ui/icons.js",
+  "./src/ui/components/CopyButton.js",
+  "./src/ui/components/ScheduleEditor.js",
+  "./src/ui/components/TimelineTip.js",
+  "./src/ui/components/Toast.js",
+  "./src/ui/modals/EditTaskModal.js",
+  "./src/ui/modals/Modal.js",
+  "./src/ui/modals/NewTaskModal.js",
+  "./src/ui/modals/ResumeModal.js",
+  "./src/ui/views/AllTasksView.js",
+  "./src/ui/views/DayNavView.js",
+  "./src/ui/views/HeaderView.js",
+  "./src/ui/views/HeroView.js",
+  "./src/ui/views/SegmentTableView.js",
+  "./src/ui/views/SettingsView.js",
+  "./src/ui/views/StatsTimelineView.js",
+  "./src/ui/views/StatsView.js",
+  "./src/ui/views/StorageView.js",
+  "./src/ui/views/TabsView.js",
+  "./src/ui/views/TaskListView.js",
+  "./src/ui/views/ThemeView.js",
+  "./src/ui/views/TimelineView.js",
+  "./src/ui/views/ToolsView.js",
+  "./src/ui/views/TotalsView.js",
+  "./src/utils/clipboard.js",
+  "./src/utils/datetime.js",
+  "./src/utils/dom.js",
+  "./src/utils/intervals.js",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(CORE))
+      // "reload" : on remplit le cache depuis le réseau, pas depuis le cache HTTP
+      // (sinon un déploiement récent peut précacher… l'ancienne version).
+      .then((cache) => cache.addAll(CORE.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -43,14 +99,39 @@ self.addEventListener("fetch", (event) => {
   const sameOrigin = url.origin === self.location.origin;
   const isFont = /fonts\.(googleapis|gstatic)\.com$/.test(url.host);
 
-  // Navigations : réseau d'abord (mises à jour immédiates), repli app shell.
+  // Navigations : réseau d'abord, mais sans attendre un réseau lent (délai de
+  // garde) — l'app shell en cache assure une ouverture instantanée.
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req).catch(() => caches.match("./index.html")));
+    event.respondWith((async () => {
+      try {
+        return await Promise.race([
+          fetch(req),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("nav timeout")), NAV_TIMEOUT_MS)),
+        ]);
+      } catch (e) {
+        return (await caches.match("./index.html")) || fetch(req);
+      }
+    })());
     return;
   }
 
-  // Assets locaux + polices : stale-while-revalidate.
-  if (sameOrigin || isFont) {
+  // Assets locaux : cache d'abord — la page sert toujours l'ensemble précaché
+  // de SA version. Le réseau ne sert qu'aux ressources absentes de CORE.
+  if (sameOrigin) {
+    event.respondWith(
+      caches.open(CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+        if (cached) return cached;
+        const res = await fetch(req);
+        if (res && res.status === 200) cache.put(req, res.clone());
+        return res;
+      })
+    );
+    return;
+  }
+
+  // Polices Google : stale-while-revalidate.
+  if (isFont) {
     event.respondWith(
       caches.open(CACHE).then(async (cache) => {
         const cached = await cache.match(req);

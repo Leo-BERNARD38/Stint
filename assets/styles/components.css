@@ -527,3 +527,25 @@
 .tl-seg.seg-l { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .tl-seg.seg-r { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .tl-seg.seg-mid { border-radius: 0; }
+
+/* ============================================================================
+   Squelette de chargement — `booting` est posé sur <body> dans le HTML statique
+   et retiré par App.start() dès le premier rendu (miroir localStorage). Les
+   afficheurs à données deviennent des barres miroitantes le temps que les
+   modules se chargent (matin froid, réseau lent). Neutralisé par
+   prefers-reduced-motion via base.css.
+   ============================================================================ */
+body.booting #activeName,
+body.booting #activeTimer,
+body.booting #dayLabel {
+  color: transparent;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 37%, var(--surface) 63%);
+  background-size: 400% 100%;
+  animation: skeleton 1.2s ease infinite;
+  user-select: none;
+}
+@keyframes skeleton {
+  from { background-position: 100% 0; }
+  to   { background-position: 0 0; }
+}

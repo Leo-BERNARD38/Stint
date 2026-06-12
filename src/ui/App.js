@@ -82,6 +82,7 @@ export class App {
   async start() {
     renderStaticIcons(); // injecte les icônes statiques du HTML
     this.render();        // rendu instantané depuis le miroir local (non interactif)
+    document.body.classList.remove("booting"); // fin du squelette de chargement
 
     await this.store.ready(); // charge l'historique complet (IndexedDB) + migration
 
