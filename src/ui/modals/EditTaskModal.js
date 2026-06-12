@@ -1,7 +1,7 @@
 import { Modal } from "./Modal.js";
 import { el } from "../../utils/dom.js";
 
-/** Édition d'une tâche : nom, clé Jira, type, couleur, archiver, supprimer. */
+/** Édition d'une tâche : nom (qui porte la clé Jira), type, couleur, archiver, supprimer. */
 export class EditTaskModal extends Modal {
   constructor(app) {
     super("editTaskModal");

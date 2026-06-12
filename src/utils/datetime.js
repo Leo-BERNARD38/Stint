@@ -2,11 +2,16 @@
  * Aides date/heure. Tout passe par des `Date` locales ; la sérialisation
  * conserve l'offset (ISO local) pour rester lisible et fidèle au fuseau.
  */
-import { DAY_MS } from "../core/constants.js";
-
-export { DAY_MS };
-
 export const pad2 = (n) => String(n).padStart(2, "0");
+
+/** Capitalise la première lettre (libellés de dates `toLocaleDateString`). */
+export const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Convertit "HH:MM" en minutes depuis minuit. */
+export function toMin(hhmm) {
+  const [h, m] = String(hhmm).split(":").map(Number);
+  return h * 60 + (m || 0);
+}
 
 export function startOfDay(d) {
   const n = new Date(d);

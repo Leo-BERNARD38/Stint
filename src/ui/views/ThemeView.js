@@ -11,13 +11,14 @@ const LABELS = { system: "Système", light: "Clair", dark: "Sombre" };
  * couleur de la barre système (meta theme-color) — utile en PWA installée.
  */
 export class ThemeView {
+  #lastIcon = null; // évite de ré-injecter (et ré-animer) l'icône à chaque rendu
+
   constructor(app) {
     this.app = app;
     this.toggle = el("themeToggle");
     this.select = el("themeSelect");
     this.meta = document.querySelector('meta[name="theme-color"]');
     this.media = window.matchMedia("(prefers-color-scheme: dark)");
-    this._lastIcon = null;
   }
 
   bind() {
@@ -36,9 +37,9 @@ export class ThemeView {
     document.documentElement.dataset.theme = theme;
     this.toggle.title = "Thème : " + (LABELS[theme] ?? theme);
     if (this.select.value !== theme) this.select.value = theme;
-    if (theme !== this._lastIcon) {
+    if (theme !== this.#lastIcon) {
       this.toggle.innerHTML = icon(ICON_NAMES[theme] ?? "monitor", { size: 17 });
-      this._lastIcon = theme;
+      this.#lastIcon = theme;
     }
     this.#updateMeta(theme);
   }

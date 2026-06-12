@@ -3,6 +3,7 @@
  * Aucune dépendance : ce module est la racine du graphe d'imports.
  */
 
+/** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
 export const SCHEMA_VERSION = 4;
 export const DAY_MS = 86_400_000;
@@ -49,7 +50,6 @@ export const PALETTE = [...PALETTES.dev, ...PALETTES.support, ...PALETTES.autre]
 export const WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export const TASK_TYPES = ["dev", "support", "autre"];
-export const ROUNDING_MODES = ["none", "1m", "5m", "15m"];
 
 /** Réglages par défaut (cf. §8 du cahier des charges). */
 export const THEMES = ["system", "light", "dark"];

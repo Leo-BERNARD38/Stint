@@ -1,9 +1,8 @@
-import { el, createEl, escapeHtml } from "../../utils/dom.js";
-import { startOfDay, addDays, isoDow, sameDay, fmtClock, fmtDateInput, DAY_MS } from "../../utils/datetime.js";
+import { el, createEl } from "../../utils/dom.js";
+import { DAY_MS } from "../../core/constants.js";
+import { startOfDay, isoDow, sameDay, fmtClock, fmtDateInput, cap, toMin } from "../../utils/datetime.js";
 import { workedParts } from "../../utils/intervals.js";
-
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const toMin = (hhmm) => { const [h, m] = String(hhmm).split(":").map(Number); return h * 60 + (m || 0); };
+import { attachTimelineTip } from "../components/TimelineTip.js";
 
 /**
  * Timeline d'historique réutilisant le langage visuel de l'onglet Journée
@@ -20,8 +19,9 @@ export class StatsTimelineView {
     this.label = el("stLabel");
     this.scale = "month";
     this.anchor = startOfDay(new Date());
-    this.tip = null;
-    this._tipSeg = null;
+    // Infobulle partagée, montée dans le conteneur re-rendu : chaque rendu la
+    // détruit avec son contenu et doit la remonter (`this.tip.mount()`).
+    this.tip = attachTimelineTip(this.el);
   }
 
   bind() {
@@ -36,8 +36,6 @@ export class StatsTimelineView {
     el("stPrev").addEventListener("click", () => this.#shift(-1));
     el("stNext").addEventListener("click", () => this.#shift(1));
     el("stNow").addEventListener("click", () => { this.anchor = startOfDay(new Date()); this.render(); });
-    this.el.addEventListener("mousemove", (e) => this.#hover(e));
-    this.el.addEventListener("mouseleave", () => this.#hideTip());
     this.el.addEventListener("click", (e) => {
       const seg = e.target.closest(".tl-seg[data-day]");
       if (seg) this.app.goToDaySegments(seg.dataset.day);
@@ -129,7 +127,7 @@ export class StatsTimelineView {
       row.appendChild(track);
       this.el.appendChild(row);
     }
-    this.#attachTip();
+    this.tip.mount();
   }
 
   #axis(winS, winE) {
@@ -174,7 +172,7 @@ export class StatsTimelineView {
       row.appendChild(track);
       this.el.appendChild(row);
     }
-    this.#attachTip();
+    this.tip.mount();
   }
 
   /** Morceau de segment (vue Mois) : `counted=false` ⇒ estompé (hors horaires). */
@@ -210,31 +208,4 @@ export class StatsTimelineView {
     });
   }
 
-  /* ----------------- infobulle maison (réutilise .tl-tip) ----------------- */
-  #attachTip() {
-    this.tip = createEl("div", { className: "tl-tip" });
-    this.el.appendChild(this.tip);
-    this._tipSeg = null;
-  }
-
-  #hover(e) {
-    const seg = e.target.closest(".tl-seg");
-    if (!seg || !this.tip) { this.#hideTip(); return; }
-    if (seg !== this._tipSeg) {
-      this._tipSeg = seg;
-      this.tip.innerHTML =
-        `<div class="nm"><span class="dot" style="background:${seg.dataset.color}"></span>${escapeHtml(seg.dataset.name)}</div>` +
-        `<div class="mt">${escapeHtml(seg.dataset.range)} · ${escapeHtml(seg.dataset.dur)}</div>`;
-    }
-    this.tip.classList.add("show");
-    const rect = this.el.getBoundingClientRect();
-    const w = this.tip.offsetWidth;
-    this.tip.style.left = Math.max(w / 2 + 4, Math.min(rect.width - w / 2 - 4, e.clientX - rect.left)) + "px";
-    this.tip.style.top = (seg.getBoundingClientRect().top - rect.top) + "px";
-  }
-
-  #hideTip() {
-    this._tipSeg = null;
-    this.tip?.classList.remove("show");
-  }
 }

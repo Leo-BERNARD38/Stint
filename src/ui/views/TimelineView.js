@@ -1,6 +1,8 @@
-import { el, createEl, escapeHtml } from "../../utils/dom.js";
-import { DAY_MS, startOfDay, sameDay, fmtClock } from "../../utils/datetime.js";
+import { el, createEl } from "../../utils/dom.js";
+import { DAY_MS } from "../../core/constants.js";
+import { startOfDay, sameDay, fmtClock } from "../../utils/datetime.js";
 import { workedParts } from "../../utils/intervals.js";
+import { attachTimelineTip } from "../components/TimelineTip.js";
 
 /** Timeline journalière (blocs colorés par tâche) + signalement du temps non tracé. */
 export class TimelineView {
@@ -9,40 +11,11 @@ export class TimelineView {
     this.timeline = el("timeline");
     this.axis = el("tlAxis");
     this.gapsList = el("gapsList");
-    // Infobulle maison (l'attribut `title` natif est lent et peu esthétique).
-    this.wrap = this.timeline.closest(".timeline-wrap");
-    this.tip = createEl("div", { className: "tl-tip" });
-    this.wrap?.appendChild(this.tip);
-    this._tipSeg = null;
-  }
-
-  bind() {
-    // Délégation sur le conteneur stable (les blocs sont reconstruits à chaque rendu).
-    this.timeline.addEventListener("mousemove", (e) => this.#hover(e));
-    this.timeline.addEventListener("mouseleave", () => this.#hideTip());
-  }
-
-  #hover(e) {
-    const seg = e.target.closest(".tl-seg");
-    if (!seg) { this.#hideTip(); return; }
-    if (seg !== this._tipSeg) {
-      this._tipSeg = seg;
-      this.tip.innerHTML =
-        `<div class="nm"><span class="dot" style="background:${seg.dataset.color}"></span>` +
-        `${escapeHtml(seg.dataset.name)}</div>` +
-        `<div class="mt">${escapeHtml(seg.dataset.range)} · ${escapeHtml(seg.dataset.dur)}</div>`;
-    }
-    this.tip.classList.add("show");
-    const rect = this.wrap.getBoundingClientRect();
-    const w = this.tip.offsetWidth;
-    const x = Math.max(w / 2 + 4, Math.min(rect.width - w / 2 - 4, e.clientX - rect.left));
-    this.tip.style.left = x + "px";
-    this.tip.style.top = this.timeline.offsetTop + "px";
-  }
-
-  #hideTip() {
-    this._tipSeg = null;
-    this.tip.classList.remove("show");
+    // Infobulle partagée, montée dans le wrap (stable : survit aux re-rendus).
+    attachTimelineTip(this.timeline, {
+      parent: this.timeline.closest(".timeline-wrap"),
+      top: () => this.timeline.offsetTop,
+    });
   }
 
   render(viewDay) {

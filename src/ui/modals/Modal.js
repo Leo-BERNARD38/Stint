@@ -22,8 +22,4 @@ export class Modal {
   close() {
     this.backdrop.classList.remove("open");
   }
-
-  get isOpen() {
-    return this.backdrop.classList.contains("open");
-  }
 }

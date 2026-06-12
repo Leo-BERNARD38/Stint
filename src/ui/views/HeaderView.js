@@ -45,6 +45,7 @@ export class HeaderView {
       days === 0 ? "Sauvegardé aujourd'hui"
       : days === 1 ? "Sauvegardé hier"
       : "Dernière sauvegarde il y a " + days + " j";
-    if (days >= 3) this.pill.classList.add("warn");
+    if (days >= 7) this.pill.classList.add("crit");
+    else if (days >= 3) this.pill.classList.add("warn");
   }
 }

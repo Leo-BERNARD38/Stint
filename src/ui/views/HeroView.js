@@ -3,6 +3,8 @@ import { dotIcon } from "../icons.js";
 
 /** Barre de contrôle : carte de tâche active + 4 boutons (Play/Pause, Nouvelle, Reprise, Terminer). */
 export class HeroView {
+  #playMode = null; // évite de ré-injecter (et ré-animer) le glyphe à chaque rendu
+
   constructor(app) {
     this.app = app;
     this.playBtn = el("btnPlay");
@@ -12,7 +14,6 @@ export class HeroView {
     this.dot = el("activeDot");
     this.name = el("activeName");
     this.timer = el("activeTimer");
-    this._playMode = null; // évite de ré-injecter (et ré-animer) le glyphe à chaque rendu
   }
 
   bind() {
@@ -29,9 +30,9 @@ export class HeroView {
 
     // glyphe Play/Pause : (re)dessiné uniquement quand l'état change → l'anim joue à bon escient
     const mode = running ? "pause" : "play";
-    if (mode !== this._playMode) {
+    if (mode !== this.#playMode) {
       this.playGlyph.innerHTML = dotIcon(mode, { size: 26 });
-      this._playMode = mode;
+      this.#playMode = mode;
     }
     this.playBtn.classList.toggle("is-running", running);
     this.playBtn.classList.toggle("is-stopped", !running);

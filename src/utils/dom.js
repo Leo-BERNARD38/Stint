@@ -1,7 +1,6 @@
 /** Petites aides DOM partagées par les vues. */
 
 export const el = (id) => document.getElementById(id);
-export const qs = (sel, root = document) => root.querySelector(sel);
 export const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 export function escapeHtml(str) {

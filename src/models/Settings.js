@@ -1,11 +1,5 @@
 import { DEFAULT_SETTINGS } from "../core/constants.js";
-import { isoDow, fmtDateInput } from "../utils/datetime.js";
-
-/** Convertit "HH:MM" en minutes depuis minuit. */
-function toMin(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
+import { isoDow, fmtDateInput, toMin } from "../utils/datetime.js";
 
 /** Copie défensive d'une map d'horaires { clé: [[start,end], …] }. */
 function cloneHours(map) {

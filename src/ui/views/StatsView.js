@@ -1,7 +1,6 @@
 import { el, createEl } from "../../utils/dom.js";
+import { TASK_TYPES } from "../../core/constants.js";
 import { startOfDay, addDays, isoDow, fmtDateInput } from "../../utils/datetime.js";
-
-const TYPES = ["dev", "support", "autre"];
 
 /**
  * Onglet Stats : cartes de synthèse tout-temps (total, semaine, mois, nb de
@@ -49,7 +48,7 @@ export class StatsView {
     }
     const maxType = Math.max(1, ...Object.values(byType));
     this.types.innerHTML = "";
-    for (const t of TYPES) {
+    for (const t of TASK_TYPES) {
       const ms = byType[t];
       this.types.appendChild(createEl("div", {
         className: "stat-type",

@@ -1,4 +1,5 @@
-import { DAY_MS, startOfDay, atTime, sameDay } from "../utils/datetime.js";
+import { DAY_MS } from "../core/constants.js";
+import { startOfDay, atTime, sameDay } from "../utils/datetime.js";
 import { overlap, unionIntervals, subtractIntervals } from "../utils/intervals.js";
 
 /**

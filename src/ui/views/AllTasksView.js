@@ -1,12 +1,10 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
+import { TASK_TYPES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import {
-  sameDay, addDays, isoDow, startOfDay, fmtClock, fmtDateInput, pad2,
+  sameDay, addDays, isoDow, startOfDay, fmtClock, fmtDateInput, pad2, cap,
 } from "../../utils/datetime.js";
-
-const TYPES = ["dev", "support", "autre"];
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * Onglet Tâches : recherche/filtres + liste des tâches **regroupées** par jour,
@@ -19,7 +17,7 @@ export class AllTasksView {
     this.app = app;
     this.root = el("allTasks");
     this.expanded = new Set();
-    this.filter = { q: "", types: new Set(TYPES), state: "all", group: "day" };
+    this.filter = { q: "", types: new Set(TASK_TYPES), state: "all", group: "day" };
   }
 
   bind() {

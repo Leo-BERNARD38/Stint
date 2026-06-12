@@ -12,6 +12,9 @@ import { startOfDay, toLocalISO } from "../utils/datetime.js";
  * publiques regroupent les primitives et committent une seule fois.
  */
 export class Store extends EventEmitter {
+  #idSeq = 0;
+  #hadLocal = false;
+
   constructor(persistence) {
     super();
     this.persistence = persistence;
@@ -20,13 +23,9 @@ export class Store extends EventEmitter {
     this.tasks = [];
     this.segments = [];
     this.meta = { lastExport: null };
-    this.#idSeq = 0;
-    this._hadLocal = false;
     const local = this.persistence.loadSync();
-    if (local) { this.hydrate(local); this._hadLocal = true; } // affichage instantané (miroir récent)
+    if (local) { this.hydrate(local); this.#hadLocal = true; } // affichage instantané (miroir récent)
   }
-
-  #idSeq;
 
   /**
    * Charge l'historique complet depuis IndexedDB une fois prêt, et migre les
@@ -38,7 +37,7 @@ export class Store extends EventEmitter {
     const full = await this.persistence.loadFull();
     if (full) {
       this.hydrate(full);                 // historique complet (IndexedDB fait foi)
-    } else if (this._hadLocal) {
+    } else if (this.#hadLocal) {
       this.persist();                     // IndexedDB vide : on y migre l'état local
     }
   }
@@ -201,11 +200,6 @@ export class Store extends EventEmitter {
     return "needsTask";
   }
 
-  stop() {
-    this.#stopActive();
-    this.#commit();
-  }
-
   /** Nouvelle tâche : arrête l'active, crée, démarre. */
   startNew({ name, type }) {
     this.#stopActive();
@@ -217,7 +211,7 @@ export class Store extends EventEmitter {
 
   /**
    * Pause : arrête le chrono de la tâche active sans la terminer
-   * (elle reste « en cours » et résumable). Alias sémantique de stop().
+   * (elle reste « en cours » et résumable).
    */
   pause() {
     this.#stopActive();

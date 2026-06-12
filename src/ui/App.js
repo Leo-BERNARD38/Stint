@@ -38,6 +38,8 @@ import { startOfDay, addDays, sameDay, atTime, parseDateInput } from "../utils/d
  * de haut niveau et relaie les évènements du Store vers le rendu.
  */
 export class App {
+  #ticksSinceRefresh = 0;
+
   constructor() {
     this.store = new Store(new Persistence());
     this.calc = new TimeCalculator(this.store);
@@ -46,7 +48,6 @@ export class App {
     this.dayGlyphAnimator = new DayGlyphAnimator();
     this.viewDay = startOfDay(new Date());
     this.screen = "app"; // app | settings | guide | tools
-    this._ticksSinceRefresh = 0;
 
     this.toast = new Toast();
     this.modals = {
@@ -272,8 +273,8 @@ export class App {
     if (!this.store.activeSegment()) return;
     this.hero.tick();
     // rafraîchissement léger périodique de la vue du jour courant
-    if (sameDay(this.viewDay, new Date()) && (this._ticksSinceRefresh += 1) >= 15) {
-      this._ticksSinceRefresh = 0;
+    if (sameDay(this.viewDay, new Date()) && (this.#ticksSinceRefresh += 1) >= 15) {
+      this.#ticksSinceRefresh = 0;
       this.render();
     }
   }

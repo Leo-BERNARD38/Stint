@@ -24,7 +24,6 @@ export class ToolsView {
     this.bnStart = el("bnStart");
     this.bnEnd = el("bnEnd");
     this.bnOut = el("bnOut");
-    this._defaultsSet = false;
   }
 
   bind() {
@@ -45,14 +44,12 @@ export class ToolsView {
     this.#renderBrutNet();
   }
 
-  /** Pré-remplit le calcul brut/net (arrivée du jour → maintenant) une seule fois. */
+  /** Pré-remplit le calcul brut/net (arrivée du jour → maintenant), au démarrage. */
   #setDefaults() {
-    if (this._defaultsSet) return;
     const now = new Date();
     const start = atTime(startOfDay(now), this.app.store.settings.arrival);
     this.bnStart.value = fmtDateTimeLocal(start);
     this.bnEnd.value = fmtDateTimeLocal(now);
-    this._defaultsSet = true;
     this.#renderBrutNet();
   }
 
