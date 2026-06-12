@@ -7,6 +7,7 @@ export class TaskListView {
   constructor(app) {
     this.app = app;
     this.list = el("taskList");
+    this.anchor = this.list;
   }
 
   render(viewDay) {

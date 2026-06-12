@@ -12,6 +12,7 @@ export class StatsView {
     this.app = app;
     this.cards = el("statsCards");
     this.types = el("statsTypes");
+    this.anchor = this.cards;
   }
 
   render() {

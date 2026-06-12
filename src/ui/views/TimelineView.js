@@ -9,6 +9,7 @@ export class TimelineView {
   constructor(app) {
     this.app = app;
     this.timeline = el("timeline");
+    this.anchor = this.timeline;
     this.axis = el("tlAxis");
     this.gapsList = el("gapsList");
     // Infobulle partagée, montée dans le wrap (stable : survit aux re-rendus).

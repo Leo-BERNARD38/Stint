@@ -16,6 +16,7 @@ export class AllTasksView {
   constructor(app) {
     this.app = app;
     this.root = el("allTasks");
+    this.anchor = this.root;
     this.expanded = new Set();
     this.filter = { q: "", types: new Set(TASK_TYPES), state: "all", group: "day" };
   }

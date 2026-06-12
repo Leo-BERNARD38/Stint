@@ -20,6 +20,7 @@ export class TabsView {
     this.panels.forEach((p) => { p.hidden = p.dataset.panel !== name; });
     // « Tâches » et « Stats » sont des vues tout-temps : pas de sélecteur de jour.
     el("dayHead").hidden = name === "taches" || name === "stats";
+    this.app.render(); // rend les vues du panneau qui vient d'être révélé
   }
 
   render() { /* déclaratif : rien à re-rendre sur changement de données */ }

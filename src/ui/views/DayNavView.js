@@ -5,6 +5,7 @@ import { sameDay, formatLongDate } from "../../utils/datetime.js";
 export class DayNavView {
   constructor(app) {
     this.app = app;
+    this.anchor = el("dayHead");
     this.label = el("dayLabel");
     this.badge = el("todayBadge");
   }

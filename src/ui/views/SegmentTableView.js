@@ -10,6 +10,7 @@ export class SegmentTableView {
   constructor(app) {
     this.app = app;
     this.body = el("segBody");
+    this.anchor = this.body;
   }
 
   bind() {

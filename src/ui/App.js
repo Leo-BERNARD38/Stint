@@ -98,8 +98,18 @@ export class App {
     this.dayGlyphAnimator.start(); // anime le glyphe « moment de la journée »
   }
 
+  /**
+   * Re-rend les vues visibles. Une vue qui déclare `this.anchor` (un élément de
+   * sa région) est sautée tant que cette région est masquée (`[hidden]` sur un
+   * ancêtre : autre onglet, autre écran) — elle sera rendue à la bascule, via
+   * `TabsView.select()` / `showScreen()`. Les vues sans `anchor` (header, thème,
+   * hero) sont toujours rendues.
+   */
   render() {
-    this.views.forEach((v) => v.render(this.viewDay));
+    this.views.forEach((v) => {
+      if (v.anchor?.closest("[hidden]")) return;
+      v.render(this.viewDay);
+    });
   }
 
   /* ----------------- flux 3 boutons ----------------- */
@@ -121,6 +131,7 @@ export class App {
     el("helpBtn").classList.toggle("active", name === "guide");
     el("toolsBtn").classList.toggle("active", name === "tools");
     window.scrollTo({ top: 0 });
+    this.render(); // rend les vues de l'écran qui vient d'être révélé
   }
   backToApp() { this.showScreen("app"); }
   toggleSettings() { this.showScreen(this.screen === "settings" ? "app" : "settings"); }

@@ -18,6 +18,7 @@ const CONV_FORMATS = [
 export class ToolsView {
   constructor(app) {
     this.app = app;
+    this.anchor = el("toolsScreen");
     this.convInput = el("convInput");
     this.convUnit = el("convUnit");
     this.convOut = el("convOut");

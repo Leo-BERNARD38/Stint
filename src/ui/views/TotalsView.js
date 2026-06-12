@@ -8,6 +8,7 @@ export class TotalsView {
   constructor(app) {
     this.app = app;
     this.root = el("totalsGrid");
+    this.anchor = this.root;
   }
 
   render(viewDay) {

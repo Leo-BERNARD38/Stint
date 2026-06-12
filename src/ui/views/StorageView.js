@@ -7,6 +7,7 @@ export class StorageView {
     this.app = app;
     this.text = el("storageText");
     this.bar = el("storageBar");
+    this.anchor = this.text;
   }
 
   bind() {

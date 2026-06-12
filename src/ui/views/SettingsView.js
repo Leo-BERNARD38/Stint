@@ -9,6 +9,7 @@ const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi
 export class SettingsView {
   constructor(app) {
     this.app = app;
+    this.anchor = el("settingsScreen");
     this.wdayEditor = createScheduleEditor();
     this.dateEditor = createScheduleEditor();
   }

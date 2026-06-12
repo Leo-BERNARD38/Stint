@@ -16,6 +16,7 @@ export class StatsTimelineView {
   constructor(app) {
     this.app = app;
     this.el = el("statsTimeline");
+    this.anchor = this.el;
     this.label = el("stLabel");
     this.scale = "month";
     this.anchor = startOfDay(new Date());
