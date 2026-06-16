@@ -69,7 +69,14 @@ header {
 /* ---------- Écrans (application / réglages / guide) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); margin-inline: auto; }
 .settings-screen { max-width: 880px; }
-.guide-screen { max-width: 760px; }
+.guide-screen { max-width: 980px; }
+/* Guide : sommaire collant (gauche) + contenu (droite). */
+.guide-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
+.guide-grid .guide-intro { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .guide-grid { grid-template-columns: 1fr; }
+  .guide-toc { position: static !important; }
+}
 .page-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-7); }
 .tab-panel { animation: fade .2s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

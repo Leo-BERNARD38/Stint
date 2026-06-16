@@ -397,13 +397,28 @@
         <button id="guideBack" class="btn-back" data-icon="chevron-left" aria-label="Retour"></button>
         <h2 class="page-title">Guide</h2>
       </div>
-      <div class="guide">
+      <div class="guide guide-grid">
         <p class="guide-intro">
           Stint découpe ta journée en <strong>segments</strong> horodatés, une tâche à la fois,
           et te donne le temps prêt à coller dans Jira. Tout reste en local dans ton navigateur.
         </p>
 
-        <div class="guide-block">
+        <aside class="guide-toc">
+          <div class="guide-toc-title">Sommaire</div>
+          <a href="#g-1"><span class="num">01</span> Les 4 boutons</a>
+          <a href="#g-2"><span class="num">02</span> Pause ou Terminer&nbsp;?</a>
+          <a href="#g-3"><span class="num">03</span> Temps ouvré &amp; brut</a>
+          <a href="#g-4"><span class="num">04</span> Onglet Journée</a>
+          <a href="#g-5"><span class="num">05</span> Onglet Tâches</a>
+          <a href="#g-6"><span class="num">06</span> Onglet Stats</a>
+          <a href="#g-7"><span class="num">07</span> Outils</a>
+          <a href="#g-8"><span class="num">08</span> Copier pour Jira</a>
+          <a href="#g-9"><span class="num">09</span> Sauvegarde</a>
+          <a href="#g-10"><span class="num">10</span> Installer l'app</a>
+        </aside>
+
+        <div class="guide-content">
+        <div class="guide-block" id="g-1">
           <h3>Les 4 boutons</h3>
           <ul class="guide-actions">
             <li>
@@ -426,13 +441,13 @@
           <p>La carte « Tâche active » en haut affiche le <b>temps total cumulé</b> de la tâche en cours (tous ses segments).</p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-2">
           <h3>Pause ou Terminer&nbsp;?</h3>
           <p><b>Pause</b> — je m'arrête un moment, je reprendrai : la tâche reste « en cours ».</p>
           <p><b>Terminer</b> — c'est fini pour cette tâche : ça garde la liste « Reprise » propre.</p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-3">
           <h3>Temps « ouvré » et case « brut »</h3>
           <p>
             Par défaut, Stint ne compte que le temps passé <b>dans tes horaires de travail</b>
@@ -450,7 +465,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-4">
           <h3>Onglet Journée — timeline & temps non tracé</h3>
           <p>
             La barre représente ta journée, chaque bloc une tâche. Les vides entre les blocs sont
@@ -460,7 +475,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-5">
           <h3>Onglet Tâches — rechercher, filtrer, regrouper</h3>
           <p>
             Toutes tes tâches, avec <b>recherche</b> (nom ou clé Jira), <b>filtres</b> par type
@@ -474,7 +489,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-6">
           <h3>Onglet Stats — vue d'ensemble</h3>
           <p>
             Le panorama de tout ton historique : <b>cartes de synthèse</b> (total, semaine, mois,
@@ -483,7 +498,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-7">
           <h3>Outils <span class="kbd">clé</span></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
@@ -492,7 +507,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-8">
           <h3>Copier pour Jira</h3>
           <p>
             Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
@@ -501,7 +516,7 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-9">
           <h3>Sauvegarde</h3>
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
@@ -516,13 +531,14 @@
           </p>
         </div>
 
-        <div class="guide-block">
+        <div class="guide-block" id="g-10">
           <h3>Installer l'application</h3>
           <p>
             Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,
             ou « Ajouter à l'écran d'accueil »), puis fonctionne hors-ligne.
           </p>
         </div>
+        </div><!-- /.guide-content -->
       </div>
     </section>
 
