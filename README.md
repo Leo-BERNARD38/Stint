@@ -9,6 +9,8 @@ reste modifiable dans l'app.
 100 % front, **sans build** : HTML + CSS + **modules ES natifs**. Déployable tel quel
 sur GitHub Pages, fonctionne hors-ligne une fois chargé.
 
+https://leo-bernard38.github.io/Stint/
+
 ## Lancer en local
 
 Les modules ES nécessitent d'être servis en HTTP (le protocole `file://` les bloque).
