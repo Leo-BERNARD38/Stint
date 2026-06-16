@@ -446,6 +446,18 @@
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
 
+/* Sélecteur de couleur libre (modale d'édition) : pastille ronde + presets. */
+.color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.color-pick { width: 42px; height: 42px; border: none; border-radius: 50%; padding: 0; background: transparent; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; }
+.color-pick::-webkit-color-swatch-wrapper { padding: 0; }
+.color-pick::-webkit-color-swatch { border: none; border-radius: 50%; }
+.color-pick::-moz-color-swatch { border: none; border-radius: 50%; }
+.color-hex { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; min-width: 72px; }
+.color-presets { display: flex; gap: 9px; flex-wrap: wrap; }
+.color-preset { width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); padding: 0; }
+.color-preset:hover { transform: scale(1.15); }
+.color-preset.active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+
 /* ---------- Icônes ---------- */
 .icon { display: block; flex-shrink: 0; }
 .mini-btn .icon, .btn .icon, .big-btn .icon, .icon-btn .icon, .daynav .icon, .total-card .icon { pointer-events: none; }
@@ -469,8 +481,10 @@
 .task-row.done .task-dur { color: var(--text-soft); }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; }
+.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.toast .icon { color: var(--play); flex-shrink: 0; }
+.toast span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Page Guide ---------- */
 .guide { max-width: none; }

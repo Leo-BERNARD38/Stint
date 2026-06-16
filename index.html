@@ -601,9 +601,10 @@
       </div>
       <div class="field">
         <label>Type</label>
-        <div class="select-wrap">
-          <select id="ntType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
-          <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+        <div class="chip-group type-pick" id="ntTypeChips" role="group" aria-label="Type">
+          <button type="button" class="chip" data-type="dev">dev</button>
+          <button type="button" class="chip" data-type="support">support</button>
+          <button type="button" class="chip" data-type="autre">autre</button>
         </div>
       </div>
       <div class="modal-actions">
@@ -630,14 +631,29 @@
       <div class="field" style="margin-bottom:12px;">
         <label>Nom</label><input type="text" id="etName" autocomplete="off">
       </div>
-      <div class="field-grid">
-        <div class="field"><label>Type</label>
-          <div class="select-wrap">
-            <select id="etType"><option value="dev">dev</option><option value="support">support</option><option value="autre">autre</option></select>
-            <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+      <div class="field" style="margin-bottom:14px;">
+        <label>Type</label>
+        <div class="chip-group type-pick" id="etTypeChips" role="group" aria-label="Type">
+          <button type="button" class="chip" data-type="dev">dev</button>
+          <button type="button" class="chip" data-type="support">support</button>
+          <button type="button" class="chip" data-type="autre">autre</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Couleur</label>
+        <div class="color-row">
+          <input type="color" id="etColor" class="color-pick" aria-label="Couleur de la tâche">
+          <span class="color-hex" id="etColorHex"></span>
+          <div class="color-presets" id="etPresets" role="group" aria-label="Couleurs prédéfinies">
+            <button type="button" class="color-preset" data-color="#5B8BFF" style="background:#5B8BFF" title="#5B8BFF"></button>
+            <button type="button" class="color-preset" data-color="#F0584D" style="background:#F0584D" title="#F0584D"></button>
+            <button type="button" class="color-preset" data-color="#2DD4BF" style="background:#2DD4BF" title="#2DD4BF"></button>
+            <button type="button" class="color-preset" data-color="#9B78FF" style="background:#9B78FF" title="#9B78FF"></button>
+            <button type="button" class="color-preset" data-color="#E8941F" style="background:#E8941F" title="#E8941F"></button>
+            <button type="button" class="color-preset" data-color="#25B35C" style="background:#25B35C" title="#25B35C"></button>
+            <button type="button" class="color-preset" data-color="#F3F3F5" style="background:#F3F3F5" title="#F3F3F5"></button>
           </div>
         </div>
-        <div class="field"><label>Couleur</label><input type="color" id="etColor"></div>
       </div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="btn danger" id="etDelete">Supprimer</button>

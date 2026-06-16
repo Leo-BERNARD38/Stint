@@ -1,12 +1,14 @@
 import { Modal } from "./Modal.js";
 import { el } from "../../utils/dom.js";
 
-/** Édition d'une tâche : nom (qui porte la clé Jira), type, couleur, archiver, supprimer. */
+/** Édition d'une tâche : nom (qui porte la clé Jira), type (chips), couleur
+ *  (sélecteur libre + presets), archiver, supprimer. */
 export class EditTaskModal extends Modal {
   constructor(app) {
     super("editTaskModal");
     this.app = app;
     this.taskId = null;
+    this.type = "dev";
   }
 
   bind() {
@@ -14,6 +16,27 @@ export class EditTaskModal extends Modal {
     el("etSave").addEventListener("click", () => this.#save());
     el("etArchive").addEventListener("click", () => this.#archive());
     el("etDelete").addEventListener("click", () => this.#delete());
+    el("etTypeChips").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-type]");
+      if (b) this.#setType(b.dataset.type);
+    });
+    el("etColor").addEventListener("input", () => this.#reflectColor());
+    el("etPresets").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-color]");
+      if (b) { el("etColor").value = b.dataset.color; this.#reflectColor(); }
+    });
+  }
+
+  #setType(type) {
+    this.type = type;
+    [...el("etTypeChips").children].forEach((c) => c.classList.toggle("active", c.dataset.type === type));
+  }
+
+  #reflectColor() {
+    const v = el("etColor").value;
+    el("etColorHex").textContent = v.toUpperCase();
+    [...el("etPresets").children].forEach((c) =>
+      c.classList.toggle("active", c.dataset.color.toLowerCase() === v.toLowerCase()));
   }
 
   open(taskId) {
@@ -21,8 +44,9 @@ export class EditTaskModal extends Modal {
     if (!t) return;
     this.taskId = taskId;
     el("etName").value = t.name;
-    el("etType").value = t.type;
+    this.#setType(t.type);
     el("etColor").value = t.color;
+    this.#reflectColor();
     el("etArchive").textContent = t.archived ? "Désarchiver" : "Archiver";
     super.open();
     setTimeout(() => el("etName").focus(), 50);
@@ -31,7 +55,7 @@ export class EditTaskModal extends Modal {
   #save() {
     this.app.store.updateTask(this.taskId, {
       name: el("etName").value.trim(),
-      type: el("etType").value,
+      type: this.type,
       color: el("etColor").value,
     });
     this.close();
