@@ -10,6 +10,10 @@
   <!-- PWA : installable sur PC et mobile, fonctionne hors-ligne -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#ffffff" />
+  <!-- Déclare au navigateur que les deux schémas sont gérés : indispensable pour
+       qu'une PWA installée (standalone) honore un forçage clair/sombre au lieu de
+       rester verrouillée sur le schéma de l'OS. -->
+  <meta name="color-scheme" content="light dark" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Stint" />
@@ -18,12 +22,18 @@
   <!-- Applique le thème enregistré avant le premier rendu (évite tout flash). -->
   <script>
     (function () {
+      var t = "system";
       try {
         var raw = localStorage.getItem("stint.v1");
-        var t = raw && JSON.parse(raw).settings && JSON.parse(raw).settings.theme;
-        document.documentElement.dataset.theme =
-          (t === "light" || t === "dark" || t === "system") ? t : "system";
-      } catch (e) { document.documentElement.dataset.theme = "system"; }
+        var s = raw && JSON.parse(raw).settings && JSON.parse(raw).settings.theme;
+        if (s === "light" || s === "dark" || s === "system") t = s;
+      } catch (e) {}
+      var root = document.documentElement;
+      root.dataset.theme = t;
+      // En PWA installée, l'attribut [data-theme] (→ color-scheme via CSS) ne
+      // suffit pas : on force aussi color-scheme en style inline pour que
+      // light-dark() se re-résolve quel que soit le schéma de l'OS.
+      root.style.colorScheme = t === "system" ? "light dark" : t;
     })();
   </script>
 

@@ -34,7 +34,12 @@ export class ThemeView {
 
   render() {
     const theme = this.app.store.settings.theme;
-    document.documentElement.dataset.theme = theme;
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    // Forçage inline du color-scheme : en PWA installée (standalone), le seul
+    // attribut [data-theme] ne suffit pas à faire basculer light-dark() — le
+    // style inline est le signal le plus direct au moteur de rendu.
+    root.style.colorScheme = theme === "system" ? "light dark" : theme;
     this.toggle.title = "Thème : " + (LABELS[theme] ?? theme);
     if (this.select.value !== theme) this.select.value = theme;
     if (theme !== this.#lastIcon) {
