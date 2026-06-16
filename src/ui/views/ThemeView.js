@@ -7,8 +7,8 @@ const LABELS = { system: "Système", light: "Clair", dark: "Sombre" };
 
 /**
  * Gère le thème (clair / sombre / système) : applique data-theme, synchronise
- * le bouton du header (cycle) et le select des réglages, et tient à jour la
- * couleur de la barre système (meta theme-color) — utile en PWA installée.
+ * le bouton cyclique du header **et** le contrôle segmenté des réglages, et
+ * tient à jour la couleur de la barre système (meta theme-color) — utile en PWA.
  */
 export class ThemeView {
   #lastIcon = null; // évite de ré-injecter (et ré-animer) l'icône à chaque rendu
@@ -16,7 +16,8 @@ export class ThemeView {
   constructor(app) {
     this.app = app;
     this.toggle = el("themeToggle");
-    this.select = el("themeSelect");
+    this.seg = el("themeSeg");
+    this.segBtns = [...this.seg.querySelectorAll("[data-theme-opt]")];
     this.meta = document.querySelector('meta[name="theme-color"]');
     this.media = window.matchMedia("(prefers-color-scheme: dark)");
   }
@@ -26,7 +27,10 @@ export class ThemeView {
       const i = THEMES.indexOf(this.app.store.settings.theme);
       this.app.setTheme(THEMES[(i + 1) % THEMES.length]);
     });
-    this.select.addEventListener("change", () => this.app.setTheme(this.select.value));
+    this.seg.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-theme-opt]");
+      if (b) this.app.setTheme(b.dataset.themeOpt);
+    });
     this.media.addEventListener("change", () => {
       if (this.app.store.settings.theme === "system") this.#updateMeta("system");
     });
@@ -37,11 +41,12 @@ export class ThemeView {
     const root = document.documentElement;
     root.dataset.theme = theme;
     // Forçage inline du color-scheme : en PWA installée (standalone), le seul
-    // attribut [data-theme] ne suffit pas à faire basculer light-dark() — le
-    // style inline est le signal le plus direct au moteur de rendu.
+    // attribut [data-theme] ne suffit pas à faire basculer light-dark().
     root.style.colorScheme = theme === "system" ? "light dark" : theme;
     this.toggle.title = "Thème : " + (LABELS[theme] ?? theme);
-    if (this.select.value !== theme) this.select.value = theme;
+    // contrôle segmenté : curseur + état actif
+    this.seg.style.setProperty("--seg-i", Math.max(0, THEMES.indexOf(theme)));
+    this.segBtns.forEach((b) => b.classList.toggle("active", b.dataset.themeOpt === theme));
     if (theme !== this.#lastIcon) {
       this.toggle.innerHTML = icon(ICON_NAMES[theme] ?? "monitor", { size: 17 });
       this.#lastIcon = theme;

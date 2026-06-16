@@ -263,22 +263,26 @@
       <div class="settings-grid">
         <div class="settings-block">
           <div class="block-title">Apparence</div>
-          <div class="field" style="max-width:240px;">
-            <label>Thème</label>
-            <select id="themeSelect">
-              <option value="system">Système</option>
-              <option value="light">Clair</option>
-              <option value="dark">Sombre</option>
-            </select>
+          <div class="seg-field">
+            <span class="seg-label">Thème</span>
+            <div class="seg-control" id="themeSeg" role="tablist" aria-label="Thème">
+              <button type="button" data-theme-opt="system" role="tab">Système</button>
+              <button type="button" data-theme-opt="light" role="tab">Clair</button>
+              <button type="button" data-theme-opt="dark" role="tab">Sombre</button>
+            </div>
           </div>
         </div>
 
         <div class="settings-block">
           <div class="block-title">Horaires</div>
+          <div class="seg-control" id="hoursSeg" role="tablist" aria-label="Type d'horaire">
+            <button type="button" data-hours="base" class="active" role="tab">De base</button>
+            <button type="button" data-hours="weekday" role="tab">Par jour</button>
+            <button type="button" data-hours="date" role="tab">Par date</button>
+          </div>
 
-          <div class="settings-sub">
-            <div class="sub-title">De base</div>
-            <p class="muted">Appliqués à tous les jours travaillés, sauf exception ci-dessous.</p>
+          <div class="hours-panel" data-hours-panel="base">
+            <p class="muted">Appliqués à tous les jours travaillés, sauf exception.</p>
             <div class="field" style="margin-bottom:16px;">
               <label>Jours travaillés</label>
               <div class="weekdays" id="weekdays"></div>
@@ -291,8 +295,7 @@
             </div>
           </div>
 
-          <div class="settings-sub">
-            <div class="sub-title">Par jour de la semaine</div>
+          <div class="hours-panel" data-hours-panel="weekday" hidden>
             <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
             <div class="ov-list" id="weekdayOvList"></div>
             <div class="ov-editor">
@@ -308,8 +311,7 @@
             </div>
           </div>
 
-          <div class="settings-sub">
-            <div class="sub-title">Dates spécifiques</div>
+          <div class="hours-panel" data-hours-panel="date" hidden>
             <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
             <div class="ov-list" id="dateOvList"></div>
             <div class="ov-editor">

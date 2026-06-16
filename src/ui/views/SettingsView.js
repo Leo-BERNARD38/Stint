@@ -83,9 +83,24 @@ export class SettingsView {
       if (row) { dateSelect.value = row.dataset.date; this.#loadDate(); }
     });
 
+    // --- onglets « Horaires » (De base / Par jour / Par date) : évite le gros scroll ---
+    el("hoursSeg").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-hours]");
+      if (b) this.#selectHoursTab(b.dataset.hours);
+    });
+    this.#selectHoursTab("base");
+
     // pré-remplissage initial des éditeurs
     this.#loadWeekday();
     this.#loadDate();
+  }
+
+  #selectHoursTab(name) {
+    const order = ["base", "weekday", "date"];
+    const seg = el("hoursSeg");
+    [...seg.children].forEach((b) => b.classList.toggle("active", b.dataset.hours === name));
+    seg.style.setProperty("--seg-i", Math.max(0, order.indexOf(name)));
+    document.querySelectorAll(".hours-panel").forEach((p) => { p.hidden = p.dataset.hoursPanel !== name; });
   }
 
   #loadWeekday() {
