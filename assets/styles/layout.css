@@ -29,6 +29,13 @@ header {
   gap: var(--sp-4);
   padding: var(--sp-7) 0 var(--sp-3);
 }
+/* Héros 2 colonnes : tâche active (gauche) + total du jour (droite). */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(252px, 1fr);
+  gap: var(--sp-4);
+}
+@media (max-width: 720px) { .hero { grid-template-columns: 1fr; } }
 .control-buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -44,9 +51,9 @@ header {
   display: grid; grid-template-columns: repeat(3, 1fr);
   width: 360px; max-width: 100%;
   background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
-  margin: var(--sp-5) 0 var(--sp-4);
+  margin: var(--sp-5) auto var(--sp-4); /* centré (signature Nothing) */
 }
-.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 440px; }
+.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 460px; }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
 .tabs::before {
   content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;

@@ -82,13 +82,20 @@
     <div id="appScreen">
     <!-- ============================ BARRE DE CONTRÔLE (toujours visible) ============================ -->
     <div class="control">
-      <div class="active-card">
-        <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
-        <div class="active-meta">
-          <div class="active-label">Tâche active</div>
-          <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
+      <!-- Héros 2 colonnes : tâche active (gauche) + total du jour (droite, day-glyph) -->
+      <div class="hero">
+        <div class="active-card">
+          <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
+          <div class="active-meta">
+            <div class="active-label">Tâche active</div>
+            <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
+            <div class="active-extra" id="activeExtra"></div>
+          </div>
+          <div class="active-timer idle" id="activeTimer">0:00:00</div>
         </div>
-        <div class="active-timer idle" id="activeTimer">0:00:00</div>
+        <!-- Carte « Total du jour » (toujours visible) : remplie par DayTotalView,
+             scène day-glyph animée en fond. -->
+        <div class="total-card" id="dayTotalCard"></div>
       </div>
 
       <div class="control-buttons">

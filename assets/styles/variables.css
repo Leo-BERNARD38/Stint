@@ -21,6 +21,7 @@
   /* Rayons — volontairement proches les uns des autres (langage « pilule »
      Nothing) : les cartes partagent un grand rayon, les petits éléments sont
      des pilules pleines (--radius-pill). */
+  --radius-lg: 22px;  /* cartes héros (tâche active / total du jour) */
   --radius: 18px;
   --radius-sm: 14px;
   --radius-xs: 11px;
@@ -47,6 +48,15 @@
   --dot: color-mix(in srgb, var(--text) 24%, transparent);
   --dot-grid: color-mix(in srgb, var(--text) 9%, transparent);
 
+  /* Timeline & interactions (drag, trous, bande déjeuner). */
+  --lunch-overlay: color-mix(in srgb, var(--bg) 50%, transparent); /* superposition sombre sur la pause */
+  --grip: light-dark(rgba(17, 17, 19, .5), rgba(12, 12, 14, .55));  /* trait de poignée (lisible sur toute couleur de segment) */
+  --grip-strong: light-dark(rgba(17, 17, 19, .82), rgba(12, 12, 14, .9));
+  --gap-bg: color-mix(in srgb, var(--text) 4.5%, transparent);      /* zone de trou (temps non tracé) */
+  --gap-ring: color-mix(in srgb, var(--text) 16%, transparent);
+  --gap-bg-hover: color-mix(in srgb, var(--pause) 14%, transparent); /* survol / actif → ambre */
+  --gap-ring-hover: color-mix(in srgb, var(--pause) 60%, transparent);
+
   /* ---------------------- Couleurs (clair, sombre) ---------------------- */
   --bg: light-dark(#ffffff, #0c0c0e);
   --surface: light-dark(#f5f5f6, #161619);       /* zones douces : inputs, boutons secondaires, aside */
@@ -68,6 +78,9 @@
   --new: light-dark(#2f6df6, #5b8bff);
   --resume: light-dark(#7c4dff, #9b78ff);
   --finish: light-dark(#0d9488, #2dd4bf);
+  /* Pastilles douces des contrôles play/terminer dans les lignes de tâche. */
+  --play-soft: light-dark(#dcfce7, #173a26);
+  --finish-soft: light-dark(#d1fae5, #16361f);
 
   --warn-bg: light-dark(#fdf3d6, #3a2f12);
   --warn-text: light-dark(#8a6212, #f4cf6b);

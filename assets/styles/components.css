@@ -65,15 +65,18 @@
 
 /* ---------- Carte tâche active ---------- */
 .active-card {
-  background: var(--surface); border-radius: var(--radius);
-  padding: var(--sp-4) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 78px;
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 128px;
 }
-.active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; transition: box-shadow .2s var(--ease); }
 .active-meta { flex: 1; min-width: 0; }
 .active-label { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
-.active-name { font-size: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.active-name { font-size: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .active-name.idle { color: var(--text-faint); font-weight: 500; }
-.active-timer { font-family: var(--font-display); font-weight: 400; font-size: 42px; line-height: 1; letter-spacing: .02em; }
+.active-extra { display: flex; align-items: center; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
+.active-extra:empty { display: none; }
+.active-started { font-size: 12px; color: var(--text-faint); }
+.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; }
 .active-timer.idle { color: var(--text-faint); }
 .live-dot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--stop);
@@ -155,16 +158,26 @@
 .gap-item .gap-fill { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-weight: 600; cursor: pointer; font-size: 12px; padding: 4px 11px; border-radius: var(--radius-pill); }
 .gap-item .gap-fill:hover { background: var(--surface); color: var(--text); }
 
-/* ---------- Totaux (aside) ---------- */
-.totals { display: flex; flex-direction: column; }
-.total-hero { position: relative; overflow: hidden; min-height: 156px; background: var(--accent); color: var(--accent-text); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5); margin-bottom: var(--sp-3); }
-.total-hero .hero-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
+/* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
+.total-card {
+  position: relative; overflow: hidden;
+  background: var(--accent); color: var(--accent-text);
+  border-radius: var(--radius-lg); padding: var(--sp-4) var(--sp-5);
+  min-height: 128px; display: flex; flex-direction: column; justify-content: center;
+}
 /* Scène « moment de la journée » : fond de carte pleine largeur (derrière le
    texte ; moitié gauche / haut gauche laissés vides par le dessin). Animée image
    par image en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
-.total-hero .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--accent-text); pointer-events: none; }
-.total-hero .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .7; }
-.total-hero .v { font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.05; margin-top: 4px; letter-spacing: .02em; }
+.total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--accent-text); pointer-events: none; }
+.total-card-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
+.total-card .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .55; }
+.total-card .v { font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; margin-top: 4px; letter-spacing: .02em; }
+/* Pilules de copie sur fond inversé : translucides claires/sombres selon l'accent. */
+.total-card .copy-row .mini-btn { background: color-mix(in srgb, var(--accent-text) 10%, transparent); color: var(--accent-text); }
+.total-card .copy-row .mini-btn:hover { background: color-mix(in srgb, var(--accent-text) 18%, transparent); }
+
+/* ---------- Totaux (aside Journée) ---------- */
+.totals { display: flex; flex-direction: column; }
 .copy-row { display: flex; gap: var(--sp-1); margin-top: var(--sp-3); }
 .total-line { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-1); }
 .total-line + .total-line { border-top: 1px dotted var(--dot); }
@@ -174,6 +187,12 @@
 .total-line .tdot.autre { background: var(--dot-autre); }
 .total-line .tname { flex: 1; color: var(--text-soft); text-transform: capitalize; }
 .total-line .tamt { font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Ligne « Total » du jour (gras) + pilules de copie pleine largeur. */
+.total-sum { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-1) var(--sp-2); }
+.total-sum .tname { flex: 1; font-weight: 700; }
+.total-sum .tamt { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.totals-copy .mini-btn { flex: 1; justify-content: center; background: var(--surface); }
+.totals-copy .mini-btn:hover { background: var(--surface-hover); }
 
 /* ---------- Liste des tâches (espace + survol, aucune ligne) ---------- */
 .task-list { display: flex; flex-direction: column; gap: 2px; }
@@ -322,7 +341,7 @@
 
 /* ---------- Icônes ---------- */
 .icon { display: block; flex-shrink: 0; }
-.mini-btn .icon, .btn .icon, .big-btn .icon, .icon-btn .icon, .daynav .icon, .total-hero .icon { pointer-events: none; }
+.mini-btn .icon, .btn .icon, .big-btn .icon, .icon-btn .icon, .daynav .icon, .total-card .icon { pointer-events: none; }
 .mini-btn.icon-only { padding: 6px; }
 .daynav button { display: inline-grid; place-items: center; line-height: 0; }
 

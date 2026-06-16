@@ -15,7 +15,7 @@ body {
 }
 
 /* Transition douce lors d'un changement de thème (mais pas au chargement). */
-body, .active-card, .big-btn, .settings-block, .seg-table td, .total-hero, input, select {
+body, .active-card, .total-card, .big-btn, .settings-block, .seg-table td, input, select {
   transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
 

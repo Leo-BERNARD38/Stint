@@ -8,6 +8,7 @@ import { Timer } from "./Timer.js";
 import { HeaderView } from "./views/HeaderView.js";
 import { ThemeView } from "./views/ThemeView.js";
 import { HeroView } from "./views/HeroView.js";
+import { DayTotalView } from "./views/DayTotalView.js";
 import { TabsView } from "./views/TabsView.js";
 import { DayNavView } from "./views/DayNavView.js";
 import { TimelineView } from "./views/TimelineView.js";
@@ -59,11 +60,13 @@ export class App {
     this.header = new HeaderView(this);
     this.theme = new ThemeView(this);
     this.hero = new HeroView(this);
+    this.dayTotal = new DayTotalView(this);
     this.tabs = new TabsView(this);
     this.views = [
       this.header,
       this.theme,
       this.hero,
+      this.dayTotal,
       this.tabs,
       new DayNavView(this),
       new TimelineView(this),
@@ -284,6 +287,7 @@ export class App {
   #onTick() {
     if (!this.store.activeSegment()) return;
     this.hero.tick();
+    this.dayTotal.tickValue(); // total du jour live (sans reconstruire le glyphe)
     // rafraîchissement léger périodique de la vue du jour courant
     if (sameDay(this.viewDay, new Date()) && (this.#ticksSinceRefresh += 1) >= 15) {
       this.#ticksSinceRefresh = 0;
