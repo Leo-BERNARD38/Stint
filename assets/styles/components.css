@@ -378,10 +378,6 @@
 /* Petits écrans : le contrôle segmenté prend toute la largeur (pas de débordement). */
 @media (max-width: 480px) { .seg-control { min-width: 0; width: 100%; } }
 
-/* Sous-sections d'une carte de réglages (ex. Horaires) */
-.settings-sub + .settings-sub { margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px dotted var(--dot); }
-.sub-title { font-family: var(--font-body); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-soft); margin: 0 0 var(--sp-3); }
-
 .io-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
 .btn:hover { background: var(--surface-hover); }
@@ -531,7 +527,7 @@
 
 /* Transitions douces sur tout ce qui réagit */
 .mini-btn, .btn, .icon-btn, .daynav button, .btn-ghost, .btn-back, .weekdays button,
-.tab, .backup-pill, .swatch, .resume-item, .gap-fill, .total-line {
+.tab, .backup-pill, .swatch, .resume-item, .total-line {
   transition: background-color .15s var(--ease), color .15s var(--ease),
               transform .12s var(--ease), box-shadow .15s var(--ease);
 }
@@ -541,7 +537,7 @@
 .big-btn { transition: background-color .16s var(--ease), transform .12s var(--ease); }
 .big-btn:active { transform: scale(.97); }
 .mini-btn:active, .btn:active, .icon-btn:active, .daynav button:active, .btn-ghost:active,
-.btn-back:active, .weekdays button:active, .gap-fill:active,
+.btn-back:active, .weekdays button:active,
 .backup-pill:active { transform: scale(.92); }
 .tab:active { transform: scale(.96); }
 .resume-item:active { transform: scale(.99); }

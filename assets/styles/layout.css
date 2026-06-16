@@ -114,7 +114,6 @@ header {
   .control { padding-top: var(--sp-5); }
   .tabs { margin: var(--sp-4) 0 var(--sp-3); }
   .day-head { margin: 0 0 var(--sp-4); }
-  .seg-table .col-date { display: none; }
   .daynav .date { min-width: 0; font-size: 14px; }
   /* les actions de tâche passent sur leur propre ligne (évite le débordement) */
   .task-row { flex-wrap: wrap; }
