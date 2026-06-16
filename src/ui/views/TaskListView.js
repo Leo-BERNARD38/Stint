@@ -32,14 +32,16 @@ export class TaskListView {
     }
 
     const activeSeg = store.activeSegment();
+    const maxMs = Math.max(1, ...[...byTask.values()]);
     for (const id of taskIds) {
       const t = store.taskById(id);
       if (!t) continue;
-      this.list.appendChild(this.#row(t, (byTask.get(id) ?? 0) / 60000, activeSeg?.taskId === id));
+      const ms = byTask.get(id) ?? 0;
+      this.list.appendChild(this.#row(t, ms / 60000, activeSeg?.taskId === id, (ms / maxMs) * 100));
     }
   }
 
-  #row(task, minutes, isActive) {
+  #row(task, minutes, isActive, share) {
     const fmt = this.app.formatter;
     const row = createEl("div", {
       className: "task-row" + (isActive ? " active" : "") + (task.done ? " done" : "") + (task.archived ? " archived" : ""),
@@ -49,26 +51,28 @@ export class TaskListView {
           (isActive ? `<span class="live-dot"></span>` : "") +
           `<span class="type-badge type-${task.type}">${task.type}</span>` +
           (task.done ? `<span class="badge-done">terminé</span>` : "") +
-        `</div></div>` +
+        `</div>` +
+        `<div class="task-share"><span style="width:${share}%;background:${task.color}"></span></div>` +
+        `</div>` +
         `<div class="task-dur">${fmt.clock(minutes)}</div>`,
     });
 
     const actions = createEl("div", { className: "task-actions" });
+    const store = this.app.store;
+    // contrôles de cycle de vie (pastilles colorées), puis copie + édition
+    if (task.done) {
+      actions.appendChild(this.#iconBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id), "ctrl-play"));
+    } else if (isActive) {
+      actions.appendChild(this.#iconBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
+      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
+    } else {
+      actions.appendChild(this.#iconBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
+      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
+    }
     actions.append(
       createCopyButton(this.app, fmt.decimal(minutes), "Déc."),
       createCopyButton(this.app, fmt.jira(minutes), "Jira"),
     );
-
-    const store = this.app.store;
-    if (task.done) {
-      actions.appendChild(this.#iconBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id)));
-    } else if (isActive) {
-      actions.appendChild(this.#iconBtn("pause", "Pause", () => store.pause()));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
-    } else {
-      actions.appendChild(this.#iconBtn("play", "Reprendre", () => store.resume(task.id)));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
-    }
     actions.appendChild(this.#iconBtn("pencil", "Éditer", () => this.app.openEditTask(task.id)));
 
     row.appendChild(actions);
@@ -76,9 +80,9 @@ export class TaskListView {
     return row;
   }
 
-  #iconBtn(name, title, onClick) {
+  #iconBtn(name, title, onClick, extra = "") {
     return createEl("button", {
-      className: "mini-btn icon-only",
+      className: "mini-btn icon-only" + (extra ? " " + extra : ""),
       html: icon(name, { size: 15 }),
       attrs: { title, "aria-label": title },
       on: { click: onClick },

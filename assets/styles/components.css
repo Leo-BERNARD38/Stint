@@ -285,12 +285,21 @@
 .type-support { background: var(--type-support-bg); color: var(--type-support-text); }
 .type-autre { background: var(--type-autre-bg); color: var(--type-autre-text); }
 .task-dur { font-family: var(--font-body); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.task-actions { display: flex; gap: 4px; }
+.task-actions { display: flex; align-items: center; gap: 4px; }
+/* Mini-barre de part du jour (proportion du temps de la tâche). */
+.task-share { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 8px; overflow: hidden; max-width: 280px; }
+.task-share span { display: block; height: 100%; border-radius: 2px; }
 
 .mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
 .mini-btn:hover { background: var(--surface-hover); color: var(--text); }
 .mini-btn.copied { background: var(--play); color: #fff; }
-.task-row:not(:hover):not(.active) .task-actions .mini-btn { background: transparent; }
+/* Contrôles de cycle de vie : pastilles colorées, toujours visibles. */
+.mini-btn.ctrl-play { background: var(--play-soft); color: var(--play); }
+.mini-btn.ctrl-play:hover { background: color-mix(in srgb, var(--play) 24%, transparent); color: var(--play); }
+.mini-btn.ctrl-pause { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause); }
+.mini-btn.ctrl-pause:hover { background: color-mix(in srgb, var(--pause) 26%, transparent); color: var(--pause); }
+/* Les boutons discrets (copie, édition, terminer) ne montrent leur fond qu'au survol. */
+.task-row:not(:hover):not(.active) .task-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; }
 
 /* ---------- Onglet « Tâches » : liste groupée (jour / semaine / mois) ---------- */
 .all-tasks { display: flex; flex-direction: column; }
@@ -306,7 +315,7 @@
 .at-total { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Copie du total : boutons discrets, révélés au survol/focus de la ligne. */
 .at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.at-head:not(:hover):not(:focus-within) .at-actions .mini-btn { background: transparent; color: var(--text-faint); }
+.at-head:not(:hover):not(:focus-within) .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
 /* Conteneur animable : la hauteur passe de 0fr à 1fr (transition fluide). */
 .at-segs-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }
 .at-task.open .at-segs-wrap { grid-template-rows: 1fr; }
@@ -324,14 +333,19 @@
 .table-scroll { overflow-x: auto; border-radius: var(--radius); }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .seg-table th { text-align: left; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 600; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
-.seg-table td { padding: 10px 14px; vertical-align: middle; }
-.seg-table tbody tr { border-radius: var(--radius-sm); }
-.seg-table tbody tr:nth-child(even) td { background: var(--surface); }
-.seg-table tbody tr:hover td { background: var(--surface-hover); }
+.seg-table td { padding: 7px 12px; vertical-align: middle; }
+.seg-table tbody tr:hover td { background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .seg-table tbody tr.running td { background: color-mix(in srgb, var(--play) 10%, transparent); }
-.seg-table input[type="time"], .seg-table input[type="date"], .seg-table input[type="datetime-local"], .seg-table select { border: none; background: transparent; border-radius: 6px; padding: 4px 6px; color: var(--text); }
-.seg-table input:hover, .seg-table select:hover { background: var(--bg); }
-.seg-table input:focus, .seg-table select:focus { outline: none; background: var(--bg); box-shadow: 0 0 0 2px var(--ring); }
+/* Champs en pilule sombre (look « grille » du design système). */
+.seg-table input[type="time"], .seg-table input[type="date"], .seg-table input[type="datetime-local"], .seg-table select {
+  border: none; background: var(--surface-2); border-radius: 10px; padding: 7px 9px; color: var(--text);
+  font-variant-numeric: tabular-nums; }
+.seg-table select { appearance: none; -webkit-appearance: none; cursor: pointer; max-width: 100%; }
+.seg-table input:hover, .seg-table select:hover { background: var(--surface-hover); }
+.seg-table input:focus, .seg-table select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
 /* ---------- Réglages : champs & blocs ---------- */

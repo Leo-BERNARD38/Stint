@@ -16,6 +16,12 @@ export class SegmentTableView {
   bind() {
     this.body.addEventListener("change", (e) => this.#onChange(e));
     this.body.addEventListener("click", (e) => {
+      const cp = e.target.closest?.("[data-copy]");
+      if (cp) {
+        const seg = this.app.store.segments.find((s) => s.id === cp.getAttribute("data-copy"));
+        if (seg) this.app.copy(this.app.formatter.clock(this.app.calc.segmentMs(seg) / 60000), cp);
+        return;
+      }
       const btn = e.target.closest?.("[data-del]");
       if (!btn || !confirm("Supprimer ce segment ?")) return;
       // Le bouton est dans la table : tant qu'il garde le focus, render() ignore
@@ -49,20 +55,26 @@ export class SegmentTableView {
     const end = seg.end ? new Date(seg.end) : null;
     const minutes = calc.segmentMs(seg) / 60000;
 
+    const task = store.taskById(seg.taskId);
+    const color = task ? task.color : "var(--text-faint)";
     const options = store.tasks.map((t) =>
       `<option value="${t.id}"${t.id === seg.taskId ? " selected" : ""}>` +
       escapeHtml(t.displayName) + "</option>"
     ).join("");
 
     tr.innerHTML =
-      `<td><select data-seg="${seg.id}" data-field="taskId">${options}</select></td>` +
+      `<td><div class="seg-task-cell"><span class="seg-swatch" style="background:${color}"></span>` +
+        `<select data-seg="${seg.id}" data-field="taskId">${options}</select></div></td>` +
       `<td><input type="datetime-local" data-seg="${seg.id}" data-field="start" value="${fmtDateTimeLocal(start)}"></td>` +
       `<td>${end
         ? `<input type="datetime-local" data-seg="${seg.id}" data-field="end" value="${fmtDateTimeLocal(end)}">`
         : '<span style="color:var(--play);font-weight:600">en cours</span>'}</td>` +
       `<td><input type="checkbox" class="raw-toggle" data-seg="${seg.id}" data-field="raw"${seg.raw ? " checked" : ""} title="Temps brut (sans rognage ouvré)"></td>` +
       `<td class="seg-dur">${this.app.formatter.clock(minutes)}</td>` +
-      `<td><button class="mini-btn icon-only" data-del="${seg.id}" title="Supprimer">${icon("trash", { size: 15 })}</button></td>`;
+      `<td><div class="seg-actions">` +
+        `<button class="mini-btn icon-only" data-copy="${seg.id}" title="Copier la durée">${icon("copy", { size: 15 })}</button>` +
+        `<button class="mini-btn icon-only" data-del="${seg.id}" title="Supprimer">${icon("trash", { size: 15 })}</button>` +
+      `</div></td>`;
     return tr;
   }
 

@@ -181,18 +181,25 @@ export class AllTasksView {
         `<span class="at-total">${fmt.clock(total / 60000)}</span>`,
     });
 
-    // Copie du temps total de la tâche (brut/net déjà pris en compte dans `total`).
+    // Contrôles de cycle de vie + copie du temps total + édition (brut/net déjà
+    // pris en compte dans `total`).
     const mins = total / 60000;
+    const store = this.app.store;
+    const isActive = store.activeSegment()?.taskId === task.id;
     const actions = createEl("div", { className: "at-actions" });
+    if (task.done) {
+      actions.appendChild(this.#ctrlBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id), "ctrl-play"));
+    } else if (isActive) {
+      actions.appendChild(this.#ctrlBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
+      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id)));
+    } else if (!task.archived) {
+      actions.appendChild(this.#ctrlBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
+      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id)));
+    }
     actions.append(
       createCopyButton(this.app, fmt.decimal(mins), "Déc."),
       createCopyButton(this.app, fmt.jira(mins), "Jira"),
-      createEl("button", {
-        className: "mini-btn icon-only",
-        html: icon("pencil", { size: 15 }),
-        attrs: { title: "Éditer la tâche", "aria-label": "Éditer la tâche" },
-        on: { click: () => this.app.openEditTask(task.id) },
-      }),
+      this.#ctrlBtn("pencil", "Éditer la tâche", () => this.app.openEditTask(task.id)),
     );
     head.appendChild(actions);
     card.appendChild(head);
@@ -209,6 +216,15 @@ export class AllTasksView {
     wrap.appendChild(list);
     card.appendChild(wrap);
     return card;
+  }
+
+  #ctrlBtn(name, title, onClick, extra = "") {
+    return createEl("button", {
+      className: "mini-btn icon-only" + (extra ? " " + extra : ""),
+      html: icon(name, { size: 15 }),
+      attrs: { title, "aria-label": title },
+      on: { click: onClick },
+    });
   }
 
   #segLine(seg) {
