@@ -31,7 +31,7 @@ import { DayGlyphAnimator } from "./DayGlyphAnimator.js";
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
 import { copyText } from "../utils/clipboard.js";
-import { startOfDay, addDays, sameDay, atTime, parseDateInput } from "../utils/datetime.js";
+import { startOfDay, addDays, sameDay, atTime, parseDateInput, toLocalISO } from "../utils/datetime.js";
 
 /**
  * Contrôleur racine : assemble modèle (Store), services (calc, formatter),
@@ -62,6 +62,7 @@ export class App {
     this.hero = new HeroView(this);
     this.dayTotal = new DayTotalView(this);
     this.tabs = new TabsView(this);
+    this.timelineView = new TimelineView(this);
     this.views = [
       this.header,
       this.theme,
@@ -69,7 +70,7 @@ export class App {
       this.dayTotal,
       this.tabs,
       new DayNavView(this),
-      new TimelineView(this),
+      this.timelineView,
       new TotalsView(this),
       new TaskListView(this),
       new SegmentTableView(this),
@@ -127,6 +128,7 @@ export class App {
   /* ----------------- écrans (app / réglages / guide / outils) ----------------- */
   showScreen(name) {
     this.screen = name;
+    this.closeFill(); // ferme un éventuel popover de trou resté ouvert
     el("appScreen").hidden = name !== "app";
     el("settingsScreen").hidden = name !== "settings";
     el("guideScreen").hidden = name !== "guide";
@@ -186,6 +188,27 @@ export class App {
     if (!input) return;
     input.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
     input.focus();
+  }
+
+  /* ----------------- timeline : redimensionnement & remplissage des trous ----------------- */
+  /** Commit d'un redimensionnement par glisser : met à jour le bord déplacé. */
+  resizeSegment(segId, side, date) {
+    this.store.updateSegment(segId, side === "left" ? { start: toLocalISO(date) } : { end: toLocalISO(date) });
+  }
+  /** Ouvre le popover de remplissage pour le trou [gs, ge] (ms). */
+  openFillForGap(gs, ge) { this.timelineView.openFill(gs, ge); }
+  closeFill() { this.timelineView.closeFill(); }
+  extendLeftIntoGap(segId, end) {
+    this.store.updateSegment(segId, { end: toLocalISO(end) });
+    this.toast.show("Segment prolongé");
+  }
+  extendRightIntoGap(segId, start) {
+    this.store.updateSegment(segId, { start: toLocalISO(start) });
+    this.toast.show("Segment prolongé");
+  }
+  createSegmentInGap(taskId, start, end) {
+    this.store.addSegment({ taskId, start, end });
+    this.toast.show("Segment créé");
   }
 
   /* ----------------- presse-papier ----------------- */

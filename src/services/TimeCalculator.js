@@ -82,19 +82,17 @@ export class TimeCalculator {
     return { total, byType, byTask, segments: segs };
   }
 
-  /** Fenêtre d'affichage de la timeline (plages ouvrées, élargies si débordement). */
+  /**
+   * Fenêtre d'affichage de la timeline. Référence fixe (DS §7.1) : 08:00 → 18:30,
+   * **élargie** si les plages ouvrées ou des segments débordent (chrono matinal /
+   * nocturne) — la timeline reste lisible sans jamais rogner un segment.
+   */
   timelineWindow(day) {
     const ds = startOfDay(day).getTime();
     const de = ds + DAY_MS;
-    const ranges = this.workRangesForDay(day);
-    let start, end;
-    if (ranges.length) {
-      start = ranges[0][0];
-      end = ranges[ranges.length - 1][1];
-    } else {
-      start = atTime(day, this.settings.arrival).getTime();
-      end = atTime(day, this.settings.departure).getTime();
-    }
+    let start = atTime(day, "08:00").getTime();
+    let end = atTime(day, "18:30").getTime();
+    for (const [rs, re] of this.workRangesForDay(day)) { start = Math.min(start, rs); end = Math.max(end, re); }
     for (const seg of this.store.segmentsForDay(day)) {
       start = Math.min(start, Math.max(seg.startMs(), ds));
       end = Math.max(end, Math.min(seg.endMs(), de));
@@ -103,7 +101,7 @@ export class TimeCalculator {
     return { start, end };
   }
 
-  /** Trous (≥ 1 min) dans les plages ouvrées non couverts par un segment. */
+  /** Trous (≥ 5 min, DS §7.4) dans les plages ouvrées non couverts par un segment. */
   gapsForDay(day) {
     const ds = startOfDay(day).getTime();
     const de = ds + DAY_MS;
@@ -115,7 +113,7 @@ export class TimeCalculator {
     for (const [rs, re] of this.workRangesForDay(day)) {
       for (const [gs, ge] of subtractIntervals([rs, re], covered)) {
         const end = Math.min(ge, nowCap);
-        if (end - gs >= 60_000) gaps.push([gs, end]);
+        if (end - gs >= 300_000) gaps.push([gs, end]);
       }
     }
     return gaps;

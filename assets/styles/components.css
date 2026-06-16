@@ -138,25 +138,102 @@
 .tl-tip .nm .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .tl-tip .mt { opacity: .72; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .timeline {
-  position: relative; height: 60px; background: var(--surface-2);
+  position: relative; height: 64px; background: var(--surface-2);
   border-radius: var(--radius); overflow: hidden;
   background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
   background-size: 11px 11px; background-position: center;
 }
-.tl-lunch { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--bg) 45%, transparent); }
-.tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; transition: filter .14s var(--ease); }
+/* Bande déjeuner : superposition sombre au-dessus des segments (DS §7.1). */
+.tl-lunch { position: absolute; top: 0; bottom: 0; z-index: 5; background: var(--lunch-overlay); pointer-events: none; }
+.tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
+  transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
 .tl-seg:hover { filter: brightness(1.08); }
-/* Portion non comptée d'un segment net (hors heures de travail) : estompée. */
+.timeline .tl-seg:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 32%, transparent); }
+/* Portion non comptée d'un segment net (hors heures) : estompée (timeline Stats). */
 .tl-seg.uncounted { opacity: .3; }
-.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; }
+/* Poignées de redimensionnement (un trait fin par bord ; en cours = gauche seule). */
+.tl-grip { position: absolute; top: 0; bottom: 0; width: 15px; display: grid; place-items: center; cursor: ew-resize; touch-action: none; z-index: 4; }
+.tl-grip.left { left: 0; } .tl-grip.right { right: 0; }
+.tl-grip span { width: 3px; height: 44%; border-radius: 2px; background: var(--grip); transition: height .2s var(--ease-out), background-color .2s var(--ease-out); }
+.tl-seg:hover .tl-grip span { height: 56%; background: var(--grip-strong); }
+/* Zones de trou (temps non tracé) : pointillé cliquable, ambre au survol. */
+.tl-gap { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs); background: var(--gap-bg);
+  box-shadow: inset 0 0 0 1px var(--gap-ring); display: grid; place-items: center; cursor: pointer; z-index: 2;
+  transition: background-color .22s var(--ease-out), box-shadow .22s var(--ease-out); }
+.tl-gap:hover { background: var(--gap-bg-hover); box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
+.tl-gap-lab { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+/* Pendant un glisser : on fige les transitions de position et on masque le survol. */
+.timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
+.timeline.dragging ~ .tl-tip { opacity: 0 !important; }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; z-index: 6; }
 .tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease) infinite; }
+/* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
+.tl-drag-tip { position: absolute; z-index: 8; pointer-events: none; opacity: 0;
+  background: var(--accent); color: var(--accent-text); border-radius: var(--radius-pill);
+  padding: 4px 11px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+  box-shadow: var(--shadow-pop); transform: translate(-50%, calc(-100% - 8px)); transition: opacity .12s var(--ease); }
+.tl-drag-tip.show { opacity: 1; }
 .tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .tl-tick { position: absolute; top: 0; white-space: nowrap; }
-.gaps-list { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: 2px; }
-.gap-item { font-size: 12.5px; color: var(--text-soft); padding: 6px 2px; display: flex; align-items: center; gap: var(--sp-2); font-variant-numeric: tabular-nums; }
-.gap-item .gap-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn-text); flex-shrink: 0; opacity: .75; }
-.gap-item .gap-fill { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-weight: 600; cursor: pointer; font-size: 12px; padding: 4px 11px; border-radius: var(--radius-pill); }
-.gap-item .gap-fill:hover { background: var(--surface); color: var(--text); }
+
+/* ---------- Popover de remplissage d'un trou (flottant) ---------- */
+.fill-backdrop { display: none; }
+.fill-pop { position: absolute; z-index: 20; width: 300px; max-width: calc(100% - 6px);
+  transform: translateX(-50%); background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow-pop); padding: 16px 16px 18px; opacity: 0; visibility: hidden;
+  transition: opacity .16s var(--ease-out); }
+.fill-pop.show { opacity: 1; visibility: visible; }
+.fill-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.fill-head .fill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
+.fill-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+.fill-x { margin-left: auto; width: 26px; height: 26px; border: none; border-radius: 9px; background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; }
+.fill-x:hover { background: var(--surface-2); color: var(--text); }
+.fill-range { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; margin-bottom: 15px; }
+.fill-range .fill-dur { color: var(--text-faint); font-weight: 600; font-size: 13.5px; }
+.fill-opts { display: flex; flex-direction: column; gap: 8px; }
+.fill-opt { display: flex; align-items: center; gap: 11px; border: none; background: var(--surface-2); color: var(--text);
+  border-radius: 13px; padding: 11px 13px; text-align: left; width: 100%; cursor: pointer;
+  transition: background-color .15s var(--ease), transform .1s var(--ease); }
+.fill-opt:hover { background: var(--surface-hover); }
+.fill-opt:active { transform: scale(.985); }
+.fill-opt .o-ic { display: grid; place-items: center; color: var(--text-soft); flex-shrink: 0; }
+.fill-opt .o-ic-new { color: var(--new); }
+.fill-opt .o-text { flex: 1; min-width: 0; }
+.fill-opt .o-k { font-size: 11px; color: var(--text-faint); font-weight: 600; display: block; }
+.fill-opt .o-name { display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13.5px; margin-top: 1px; }
+.fill-opt .o-name .o-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+.fill-opt .o-name span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fill-create-btn .o-create { flex: 1; font-weight: 600; font-size: 13.5px; }
+.fill-create-btn .o-chev { color: var(--text-faint); flex-shrink: 0; transition: transform .2s var(--ease); }
+.fill-create-btn.open .o-chev { transform: rotate(180deg); }
+.fill-create { display: flex; flex-direction: column; gap: 5px; padding: 2px 2px 0; }
+.fill-create-lab { font-size: 11px; color: var(--text-faint); font-weight: 600; padding: 2px 2px 4px; }
+.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--bg); color: var(--text);
+  border-radius: 11px; padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;
+  transition: background-color .15s var(--ease); }
+.fill-task:hover { background: var(--surface-2); }
+.fill-task .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.fill-task-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) {
+  .fill-pop { position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; transform: none; width: 100%; max-width: 100%;
+    border-radius: 20px 20px 0 0; padding-bottom: 26px; }
+  .fill-backdrop.show { display: block; position: fixed; inset: 0; background: color-mix(in srgb, #000 50%, transparent); z-index: 19; }
+}
+
+/* ---------- Bloc « Temps non tracé » (aside Journée) ---------- */
+.untracked { margin-top: var(--sp-4); background: var(--surface); border-radius: var(--radius-sm); padding: var(--sp-4); }
+.untracked-head { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.untracked-head .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+.untracked-total { margin-left: auto; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.untracked-total.has { color: var(--pause); }
+.untracked-total.clear { color: var(--play); }
+.untracked-list { display: flex; flex-direction: column; gap: 9px; }
+.untracked-row { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
+.untracked-row .ut-range { white-space: nowrap; }
+.untracked-row .ut-dur { font-weight: 700; color: var(--text); }
+.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--surface-2); }
+.untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--play); font-weight: 600; }
 
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {

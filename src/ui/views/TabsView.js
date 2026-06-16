@@ -16,6 +16,7 @@ export class TabsView {
 
   select(name) {
     this.active = name;
+    this.app.closeFill?.(); // ferme un éventuel popover de trou en quittant l'onglet
     this.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
     this.panels.forEach((p) => { p.hidden = p.dataset.panel !== name; });
     // « Tâches » et « Stats » sont des vues tout-temps : pas de sélecteur de jour.
