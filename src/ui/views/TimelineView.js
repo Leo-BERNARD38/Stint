@@ -148,22 +148,23 @@ export class TimelineView {
     const i = segs.findIndex((s) => s.id === d.segId);
     const now = Date.now();
     const isToday = sameDay(viewDay, new Date());
-    const lunches = [];
-    for (let k = 0; k < this._ranges.length - 1; k++) lunches.push([this._ranges[k][1], this._ranges[k + 1][0]]);
-    const workStart = this._ranges.length ? this._ranges[0][0] : this._win.start;
 
+    // Redimensionnement libre : les seules bornes sont le segment voisin (jamais
+    // de chevauchement), « maintenant » (pas de futur) et le bord de la fenêtre
+    // visible. On ne cale plus sur les créneaux ouvrés / pauses — c'était la
+    // source du comportement « aléatoire » hors horaires (un segment couvrant la
+    // pause se repliait dès qu'on saisissait sa poignée). Le temps ouvré reste
+    // calculé par intersection avec les créneaux au moment de l'affichage.
     let ms = this.#snap(this.#pctToMs(e.clientX));
     let newStart, newEnd;
     if (d.side === "right") {
       const next = segs[i + 1];
-      let max = next ? next.startMs() : (isToday ? now : this._win.end);
-      for (const [ls] of lunches) if (seg.startMs() < ls) max = Math.min(max, ls);
+      const max = next ? next.startMs() : (isToday ? now : this._win.end);
       ms = Math.min(Math.max(seg.startMs() + SNAP_MS, ms), max);
       newStart = seg.startMs(); newEnd = ms;
     } else {
       const prev = segs[i - 1];
-      let min = prev ? prev.endMs() : workStart;
-      for (const [, le] of lunches) if (seg.startMs() >= le) min = Math.max(min, le);
+      const min = prev ? prev.endMs() : this._win.start;
       const endRef = seg.isRunning ? (isToday ? now : this._win.end) : seg.endMs();
       ms = Math.max(Math.min(ms, endRef - SNAP_MS), min);
       newStart = ms; newEnd = endRef;
