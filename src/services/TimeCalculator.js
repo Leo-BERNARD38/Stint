@@ -82,17 +82,19 @@ export class TimeCalculator {
     return { total, byType, byTask, segments: segs };
   }
 
-  /**
-   * Fenêtre d'affichage de la timeline. Référence fixe (DS §7.1) : 08:00 → 18:30,
-   * **élargie** si les plages ouvrées ou des segments débordent (chrono matinal /
-   * nocturne) — la timeline reste lisible sans jamais rogner un segment.
-   */
+  /** Fenêtre d'affichage de la timeline (plages ouvrées, élargies si débordement). */
   timelineWindow(day) {
     const ds = startOfDay(day).getTime();
     const de = ds + DAY_MS;
-    let start = atTime(day, "08:00").getTime();
-    let end = atTime(day, "18:30").getTime();
-    for (const [rs, re] of this.workRangesForDay(day)) { start = Math.min(start, rs); end = Math.max(end, re); }
+    const ranges = this.workRangesForDay(day);
+    let start, end;
+    if (ranges.length) {
+      start = ranges[0][0];
+      end = ranges[ranges.length - 1][1];
+    } else {
+      start = atTime(day, this.settings.arrival).getTime();
+      end = atTime(day, this.settings.departure).getTime();
+    }
     for (const seg of this.store.segmentsForDay(day)) {
       start = Math.min(start, Math.max(seg.startMs(), ds));
       end = Math.max(end, Math.min(seg.endMs(), de));

@@ -47,7 +47,7 @@
 /* ---------- Titres de bloc ---------- */
 .block-title {
   font-family: var(--font-display); font-weight: 600; font-size: 17px;
-  letter-spacing: 0; margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3);
+  letter-spacing: 0; margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
 }
 .block-title .hint { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--text-faint); letter-spacing: 0; }
 .block-title .grow { flex: 1; }
@@ -375,6 +375,8 @@
 .seg-control button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Onglets « Horaires » : un panneau visible à la fois. */
 .hours-panel { margin-top: var(--sp-5); }
+/* Petits écrans : le contrôle segmenté prend toute la largeur (pas de débordement). */
+@media (max-width: 480px) { .seg-control { min-width: 0; width: 100%; } }
 
 /* Sous-sections d'une carte de réglages (ex. Horaires) */
 .settings-sub + .settings-sub { margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px dotted var(--dot); }

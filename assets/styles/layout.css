@@ -119,11 +119,21 @@ header {
   /* les actions de tâche passent sur leur propre ligne (évite le débordement) */
   .task-row { flex-wrap: wrap; }
   .task-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
+  /* idem pour l'en-tête de tâche de l'onglet « Tâches » (mêmes contrôles) */
+  .at-head { flex-wrap: wrap; }
+  .at-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
+}
+
+/* Héros : sur petit écran, le chrono passe sur sa propre ligne (la police
+   dot-matrix est large et ne se rétrécit pas → évite tout débordement). */
+@media (max-width: 560px) {
+  .active-card { flex-wrap: wrap; row-gap: 6px; }
+  .active-timer { flex-basis: 100%; text-align: left; font-size: clamp(30px, 9vw, 44px); }
+  .total-card .v { font-size: 38px; }
 }
 
 @media (max-width: 520px) {
   .wordmark { max-width: 130px; font-size: 20px; }
-  .active-timer { font-size: 34px; }
   .active-card { padding: var(--sp-4); gap: var(--sp-3); }
   .big-btn { padding: var(--sp-3) var(--sp-2); }
   .big-btn .kbd { display: none; }
