@@ -269,8 +269,10 @@
 .total-sum .tamt { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
 
 /* Carte à filet pointillé (esthétique Nothing) : structure une section sans la
-   surcharger (pas de fond, juste le contour --dot). */
-.dot-card { border: 1px dotted var(--dot); border-radius: var(--radius); padding: var(--sp-5); }
+   surcharger (pas de fond, juste le contour --dot). Format partagé par les
+   sections de Journée, les groupes de Tâches, le tableau Segments et les blocs
+   Stats (.stat-block), pour une unité visuelle d'une page à l'autre. */
+.dot-card, .stat-block { border: 1px dotted var(--dot); border-radius: var(--radius); padding: var(--sp-5); }
 
 /* ---------- Liste des tâches (espace + survol, aucune ligne) ---------- */
 .task-list { display: flex; flex-direction: column; gap: 6px; }
@@ -305,7 +307,10 @@
 .task-row:not(:hover):not(.active) .task-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; }
 
 /* ---------- Onglet « Tâches » : liste groupée (jour / semaine / mois) ---------- */
-.all-tasks { display: flex; flex-direction: column; }
+.all-tasks { display: flex; flex-direction: column; gap: var(--sp-4); }
+/* Chaque groupe (jour/semaine/mois) est une carte pointillée ; l'en-tête se cale
+   en haut de la carte (le padding de la carte fait l'espace). */
+.at-group .at-date { margin-top: 0; }
 .at-task { border-radius: var(--radius-sm); }
 .at-head { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer; border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
 .at-head:hover { background: var(--surface); }
@@ -641,7 +646,7 @@
 .stat-lab { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 
 /* Blocs Stats : cartes pleines sur le fond de page. */
-.stat-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); margin-bottom: var(--sp-4); }
+.stat-block { margin-bottom: var(--sp-4); }
 .stat-block .block-title { margin-bottom: var(--sp-4); }
 
 /* Répartition par type : badge + barre proportionnelle + durée. */

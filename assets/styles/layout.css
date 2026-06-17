@@ -78,7 +78,10 @@ header {
   .guide-toc { position: static !important; }
 }
 .page-head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-7); }
-.tab-panel { animation: fade .2s ease; }
+/* Entrée d'onglet : on anime le contenu, mais PAS la timeline (`.timeline-wrap`) :
+   elle est commune à Journée et Segments, donc elle doit rester fixe à la bascule
+   (comme le sélecteur de jour), sans refondu. */
+.tab-panel > :not(.timeline-wrap) { animation: fade .2s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Sélecteur de jour (sous les onglets, commun à Journée et Segments) ---------- */

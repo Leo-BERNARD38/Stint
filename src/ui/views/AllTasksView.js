@@ -137,8 +137,12 @@ export class AllTasksView {
 
     for (const grp of ordered) {
       grp.items.sort((a, b) => (b.openedAt ?? -Infinity) - (a.openedAt ?? -Infinity));
-      this.root.appendChild(this.#groupHeader(grp));
-      for (const m of grp.items) this.root.appendChild(this.#taskCard(m));
+      // Un groupe = une carte pointillée (en-tête + ses tâches) pour bien séparer
+      // visuellement les périodes et garder une unité avec les autres pages.
+      const card = createEl("div", { className: "at-group dot-card" });
+      card.appendChild(this.#groupHeader(grp));
+      for (const m of grp.items) card.appendChild(this.#taskCard(m));
+      this.root.appendChild(card);
     }
   }
 
