@@ -20,17 +20,28 @@ export class StatsView {
     const clock = (ms) => formatter.clock(ms / 60000);
     const today = startOfDay(new Date());
     const monday = addDays(today, -(isoDow(today) - 1));
-    const sumWin = (s, e) => store.segments.reduce((a, seg) => a + calc.segmentMs(seg, s, e), 0);
+    const weekStart = monday.getTime(), weekEnd = addDays(monday, 7).getTime();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1).getTime();
 
-    // --- cartes de synthèse ---
-    const totalAll = store.segments.reduce((a, seg) => a + calc.segmentMs(seg), 0);
-    const weekMs = sumWin(monday.getTime(), addDays(monday, 7).getTime());
-    const monthMs = sumWin(
-      new Date(today.getFullYear(), today.getMonth(), 1).getTime(),
-      new Date(today.getFullYear(), today.getMonth() + 1, 1).getTime(),
-    );
+    // Un seul balayage des segments → total, semaine, mois, jours actifs et
+    // répartition par type. `segmentMs(seg, s, e)` vaut 0 hors fenêtre : on évite
+    // l'appel borné (coûteux en net) quand le segment ne chevauche pas la
+    // semaine / le mois — résultat strictement identique.
+    let totalAll = 0, weekMs = 0, monthMs = 0;
+    const byType = { dev: 0, support: 0, autre: 0 };
+    const activeDays = new Set();
+    for (const seg of store.segments) {
+      const full = calc.segmentMs(seg);
+      totalAll += full;
+      const type = store.taskById(seg.taskId)?.type ?? "autre";
+      byType[type] = (byType[type] ?? 0) + full;
+      activeDays.add(fmtDateInput(new Date(seg.startMs())));
+      const sMs = seg.startMs(), eMs = seg.endMs();
+      if (eMs > weekStart && sMs < weekEnd) weekMs += calc.segmentMs(seg, weekStart, weekEnd);
+      if (eMs > monthStart && sMs < monthEnd) monthMs += calc.segmentMs(seg, monthStart, monthEnd);
+    }
     const taskCount = store.tasks.filter((t) => !t.archived).length;
-    const activeDays = new Set(store.segments.map((s) => fmtDateInput(new Date(s.startMs())))).size;
 
     this.cards.innerHTML = "";
     this.cards.append(
@@ -38,15 +49,10 @@ export class StatsView {
       this.#card(clock(weekMs), "Cette semaine"),
       this.#card(clock(monthMs), "Ce mois"),
       this.#card(String(taskCount), "Tâches"),
-      this.#card(String(activeDays), "Jours actifs"),
+      this.#card(String(activeDays.size), "Jours actifs"),
     );
 
     // --- répartition par type ---
-    const byType = { dev: 0, support: 0, autre: 0 };
-    for (const seg of store.segments) {
-      const t = store.taskById(seg.taskId)?.type ?? "autre";
-      byType[t] += calc.segmentMs(seg);
-    }
     const maxType = Math.max(1, ...Object.values(byType));
     this.types.innerHTML = "";
     for (const t of TASK_TYPES) {

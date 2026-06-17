@@ -37,10 +37,11 @@
     })();
   </script>
 
-  <!-- Typographie : Bitcount Grid Single (caractère : wordmark, titres, afficheurs) + Inter (lisibilité) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Typographie auto-hébergée : Bitcount Grid Single (wordmark, titres, afficheurs)
+       + Inter (lisibilité). Aucune requête tierce → 1er rendu plus rapide, hors-ligne dès l'install. -->
+  <link rel="preload" as="font" type="font/woff2" href="assets/fonts/inter-latin.woff2" crossorigin />
+  <link rel="preload" as="font" type="font/woff2" href="assets/fonts/bitcount-latin.woff2" crossorigin />
+  <link rel="stylesheet" href="assets/styles/fonts.css" />
 
   <!-- Feuilles de style découpées -->
   <link rel="stylesheet" href="assets/styles/variables.css" />

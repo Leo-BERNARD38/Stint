@@ -204,6 +204,13 @@ Notes :
   wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
   `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
   comprises — pour la lisibilité). **Pas de serif.** Durées en `tabular-nums`.
+  **Polices auto-hébergées** (aucune requête tierce, hors-ligne dès l'install) :
+  `@font-face` dans `assets/styles/fonts.css`, woff2 sous-ensembles **latin /
+  latin-ext** dans `assets/fonts/` (Inter = police **variable** 100–900, un fichier
+  par sous-ensemble ; Bitcount en 400). Les 4 woff2 + `fonts.css` sont dans `CORE`
+  (sw.js) ; `inter-latin`/`bitcount-latin` sont **préchargés** (`<link rel=preload>`)
+  dans `index.html`. Pour régénérer (nouvelles graisses/glyphes) : refaire les woff2
+  depuis l'API Google `css2` (pas d'outil de subset embarqué) puis bumper `CACHE`.
 - **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 7×7**
   (carrée, points jointifs, traits 1 point pour « + » et « pause » ; même rendu
   que la police), via `dotIcon()` dans `ui/icons.js`. « Reprise » = barre +

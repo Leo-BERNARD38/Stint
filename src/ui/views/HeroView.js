@@ -5,6 +5,8 @@ import { dotIcon } from "../icons.js";
 /** Barre de contrôle : carte de tâche active + 4 boutons (Play/Pause, Nouvelle, Reprise, Terminer). */
 export class HeroView {
   #playMode = null; // évite de ré-injecter (et ré-animer) le glyphe à chaque rendu
+  #liveTaskId = null; // tâche dont le total vif est mémoïsé (cf. tick)
+  #liveBaseMs = 0;    // somme des segments TERMINÉS de cette tâche, rafraîchie à chaque render (= chaque "change")
 
   constructor(app) {
     this.app = app;
@@ -51,6 +53,10 @@ export class HeroView {
         `<span class="type-badge type-${task.type}">${escapeHtml(task.type)}</span>` +
         `<span class="active-started">démarré à ${fmtClock(new Date(seg.startMs()))}</span>`;
       this.timer.classList.remove("idle");
+      // Mémoïse le total des segments terminés de la tâche active ; le segment en
+      // cours est ajouté à chaque tick (cf. tick) → pas de balayage complet/seconde.
+      this.#liveTaskId = task.id;
+      this.#liveBaseMs = this.#completedMsFor(task.id);
     } else {
       this.dot.style.background = "var(--text-faint)";
       this.dot.style.boxShadow = "none";
@@ -59,6 +65,7 @@ export class HeroView {
       this.extra.innerHTML = "";
       this.timer.classList.add("idle");
       this.timer.textContent = "0:00:00";
+      this.#liveTaskId = null;
     }
     this.tick();
   }
@@ -67,8 +74,24 @@ export class HeroView {
   tick() {
     const seg = this.app.store.activeSegment();
     if (!seg) return;
-    // Vrai temps de la tâche en cours : somme de tous ses segments, en
-    // respectant le statut brut/net de chacun (pas seulement le segment actif).
-    this.timer.textContent = this.app.formatter.hms(this.app.calc.taskTotalMs(seg.taskId));
+    const { calc, formatter } = this.app;
+    // Vrai temps de la tâche en cours : segments terminés (mémoïsés au dernier
+    // « change ») + part vive du segment en cours, recalculée ici. Strictement
+    // égal à calc.taskTotalMs(seg.taskId) au même instant, sans reparcourir tout
+    // l'historique chaque seconde. Repli défensif si le cache n'est pas amorcé.
+    const total = seg.taskId === this.#liveTaskId
+      ? this.#liveBaseMs + calc.segmentMs(seg)
+      : calc.taskTotalMs(seg.taskId);
+    this.timer.textContent = formatter.hms(total);
+  }
+
+  /** Somme des segments TERMINÉS d'une tâche (le segment en cours est ajouté au tick). */
+  #completedMsFor(taskId) {
+    const { calc, store } = this.app;
+    let ms = 0;
+    for (const s of store.segments) {
+      if (s.taskId === taskId && !s.isRunning) ms += calc.segmentMs(s);
+    }
+    return ms;
   }
 }

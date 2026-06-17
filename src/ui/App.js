@@ -308,6 +308,7 @@ export class App {
   }
 
   #onTick() {
+    if (document.hidden) return; // onglet caché : rien de visible, on n'anime rien (cf. DayGlyphAnimator)
     if (!this.store.activeSegment()) return;
     this.hero.tick();
     this.dayTotal.tickValue(); // total du jour live (sans reconstruire le glyphe)

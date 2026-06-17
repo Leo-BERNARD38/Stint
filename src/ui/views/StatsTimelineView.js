@@ -63,14 +63,29 @@ export class StatsTimelineView {
     this.label.textContent = cap(this.refDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }));
     const days = new Date(y, m + 1, 0).getDate();
 
+    // Segments du mois en un seul balayage, puis répartis par jour. daySegs[d]
+    // est strictement égal à store.segmentsForDay(jour d) (même critère, même
+    // DAY_MS fixe) → on évite de rebalayer tout l'historique 2× par jour.
+    const monthStart = new Date(y, m, 1).getTime();
+    const monthEnd = new Date(y, m + 1, 1).getTime();
+    const monthSegs = store.segments.filter((s) => s.startMs() < monthEnd && s.endMs() > monthStart);
+    const dayStartMs = [];
+    const daySegs = [];
+    for (let d = 1; d <= days; d++) {
+      const ds = new Date(y, m, d).getTime(); // minuit local (== startOfDay)
+      const de = ds + DAY_MS;
+      dayStartMs[d] = ds;
+      daySegs[d] = monthSegs.filter((s) => s.startMs() < de && s.endMs() > ds);
+    }
+
     // Fenêtre horaire commune (minutes) : horaires de base, élargie par les
     // plannings du mois et par tout segment qui déborde.
     let winS = toMin(settings.arrival), winE = toMin(settings.departure);
     for (let d = 1; d <= days; d++) {
       const day = new Date(y, m, d);
       for (const [a, b] of settings.blocksFor(day)) { winS = Math.min(winS, toMin(a)); winE = Math.max(winE, toMin(b)); }
-      const ds = startOfDay(day).getTime();
-      for (const seg of store.segmentsForDay(day)) {
+      const ds = dayStartMs[d];
+      for (const seg of daySegs[d]) {
         winS = Math.min(winS, Math.floor((Math.max(seg.startMs(), ds) - ds) / 60000));
         winE = Math.max(winE, Math.ceil((Math.min(seg.endMs(), ds + DAY_MS) - ds) / 60000));
       }
@@ -85,7 +100,7 @@ export class StatsTimelineView {
     const today = new Date();
     for (let d = 1; d <= days; d++) {
       const day = new Date(y, m, d);
-      const ds = startOfDay(day).getTime();
+      const ds = dayStartMs[d];
       const winStart = ds + winS * 60000, winEnd = ds + winE * 60000;
       const isToday = sameDay(day, today);
       const row = createEl("div", { className: "st-row" + (isoDow(day) >= 6 ? " weekend" : "") + (isToday ? " today" : "") });
@@ -102,7 +117,7 @@ export class StatsTimelineView {
         if (!counted) track.appendChild(createEl("div", { className: "tl-lunch", attrs: { style: `left:${pct(from)}%;width:${pct(to) - pct(from)}%` } }));
       }
       const key = fmtDateInput(day);
-      for (const seg of store.segmentsForDay(day)) {
+      for (const seg of daySegs[d]) {
         const s = Math.max(seg.startMs(), winStart), e = Math.min(seg.endMs(), winEnd);
         if (e <= s) continue;
         const task = store.taskById(seg.taskId);
@@ -151,6 +166,12 @@ export class StatsTimelineView {
     this.el.classList.add("year");
     this.el.innerHTML = "";
 
+    // Pré-filtre les segments de l'année (un balayage) : les 12 lignes de mois
+    // n'itèrent plus que ce sous-ensemble au lieu de tout l'historique × 12.
+    const yearStart = new Date(y, 0, 1).getTime();
+    const yearEnd = new Date(y + 1, 0, 1).getTime();
+    const yearSegs = store.segments.filter((s) => s.startMs() < yearEnd && s.endMs() > yearStart);
+
     const today = new Date();
     const shortDate = (d) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
     for (let m = 0; m < 12; m++) {
@@ -163,7 +184,7 @@ export class StatsTimelineView {
         text: cap(new Date(y, m, 1).toLocaleDateString("fr-FR", { month: "long" })),
       }));
       const track = createEl("div", { className: "st-track" });
-      for (const seg of store.segments) {
+      for (const seg of yearSegs) {
         if (seg.startMs() >= monthEnd || seg.endMs() <= monthStart) continue;
         const dayKey = fmtDateInput(new Date(Math.max(seg.startMs(), monthStart)));
         const blk = this.#block(seg, monthStart, monthEnd, dayKey,

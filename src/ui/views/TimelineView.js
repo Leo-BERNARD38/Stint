@@ -122,6 +122,9 @@ export class TimelineView {
     e.preventDefault();
     this.dragging = { segId: grip.dataset.seg, side: grip.dataset.side, segEl: grip.closest(".tl-seg"), value: null };
     this._dragged = false;
+    // Rect figé pour toute la durée du glisser : évite un reflow (getBoundingClientRect)
+    // à chaque pointermove ; il ne change pas tant qu'on ne scrolle/redimensionne pas.
+    this._dragRect = this.timeline.getBoundingClientRect();
     this.timeline.classList.add("dragging");
     window.addEventListener("pointermove", this.#onMove);
     window.addEventListener("pointerup", this.#onUp);
@@ -131,7 +134,7 @@ export class TimelineView {
   #snap(ms) { return Math.round(ms / SNAP_MS) * SNAP_MS; }
 
   #pctToMs(clientX) {
-    const r = this.timeline.getBoundingClientRect();
+    const r = this._dragRect || this.timeline.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
     return this._win.start + ratio * (this._win.end - this._win.start);
   }
@@ -191,6 +194,7 @@ export class TimelineView {
     window.removeEventListener("pointercancel", this.#onUp);
     this.timeline.classList.remove("dragging");
     this.dragTip.classList.remove("show");
+    this._dragRect = null;
     const d = this.dragging;
     this.dragging = null;
     if (d && d.value != null) this.app.resizeSegment(d.segId, d.side, new Date(d.value));

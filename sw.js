@@ -8,12 +8,13 @@
  *     réseau ne sert qu'aux ressources oubliées de CORE) ;
  *   - navigation : réseau d'abord avec délai de garde, repli app shell en cache
  *     (ouverture instantanée même sur réseau lent) ;
- *   - polices Google : stale-while-revalidate (quasi immuables) ;
+ *   - polices : auto-hébergées et précachées (CORE) → servies cache-d'abord
+ *     comme les autres assets même origine, aucune requête tierce ;
  *   - nouvelle version : purge de l'ancien cache, prise de contrôle, puis la
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v59";
+const CACHE = "stint-v60";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
@@ -28,6 +29,11 @@ const CORE = [
   "./assets/styles/base.css",
   "./assets/styles/layout.css",
   "./assets/styles/components.css",
+  "./assets/styles/fonts.css",
+  "./assets/fonts/inter-latin.woff2",
+  "./assets/fonts/inter-latin-ext.woff2",
+  "./assets/fonts/bitcount-latin.woff2",
+  "./assets/fonts/bitcount-latin-ext.woff2",
   "./src/main.js",
   "./src/core/EventEmitter.js",
   "./src/core/constants.js",
@@ -99,7 +105,6 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
-  const isFont = /fonts\.(googleapis|gstatic)\.com$/.test(url.host);
 
   // Navigations : réseau d'abord, mais sans attendre un réseau lent (délai de
   // garde) — l'app shell en cache assure une ouverture instantanée.
@@ -130,21 +135,5 @@ self.addEventListener("fetch", (event) => {
       })
     );
     return;
-  }
-
-  // Polices Google : stale-while-revalidate.
-  if (isFont) {
-    event.respondWith(
-      caches.open(CACHE).then(async (cache) => {
-        const cached = await cache.match(req);
-        const network = fetch(req)
-          .then((res) => {
-            if (res && res.status === 200) cache.put(req, res.clone());
-            return res;
-          })
-          .catch(() => cached);
-        return cached || network;
-      })
-    );
   }
 });
