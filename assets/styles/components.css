@@ -125,7 +125,7 @@
 
 /* ---------- Timeline (carte arrondie, grille de points, blocs en pilule) ---------- */
 /* ----- Fond dot-matrix « spotlight » (easter-egg, piloté par BgDots.js) -----
-   Couche fixe plein écran : grille de points (même langage que la timeline)
+   Couche fixe plein écran : grille de gros points jointifs (façon glyphe dot-matrix)
    révélée seulement autour du curseur par un masque radial suivant --mx/--my.
    z-index:-1 → derrière tout le contenu opaque, n'affleure que dans les marges.
    `.on` = réglage activé ; `.lit` = curseur présent. Composité GPU, aucun dessin JS. */
@@ -133,8 +133,8 @@
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
   display: none;
   --mx: 50%; --my: 50%;
-  background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.4px);
-  background-size: 22px 22px; background-position: center;
+  background-image: radial-gradient(circle, var(--dot) 3.1px, transparent 3.6px);
+  background-size: 7px 7px; background-position: center;
   -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
           mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
   opacity: 0; transition: opacity .45s var(--ease);
