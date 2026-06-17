@@ -14,7 +14,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v70";
+const CACHE = "stint-v71";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
@@ -57,6 +57,7 @@ const CORE = [
   "./src/ui/components/Toast.js",
   "./src/ui/modals/EditTaskModal.js",
   "./src/ui/modals/Modal.js",
+  "./src/ui/modals/SegmentModal.js",
   "./src/ui/modals/NewTaskModal.js",
   "./src/ui/modals/ResumeModal.js",
   "./src/ui/views/AllTasksView.js",

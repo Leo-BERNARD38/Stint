@@ -149,8 +149,9 @@
 .tl-lunch { position: absolute; top: 0; bottom: 0; z-index: 5; background: var(--lunch-overlay); pointer-events: none; }
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
   transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
-.tl-seg:hover { filter: brightness(1.08); }
-.timeline .tl-seg:hover { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 32%, transparent); }
+.tl-seg:hover, .tl-seg.hl { filter: brightness(1.08); }
+/* `.hl` = survol croisé depuis la ligne du tableau (même rendu que le survol direct). */
+.timeline .tl-seg:hover, .timeline .tl-seg.hl { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 32%, transparent); }
 /* Portion non comptée d'un segment net (hors heures) : estompée (timeline Stats). */
 .tl-seg.uncounted { opacity: .3; }
 /* Poignées de redimensionnement (un trait fin par bord ; en cours = gauche seule). */
@@ -331,23 +332,23 @@
 .at-seg-dur { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .raw-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
 
-/* ---------- Segments (table flat : zébrage, pas de bordures) ---------- */
-.table-scroll { overflow-x: auto; border-radius: var(--radius); }
+/* ---------- Segments (table flat lecture seule : zébrage, pas de bordures) ---------- */
+.table-scroll { overflow-x: auto; }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .seg-table th { text-align: left; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 600; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
-.seg-table td { padding: 7px 12px; vertical-align: middle; }
+.seg-table td { padding: 9px 12px; vertical-align: middle; }
 .seg-table tbody tr:hover td { background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .seg-table tbody tr.running td { background: color-mix(in srgb, var(--play) 10%, transparent); }
-/* Champs en pilule sombre (look « grille » du design système). */
-.seg-table input[type="time"], .seg-table input[type="date"], .seg-table input[type="datetime-local"], .seg-table select {
-  border: none; background: var(--surface-2); border-radius: 10px; padding: 7px 9px; color: var(--text);
-  font-variant-numeric: tabular-nums; }
-.seg-table select { appearance: none; -webkit-appearance: none; cursor: pointer; max-width: 100%; }
-.seg-table input:hover, .seg-table select:hover { background: var(--surface-hover); }
-.seg-table input:focus, .seg-table select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-.seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+/* Survol croisé : la ligne reliée au bloc de timeline survolé (et inversement). */
+.seg-table tbody tr.hl td { background: color-mix(in srgb, var(--accent) 11%, transparent); }
+.seg-clickable { cursor: pointer; }
+.seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; max-width: 100%; }
 .seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
 .seg-swatch:hover { transform: scale(1.18); }
+.seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.seg-time { font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
+.seg-live { color: var(--play); font-weight: 600; }
+.seg-dash { color: var(--text-faint); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 

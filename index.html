@@ -165,9 +165,13 @@
     <section class="tab-panel" data-panel="segments" hidden>
       <div class="block-title">
         Segments
-        <span class="hint">éditer heures, tâche, mode brut · ou ajouter une saisie manuelle</span>
+        <span class="hint">survolez pour relier timeline et tableau · cliquez une ligne pour l'éditer</span>
         <span class="grow"></span>
         <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
+      </div>
+      <div class="timeline-wrap" id="segTimelineWrap">
+        <div class="timeline" id="segTimeline"></div>
+        <div class="tl-axis" id="segTlAxis"></div>
       </div>
       <div class="table-scroll">
         <table class="seg-table">
@@ -651,6 +655,36 @@
         <div style="display:flex; gap:10px;">
           <button class="btn" id="etArchive">Archiver</button>
           <button class="btn primary" id="etSave">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="segmentModal">
+    <div class="modal">
+      <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
+      <h3 id="segmentModalTitle">Segment manuel</h3>
+      <p class="modal-sub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Tâche</label>
+        <div class="select-wrap">
+          <select id="smTask" aria-label="Tâche"></select>
+          <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+        </div>
+      </div>
+      <div class="field-grid" style="margin-bottom:12px;">
+        <div class="field"><label>Début</label><input type="datetime-local" id="smStart"></div>
+        <div class="field"><label>Fin</label><input type="datetime-local" id="smEnd"></div>
+      </div>
+      <label class="switch-row" style="margin-bottom:4px;">
+        <input type="checkbox" id="smRaw">
+        Temps brut (sans rognage sur les horaires de travail)
+      </label>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button class="btn danger" id="smDelete" hidden>Supprimer</button>
+        <div style="display:flex; gap:10px; margin-left:auto;">
+          <button class="btn" data-close>Annuler</button>
+          <button class="btn primary" id="smSave">Enregistrer</button>
         </div>
       </div>
     </div>

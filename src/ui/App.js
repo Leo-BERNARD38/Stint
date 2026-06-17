@@ -25,13 +25,14 @@ import { ToolsView } from "./views/ToolsView.js";
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
 import { EditTaskModal } from "./modals/EditTaskModal.js";
+import { SegmentModal } from "./modals/SegmentModal.js";
 import { Toast } from "./components/Toast.js";
 import { DayGlyphAnimator } from "./DayGlyphAnimator.js";
 
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
 import { copyText } from "../utils/clipboard.js";
-import { startOfDay, addDays, sameDay, atTime, parseDateInput, toLocalISO } from "../utils/datetime.js";
+import { startOfDay, addDays, sameDay, parseDateInput, toLocalISO } from "../utils/datetime.js";
 
 /**
  * Contrôleur racine : assemble modèle (Store), services (calc, formatter),
@@ -55,6 +56,7 @@ export class App {
       newTask: new NewTaskModal(this),
       resume: new ResumeModal(this),
       editTask: new EditTaskModal(this),
+      segment: new SegmentModal(this),
     };
     // Références nommées (évite toute fragilité d'index) puis liste de rendu.
     this.header = new HeaderView(this);
@@ -63,6 +65,14 @@ export class App {
     this.dayTotal = new DayTotalView(this);
     this.tabs = new TabsView(this);
     this.timelineView = new TimelineView(this);
+    // Deuxième instance du même composant pour l'onglet Segments : édition
+    // identique (glisser/remplir) + survol croisé et clic = édition (modale).
+    this.segTimelineView = new TimelineView(this, {
+      timelineId: "segTimeline",
+      axisId: "segTlAxis",
+      onSegHover: (id) => this.highlightSegment(id),
+      onSegClick: (id) => this.openSegmentModal(id),
+    });
     this.views = [
       this.header,
       this.theme,
@@ -71,6 +81,7 @@ export class App {
       this.tabs,
       new DayNavView(this),
       this.timelineView,
+      this.segTimelineView,
       new TotalsView(this),
       new TaskListView(this),
       new SegmentTableView(this),
@@ -166,28 +177,28 @@ export class App {
     this.tabs.select("segments");
   }
 
-  /* ----------------- segments manuels ----------------- */
-  addManualSegment(start, end) {
-    const task = this.store.lastUsedTask();
-    if (!task) { this.openNewTask(); return; }
-    this.store.addSegment({ taskId: task.id, start, end });
-    this.toast.show("Segment ajouté");
+  /* ----------------- segments (modale + survol croisé) ----------------- */
+  /** Ouvre la modale de segment (création si segId absent, sinon édition). */
+  openSegmentModal(segId = null) {
+    if (!segId && this.store.tasks.length === 0) { this.openNewTask(); return; }
+    this.modals.segment.open(segId);
   }
-  addManualSegmentDefault() {
-    if (this.store.tasks.length === 0) { this.openNewTask(); return; }
-    const base = sameDay(this.viewDay, new Date())
-      ? new Date()
-      : atTime(this.viewDay, this.store.settings.arrival);
-    const start = new Date(base);
-    start.setSeconds(0, 0);
-    this.addManualSegment(start, new Date(start.getTime() + 3_600_000));
+
+  /** Survol croisé timeline ⇄ tableau (onglet Segments) : met en évidence le
+   *  bloc et la ligne du même segment. `segId` nul = retire la surbrillance. */
+  highlightSegment(segId) {
+    if (this._hlId === segId) return;
+    this._hlId = segId;
+    for (const e of qsa("#segTimeline .tl-seg.hl, #segBody tr.hl")) e.classList.remove("hl");
+    if (!segId) return;
+    const esc = window.CSS && CSS.escape ? CSS.escape(segId) : segId;
+    document.querySelector(`#segTimeline .tl-seg[data-id="${esc}"]`)?.classList.add("hl");
+    document.querySelector(`#segBody tr[data-seg-row="${esc}"]`)?.classList.add("hl");
   }
 
   scrollToSegment(segId) {
-    const input = document.querySelector(`[data-seg="${segId}"]`);
-    if (!input) return;
-    input.closest("tr").scrollIntoView({ behavior: "smooth", block: "center" });
-    input.focus();
+    const row = document.querySelector(`#segBody [data-seg-row="${segId}"]`);
+    if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   /* ----------------- timeline : redimensionnement & remplissage des trous ----------------- */

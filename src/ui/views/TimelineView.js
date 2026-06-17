@@ -14,15 +14,21 @@ const SNAP_MS = 300_000; // calage par pas de 5 minutes
  * Pendant un glisser actif, `render()` est court-circuité (garde-fou
  * anti-reconstruction, cf. CLAUDE.md §10) : le bloc est repositionné à la main,
  * et le changement n'est committé qu'au relâchement (un seul rebuild propre).
+ *
+ * Composant réutilisable : monté une fois dans « Journée » et une fois dans
+ * « Segments » (ids passés en options). `onSegHover`/`onSegClick` permettent le
+ * survol croisé et l'édition (modale) côté Segments, sans dupliquer la logique.
  */
 export class TimelineView {
   dragging = null;
 
-  constructor(app) {
+  constructor(app, { timelineId = "timeline", axisId = "tlAxis", onSegHover = null, onSegClick = null } = {}) {
     this.app = app;
-    this.timeline = el("timeline");
+    this.timeline = el(timelineId);
     this.anchor = this.timeline;
-    this.axis = el("tlAxis");
+    this.axis = el(axisId);
+    this.onSegHover = onSegHover;
+    this.onSegClick = onSegClick || ((segId) => this.app.scrollToSegment(segId));
     this.wrap = this.timeline.closest(".timeline-wrap");
     // Infobulle de survol (partagée, montée dans le wrap : survit aux re-rendus).
     attachTimelineTip(this.timeline, { parent: this.wrap, top: () => this.timeline.offsetTop });
@@ -37,6 +43,18 @@ export class TimelineView {
   bind() {
     // Délégation : un pointerdown sur une poignée démarre le glisser.
     this.timeline.addEventListener("pointerdown", (e) => this.#onGripDown(e));
+    // Survol croisé (instance Segments) : signale le segment survolé (ou null).
+    if (this.onSegHover) {
+      this._hoverId = null;
+      this.timeline.addEventListener("mousemove", (e) => {
+        const seg = e.target.closest(".tl-seg");
+        const id = seg ? seg.dataset.id : null;
+        if (id !== this._hoverId) { this._hoverId = id; this.onSegHover(id); }
+      });
+      this.timeline.addEventListener("mouseleave", () => {
+        if (this._hoverId != null) { this._hoverId = null; this.onSegHover(null); }
+      });
+    }
   }
 
   render(viewDay) {
@@ -82,7 +100,7 @@ export class TimelineView {
           "data-dur": formatter.clock(calc.segmentMs(seg, ds, de) / 60000),
           "data-color": color,
         },
-        on: { click: (ev) => { if (!ev.target.closest(".tl-grip") && !this._dragged) this.app.scrollToSegment(seg.id); } },
+        on: { click: (ev) => { if (!ev.target.closest(".tl-grip") && !this._dragged) this.onSegClick(seg.id); } },
       });
       block.appendChild(createEl("div", { className: "tl-grip left", html: "<span></span>", attrs: { "data-seg": seg.id, "data-side": "left" } }));
       if (!seg.isRunning) block.appendChild(createEl("div", { className: "tl-grip right", html: "<span></span>", attrs: { "data-seg": seg.id, "data-side": "right" } }));
