@@ -7,17 +7,18 @@ export class DayNavView {
     this.app = app;
     this.anchor = el("dayHead");
     this.label = el("dayLabel");
-    this.badge = el("todayBadge");
+    this.todayBtn = el("dayToday");
   }
 
   bind() {
     el("dayPrev").addEventListener("click", () => this.app.shiftDay(-1));
     el("dayNext").addEventListener("click", () => this.app.shiftDay(1));
-    el("dayToday").addEventListener("click", () => this.app.goToday());
+    this.todayBtn.addEventListener("click", () => this.app.goToday());
   }
 
   render(viewDay) {
     this.label.textContent = formatLongDate(viewDay);
-    this.badge.textContent = sameDay(viewDay, new Date()) ? "● aujourd'hui" : "";
+    // Sur aujourd'hui : on signale par la couleur du bouton (texte vert), pas de badge.
+    this.todayBtn.classList.toggle("is-today", sameDay(viewDay, new Date()));
   }
 }

@@ -16,6 +16,8 @@ export class SegmentTableView {
   bind() {
     this.body.addEventListener("change", (e) => this.#onChange(e));
     this.body.addEventListener("click", (e) => {
+      const sw = e.target.closest?.("[data-edit-task]");
+      if (sw) { this.app.openEditTask(sw.getAttribute("data-edit-task")); return; }
       const cp = e.target.closest?.("[data-copy]");
       if (cp) {
         const seg = this.app.store.segments.find((s) => s.id === cp.getAttribute("data-copy"));
@@ -68,7 +70,7 @@ export class SegmentTableView {
     ).join("");
 
     tr.innerHTML =
-      `<td><div class="seg-task-cell"><span class="seg-swatch" style="background:${color}"></span>` +
+      `<td><div class="seg-task-cell"><span class="seg-swatch" style="background:${color}" data-edit-task="${seg.taskId}" title="Éditer la tâche"></span>` +
         `<select data-seg="${seg.id}" data-field="taskId">${options}</select></div></td>` +
       `<td><input type="datetime-local" data-seg="${seg.id}" data-field="start" value="${fmtDateTimeLocal(start)}"></td>` +
       `<td>${end

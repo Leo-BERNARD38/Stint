@@ -79,10 +79,10 @@
 .active-started { font-size: 12px; color: var(--text-faint); }
 .active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; }
 .active-timer.idle { color: var(--text-faint); }
-.live-dot {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--stop);
-  margin-left: 8px; vertical-align: middle; animation: pulse 1.6s ease-in-out infinite;
-}
+/* En pause : la tâche reste affichée mais atténuée (vs en cours, pleine opacité). */
+.active-card.paused .active-name, .active-card.paused .active-extra,
+.active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
+.active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* ---------- Gros boutons (flat : icône à gauche, libellé à droite) ---------- */
@@ -118,7 +118,8 @@
 }
 .daynav button:hover { background: color-mix(in srgb, var(--accent-text) 18%, transparent); }
 .daynav .date { flex: 1; min-width: 0; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--accent-text); padding: 0 var(--sp-2); }
-.today-badge { font-size: 11px; color: var(--play); font-weight: 600; }
+/* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien badge). */
+#dayToday.is-today { color: var(--play); }
 /* Bouton « Aujourd'hui » : pilule pour s'accorder à la nav jour. */
 .btn-ghost { border: none; background: var(--surface); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
 .btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
@@ -269,11 +270,13 @@
 .total-sum .tamt { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
 
 /* ---------- Liste des tâches (espace + survol, aucune ligne) ---------- */
-.task-list { display: flex; flex-direction: column; gap: 2px; }
+.task-list { display: flex; flex-direction: column; gap: 6px; }
 .task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3); border-radius: var(--radius-sm); }
 .task-row:hover { background: var(--surface); }
 .task-row.active { background: var(--surface-2); }
 .task-row.archived { opacity: .5; }
+/* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
+.task-row.done-sep { margin-top: var(--sp-3); padding-top: 18px; border-top: 1px dotted var(--dot); }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -341,7 +344,8 @@
 .seg-table input:hover, .seg-table select:hover { background: var(--surface-hover); }
 .seg-table input:focus, .seg-table select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 .seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
-.seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
+.seg-swatch:hover { transform: scale(1.18); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
@@ -443,15 +447,12 @@
 
 /* Sélecteur de couleur libre (modale d'édition) : pastille ronde + presets. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.color-pick { width: 42px; height: 42px; border: none; border-radius: 50%; padding: 0; background: transparent; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; }
+/* Color picker : simple carré à bords arrondis (plus de palette de presets). */
+.color-pick { width: 44px; height: 44px; border: none; border-radius: var(--radius-xs); padding: 0; background: transparent; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; }
 .color-pick::-webkit-color-swatch-wrapper { padding: 0; }
-.color-pick::-webkit-color-swatch { border: none; border-radius: 50%; }
-.color-pick::-moz-color-swatch { border: none; border-radius: 50%; }
+.color-pick::-webkit-color-swatch { border: none; border-radius: var(--radius-xs); }
+.color-pick::-moz-color-swatch { border: none; border-radius: var(--radius-xs); }
 .color-hex { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; min-width: 72px; }
-.color-presets { display: flex; gap: 9px; flex-wrap: wrap; }
-.color-preset { width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); padding: 0; }
-.color-preset:hover { transform: scale(1.15); }
-.color-preset.active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
 
 /* ---------- Icônes ---------- */
 .icon { display: block; flex-shrink: 0; }

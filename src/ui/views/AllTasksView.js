@@ -27,6 +27,8 @@ export class AllTasksView {
       // déclencher le plier/déplier.
       if (e.target.closest(".at-actions, .at-date-copy")) return;
       const head = e.target.closest("[data-task-toggle]");
+      // Clic sur la couleur = éditer la tâche (pas plier/déplier).
+      if (head && e.target.closest(".swatch")) { this.app.openEditTask(head.dataset.taskToggle); return; }
       if (head) { this.#toggle(head.dataset.taskToggle); return; }
       const seg = e.target.closest("[data-seg-day]");
       if (seg) this.app.goToDaySegments(seg.dataset.segDay);
@@ -172,7 +174,7 @@ export class AllTasksView {
       attrs: { "data-task-toggle": task.id, role: "button", tabindex: "0", "aria-expanded": String(open) },
       html:
         `<span class="at-chev">${icon("chevron-right", { size: 16 })}</span>` +
-        `<span class="swatch" style="background:${task.color}"></span>` +
+        `<span class="swatch" style="background:${task.color}" title="Éditer la tâche"></span>` +
         `<div class="at-main"><div class="at-name">${escapeHtml(task.displayName)}` +
           `<span class="type-badge type-${task.type}">${task.type}</span>` +
           (task.done ? `<span class="badge-done">terminé</span>` : "") +

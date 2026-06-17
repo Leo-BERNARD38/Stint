@@ -133,7 +133,7 @@ Signatures *Nothing* — tout est neutralisé par `prefers-reduced-motion`.
 ### Mouvement
 | Nom | Courbe / durée | Usage |
 |---|---|---|
-| `pulse` | 1.6–1.8 s | Point « en cours », trait *maintenant* |
+| `pulse` | 1.8 s | Trait *maintenant* (timeline) |
 | `dotIn` | éclosion | Apparition des glyphes |
 | `floaty` | 2.4 s | Flottement léger |
 | `spring` | `cubic-bezier(.34,1.56,.64,1)` | Pilule qui glisse entre onglets |

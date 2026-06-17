@@ -144,9 +144,9 @@ export class App {
   toggleGuide() { this.showScreen(this.screen === "guide" ? "app" : "guide"); }
   toggleTools() { this.showScreen(this.screen === "tools" ? "app" : "tools"); }
 
-  /** Termine (ferme) la tâche active. */
+  /** Termine (ferme) la tâche affichée au héros : active si en cours, sinon celle en pause. */
   finishActive() {
-    const t = this.store.activeTask();
+    const t = this.store.activeTask() ?? this.store.lastUsedTask();
     if (t) this.store.closeTask(t.id);
   }
 

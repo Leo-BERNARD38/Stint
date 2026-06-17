@@ -2,7 +2,7 @@ import { Modal } from "./Modal.js";
 import { el } from "../../utils/dom.js";
 
 /** Édition d'une tâche : nom (qui porte la clé Jira), type (chips), couleur
- *  (sélecteur libre + presets), archiver, supprimer. */
+ *  (color picker libre), archiver, supprimer. */
 export class EditTaskModal extends Modal {
   constructor(app) {
     super("editTaskModal");
@@ -21,10 +21,6 @@ export class EditTaskModal extends Modal {
       if (b) this.#setType(b.dataset.type);
     });
     el("etColor").addEventListener("input", () => this.#reflectColor());
-    el("etPresets").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-color]");
-      if (b) { el("etColor").value = b.dataset.color; this.#reflectColor(); }
-    });
   }
 
   #setType(type) {
@@ -33,10 +29,7 @@ export class EditTaskModal extends Modal {
   }
 
   #reflectColor() {
-    const v = el("etColor").value;
-    el("etColorHex").textContent = v.toUpperCase();
-    [...el("etPresets").children].forEach((c) =>
-      c.classList.toggle("active", c.dataset.color.toLowerCase() === v.toLowerCase()));
+    el("etColorHex").textContent = el("etColor").value.toUpperCase();
   }
 
   open(taskId) {
