@@ -450,7 +450,10 @@
 /* Color picker = simple carré à bords arrondis rempli par la couleur. Le swatch
    natif (rendu variable selon le navigateur) est rendu transparent ; c'est le
    FOND de l'élément, peint en JS avec la couleur choisie, qui remplit le carré. */
-.color-pick { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 32px; height: 32px; border: none; border-radius: var(--radius-xxs); padding: 0; background: var(--surface-2); cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; overflow: hidden; }
+/* Sélecteur `.color-row .color-pick` (et non `.color-pick`) : il faut battre la
+   règle générique `.field input` (radius-sm + padding) en spécificité, sinon le
+   carré hérite d'un rayon et d'un padding parasites (rectangle interne). */
+.color-row .color-pick { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 32px; height: 32px; border: none; border-radius: var(--radius-xs); padding: 0; background: var(--surface-2); cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; overflow: hidden; }
 .color-pick::-webkit-color-swatch-wrapper { padding: 0; }
 .color-pick::-webkit-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-color-swatch { border: none; background: transparent; }
