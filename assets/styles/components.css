@@ -89,7 +89,7 @@
 .big-btn {
   border: none; background: var(--surface); border-radius: var(--radius);
   padding: var(--sp-4) var(--sp-4); display: flex; flex-direction: row; align-items: center; gap: var(--sp-3);
-  text-align: left; color: var(--text); transition: background-color .14s ease, transform .06s ease;
+  text-align: left; color: var(--text); /* transition définie dans la section motion (plus bas) */
 }
 .big-btn:hover { background: var(--surface-hover); }
 .big-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
