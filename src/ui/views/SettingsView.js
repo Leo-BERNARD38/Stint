@@ -35,6 +35,8 @@ export class SettingsView {
       store.updateSettings((s) => { s.jira.daysPerWeek = Math.max(1, Math.min(7, parseInt(e.target.value) || 5)); }));
     el("setRounding").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.rounding = e.target.value; }));
+    el("setBgDots").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.bgDots = e.target.checked; }));
 
     // --- exceptions par jour de semaine ---
     const wdaySelect = el("wdaySelect");
@@ -127,6 +129,8 @@ export class SettingsView {
     setIf("setHpd", s.jira.hoursPerDay);
     setIf("setDpw", s.jira.daysPerWeek);
     setIf("setRounding", s.rounding);
+
+    el("setBgDots").checked = s.bgDots;
 
     el("setJiraAuto").checked = s.jira.auto;
     el("jiraManual").style.display = s.jira.auto ? "none" : "";

@@ -28,6 +28,7 @@ import { EditTaskModal } from "./modals/EditTaskModal.js";
 import { SegmentModal } from "./modals/SegmentModal.js";
 import { Toast } from "./components/Toast.js";
 import { DayGlyphAnimator } from "./DayGlyphAnimator.js";
+import { BgDots } from "./BgDots.js";
 
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
@@ -48,6 +49,7 @@ export class App {
     this.formatter = new Formatter(this.store);
     this.timer = new Timer();
     this.dayGlyphAnimator = new DayGlyphAnimator();
+    this.bgDots = new BgDots(el("bgDots")); // fond réactif au curseur (easter-egg)
     this.viewDay = startOfDay(new Date());
     this.screen = "app"; // app | settings | guide | tools
 
@@ -112,6 +114,7 @@ export class App {
     this.render();        // re-rendu avec l'historique complet
     this.timer.start();
     this.dayGlyphAnimator.start(); // anime le glyphe « moment de la journée »
+    this.bgDots.start();           // câble le suivi du curseur (inactif tant que coupé)
   }
 
   /**
@@ -122,6 +125,7 @@ export class App {
    * hero) sont toujours rendues.
    */
   render() {
+    this.bgDots?.setEnabled(this.store.settings.bgDots); // suit le réglage (off par défaut)
     this.views.forEach((v) => {
       if (v.anchor?.closest("[hidden]")) return;
       v.render(this.viewDay);

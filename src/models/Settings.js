@@ -39,6 +39,7 @@ export class Settings {
       daysPerWeek: data.jira?.daysPerWeek ?? d.jira.daysPerWeek,
     };
     this.rounding = data.rounding ?? d.rounding;
+    this.bgDots = data.bgDots ?? d.bgDots;
   }
 
   static fromJSON(o) {
@@ -104,6 +105,7 @@ export class Settings {
       dateHours: cloneHours(this.dateHours),
       jira: { ...this.jira },
       rounding: this.rounding,
+      bgDots: this.bgDots,
     };
   }
 }

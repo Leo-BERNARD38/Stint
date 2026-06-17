@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -66,4 +66,5 @@ export const DEFAULT_SETTINGS = Object.freeze({
   dateHours: {},     // exceptions par date : { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }
   jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
   rounding: "none",
+  bgDots: false,     // fond dot-matrix réactif au curseur (easter-egg, off par défaut)
 });

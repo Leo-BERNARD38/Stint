@@ -55,6 +55,8 @@ export class Store extends EventEmitter {
    * Migration ascendante du format. La plupart des champs ajoutés ont des
    * valeurs par défaut gérées par les modèles. Cas explicite v3 → v4 :
    * suppression de `task.jiraKey`, replié dans le nom pour ne rien perdre.
+   * v4 → v5 : ajout du réglage `bgDots` (fond réactif) — purement additif,
+   * valeur par défaut fournie par `Settings`, aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};

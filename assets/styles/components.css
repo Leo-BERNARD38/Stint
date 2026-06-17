@@ -124,6 +124,28 @@
 .btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
 
 /* ---------- Timeline (carte arrondie, grille de points, blocs en pilule) ---------- */
+/* ----- Fond dot-matrix « spotlight » (easter-egg, piloté par BgDots.js) -----
+   Couche fixe plein écran : grille de points (même langage que la timeline)
+   révélée seulement autour du curseur par un masque radial suivant --mx/--my.
+   z-index:-1 → derrière tout le contenu opaque, n'affleure que dans les marges.
+   `.on` = réglage activé ; `.lit` = curseur présent. Composité GPU, aucun dessin JS. */
+.bg-dots {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  display: none;
+  --mx: 50%; --my: 50%;
+  background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.4px);
+  background-size: 22px 22px; background-position: center;
+  -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
+          mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
+  opacity: 0; transition: opacity .45s var(--ease);
+}
+.bg-dots.on { display: block; }
+.bg-dots.on.lit { opacity: 1; }
+/* Coupe-circuits CSS (le reset reduced-motion global ne neutralise que la transition,
+   pas l'affichage) : pas de fond sans souris ni si l'on réduit le mouvement. */
+@media (prefers-reduced-motion: reduce) { .bg-dots { display: none !important; } }
+@media (hover: none) { .bg-dots { display: none !important; } }
+
 .timeline-wrap { position: relative; margin-bottom: var(--sp-6); }
 /* Infobulle maison (réactive, suit le curseur, flotte au-dessus du bloc survolé). */
 .tl-tip {

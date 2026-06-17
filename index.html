@@ -54,6 +54,9 @@
 </head>
 <!-- `booting` = squelette de chargement (CSS) ; retiré par App.start() au premier rendu. -->
 <body class="booting">
+  <!-- Fond dot-matrix réactif au curseur (easter-egg, off par défaut ; voir BgDots.js).
+       Couche fixe en z-index:-1, derrière tout le contenu opaque → jamais sur du texte. -->
+  <div id="bgDots" class="bg-dots" aria-hidden="true"></div>
   <!-- ============================ HEADER ============================ -->
   <header>
     <div class="header-inner">
@@ -353,6 +356,16 @@
               <option value="15m">15 minutes</option>
             </select>
           </div>
+        </div>
+
+        <div class="settings-block">
+          <div class="block-title">Apparence</div>
+          <label class="switch-row">
+            <input type="checkbox" id="setBgDots">
+            <span>Fond dot-matrix réactif au curseur</span>
+          </label>
+          <p class="muted">Une grille de points s'illumine autour du pointeur (clair comme sombre).
+            Coupé d'office sur écran tactile ou si vous réduisez les animations.</p>
         </div>
 
         <div class="settings-block full">
