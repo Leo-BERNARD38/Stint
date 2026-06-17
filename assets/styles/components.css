@@ -295,7 +295,7 @@
 .task-share { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 8px; overflow: hidden; max-width: 280px; }
 .task-share span { display: block; height: 100%; border-radius: 2px; }
 
-.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
 .mini-btn:hover { background: var(--surface-hover); color: var(--text); }
 .mini-btn.copied { background: var(--play); color: #fff; }
 /* Contrôles de cycle de vie : pastilles colorées, toujours visibles. */
@@ -338,6 +338,7 @@
 .raw-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
 
 /* ---------- Segments (table flat lecture seule : zébrage, pas de bordures) ---------- */
+.seg-add-row { display: flex; justify-content: flex-end; margin-bottom: var(--sp-3); }
 .table-scroll { overflow-x: auto; }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .seg-table th { text-align: left; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 600; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
