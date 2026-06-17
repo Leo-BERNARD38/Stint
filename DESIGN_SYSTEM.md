@@ -133,7 +133,6 @@ Signatures *Nothing* — tout est neutralisé par `prefers-reduced-motion`.
 ### Mouvement
 | Nom | Courbe / durée | Usage |
 |---|---|---|
-| `pulse` | 1.8 s | Trait *maintenant* (timeline) |
 | `dotIn` | éclosion | Apparition des glyphes |
 | `floaty` | 2.4 s | Flottement léger |
 | `spring` | `cubic-bezier(.34,1.56,.64,1)` | Pilule qui glisse entre onglets |
@@ -238,7 +237,7 @@ Points de copie : par tâche (Déc./Jira), par segment (durée), **récap Jira**
 ## 10 · Accessibilité & garde-fous
 
 - Anneau de focus visible partout ; cibles tactiles **≥ 30 px** (boutons ronds), **≥ 44 px** pour les actions principales.
-- `prefers-reduced-motion` coupe pulse/spring/dotIn.
+- `prefers-reduced-motion` coupe spring/dotIn.
 - `tabular-nums` obligatoire sur toute durée.
 - Contraste : texte primaire sur surface, `--text-faint` réservé au non-essentiel.
 - `color-scheme:dark` sur les contrôles natifs (`time`, `date`, `select`, `checkbox`).

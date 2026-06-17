@@ -83,7 +83,6 @@
 .active-card.paused .active-name, .active-card.paused .active-extra,
 .active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
 .active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* ---------- Gros boutons (flat : icône à gauche, libellé à droite) ---------- */
 .big-btn {
@@ -169,7 +168,6 @@
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; z-index: 6; }
-.tl-now::before { content: ""; position: absolute; top: 3px; left: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s var(--ease) infinite; }
 /* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
 .tl-drag-tip { position: absolute; z-index: 8; pointer-events: none; opacity: 0;
   left: 50%; top: 0; /* centré au repos (JS pose left/top pendant le glisser) */
@@ -276,7 +274,7 @@
 .task-row.active { background: var(--surface-2); }
 .task-row.archived { opacity: .5; }
 /* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
-.task-row.done-sep { margin-top: var(--sp-3); padding-top: 18px; border-top: 1px dotted var(--dot); }
+.task-row.done-sep { margin-top: var(--sp-3); padding-top: 18px; border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
