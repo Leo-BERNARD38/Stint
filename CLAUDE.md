@@ -188,9 +188,9 @@ Notes :
   `SCENE_W`×`SCENE_H`, fine) — montagnes basses sur toute la largeur, **soleil qui
   traverse de gauche à droite** (`SUN_X0..SUN_X1`) puis **lune + étoiles** la nuit.
   La **trajectoire de l'astre** est tracée en fond (`trajectoryDots`, groupe à
-  **~10 % d'opacité**, très discret) : **pointillé serré** pour la portion déjà
-  parcourue, **plus espacé** pour le reste ; les points sous la crête sont omis
-  (l'astre émerge / plonge derrière le relief). Points
+  **~10 % d'opacité**, très discret) : **pointillé régulier** (1 point sur 3) sur
+  tout l'arc ; les points sous la crête sont omis (l'astre émerge / plonge
+  derrière le relief). Points
   **allumés/éteints uniquement** (aucun gris). Astres et montagnes sont des
   **bitmaps / pics réglables** dans `icons.js`. La position évolue par tranche de
   30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par

@@ -235,18 +235,14 @@ const arcY = (body, t) => {
 };
 
 /** Trajectoire de l'astre dessinée en fond, très subtile (groupe peu opaque) :
- *  pointillé serré pour la portion déjà parcourue (t ≤ tNow), plus espacé pour le
- *  reste à parcourir. Les points sous la crête sont omis ⇒ l'astre paraît émerger
- *  / plonger derrière le relief. Vaut pour le jour (soleil) comme la nuit (lune). */
-function trajectoryDots(body, tNow) {
+ *  pointillé régulier (1 point sur 3) sur tout l'arc. Les points sous la crête
+ *  sont omis ⇒ l'astre paraît émerger / plonger derrière le relief. Vaut pour le
+ *  jour (soleil) comme la nuit (lune). */
+function trajectoryDots(body) {
   const g = sNew();
-  const cxNow = arcX(tNow);
-  for (let x = SUN_X0; x <= SUN_X1; x++) {
-    const t = (x - SUN_X0) / (SUN_X1 - SUN_X0);
-    const y = arcY(body, t);
-    if (y >= RIDGE[x]) continue;          // caché derrière les montagnes
-    const step = x <= cxNow ? 3 : 6;      // parcouru plus dense que le reste à parcourir
-    if (x % step === 0) sSet(g, x, y);
+  for (let x = SUN_X0; x <= SUN_X1; x += 3) {
+    const y = arcY(body, (x - SUN_X0) / (SUN_X1 - SUN_X0));
+    if (y < RIDGE[x]) sSet(g, x, y); // au-dessus de la crête seulement
   }
   return g;
 }
@@ -257,7 +253,7 @@ function sceneFrames(slot) {
   const cx = Math.round(arcX(t)); // large traversée : gauche → droite
   const title = `<title>${label}</title>`;
   // La trajectoire ne dépend pas de la frame d'animation : on la cuit une fois.
-  const traj = `<g opacity="0.1">${sBake(trajectoryDots(body, t))}</g>`;
+  const traj = `<g opacity="0.1">${sBake(trajectoryDots(body))}</g>`;
   const frames = Array.from({ length: 4 }, (_, f) => {
     const g = sNew();
     if (body === "moon") {
