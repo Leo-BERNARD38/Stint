@@ -445,15 +445,15 @@
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
 
-/* Sélecteur de couleur libre (modale d'édition) : pastille ronde + presets. */
+/* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-/* Color picker : simple carré à bords arrondis (plus de palette de presets).
-   appearance:none + overflow:hidden suppriment le rendu natif (pastille ovale)
-   et clippent le swatch, qui remplit alors tout le carré. */
-.color-pick { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 44px; height: 44px; border: none; border-radius: var(--radius-xs); padding: 0; background: transparent; cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; overflow: hidden; }
+/* Color picker = simple carré à bords arrondis rempli par la couleur. Le swatch
+   natif (rendu variable selon le navigateur) est rendu transparent ; c'est le
+   FOND de l'élément, peint en JS avec la couleur choisie, qui remplit le carré. */
+.color-pick { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 44px; height: 44px; border: none; border-radius: var(--radius-xs); padding: 0; background: var(--surface-2); cursor: pointer; box-shadow: 0 0 0 1px var(--ring); flex-shrink: 0; overflow: hidden; }
 .color-pick::-webkit-color-swatch-wrapper { padding: 0; }
-.color-pick::-webkit-color-swatch { border: none; border-radius: 0; }
-.color-pick::-moz-color-swatch { border: none; border-radius: 0; }
+.color-pick::-webkit-color-swatch { border: none; background: transparent; }
+.color-pick::-moz-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-focus-inner { border: 0; padding: 0; }
 .color-hex { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; min-width: 72px; }
 

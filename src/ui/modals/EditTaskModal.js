@@ -29,7 +29,9 @@ export class EditTaskModal extends Modal {
   }
 
   #reflectColor() {
-    el("etColorHex").textContent = el("etColor").value.toUpperCase();
+    const v = el("etColor").value;
+    el("etColor").style.background = v; // le carré se remplit de la couleur choisie
+    el("etColorHex").textContent = v.toUpperCase();
   }
 
   open(taskId) {
