@@ -13,7 +13,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v56";
+const CACHE = "stint-v57";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [

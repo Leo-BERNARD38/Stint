@@ -186,8 +186,11 @@ Notes :
   texte ; `preserveAspectRatio xMaxYMax meet` ⇒ scène jamais rognée, ancrée en
   bas-droite, le surplus de ciel tombant à gauche sur les cartes larges) : paysage dot-matrix (grille
   `SCENE_W`×`SCENE_H`, fine) — montagnes basses sur toute la largeur, **soleil qui
-  ne circule que sur la moitié droite** (`SUN_X0..SUN_X1`, jamais derrière le
-  texte) puis **lune + étoiles** la nuit ; la **moitié gauche reste vide**. Points
+  traverse de gauche à droite** (`SUN_X0..SUN_X1`) puis **lune + étoiles** la nuit.
+  La **trajectoire de l'astre** est tracée en fond (`trajectoryDots`, groupe à
+  **20 % d'opacité**) : **plein** pour la portion déjà parcourue, **pointillé**
+  pour le reste ; les points sous la crête sont omis (l'astre émerge / plonge
+  derrière le relief). Points
   **allumés/éteints uniquement** (aucun gris). Astres et montagnes sont des
   **bitmaps / pics réglables** dans `icons.js`. La position évolue par tranche de
   30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par
