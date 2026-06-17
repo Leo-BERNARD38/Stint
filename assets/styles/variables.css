@@ -62,6 +62,7 @@
   --surface: light-dark(#f5f5f6, #161619);       /* zones douces : inputs, boutons secondaires, aside */
   --surface-2: light-dark(#ececee, #1f1f23);     /* enfoncé : piste timeline, survols */
   --surface-hover: light-dark(#efeff1, #222227);
+  --skeleton: light-dark(#e3e3e6, #2a2a31);      /* placeholder de chargement, visible sur --surface */
 
   --text: light-dark(#18181b, #f3f3f5);
   --text-soft: light-dark(#5b5b63, #a6a6ae);
