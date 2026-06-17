@@ -1,6 +1,5 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { TASK_TYPES } from "../../core/constants.js";
-import { createCopyButton } from "../components/CopyButton.js";
 import { fmtClock } from "../../utils/datetime.js";
 import { icon } from "../icons.js";
 
@@ -35,17 +34,11 @@ export class TotalsView {
             `<span class="tamt">${fmt.clock(byType[type] / 60000)}</span>`,
         }));
       }
-      // total du jour + copie
+      // total du jour
       this.root.appendChild(createEl("div", {
         className: "total-sum",
         html: `<span class="tname">Total</span><span class="tamt">${fmt.clock(total / 60000)}</span>`,
       }));
-      const copyRow = createEl("div", { className: "copy-row totals-copy" });
-      copyRow.append(
-        createCopyButton(this.app, fmt.decimal(total / 60000), "Déc."),
-        createCopyButton(this.app, fmt.jira(total / 60000), "Jira"),
-      );
-      this.root.appendChild(copyRow);
     }
 
     this.#renderUntracked(viewDay, fmt);

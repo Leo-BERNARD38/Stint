@@ -1,12 +1,12 @@
 import { el, createEl } from "../../utils/dom.js";
-import { createCopyButton } from "../components/CopyButton.js";
 import { dayGlyph } from "../icons.js";
 
 /**
- * Carte « Total du jour » du héros — **toujours visible** (au-dessus des onglets,
- * sur tous les onglets de l'app). Contraste inversé (fond accent), scène
- * « moment de la journée » dot-matrix animée en filigrane (DayGlyphAnimator),
- * total géant et pilules Déc./Jira copiables.
+ * Carte « Total aujourd'hui » du héros — **toujours visible** (au-dessus des
+ * onglets, sur tous les onglets de l'app). Contraste inversé (fond accent), scène
+ * « moment de la journée » dot-matrix animée en filigrane (DayGlyphAnimator) et
+ * total géant. Affiche toujours le total du **jour réel** (indépendant de
+ * `app.viewDay`) : cohérent avec le glyphe, basé sur l'heure courante.
  *
  * La structure (dont le `.day-glyph`) est construite **une seule fois** : seules
  * les valeurs sont remises à jour au rendu / au tick, pour ne jamais
@@ -27,32 +27,22 @@ export class DayTotalView {
     this.root.insertAdjacentHTML("beforeend", dayGlyph());
     this.text = createEl("div", {
       className: "total-card-text",
-      html: '<div class="k">Total du jour</div><div class="v">0:00</div>',
+      html: '<div class="k">Total aujourd\'hui</div><div class="v">0:00</div>',
     });
     this.valueEl = this.text.querySelector(".v");
-    this.copyRow = createEl("div", { className: "copy-row" });
-    this.text.appendChild(this.copyRow);
     this.root.appendChild(this.text);
     this.#built = true;
   }
 
-  render(viewDay) {
+  render() {
     if (!this.#built) this.#build();
-    this.viewDay = viewDay;
     this.#updateValues();
   }
 
-  /** Met à jour le total + les pilules de copie sans toucher au glyphe. */
+  /** Met à jour le total du jour réel sans toucher au glyphe. */
   #updateValues() {
-    const fmt = this.app.formatter;
-    const { total } = this.app.calc.totalsForDay(this.viewDay ?? this.app.viewDay);
-    const mins = total / 60000;
-    this.valueEl.textContent = fmt.clock(mins);
-    this.copyRow.innerHTML = "";
-    this.copyRow.append(
-      createCopyButton(this.app, fmt.decimal(mins), "Déc."),
-      createCopyButton(this.app, fmt.jira(mins), "Jira"),
-    );
+    const { total } = this.app.calc.totalsForDay(new Date());
+    this.valueEl.textContent = this.app.formatter.clock(total / 60000);
   }
 
   /** Total live au tick (1 s) : ne reconstruit ni le glyphe ni la structure. */

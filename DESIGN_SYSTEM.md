@@ -173,7 +173,7 @@ Pilules `uppercase` 10.5 px : type de tâche, `terminé`, mode `brut`, raccourci
 
 ### Cartes
 - **Tâche active** : point pulsé + halo, nom, badge, chrono dot-matrix.
-- **Héros « Total du jour »** : contraste **inversé** (fond `--text`), glyphe dot-matrix animé en filigrane, chrono géant, pilules Déc./Jira **copiables**.
+- **Héros « Total aujourd'hui »** : contraste **inversé** (fond `--text`), glyphe dot-matrix animé en filigrane, chrono géant. Affiche toujours le jour réel (indépendant du jour sélectionné).
 - **Stat** : grand nombre dot-matrix + overline.
 
 ---
@@ -222,7 +222,7 @@ Partout, **deux formats copiables** (toast de confirmation) :
 - **Décimal** — heures à 2 décimales (`1.5`).
 - **Jira** — unités `w / d / h / m`, avec **`1d = 450 min = 7,5 h`** et **`1w = 5 d`** (calculées depuis les horaires). Ex. `6h 42m`, `1d 2h`.
 
-Points de copie : total du jour, par tâche (Déc./Jira), par segment (durée), **récap Jira** d'un groupe (`nom — durée` par ligne).
+Points de copie : par tâche (Déc./Jira), par segment (durée), **récap Jira** d'un groupe (`nom — durée` par ligne).
 
 ---
 
