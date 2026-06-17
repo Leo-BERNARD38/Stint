@@ -19,7 +19,12 @@ export class SegmentTableView {
       const cp = e.target.closest?.("[data-copy]");
       if (cp) {
         const seg = this.app.store.segments.find((s) => s.id === cp.getAttribute("data-copy"));
-        if (seg) this.app.copy(this.app.formatter.clock(this.app.calc.segmentMs(seg) / 60000), cp);
+        if (seg) {
+          const minutes = this.app.calc.segmentMs(seg) / 60000;
+          const fmt = this.app.formatter;
+          const value = cp.getAttribute("data-fmt") === "jira" ? fmt.jira(minutes) : fmt.decimal(minutes);
+          this.app.copy(value, cp);
+        }
         return;
       }
       const btn = e.target.closest?.("[data-del]");
@@ -72,7 +77,8 @@ export class SegmentTableView {
       `<td><input type="checkbox" class="raw-toggle" data-seg="${seg.id}" data-field="raw"${seg.raw ? " checked" : ""} title="Temps brut (sans rognage ouvré)"></td>` +
       `<td class="seg-dur">${this.app.formatter.clock(minutes)}</td>` +
       `<td><div class="seg-actions">` +
-        `<button class="mini-btn icon-only" data-copy="${seg.id}" title="Copier la durée">${icon("copy", { size: 15 })}</button>` +
+        `<button class="mini-btn" data-copy="${seg.id}" data-fmt="dec" title="Copier en décimal">${icon("copy", { size: 14 })} Déc.</button>` +
+        `<button class="mini-btn" data-copy="${seg.id}" data-fmt="jira" title="Copier en Jira">${icon("copy", { size: 14 })} Jira</button>` +
         `<button class="mini-btn icon-only" data-del="${seg.id}" title="Supprimer">${icon("trash", { size: 15 })}</button>` +
       `</div></td>`;
     return tr;
