@@ -2,7 +2,7 @@ import { el } from "../../utils/dom.js";
 import { THEMES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 
-const ICON_NAMES = { system: "monitor", light: "sun", dark: "moon" };
+const ICON_NAMES = { system: "sun-moon", light: "sun", dark: "moon" };
 const LABELS = { system: "Système", light: "Clair", dark: "Sombre" };
 
 /**
