@@ -183,7 +183,8 @@ Notes :
   « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
   `grid-template-rows 0fr→1fr`). Dans « Total journée », **scène `dayGlyph`** en
   **fond de carte pleine largeur** (`position:absolute; inset:0`, derrière le
-  texte ; `preserveAspectRatio xMidYMax slice`) : paysage dot-matrix (grille
+  texte ; `preserveAspectRatio xMaxYMax meet` ⇒ scène jamais rognée, ancrée en
+  bas-droite, le surplus de ciel tombant à gauche sur les cartes larges) : paysage dot-matrix (grille
   `SCENE_W`×`SCENE_H`, fine) — montagnes basses sur toute la largeur, **soleil qui
   ne circule que sur la moitié droite** (`SUN_X0..SUN_X1`, jamais derrière le
   texte) puis **lune + étoiles** la nuit ; la **moitié gauche reste vide**. Points

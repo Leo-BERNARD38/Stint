@@ -263,11 +263,12 @@ export function dayGlyphFrames(name = dayGlyphName()) {
 }
 
 /** Scène dot-matrix (1ʳᵉ frame, pour le rendu initial avant animation). Ancrée en
- *  bas (montagnes affleurant le bas) ; `meet` ⇒ jamais rognée, le soleil reste
- *  toujours visible (l'éventuel surplus est du ciel vide, invisible sur l'accent). */
+ *  bas-droite (`xMaxYMax meet`) : jamais rognée (le soleil reste toujours visible),
+ *  et sur les cartes larges l'éventuel surplus de ciel vide tombe à gauche, derrière
+ *  le texte — la scène reste collée au bord droit plutôt que de flotter au centre. */
 export function dayGlyph(name = dayGlyphName()) {
   const { frames } = dayGlyphFrames(name);
-  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMidYMax meet" ` +
+  return `<svg class="day-glyph" viewBox="0 0 ${SCENE_W} ${SCENE_H}" preserveAspectRatio="xMaxYMax meet" ` +
     `fill="currentColor" aria-hidden="true">${frames[0]}</svg>`;
 }
 
