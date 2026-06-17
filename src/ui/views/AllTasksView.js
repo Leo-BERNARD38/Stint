@@ -144,7 +144,6 @@ export class AllTasksView {
 
   #groupHeader({ g, items }) {
     const fmt = this.app.formatter;
-    const totalMs = items.reduce((s, m) => s + m.total, 0);
     const lines = items.filter((m) => m.total > 0)
       .sort((a, b) => b.total - a.total)
       .map((m) => `${m.task.displayName}\t${fmt.jira(m.total / 60000)}`)
@@ -152,7 +151,6 @@ export class AllTasksView {
 
     const head = createEl("div", { className: "at-date" });
     head.appendChild(createEl("span", { className: "at-date-label", text: g.label }));
-    head.appendChild(createEl("span", { className: "at-date-total", text: fmt.clock(totalMs / 60000) }));
     const copyBtn = createEl("button", {
       className: "mini-btn at-date-copy",
       html: icon("copy", { size: 13 }) + " Jira",

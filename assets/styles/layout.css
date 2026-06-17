@@ -51,7 +51,7 @@ header {
   display: grid; grid-template-columns: repeat(3, 1fr);
   width: 360px; max-width: 100%;
   background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
-  margin: var(--sp-5) auto var(--sp-4); /* centré (signature Nothing) */
+  margin: var(--sp-7) auto var(--sp-5); /* centré (signature Nothing) + air sous le héros */
 }
 .tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 460px; }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
