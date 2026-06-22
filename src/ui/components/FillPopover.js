@@ -30,15 +30,34 @@ export function createFillPopover({ parent }) {
   function open(opts) {
     cbs = opts;
     pop.innerHTML = render(opts);
-    pop.style.top = opts.topPx + "px";
-    pop.style.left = Math.max(0, Math.min(100, opts.leftPct)) + "%";
     isOpen = true;
     pop.classList.add("show");
     backdrop.classList.add("show");
+    position(opts);
     // Clic hors du popover → fermeture (posé au tick suivant pour ne pas
     // capter le clic d'ouverture lui-même).
     onDocDown = (e) => { if (!pop.contains(e.target)) close(); };
     setTimeout(() => document.addEventListener("pointerdown", onDocDown, true), 0);
+  }
+
+  // Place la carte flottante en empêchant tout débordement : le centre est calé
+  // sur le trou, puis borné pour garder une marge minimale avec les deux bords
+  // du conteneur (un trou en tout début ou toute fin de journée ne sort donc
+  // plus de l'écran). Variante feuille basse (mobile) : on laisse la feuille de
+  // style gérer le positionnement plein écran (cf. media query).
+  function position(opts) {
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      pop.style.left = "";
+      pop.style.top = "";
+      return;
+    }
+    pop.style.top = opts.topPx + "px";
+    const MARGIN = 8;
+    const parentW = parent.clientWidth;
+    const half = pop.offsetWidth / 2; // le CSS centre la carte via translateX(-50%)
+    let center = (Math.max(0, Math.min(100, opts.leftPct)) / 100) * parentW;
+    center = Math.max(half + MARGIN, Math.min(parentW - half - MARGIN, center));
+    pop.style.left = center + "px";
   }
 
   function render(o) {

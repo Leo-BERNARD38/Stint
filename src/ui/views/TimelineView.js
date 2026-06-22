@@ -124,7 +124,21 @@ export class TimelineView {
     // axe : bornes des plages ouvrées + extrémités de la fenêtre
     const bounds = new Set([win.start, win.end]);
     for (const [rs, re] of ranges) { bounds.add(rs); bounds.add(re); }
-    const ticks = [...bounds].filter((t) => t >= win.start && t <= win.end).sort((a, b) => a - b);
+    const allTicks = [...bounds].filter((t) => t >= win.start && t <= win.end).sort((a, b) => a - b);
+    // Anti-chevauchement : on impose une distance minimale (~ largeur d'un
+    // libellé) entre deux étiquettes. Le bord droit (fin de fenêtre, p. ex. la
+    // fin réelle d'un segment qui déborde de l'horaire) est prioritaire : il
+    // évince les bornes internes trop proches plutôt que de se superposer à
+    // elles (cas 17:00 / 17:05). Les deux extrémités sont toujours conservées.
+    const axisW = this.axis.clientWidth || this.timeline.clientWidth || 600;
+    const minGap = (50 / axisW) * 100; // en % de la largeur de l'axe
+    const ticks = [];
+    const lastIdx = allTicks.length - 1;
+    allTicks.forEach((t, i) => {
+      const close = () => ticks.length && pct(t) - pct(ticks[ticks.length - 1]) < minGap;
+      if (i === lastIdx) { while (close()) ticks.pop(); ticks.push(t); }
+      else if (!close()) ticks.push(t);
+    });
     ticks.forEach((t, i) => {
       const tick = createEl("span", { className: "tl-tick", text: fmtClock(new Date(t)) });
       tick.style.left = pct(t) + "%";
