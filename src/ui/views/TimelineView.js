@@ -251,7 +251,7 @@ export class TimelineView {
       dur: formatter.clock((ge - gs) / 60000),
       left: leftSeg ? nameColor(leftSeg) : null,
       right: rightSeg ? nameColor(rightSeg) : null,
-      tasks: store.tasks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.displayName, color: t.color })),
+      tasks: store.tasks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.displayName, color: t.color, done: t.done })),
       onExtendLeft: () => this.app.extendLeftIntoGap(leftSeg.id, new Date(ge)),
       onExtendRight: () => this.app.extendRightIntoGap(rightSeg.id, new Date(gs)),
       onCreate: (taskId) => this.app.createSegmentInGap(taskId, new Date(gs), new Date(ge)),

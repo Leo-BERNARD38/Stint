@@ -239,6 +239,12 @@
 .fill-task:hover { background: var(--surface-2); }
 .fill-task .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .fill-task-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fill-done-toggle { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--text-faint);
+  padding: 6px 4px 4px; width: 100%; cursor: pointer; font-weight: 600; font-size: 11px; }
+.fill-done-lab { flex: 1; text-align: left; }
+.fill-done-toggle .o-chev { flex-shrink: 0; transition: transform .2s var(--ease); }
+.fill-done-toggle.open .o-chev { transform: rotate(180deg); }
+.fill-done-list { display: flex; flex-direction: column; gap: 5px; }
 @media (max-width: 760px) {
   .fill-pop { position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; transform: none; width: 100%; max-width: 100%;
     border-radius: 20px 20px 0 0; padding-bottom: 26px; }

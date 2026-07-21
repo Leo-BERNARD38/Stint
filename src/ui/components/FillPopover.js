@@ -81,10 +81,23 @@ export function createFillPopover({ parent }) {
         `<span class="o-create">Créer un segment</span>` +
         `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span></button>` +
       `<div class="fill-create" hidden><span class="fill-create-lab">Sur quelle tâche ?</span>`;
-    for (const t of o.tasks) {
-      html += `<button class="fill-task" data-task="${t.id}">` +
-        `<span class="o-dot" style="background:${t.color}"></span>` +
-        `<span class="fill-task-name">${escapeHtml(t.name)}</span></button>`;
+    const taskBtn = (t) =>
+      `<button class="fill-task" data-task="${t.id}">` +
+      `<span class="o-dot" style="background:${t.color}"></span>` +
+      `<span class="fill-task-name">${escapeHtml(t.name)}</span></button>`;
+    const active = o.tasks.filter((t) => !t.done);
+    const done = o.tasks.filter((t) => t.done);
+    for (const t of active) html += taskBtn(t);
+    // Les tâches terminées sont masquées par défaut (dépliées via le bouton) pour
+    // éviter une liste interminable.
+    if (done.length) {
+      html +=
+        `<button class="fill-done-toggle" data-act="toggle-done" data-count="${done.length}">` +
+        `<span class="fill-done-lab">Afficher les tâches terminées (${done.length})</span>` +
+        `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span></button>` +
+        `<div class="fill-done-list" hidden>`;
+      for (const t of done) html += taskBtn(t);
+      html += `</div>`;
     }
     html += `</div></div>`;
     return html;
@@ -104,6 +117,14 @@ export function createFillPopover({ parent }) {
       const open2 = box.hasAttribute("hidden");
       box.toggleAttribute("hidden", !open2);
       pop.querySelector(".fill-create-btn").classList.toggle("open", open2);
+    }
+    else if (act === "toggle-done") {
+      const list = pop.querySelector(".fill-done-list");
+      const open2 = list.hasAttribute("hidden");
+      list.toggleAttribute("hidden", !open2);
+      btn.classList.toggle("open", open2);
+      const lab = btn.querySelector(".fill-done-lab");
+      if (lab) lab.textContent = `${open2 ? "Masquer" : "Afficher"} les tâches terminées (${btn.dataset.count})`;
     }
   });
   backdrop.addEventListener("click", close);
