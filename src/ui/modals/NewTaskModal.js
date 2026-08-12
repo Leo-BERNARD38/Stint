@@ -13,6 +13,7 @@ export class NewTaskModal extends Modal {
     this.bindDismiss();
     el("ntCreate").addEventListener("click", () => this.#create());
     el("ntName").addEventListener("keydown", (e) => { if (e.key === "Enter") this.#create(); });
+    el("ntLink").addEventListener("keydown", (e) => { if (e.key === "Enter") this.#create(); });
     el("ntTypeChips").addEventListener("click", (e) => {
       const b = e.target.closest("[data-type]");
       if (b) this.#setType(b.dataset.type);
@@ -26,13 +27,18 @@ export class NewTaskModal extends Modal {
 
   open() {
     el("ntName").value = "";
+    el("ntLink").value = "";
     this.#setType("dev");
     super.open();
     setTimeout(() => el("ntName").focus(), 50);
   }
 
   #create() {
-    this.app.store.startNew({ name: el("ntName").value.trim(), type: this.type });
+    this.app.store.startNew({
+      name: el("ntName").value.trim(),
+      type: this.type,
+      link: el("ntLink").value.trim(),
+    });
     this.close();
   }
 }

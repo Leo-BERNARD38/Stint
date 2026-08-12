@@ -203,8 +203,9 @@ export class AllTasksView {
     actions.append(
       createCopyButton(this.app, fmt.decimal(mins), "Déc."),
       createCopyButton(this.app, fmt.jira(mins), "Jira"),
-      this.#ctrlBtn("pencil", "Éditer la tâche", () => this.app.openEditTask(task.id)),
     );
+    if (task.link) actions.appendChild(this.#linkBtn(task.link));
+    actions.appendChild(this.#ctrlBtn("pencil", "Éditer la tâche", () => this.app.openEditTask(task.id)));
     head.appendChild(actions);
     card.appendChild(head);
 
@@ -228,6 +229,19 @@ export class AllTasksView {
       html: icon(name, { size: 15 }),
       attrs: { title, "aria-label": title },
       on: { click: onClick },
+    });
+  }
+
+  /** Petit bouton discret : ouvre le lien de la tâche dans un nouvel onglet. */
+  #linkBtn(link) {
+    return createEl("a", {
+      className: "mini-btn icon-only link-btn",
+      html: icon("external-link", { size: 15 }),
+      attrs: {
+        href: link, target: "_blank", rel: "noopener noreferrer",
+        title: "Ouvrir le lien", "aria-label": "Ouvrir le lien",
+      },
+      on: { click: (e) => e.stopPropagation() },
     });
   }
 

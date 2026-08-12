@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 export const DAY_MS = 86_400_000;
 
 /**

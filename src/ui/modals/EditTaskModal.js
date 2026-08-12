@@ -2,7 +2,7 @@ import { Modal } from "./Modal.js";
 import { el } from "../../utils/dom.js";
 
 /** Édition d'une tâche : nom (qui porte la clé Jira), type (chips), couleur
- *  (color picker libre), archiver, supprimer. */
+ *  (color picker libre), lien externe (ex. URL Jira), archiver, supprimer. */
 export class EditTaskModal extends Modal {
   constructor(app) {
     super("editTaskModal");
@@ -39,6 +39,7 @@ export class EditTaskModal extends Modal {
     if (!t) return;
     this.taskId = taskId;
     el("etName").value = t.name;
+    el("etLink").value = t.link || "";
     this.#setType(t.type);
     el("etColor").value = t.color;
     this.#reflectColor();
@@ -52,6 +53,7 @@ export class EditTaskModal extends Modal {
       name: el("etName").value.trim(),
       type: this.type,
       color: el("etColor").value,
+      link: el("etLink").value.trim(),
     });
     this.close();
   }

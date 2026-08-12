@@ -390,6 +390,7 @@
 .settings-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+.field-optional { font-weight: 400; color: var(--text-faint); }
 .field input, .field select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
 .field input:focus, .field select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }

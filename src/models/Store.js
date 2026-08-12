@@ -57,6 +57,8 @@ export class Store extends EventEmitter {
    * suppression de `task.jiraKey`, replié dans le nom pour ne rien perdre.
    * v4 → v5 : ajout du réglage `bgDots` (fond réactif) — purement additif,
    * valeur par défaut fournie par `Settings`, aucune transformation ici.
+   * v5 → v6 : ajout de `task.link` (lien externe, ex. URL Jira) — purement
+   * additif, valeur par défaut fournie par `Task`, aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -148,8 +150,8 @@ export class Store extends EventEmitter {
     return pal.find((c) => !used.has(c)) ?? pal[sameType.length % pal.length];
   }
 
-  #createTask({ name, type }) {
-    const task = new Task({ id: this.#uid("t_"), name, type, color: this.#nextColor(type) });
+  #createTask({ name, type, link = "" }) {
+    const task = new Task({ id: this.#uid("t_"), name, type, link, color: this.#nextColor(type) });
     this.tasks.push(task);
     return task;
   }
@@ -203,9 +205,9 @@ export class Store extends EventEmitter {
   }
 
   /** Nouvelle tâche : arrête l'active, crée, démarre. */
-  startNew({ name, type }) {
+  startNew({ name, type, link = "" }) {
     this.#stopActive();
-    const task = this.#createTask({ name, type });
+    const task = this.#createTask({ name, type, link });
     this.#startSegment(task.id);
     this.#commit();
     return task;
