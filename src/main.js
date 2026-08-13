@@ -14,7 +14,18 @@ window.addEventListener("DOMContentLoaded", () => {
 // Service worker : installable + hors-ligne (ignoré sous file://).
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => { /* sans incidence */ });
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      // Un onglet resté ouvert (veille, arrière-plan) toute une nuit ne revérifie
+      // pas forcément de lui-même une nouvelle version : il continuerait à tourner
+      // avec un ancien schéma de données, et la moindre sauvegarde depuis cet
+      // onglet écraserait alors la base avec un état qui ignore les champs ajoutés
+      // depuis (perte silencieuse). On force donc la vérification dès que l'onglet
+      // redevient visible/actif ; si une nouvelle version est trouvée, le flux
+      // `controllerchange` ci-dessous recharge la page avant toute nouvelle saisie.
+      const checkForUpdate = () => reg.update().catch(() => { /* sans incidence */ });
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(); });
+      window.addEventListener("focus", checkForUpdate);
+    }).catch(() => { /* sans incidence */ });
   });
   // Une nouvelle version vient de prendre la main (skipWaiting + claim) : on
   // recharge une fois pour servir un ensemble HTML/CSS/JS cohérent — c'était
