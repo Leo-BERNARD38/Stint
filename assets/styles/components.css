@@ -318,6 +318,9 @@
 .type-support { background: var(--type-support-bg); color: var(--type-support-text); }
 .type-autre { background: var(--type-autre-bg); color: var(--type-autre-text); }
 .task-dur { font-family: var(--font-body); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Vue arrondie : soulignement pointillé pour rappeler que la durée n'est plus exacte. */
+.task-list.is-rounded .task-dur,
+.totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
 .task-actions { display: flex; align-items: center; gap: 4px; }
 /* Mini-barre de part du jour (proportion du temps de la tâche). */
 .task-share { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 8px; overflow: hidden; max-width: 280px; }
@@ -513,6 +516,23 @@
 /* Interrupteur (case + libellé) */
 .switch-row { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; user-select: none; }
 .switch-row input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+
+/* Variante compacte, en pilule, posée à droite d'un titre de bloc (ex. « Arrondi »).
+   Actif = couleurs inversées, comme le sélecteur de jour. */
+.switch-mini {
+  align-self: center; font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint);
+  gap: 8px; padding: 5px 12px 5px 10px; background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  transition: background .18s var(--ease), color .18s var(--ease);
+}
+.switch-mini input { width: 14px; height: 14px; }
+.switch-mini:hover { color: var(--text-soft); }
+.switch-mini.on { background: var(--accent); color: var(--accent-text); }
+.switch-mini.on input { accent-color: var(--accent-text); }
+.switch-mini.on:hover { color: var(--accent-text); }
+.switch-mini.off { opacity: .55; cursor: not-allowed; }
+.switch-mini.off input { cursor: not-allowed; }
 .auto-info { margin-top: 12px; font-size: 13px; color: var(--text-soft); background: var(--bg); border-radius: var(--radius-sm); padding: 10px 13px; font-variant-numeric: tabular-nums; }
 
 /* État « terminé » */

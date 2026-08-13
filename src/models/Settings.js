@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "../core/constants.js";
+import { DEFAULT_SETTINGS, ROUNDING_STEPS } from "../core/constants.js";
 import { isoDow, fmtDateInput, toMin } from "../utils/datetime.js";
 
 /** Copie défensive d'une map d'horaires { clé: [[start,end], …] }. */
@@ -38,8 +38,25 @@ export class Settings {
       hoursPerDay: data.jira?.hoursPerDay ?? d.jira.hoursPerDay,
       daysPerWeek: data.jira?.daysPerWeek ?? d.jira.daysPerWeek,
     };
-    this.rounding = data.rounding ?? d.rounding;
+    this.rounding = ROUNDING_STEPS[data.rounding] != null ? data.rounding : d.rounding;
+    this.roundedDay = data.roundedDay ?? d.roundedDay;
     this.bgDots = data.bgDots ?? d.bgDots;
+  }
+
+  /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */
+  roundingMinutes() {
+    return ROUNDING_STEPS[this.rounding] ?? 0;
+  }
+
+  /**
+   * Arrondit une durée (minutes) au pas configuré. Arrondi **au plus proche**,
+   * mais une durée non nulle ne tombe jamais à 0 : on reporte au minimum un pas
+   * (5 min tracées ≠ rien de fait).
+   */
+  roundMinutes(minutes) {
+    const step = this.roundingMinutes();
+    if (!step || minutes <= 0) return minutes;
+    return Math.max(step, Math.round(minutes / step) * step);
   }
 
   static fromJSON(o) {
@@ -105,6 +122,7 @@ export class Settings {
       dateHours: cloneHours(this.dateHours),
       jira: { ...this.jira },
       rounding: this.rounding,
+      roundedDay: this.roundedDay,
       bgDots: this.bgDots,
     };
   }

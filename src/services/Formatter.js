@@ -1,8 +1,13 @@
 import { pad2 } from "../utils/datetime.js";
 
 /**
- * Conversions d'affichage : arrondi paramétrable (§6.6), décimal (§9.2),
- * Jira `w d h m` (§9.3) et horloge h:mm:ss. Lit `store.settings` en direct.
+ * Conversions d'affichage : décimal (§9.2), Jira `w d h m` (§9.3) et horloge
+ * h:mm:ss. Lit `store.settings` en direct.
+ *
+ * ⚠ Le formateur **n'arrondit pas** : l'arrondi est une décision de vue (il
+ * s'applique au total d'une tâche sur la journée, pas à chaque durée affichée).
+ * Il est appliqué en amont par `TimeCalculator.totalsForDay(day, true)` quand la
+ * vue arrondie de la journée est active.
  */
 export class Formatter {
   constructor(store) {
@@ -13,21 +18,15 @@ export class Formatter {
     return this.store.settings;
   }
 
-  /** Arrondit des minutes selon le mode courant (none|1m|5m|15m). */
-  round(minutes) {
-    const step = { none: 0, "1m": 1, "5m": 5, "15m": 15 }[this.s.rounding] ?? 0;
-    return step ? Math.round(minutes / step) * step : minutes;
-  }
-
   /** Décimal : 90 min → "1.5". */
   decimal(minutes) {
-    const hours = this.round(minutes) / 60;
+    const hours = minutes / 60;
     return String(parseFloat(hours.toFixed(2)));
   }
 
   /** Horloge H:mm pour l'affichage : 90 min → "1:30", 75 → "1:15". */
   clock(minutes) {
-    const total = Math.max(0, Math.round(this.round(minutes)));
+    const total = Math.max(0, Math.round(minutes));
     return Math.floor(total / 60) + ":" + pad2(total % 60);
   }
 
@@ -49,7 +48,7 @@ export class Formatter {
 
   /** Jira : "2w 4d 6h 45m" en omettant les zéros. */
   jira(minutes) {
-    let rest = Math.round(this.round(minutes));
+    let rest = Math.round(minutes);
     if (rest <= 0) return "0m";
     const dayUnit = this.effHoursPerDay() * 60;
     const weekUnit = dayUnit * this.effDaysPerWeek();

@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -65,6 +65,16 @@ export const DEFAULT_SETTINGS = Object.freeze({
   weekdayHours: {},  // exceptions par jour de semaine : { "5": [["08:30","12:50"]] }
   dateHours: {},     // exceptions par date : { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }
   jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
-  rounding: "none",
+  rounding: "none",  // pas d'arrondi | 1m | 5m | 15m | 30m | 1h (cf. ROUNDING_STEPS)
+  roundedDay: false, // vue « arrondi » de la journée (interrupteur des Tâches du jour)
   bgDots: false,     // fond dot-matrix réactif au curseur (easter-egg, off par défaut)
+});
+
+/**
+ * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au
+ * **total d'une tâche sur la journée**, pas à chaque segment : c'est la maille
+ * qu'on reporte dans Jira.
+ */
+export const ROUNDING_STEPS = Object.freeze({
+  none: 0, "1m": 1, "5m": 5, "15m": 15, "30m": 30, "1h": 60,
 });

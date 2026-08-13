@@ -59,6 +59,9 @@ export class Store extends EventEmitter {
    * valeur par défaut fournie par `Settings`, aucune transformation ici.
    * v5 → v6 : ajout de `task.link` (lien externe, ex. URL Jira) — purement
    * additif, valeur par défaut fournie par `Task`, aucune transformation ici.
+   * v6 → v7 : ajout du réglage `roundedDay` (vue arrondie de la journée) et de
+   * nouveaux pas d'arrondi (30m, 1h) — purement additif, valeurs par défaut
+   * fournies par `Settings`, aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};

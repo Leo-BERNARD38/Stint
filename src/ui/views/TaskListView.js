@@ -3,20 +3,34 @@ import { sameDay } from "../../utils/datetime.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import { icon } from "../icons.js";
 
-/** Liste des tâches du jour : durée, copie, et actions selon le cycle de vie. */
+/**
+ * Liste des tâches du jour : durée, copie, et actions selon le cycle de vie.
+ * Porte aussi l'interrupteur « Arrondi » : bascule l'affichage de la journée sur
+ * les totaux arrondis au pas configuré dans les réglages (§ Arrondi).
+ */
 export class TaskListView {
   constructor(app) {
     this.app = app;
     this.list = el("taskList");
     this.anchor = this.list;
+    this.toggle = el("roundedDay");
+    this.toggleRow = el("roundedDayRow");
+    this.toggleLabel = el("roundedDayLabel");
+  }
+
+  bind() {
+    this.toggle.addEventListener("change", (e) =>
+      this.app.store.updateSettings((s) => { s.roundedDay = e.target.checked; }));
   }
 
   render(viewDay) {
     const { store, calc } = this.app;
     this.list.innerHTML = "";
+    const rounded = this.#syncToggle();
+    this.list.classList.toggle("is-rounded", rounded);
 
     // Uniquement les tâches réellement tracées ce jour (un jour vide → liste vide).
-    const { byTask } = calc.totalsForDay(viewDay);
+    const { byTask } = calc.totalsForDay(viewDay, rounded);
     const taskIds = [...byTask.keys()];
 
     if (taskIds.length === 0) {
@@ -45,6 +59,28 @@ export class TaskListView {
       prevDone = !!t.done;
       this.list.appendChild(row);
     }
+  }
+
+  /**
+   * Met l'interrupteur en phase avec les réglages et renvoie l'état effectif :
+   * sans pas d'arrondi configuré il n'y a rien à arrondir → interrupteur inerte
+   * (mais on garde le réglage mémorisé, il reprend dès qu'un pas est choisi).
+   */
+  #syncToggle() {
+    const s = this.app.store.settings;
+    const step = s.roundingMinutes();
+    const active = !!s.roundedDay && step > 0;
+    this.toggle.checked = !!s.roundedDay;
+    this.toggle.disabled = step === 0;
+    this.toggleRow.classList.toggle("off", step === 0);
+    this.toggleRow.classList.toggle("on", active);
+    this.toggleRow.title = step === 0
+      ? "Choisissez un pas d'arrondi dans les réglages"
+      : "Afficher les tâches du jour arrondies au pas configuré";
+    this.toggleLabel.textContent = step === 0
+      ? "Arrondi"
+      : step >= 60 ? `Arrondi ${step / 60} h` : `Arrondi ${step} min`;
+    return active;
   }
 
   #row(task, minutes, isActive, share) {

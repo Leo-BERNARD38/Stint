@@ -64,8 +64,33 @@ export class TimeCalculator {
     return total;
   }
 
-  /** Agrégats d'une journée : total, par type, par tâche. */
-  totalsForDay(day) {
+  /**
+   * Agrégats d'une journée : total, par type, par tâche.
+   *
+   * `rounded` ⇒ chaque **total de tâche** est arrondi au pas configuré (§ réglage
+   * « Arrondi »), puis le total du jour et la ventilation par type sont
+   * recalculés depuis ces valeurs arrondies : ce qu'on lit reste la somme de ce
+   * qu'on reporte, ligne par ligne. On arrondit bien la tâche à la journée, et
+   * non chaque segment (des segments arrondis séparément dérivent vite).
+   */
+  totalsForDay(day, rounded = false) {
+    const raw = this.#rawTotalsForDay(day);
+    if (!rounded || !this.settings.roundingMinutes()) return raw;
+
+    const byTask = new Map();
+    const byType = { dev: 0, support: 0, autre: 0 };
+    let total = 0;
+    for (const [taskId, ms] of raw.byTask) {
+      const roundedMs = this.settings.roundMinutes(ms / 60000) * 60000;
+      byTask.set(taskId, roundedMs);
+      total += roundedMs;
+      const type = this.store.taskById(taskId)?.type ?? "autre";
+      byType[type] = (byType[type] ?? 0) + roundedMs;
+    }
+    return { total, byType, byTask, segments: raw.segments, rounded: true };
+  }
+
+  #rawTotalsForDay(day) {
     const segs = this.store.segmentsForDay(day);
     const ds = startOfDay(day).getTime();
     const de = ds + DAY_MS;
@@ -79,7 +104,7 @@ export class TimeCalculator {
       const type = this.store.taskById(seg.taskId)?.type ?? "autre";
       byType[type] = (byType[type] ?? 0) + ms;
     }
-    return { total, byType, byTask, segments: segs };
+    return { total, byType, byTask, segments: segs, rounded: false };
   }
 
   /** Fenêtre d'affichage de la timeline (plages ouvrées, élargies si débordement). */

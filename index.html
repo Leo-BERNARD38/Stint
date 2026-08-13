@@ -154,7 +154,14 @@
 
       <div class="journee-grid">
         <div class="journee-main dot-card">
-          <div class="block-title">Tâches du jour</div>
+          <div class="block-title">
+            Tâches du jour
+            <span class="grow"></span>
+            <label class="switch-row switch-mini" id="roundedDayRow">
+              <input type="checkbox" id="roundedDay">
+              <span id="roundedDayLabel">Arrondi</span>
+            </label>
+          </div>
           <div class="task-list" id="taskList"></div>
         </div>
         <aside class="journee-aside dot-card">
@@ -354,7 +361,15 @@
               <option value="1m">1 minute</option>
               <option value="5m">5 minutes</option>
               <option value="15m">15 minutes</option>
+              <option value="30m">30 minutes</option>
+              <option value="1h">1 heure</option>
             </select>
+          </div>
+          <div class="auto-info">
+            L'arrondi s'applique au <strong>total d'une tâche sur la journée</strong>
+            (pas segment par segment), et seulement quand l'interrupteur
+            « Arrondi » de l'onglet Journée est activé. Une tâche tracée ne
+            descend jamais à 0 : elle vaut au minimum un pas.
           </div>
         </div>
 
@@ -491,6 +506,12 @@
             vertical marque l'heure actuelle. L'onglet <b>Segments</b> permet d'éditer les heures,
             la tâche ou le mode brut, et d'ajouter une saisie manuelle.
           </p>
+          <p>
+            À droite de <b>Tâches du jour</b>, l'interrupteur <b>Arrondi</b> bascule la journée sur
+            des durées arrondies au pas choisi dans Réglages (ex. 30 min). L'arrondi porte sur le
+            <b>total de chaque tâche sur la journée</b>, pas sur chaque segment ; les totaux et les
+            copies Déc./Jira suivent, et une tâche tracée vaut au minimum un pas.
+          </p>
         </div>
 
         <div class="guide-block" id="g-5">
@@ -571,7 +592,8 @@
           <div class="block-title">Convertisseur de durée</div>
           <p class="muted">
             Saisissez une durée, obtenez tous les formats. Les unités Jira (<code>1d</code>,
-            <code>1w</code>) suivent vos horaires ; l'arrondi éventuel aussi.
+            <code>1w</code>) suivent vos horaires. Aucun arrondi ici : la durée saisie est convertie
+            telle quelle.
           </p>
           <div class="conv-row">
             <div class="field">

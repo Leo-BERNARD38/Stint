@@ -18,8 +18,13 @@ export class TotalsView {
 
   render(viewDay) {
     const fmt = this.app.formatter;
-    const { total, byType, segments } = this.app.calc.totalsForDay(viewDay);
+    // Suit l'interrupteur « Arrondi » des Tâches du jour : les totaux affichés
+    // restent la somme exacte des lignes lues juste à côté.
+    const s = this.app.store.settings;
+    const { total, byType, segments, rounded } =
+      this.app.calc.totalsForDay(viewDay, !!s.roundedDay);
     this.root.innerHTML = "";
+    this.root.classList.toggle("is-rounded", !!rounded);
 
     if (segments.length === 0) {
       this.root.appendChild(createEl("div", { className: "empty", text: "Rien de tracé ce jour." }));
