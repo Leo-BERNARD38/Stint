@@ -14,7 +14,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v81";
+const CACHE = "stint-v82";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
@@ -44,6 +44,7 @@ const CORE = [
   "./src/services/DataTransfer.js",
   "./src/services/Formatter.js",
   "./src/services/Persistence.js",
+  "./src/services/StatsAggregator.js",
   "./src/services/StorageInfo.js",
   "./src/services/TimeCalculator.js",
   "./src/ui/App.js",
@@ -68,7 +69,11 @@ const CORE = [
   "./src/ui/views/HeroView.js",
   "./src/ui/views/SegmentTableView.js",
   "./src/ui/views/SettingsView.js",
+  "./src/ui/views/StatsBreakdownView.js",
+  "./src/ui/views/StatsHeatmapView.js",
   "./src/ui/views/StatsTimelineView.js",
+  "./src/ui/views/StatsTrendView.js",
+  "./src/ui/views/StatsWeeksView.js",
   "./src/ui/views/StatsView.js",
   "./src/ui/views/StorageView.js",
   "./src/ui/views/TabsView.js",
@@ -79,6 +84,7 @@ const CORE = [
   "./src/ui/views/TotalsView.js",
   "./src/utils/clipboard.js",
   "./src/utils/datetime.js",
+  "./src/utils/curve.js",
   "./src/utils/dom.js",
   "./src/utils/intervals.js",
 ];

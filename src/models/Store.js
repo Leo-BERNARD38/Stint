@@ -23,6 +23,10 @@ export class Store extends EventEmitter {
     this.tasks = [];
     this.segments = [];
     this.meta = { lastExport: null };
+    // Compteur de révision : incrémenté à chaque mutation committée (et à chaque
+    // hydratation). Sert de clé de cache aux agrégats coûteux (StatsAggregator)
+    // pour ne pas rebalayer l'historique à chaque rendu.
+    this.rev = 0;
     const local = this.persistence.loadSync();
     if (local) { this.hydrate(local); this.#hadLocal = true; } // affichage instantané (miroir récent)
   }
@@ -49,6 +53,7 @@ export class Store extends EventEmitter {
     this.tasks = (data.tasks ?? []).map(Task.fromJSON);
     this.segments = (data.segments ?? []).map(Segment.fromJSON);
     this.meta = { lastExport: null, ...(data.meta ?? {}) };
+    this.rev += 1;
   }
 
   /**
@@ -96,6 +101,7 @@ export class Store extends EventEmitter {
   }
 
   #commit() {
+    this.rev += 1;
     this.persist();
     this.emit("change", this);
   }

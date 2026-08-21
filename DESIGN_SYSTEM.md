@@ -60,6 +60,18 @@ Sémantique définie **une seule fois** via `light-dark()`, pilotée par `[data-
 | `support` | `#4D1F1F` | `#FF9F9F` | `#F0584D` |
 | `autre` | `#26262B` | `#A6A6AE` | `#6B6B74` |
 
+### Intensité (rythme de Stats)
+Cinq paliers `--heat-0..4` **dérivés de `--accent`**, du vide au plein — jamais de gradient
+arc-en-ciel : l'intensité est une seule dimension, elle se lit en une seule teinte.
+
+| Palier | Valeur | Sens |
+|---|---|---|
+| `--heat-0` | `--text` à 7 % | rien de tracé ce jour-là |
+| `--heat-1` | `--accent` 26 % sur `--surface-2` | < 25 % de la journée planifiée |
+| `--heat-2` | `--accent` 48 % sur `--surface-2` | < 50 % |
+| `--heat-3` | `--accent` 72 % sur `--surface-2` | < 80 % |
+| `--heat-4` | `--accent` | ≥ 80 % |
+
 ### Couleur de tâche (libre)
 Chaque tâche porte une **couleur propre** (point carré arrondi + segment de timeline). Palette suggérée dans l'éditeur, plus sélecteur libre :
 `#5B8BFF · #F0584D · #2DD4BF · #9B78FF · #E8941F · #25B35C · #F3F3F5`
@@ -230,7 +242,25 @@ Points de copie : par tâche (Déc./Jira), par segment (durée), **récap Jira**
 - **Onglets de contenu** : Journée · Segments · Tâches · Stats.
 - **Écrans plein** : App, **Réglages** (Apparence/Thème, Horaires, Sauvegarde & données), **Guide** (sommaire collant + 6 sections).
 - **Header collant** translucide (`blur`), wordmark dot-matrix, pastille « Sauvegardé · il y a N h », icônes Thème / Réglages / Guide / Paramètres.
-- **Stats › Historique** : pistes journalières sur **axe horaire partagé** (8h–18h), clic sur une ligne ouvre le jour ; week-ends grisés (`opacity:.72`).
+- **Stats** : page de rétrospective, pilotée par une **fenêtre d'analyse** unique en tête
+  d'onglet (chips *4 semaines · 3 mois · 12 mois · Tout*) que tous les blocs suivent.
+  - **Cartes** — total (+ écart avec la période précédente, en flèche neutre : jamais de
+    vert/rouge sur un volume de travail), moyenne/jour actif, jours actifs, meilleur jour,
+    série, couverture des horaires.
+  - **Évolution** — aires empilées (ou courbes séparées) du temps par type, granularité
+    *Jour · Semaine · Mois*. SVG mesuré en pixels, lissage **monotone** (aucun dépassement
+    sous zéro), trame de points en fond, filets de repère `1px dashed var(--dot)`, axes
+    10,5 px `--text-faint` en `tabular-nums`. Légende cliquable = masquer une série.
+  - **Rythme** — calendrier en **pastilles rondes** (colonnes = semaines, lundi en haut),
+    5 paliers `--heat-0..4` dérivés de `--accent` = part de la journée planifiée tracée.
+  - **Semaine par semaine** — barre empilée par type, total, jours actifs, écart ; la ligne
+    **se déplie** sur le détail « tâche → durée » (même dépliage en `grid-template-rows 0fr→1fr`
+    que l'onglet Tâches), et le bouton **Jira** copie ce récap.
+  - **Répartition** — barres par type (avec %) et profil lun→dim (le jour de pointe en
+    `--accent` plein, les autres en retrait).
+  - **Top tâches** — pastille de couleur, nom, badge, barre de part, durée, copies Déc./Jira.
+  - **Historique** : pistes journalières sur **axe horaire partagé** (8h–18h), clic sur une
+    ligne ouvre le jour ; week-ends grisés (`opacity:.72`).
 
 ---
 

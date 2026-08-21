@@ -95,4 +95,12 @@
   --dot-dev: light-dark(#2f6df6, #5b8bff);
   --dot-support: light-dark(#e1463c, #f0584d);
   --dot-autre: light-dark(#b8b8c0, #6b6b74);
+
+  /* Rythme (Stats) : 5 paliers d'intensité d'une journée, du vide au plein.
+     Dérivés de --accent pour rester justes dans les deux thèmes. */
+  --heat-0: color-mix(in srgb, var(--text) 7%, transparent);
+  --heat-1: color-mix(in srgb, var(--accent) 26%, var(--surface-2));
+  --heat-2: color-mix(in srgb, var(--accent) 48%, var(--surface-2));
+  --heat-3: color-mix(in srgb, var(--accent) 72%, var(--surface-2));
+  --heat-4: var(--accent);
 }

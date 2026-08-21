@@ -85,3 +85,21 @@ export function formatLongDate(d) {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 }
+
+/**
+ * Numéro de semaine ISO 8601 (1..53). Convention : la semaine 1 est celle qui
+ * contient le premier jeudi de l'année. On se déplace donc au jeudi de la
+ * semaine visée, puis on compte les semaines depuis le 1ᵉʳ janvier de SON année
+ * (une date de fin décembre peut appartenir à la semaine 1 de l'année suivante).
+ */
+export function isoWeek(d) {
+  const thu = startOfDay(d);
+  thu.setDate(thu.getDate() + (4 - isoDow(thu)));
+  const jan1 = new Date(thu.getFullYear(), 0, 1);
+  return Math.round((thu - jan1) / 604800000) + 1;
+}
+
+/** Lundi de la semaine ISO contenant `d` (minuit local). */
+export function mondayOf(d) {
+  return addDays(startOfDay(d), -(isoDow(d) - 1));
+}

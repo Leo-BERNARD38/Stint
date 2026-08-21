@@ -7,12 +7,15 @@ import { createEl, escapeHtml } from "../../utils/dom.js";
  *
  * Câblée une seule fois sur `host` (délégation : les blocs sont reconstruits à
  * chaque rendu). `parent` est le conteneur de positionnement qui reçoit le tip ;
- * `top` (optionnel) fixe l'ordonnée, sinon le tip s'aligne sur le bloc survolé.
+ * `top` (optionnel) fixe l'ordonnée, sinon le tip s'aligne sur le bloc survolé ;
+ * `selector` désigne les marques survolables — les blocs de Stats (colonnes du
+ * graphique, pastilles du rythme) portent les mêmes `data-*` sans être des
+ * segments de timeline.
  *
  * @returns {{ mount: () => void }} `mount()` ré-insère le tip — à rappeler
  *   après un rendu qui vide `parent` (le tip est détruit avec son contenu).
  */
-export function attachTimelineTip(host, { parent = host, top = null } = {}) {
+export function attachTimelineTip(host, { parent = host, top = null, selector = ".tl-seg" } = {}) {
   const tip = createEl("div", { className: "tl-tip" });
   let current = null;
 
@@ -22,7 +25,7 @@ export function attachTimelineTip(host, { parent = host, top = null } = {}) {
   };
 
   const move = (e) => {
-    const seg = e.target.closest(".tl-seg");
+    const seg = e.target.closest(selector);
     if (!seg) { hide(); return; }
     if (seg !== current) {
       current = seg;

@@ -25,6 +25,7 @@ src/
     datetime.js            Dates/heures, ISO local, jour ISO, toMin, cap
     intervals.js           overlap / union / soustraction / découpe ouvrée d'intervalles
     dom.js                 Sélecteurs, escapeHtml, createEl
+    curve.js               Chemins SVG : polyligne, spline monotone, aire fermée
     clipboard.js           Copie presse-papier (avec repli)
   models/                  DOMAINE
     Settings.js            Réglages (horaires 3 niveaux, Jira, arrondi)
@@ -34,6 +35,7 @@ src/
   services/                LOGIQUE TRANSVERSE
     Persistence.js         Stockage double zone : IndexedDB (complet) + miroir localStorage (30 j)
     TimeCalculator.js      Temps ouvré, agrégats, fenêtre timeline, trous
+    StatsAggregator.js     Agrégats rétrospectifs de Stats (séries, semaines, rythme, KPI)
     Formatter.js           Décimal, Jira, arrondi, horloge
     DataTransfer.js        Export/import JSON, export CSV, téléchargement
     StorageInfo.js         Estimation d'occupation (navigator.storage.estimate)
@@ -49,7 +51,8 @@ src/
       TimelineTip.js       Infobulle partagée des timelines (.tl-tip)
     views/                 Une vue = une région du DOM (bind optionnel + render + anchor)
       HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView,
-      TotalsView, TaskListView, SegmentTableView, StatsView, StatsTimelineView,
+      TotalsView, TaskListView, SegmentTableView, StatsView, StatsTrendView,
+      StatsHeatmapView, StatsWeeksView, StatsBreakdownView, StatsTimelineView,
       AllTasksView, SettingsView, StorageView, ToolsView
     modals/
       Modal.js             Base (ouverture/fermeture)
@@ -71,6 +74,10 @@ UI  ◀────────────────────────�
   `startNew`, `resume`, `updateSegment`, …) mutent l'état, persistent une fois, puis
   émettent `change`. Les primitives privées (`#startSegment`, `#stopActive`, …) ne
   committent pas : elles sont composées par les commandes pour éviter les doubles écritures.
+- **`StatsAggregator`** produit un instantané rétrospectif (séries par type, récap
+  hebdomadaire, rythme journalier, top tâches, indicateurs) **mémoïsé sur `store.rev`** :
+  les six blocs de l'onglet Stats lisent le même objet au lieu de rebalayer l'historique
+  chacun de leur côté.
 - **`App`** écoute `change` et appelle `render(viewDay)` sur chaque vue **visible**
   (une vue déclare son élément `anchor` ; celles sous un ancêtre `[hidden]` — autre
   onglet, autre écran — sont rendues à la bascule). Il détient l'état purement UI :

@@ -3,7 +3,7 @@ import { TASK_TYPES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import {
-  sameDay, addDays, isoDow, startOfDay, fmtClock, fmtDateInput, pad2, cap,
+  sameDay, addDays, mondayOf, startOfDay, fmtClock, fmtDateInput, pad2, cap,
 } from "../../utils/datetime.js";
 
 /**
@@ -109,7 +109,7 @@ export class AllTasksView {
       };
     }
     if (this.filter.group === "week") {
-      const monday = addDays(startOfDay(d), -(isoDow(d) - 1));
+      const monday = mondayOf(d);
       return {
         key: fmtDateInput(monday),
         label: "Semaine du " + monday.toLocaleDateString("fr-FR", { day: "numeric", month: "long" }),

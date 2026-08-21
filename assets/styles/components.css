@@ -51,6 +51,9 @@
 }
 .block-title .hint { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--text-faint); letter-spacing: 0; }
 .block-title .grow { flex: 1; }
+/* Deux groupes de chips côte à côte dans un titre (Stats › Évolution) : sans
+   respiration ils se lisent comme un seul contrôle segmenté. */
+.block-title .chip-group + .chip-group { margin-left: var(--sp-3); }
 .muted { font-size: 13.5px; color: var(--text-soft); margin: 0 0 var(--sp-4); line-height: 1.6; }
 
 /* ---------- Onglets (texte au-dessus du curseur glissant) ---------- */
@@ -706,6 +709,191 @@
 .stat-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Tête d'onglet : fenêtre d'analyse ---------- */
+.stats-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+.stats-head .hint { font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+/* Écart avec la période précédente : information, pas jugement — donc pas de
+   code couleur vert/rouge, juste une flèche discrète. */
+.stat-delta { margin-top: 4px; font-size: 11px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.stat-card:first-child .stat-delta { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+
+.sub-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint);
+  margin-bottom: var(--sp-4); }
+.stats-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
+@media (max-width: 760px) { .stats-split { grid-template-columns: 1fr; gap: var(--sp-6); } }
+.stat-type-pct { min-width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+
+/* ---------- Évolution : courbes par type ----------
+   Le SVG est dessiné en pixels réels par la vue (mesure de `clientWidth`) : ici
+   on ne pose que le cadre, la trame de points et les axes. */
+.chart { position: relative; --chart-gutter: 46px; }
+.chart-body { display: flex; gap: var(--sp-3); }
+.chart-y { position: relative; width: var(--chart-gutter); flex-shrink: 0; }
+.chart-y-lab { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap;
+  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.chart-plot { position: relative; flex: 1; min-width: 0; height: 200px; overflow: hidden;
+  background: var(--surface-2); border-radius: var(--radius-sm);
+  background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
+  background-size: 11px 11px; background-position: center; }
+.chart-svg { display: block; }
+.chart-hits { position: absolute; inset: 0; }
+/* Colonnes de survol : invisibles, elles ne servent qu'à l'infobulle et au
+   repère vertical. */
+.chart-hit { position: absolute; top: 0; bottom: 0; }
+.chart-hit::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--accent); opacity: 0; transition: opacity .12s var(--ease); }
+.chart-hit:hover::before { opacity: .5; }
+.chart-x { position: relative; height: 15px; margin-top: var(--sp-2);
+  margin-left: calc(var(--chart-gutter) + var(--sp-3));
+  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.chart-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.chart-legend { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
+.chart-legend .chip-val { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
+/* Ici « actif » veut dire « série affichée » : on reste sobre plutôt que de
+   remplir trois pilules à l'accent. */
+.chart-legend .chip.active { background: var(--surface); color: var(--text); }
+.chart-legend .chip.active:hover { background: var(--surface-hover); }
+.chart-legend .chip:not(.active) { opacity: .42; }
+
+/* ---------- Rythme : une pastille par jour ----------
+   Colonnes = semaines, lignes = jours (lundi en haut). Les libellés de jour
+   partagent la même hauteur de rangée que les pastilles (étirement de grille),
+   donc l'alignement ne dépend d'aucune valeur en dur. */
+.heatmap { overflow-x: auto; padding-bottom: 2px; }
+.hm { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-2); }
+.hm-months, .hm-cells { justify-self: start; width: 100%;
+  max-width: calc(var(--hm-cols) * 22px); min-width: calc(var(--hm-cols) * 7px); }
+.hm-months { display: grid; grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); gap: 3px;
+  font-size: 10px; color: var(--text-faint); }
+.hm-months span { white-space: nowrap; }
+.hm-dows { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; align-items: center;
+  font-size: 9.5px; color: var(--text-faint); }
+.hm-cells { display: grid; grid-auto-flow: column; gap: 3px;
+  grid-template-rows: repeat(7, 1fr); grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); }
+.hm-cell, .hm-hole, .hm-swatch { aspect-ratio: 1; border-radius: 50%; max-width: 18px; }
+.hm-cell[data-level="0"], .hm-swatch[data-level="0"] { background: var(--heat-0); }
+.hm-cell[data-level="1"], .hm-swatch[data-level="1"] { background: var(--heat-1); }
+.hm-cell[data-level="2"], .hm-swatch[data-level="2"] { background: var(--heat-2); }
+.hm-cell[data-level="3"], .hm-swatch[data-level="3"] { background: var(--heat-3); }
+.hm-cell[data-level="4"], .hm-swatch[data-level="4"] { background: var(--heat-4); }
+/* Jour non travaillé et vide : présent mais en retrait (ce n'est pas un trou). */
+.hm-cell.off[data-level="0"] { opacity: .45; }
+.hm-cell[data-day] { cursor: pointer; transition: box-shadow .12s var(--ease); }
+.hm-cell[data-day]:hover { box-shadow: 0 0 0 2px var(--dot); }
+.hm-legend { display: flex; align-items: center; gap: 4px; margin-top: var(--sp-4);
+  font-size: 10.5px; color: var(--text-faint); }
+.hm-legend .hm-swatch { width: 11px; }
+
+/* ---------- Semaine par semaine ---------- */
+.weeks { display: flex; flex-direction: column; }
+.wk-item { border-bottom: 1px dotted var(--dot); }
+.wk-item:last-of-type { border-bottom: none; }
+.wk { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3); margin: 0 calc(var(--sp-3) * -1); border-radius: var(--radius-sm);
+  cursor: pointer; transition: background-color .15s var(--ease); }
+.wk:hover { background: var(--surface); }
+.wk:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.wk-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0;
+  transition: transform .3s var(--ease-spring); }
+.wk-item.open .wk-chev { transform: rotate(90deg); }
+.wk-id { width: 108px; flex-shrink: 0; }
+.wk-num { display: block; font-family: var(--font-display); font-size: 15px; }
+.wk-sub { display: block; font-size: 11px; color: var(--text-faint); }
+.wk-track { flex: 1 1 140px; min-width: 90px; height: 8px; background: var(--surface-2);
+  border-radius: var(--radius-pill); overflow: hidden; }
+.wk-fill { display: flex; height: 100%; border-radius: var(--radius-pill); overflow: hidden;
+  transition: width .4s var(--ease-out); }
+.wk-fill span { display: block; }
+.wk-total { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+  font-variant-numeric: tabular-nums; }
+.wk-meta { width: 104px; text-align: right; font-size: 11.5px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+.wk-delta { width: 66px; text-align: right; font-size: 12px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; }
+.wk-copy { margin-left: auto; flex-shrink: 0; }
+.wk-more { margin-top: var(--sp-4); align-self: flex-start; }
+/* Les actions ne s'allument qu'au survol de la ligne : la colonne reste calme. */
+.wk:not(:hover):not(:focus-within) .wk-copy { background: transparent; color: var(--text-faint); }
+
+/* Détail « tâche → durée » de la semaine — la vue du débrief du lundi.
+   Le contenu reste dans le DOM, replié en hauteur 0, pour pouvoir s'animer. */
+.wk-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }
+.wk-item.open .wk-body { grid-template-rows: 1fr; }
+.wk-tasks { display: flex; flex-direction: column; gap: 1px; overflow: hidden; min-height: 0;
+  padding: 2px 0 var(--sp-3) calc(15px + var(--sp-3)); opacity: 0; transition: opacity .26s var(--ease); }
+.wk-item.open .wk-tasks { opacity: 1; }
+.wk-task { display: flex; align-items: center; gap: var(--sp-3); padding: 6px var(--sp-3);
+  border-radius: 7px; font-size: 13.5px; transition: background-color .12s var(--ease); }
+.wk-task:hover { background: var(--surface); }
+.wk-task-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-task-name .type-badge, .wk-task-name .badge-done { flex-shrink: 0; }
+.wk-task-share { width: 40px; text-align: right; color: var(--text-faint); font-size: 12px;
+  font-variant-numeric: tabular-nums; }
+.wk-task-dur { width: 52px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wk-task-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
+.wk-task:not(:hover):not(:focus-within) .mini-btn { background: transparent; color: var(--text-faint); }
+@media (max-width: 760px) {
+  .wk-tasks { padding-left: 0; }
+  .wk-task { flex-wrap: wrap; }
+  .wk-task-name { flex: 1 1 60%; }
+  .wk-task-actions { margin-left: auto; }
+}
+
+/* ---------- Profil par jour de semaine ---------- */
+.weekday-profile { display: flex; align-items: stretch; gap: var(--sp-2); height: 146px; }
+.wd { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.wd-val { height: 13px; font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.wd.peak .wd-val { color: var(--text); font-weight: 700; }
+.wd-track { position: relative; flex: 1; width: 100%; background: var(--surface-2);
+  border-radius: var(--radius-xs); overflow: hidden;
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px);
+  background-size: 10px 10px; background-position: center; }
+/* Le jour le plus chargé porte l'accent plein ; les autres restent en retrait,
+   sinon la semaine n'est qu'une rangée de pavés pleins. */
+.wd-bar { position: absolute; left: 0; right: 0; bottom: 0;
+  background: color-mix(in srgb, var(--accent) 46%, var(--surface-2));
+  border-radius: var(--radius-xs); transition: height .4s var(--ease-out); }
+.wd.peak .wd-bar { background: var(--accent); }
+.wd-lab { font-size: 11px; color: var(--text-faint); }
+
+/* ---------- Top tâches ---------- */
+.top-tasks { display: flex; flex-direction: column; }
+.tt { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0;
+  border-bottom: 1px dotted var(--dot); cursor: pointer; }
+.tt:last-child { border-bottom: none; }
+.tt:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.tt-main { flex: 1; min-width: 0; }
+.tt-name { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 7px;
+  font-size: 14px; min-width: 0; }
+/* L'ellipse doit porter sur le texte, pas sur le conteneur flex — sinon le nom
+   est coupé net au milieu d'une lettre en étroit. */
+.tt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt-name .type-badge, .tt-name .badge-done { flex-shrink: 0; }
+.tt-share { width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+.tt-dur { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+  font-variant-numeric: tabular-nums; }
+.tt-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
+.tt-rest { padding-top: var(--sp-4); font-size: 12.5px; color: var(--text-faint); }
+/* En étroit, la ligne flex écrasait le nom de tâche à zéro : on repasse en
+   grille sur deux rangées pour que le nom garde toute la largeur. */
+@media (max-width: 760px) {
+  .tt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "sw name share dur" "sw act act act";
+    column-gap: var(--sp-3); row-gap: 8px; align-items: center; }
+  .tt > .swatch { grid-area: sw; align-self: start; margin-top: 3px; }
+  .tt-main { grid-area: name; }
+  .tt-share { grid-area: share; width: auto; }
+  .tt-dur { grid-area: dur; }
+  .tt-actions { grid-area: act; justify-content: flex-end; }
+  /* Le badge de type mange la place du nom en étroit ; la pastille de couleur et
+     le bloc « Répartition par type » juste au-dessus portent déjà l'info. */
+  .tt-name .type-badge { display: none; }
+}
 
 /* ---------- Timeline d'historique (Mois / Année) ---------- */
 .st-nav { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }

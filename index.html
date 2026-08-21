@@ -239,9 +239,71 @@
       <div class="all-tasks" id="allTasks"></div>
     </section>
 
-    <!-- ---------------------------- Onglet : Stats (vue d'ensemble, tout-temps) ---------------------------- -->
+    <!-- ---------------------------- Onglet : Stats (rétrospective, tout-temps) ---------------------------- -->
     <section class="tab-panel" data-panel="stats" hidden>
+      <div class="stats-head">
+        <div class="chip-group" id="stPeriod" role="group" aria-label="Période analysée"></div>
+        <span class="hint" id="stPeriodLabel">—</span>
+      </div>
+
       <div class="stats-cards" id="statsCards"></div>
+
+      <div class="stat-block">
+        <div class="block-title">
+          Évolution
+          <span class="hint">temps par type dans le temps · survol = détail</span>
+          <span class="grow"></span>
+          <div class="chip-group" id="stGrain" role="group" aria-label="Granularité">
+            <button class="chip" data-grain="day">Jour</button>
+            <button class="chip active" data-grain="week">Semaine</button>
+            <button class="chip" data-grain="month">Mois</button>
+          </div>
+          <div class="chip-group" id="stMode" role="group" aria-label="Mode d'affichage">
+            <button class="chip active" data-mode="stacked">Empilé</button>
+            <button class="chip" data-mode="split">Séparé</button>
+          </div>
+        </div>
+        <div class="chart" id="statsTrend"></div>
+        <div class="chart-legend" id="statsTrendLegend"></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="block-title">
+          Rythme
+          <span class="hint">une pastille par jour · survol = détail · clic = ouvrir le jour</span>
+        </div>
+        <div class="heatmap" id="statsHeatmap"></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="block-title">
+          Semaine par semaine
+          <span class="hint">clic sur une semaine = détail tâche par tâche · « Jira » copie le récap</span>
+        </div>
+        <div class="weeks" id="statsWeeks"></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="block-title">Répartition</div>
+        <div class="stats-split">
+          <div>
+            <div class="sub-title">Par type</div>
+            <div class="stats-types" id="statsTypes"></div>
+          </div>
+          <div>
+            <div class="sub-title">Par jour de semaine</div>
+            <div class="weekday-profile" id="statsWeekdays"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <div class="block-title">
+          Top tâches
+          <span class="hint">sur la période · Déc. / Jira copient la durée</span>
+        </div>
+        <div class="top-tasks" id="statsTopTasks"></div>
+      </div>
 
       <div class="stat-block">
         <div class="block-title">
@@ -260,11 +322,6 @@
           <button id="stNow" class="btn-ghost">Aujourd'hui</button>
         </div>
         <div class="st-timeline" id="statsTimeline"></div>
-      </div>
-
-      <div class="stat-block">
-        <div class="block-title">Répartition par type</div>
-        <div class="stats-types" id="statsTypes"></div>
       </div>
     </section>
     </div><!-- /#appScreen -->
@@ -529,12 +586,31 @@
         </div>
 
         <div class="guide-block" id="g-6">
-          <h3>Onglet Stats — vue d'ensemble</h3>
+          <h3>Onglet Stats — rétrospective</h3>
           <p>
-            Le panorama de tout ton historique : <b>cartes de synthèse</b> (total, semaine, mois,
-            nombre de tâches, jours actifs), une <b>timeline</b> (échelle <b>Mois · Année</b> ;
-            survol = détail, clic = ouvrir le jour) et la <b>répartition par type</b>.
+            La page « qu'est-ce que j'ai fait ces derniers temps ». Tout y suit une
+            <b>fenêtre d'analyse</b> unique, choisie en haut : <b>4 semaines · 3 mois · 12 mois ·
+            Tout</b>.
           </p>
+          <ul>
+            <li><b>Cartes</b> — total (avec l'écart vs la période précédente), moyenne par jour
+              actif, jours actifs, meilleur jour, série en cours, et <b>couverture</b> : la part de
+              tes horaires réellement tracée.</li>
+            <li><b>Évolution</b> — le temps par type dans le temps, en <b>Jour · Semaine · Mois</b>.
+              <b>Empilé</b> pour lire le total, <b>Séparé</b> pour comparer les tendances. Clique une
+              couleur de la légende pour masquer sa série.</li>
+            <li><b>Rythme</b> — une pastille par jour : plus elle est pleine, plus la journée
+              planifiée a été tracée. Les creux et les vacances sautent aux yeux. Clic = ouvrir le
+              jour.</li>
+            <li><b>Semaine par semaine</b> — total, mélange, jours actifs et écart avec la semaine
+              d'avant. <b>Clique une semaine</b> pour la déplier tâche par tâche (durée et part de
+              chacune) : c'est la vue du débrief du lundi matin. Le bouton <b>Jira</b> copie ce même
+              récap « tâche → durée », prêt à coller.</li>
+            <li><b>Répartition</b> — par type et par jour de semaine ; puis le <b>top tâches</b> de
+              la période, avec les copies <b>Déc.</b> / <b>Jira</b>.</li>
+            <li><b>Timeline</b> — l'historique fin (échelle <b>Mois · Année</b> ; survol = détail,
+              clic = ouvrir le jour).</li>
+          </ul>
         </div>
 
         <div class="guide-block" id="g-7">

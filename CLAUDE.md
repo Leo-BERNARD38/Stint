@@ -47,7 +47,7 @@ src/
   core/
     constants.js        STORAGE_KEY, SCHEMA_VERSION, DAY_MS, PALETTE, DEFAULT_SETTINGS, THEMES…
     EventEmitter.js     on/off/emit (base du Store)
-  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard
+  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard · curve
   models/               DOMAINE
     Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
     Task.js  Segment.js modèles (fromJSON/toJSON)
@@ -55,6 +55,7 @@ src/
   services/
     Persistence.js      stockage 2 zones : IndexedDB (complet) + miroir localStorage 30 j (§6)
     TimeCalculator.js   temps ouvré (intersection créneaux), agrégats, timeline, trous
+    StatsAggregator.js  agrégats rétrospectifs de l'onglet Stats (§10)
     Formatter.js        décimal / Jira / clock(H:mm) / hms ; unités Jira auto (§5)
     DataTransfer.js     export/import JSON, export CSV
     StorageInfo.js      estimation d'occupation (navigator.storage.estimate)
@@ -70,7 +71,8 @@ src/
 
 Vues (toutes ajoutées à `App.views`) :
 `HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView, TotalsView,
-TaskListView, SegmentTableView, StatsView, StatsTimelineView, AllTasksView,
+TaskListView, SegmentTableView, StatsView, StatsTrendView, StatsHeatmapView,
+StatsWeeksView, StatsBreakdownView, StatsTimelineView, AllTasksView,
 SettingsView, StorageView, ToolsView`.
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
@@ -93,6 +95,8 @@ SettingsView, StorageView, ToolsView`.
   `#guideScreen` / `#toolsScreen` (pages pleines, ouvertes via le header). `showScreen()`.
 - Onglets gérés par `TabsView` ; le sélecteur de jour (`#dayHead`) est masqué sur
   les onglets « Tâches » et « Stats » (vues tout-temps).
+- `statsPeriod` (`4w|3m|12m|all`) est le second état d'UI : la fenêtre d'analyse de
+  l'onglet Stats, que **toutes** ses vues suivent (`App.setStatsPeriod`).
 - `App.start()` est **async** : rendu instantané (miroir local, retire le squelette
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
@@ -247,7 +251,27 @@ Lancer ces contrôles (rapides, en Node) :
 - **Je ne peux pas voir le rendu** dans cet environnement : signaler les
   changements visuels à valider par l'utilisateur (capture clair + sombre).
 
-## 10. Pièges déjà rencontrés (à connaître)
+## 10. Onglet Stats (rétrospective)
+
+Une **seule** agrégation sert les 6 blocs : `StatsAggregator.snapshot(période)` renvoie
+un objet **mémoïsé sur `store.rev`** (compteur incrémenté à chaque commit et à chaque
+hydratation). Sans lui, chaque bloc rebalaierait l'historique à chaque `App.render()`
+(mutation + tick 15 s). Si un segment tourne, la clé de cache inclut la minute courante.
+
+- Tout part de **`calc.segmentMs(seg, from, to)`** : lui seul connaît le brut/net et le
+  rognage horaire. On agrège **par jour**, puis on recompose semaines et mois — le temps
+  compté est additif sur des jours disjoints, donc la somme des tranches vaut toujours
+  le total (propriété couverte par les tests).
+- Les semaines du récap sont calculées **entières** (lundi → dimanche) même quand la
+  période les coupe, plus une semaine en amont qui sert de base à l'écart.
+- Le graphique est un **SVG en pixels réels** (mesure de `clientWidth` au rendu, comme
+  l'axe de `TimelineView`) + `ResizeObserver` — pas de `viewBox` étiré, qui déformerait
+  l'épaisseur des traits. Lissage **monotone** (`utils/curve.js`) : jamais de dépassement
+  sous zéro sur des séries en dents de scie.
+- Les marques survolables (colonnes du graphique, pastilles du rythme) réutilisent
+  `attachTimelineTip` via son option `selector` et le contrat `data-name/range/dur/color`.
+
+## 11. Pièges déjà rencontrés (à connaître)
 
 - **`hidden` annulé par `display`** : un élément avec l'attribut `hidden` mais une
   règle `display:flex/grid` reste visible. Garde-fou global présent
@@ -263,7 +287,7 @@ Lancer ces contrôles (rapides, en Node) :
 - **Course de données au démarrage** : on câble les interactions **après**
   `store.ready()` pour qu'un clic précoce ne soit pas écrasé par le chargement IDB.
 
-## 11. Git
+## 12. Git
 
 - Développer et pousser sur **`master`** (branche de déploiement).
 - **Messages de commit en français**, descriptifs (sujet + corps expliquant le

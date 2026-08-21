@@ -2,6 +2,7 @@ import { Store } from "../models/Store.js";
 import { Persistence } from "../services/Persistence.js";
 import { TimeCalculator } from "../services/TimeCalculator.js";
 import { Formatter } from "../services/Formatter.js";
+import { StatsAggregator } from "../services/StatsAggregator.js";
 import { DataTransfer } from "../services/DataTransfer.js";
 import { Timer } from "./Timer.js";
 
@@ -18,6 +19,10 @@ import { SegmentTableView } from "./views/SegmentTableView.js";
 import { AllTasksView } from "./views/AllTasksView.js";
 import { StatsView } from "./views/StatsView.js";
 import { StatsTimelineView } from "./views/StatsTimelineView.js";
+import { StatsTrendView } from "./views/StatsTrendView.js";
+import { StatsHeatmapView } from "./views/StatsHeatmapView.js";
+import { StatsWeeksView } from "./views/StatsWeeksView.js";
+import { StatsBreakdownView } from "./views/StatsBreakdownView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
@@ -47,11 +52,13 @@ export class App {
     this.store = new Store(new Persistence());
     this.calc = new TimeCalculator(this.store);
     this.formatter = new Formatter(this.store);
+    this.stats = new StatsAggregator(this.store, this.calc);
     this.timer = new Timer();
     this.dayGlyphAnimator = new DayGlyphAnimator();
     this.bgDots = new BgDots(el("bgDots")); // fond réactif au curseur (easter-egg)
     this.viewDay = startOfDay(new Date());
     this.screen = "app"; // app | settings | guide | tools
+    this.statsPeriod = "3m"; // fenêtre de l'onglet Stats (état d'UI, comme viewDay)
 
     this.toast = new Toast();
     this.modals = {
@@ -88,6 +95,10 @@ export class App {
       new TaskListView(this),
       new SegmentTableView(this),
       new StatsView(this),
+      new StatsTrendView(this),
+      new StatsHeatmapView(this),
+      new StatsWeeksView(this),
+      new StatsBreakdownView(this),
       new StatsTimelineView(this),
       new AllTasksView(this),
       new SettingsView(this),
@@ -174,6 +185,13 @@ export class App {
   setViewDay(d) { this.viewDay = startOfDay(d); this.render(); }
   shiftDay(n) { this.setViewDay(addDays(this.viewDay, n)); }
   goToday() { this.setViewDay(new Date()); }
+
+  /** Fenêtre d'analyse de l'onglet Stats (voir `StatsAggregator.STATS_PERIODS`). */
+  setStatsPeriod(key) {
+    if (this.statsPeriod === key) return;
+    this.statsPeriod = key;
+    this.render();
+  }
 
   /** Depuis « Tâches » : ouvre un jour ("YYYY-MM-DD") dans l'onglet Segments. */
   goToDaySegments(dayKey) {
