@@ -178,6 +178,12 @@ Notes :
   seule fois** via `light-dark(clair, sombre)` ; `[data-theme]`
   (`light|dark|system`) ne pilote que `color-scheme`. **Aucune couleur en dur**
   hors `variables.css` (seule exception : le blanc sur un fond minium plein).
+- **Trois niveaux de surface, jamais quatre** : page (`--bg`) → panneau
+  (`--surface`, une vraie carte avec un cheveu d'ombre) → creux (`--surface-2` :
+  pistes, tuiles, champs). Corollaire : un contrôle qui vaut `--surface`
+  disparaît dans un panneau `--surface` — pilules, mini-boutons, selects et
+  champs **teintent** donc leur hôte (`--ctl`, 7 % d'encre) au lieu de nommer une
+  surface.
 - **Hiérarchie à 4 niveaux — une couleur = une information.** C'est la règle qui
   tient tout le reste :
   - **N1 minium** (`--stop`) : l'instant. Chrono en marche, filet de la carte
@@ -185,12 +191,31 @@ Notes :
   - **N2 contraste inversé** (`--inverse-bg` / `--inverse-fg`) : le registre.
     **Deux ancres seulement** — total du jour et tête des Stats — plus le
     sélecteur de jour. Au-delà, l'inversion ne hiérarchise plus rien.
-  - **N3 bleu de Prusse** (`--accent`) : **la seule couleur de ce qui se clique**.
-    Onglets, chips, boutons primaires, glyphes des 4 boutons, rampe du rythme.
+  - **N3 bleu de Prusse** (`--accent`) : **la seule couleur de ce qui se clique**,
+    et à **deux étages** — aplat plein pour la barre d'onglets et elle seule,
+    **lavis + anneau** pour tout ce qui se sélectionne en dessous (chips, jours
+    travaillés, contrôle segmenté, sous-nav des Réglages). Sans cette
+    distinction, les Stats alignaient quatre pilules bleues pleines dans leurs
+    400 premiers pixels. Un seul glyphe coloré parmi les 4 gros boutons : celui
+    de Play — dans une rangée où tout se clique, l'accent ne dit plus
+    « cliquable », il dit « celui-là ».
   - **N4** : `--text` / `--text-soft` / `--text-faint`.
   - Trois teintes de service, jamais hors de leur rôle : **ambre** (`--pause`) =
     ce qui manque, **vert** (`--play`/`--finish`) = ce qui est acquis, **minium**
-    = ce qui s'arrête.
+    = ce qui s'arrête. Chacune en **deux intensités** : `--x` l'aplat, `--x-ink`
+    le petit texte (y compris sur son wash) ; le texte posé dessus prend
+    `--on-signal`.
+  - **Le filet minium de 3 px** est la signature de « c'est celle-là qui
+    tourne » : carte du chrono, bouton Play en marche, ligne de tâche active.
+- **Contraste : tout texte à ≥ 4,5:1** (≥ 3:1 au-delà de 24 px). Les trois
+  encres (`--text` / `--text-soft` / `--text-faint`) passent le seuil sur les
+  trois surfaces ; elles se ressemblent donc, et c'est voulu — la hiérarchie se
+  joue sur la **taille et la casse**, jamais sur la pâleur ni sur l'`opacity`.
+  Contrôle automatisé (§9).
+- **La perforation** (`.perf`) est le seul ornement de l'app : la bande
+  détachable du carnet de pointage, entre l'instrument et le journal (Journée) et
+  entre la tête de période et les blocs d'analyse (Stats). Deux emplois, pas
+  plus — partout, elle ne serait plus qu'une décoration.
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
   (`--surface`, `--surface-2`) et **espace**. Échelle `--sp-1..7`.
 - **Papier chaud le jour, Ardoise la nuit** — jamais de blanc ni de noir purs. Le
@@ -199,6 +224,9 @@ Notes :
 - **Contraste d'échelle** : étiquettes minuscules en capitales, chiffres énormes
   (rapport de 1 à 8 sur une même page). C'est ce qui rend l'info immédiate — pas
   la décoration.
+- **Une seule grammaire de barre de part** (piste à 8-10 % d'encre, remplissage
+  plein, coins en pilule) pour toute proportion : part d'une tâche, composition
+  du jour, couverture, semaines des Stats, stockage.
 - **Rayons** resserrés (`--radius-lg` 16 / `--radius` 12 / `--radius-sm` 9 /
   `--radius-xs` 7 / `--radius-pill` 999) : l'app se lit comme un instrument de
   mesure. Les pilules restent pour ce qui se clique.
@@ -253,6 +281,19 @@ Lancer ces contrôles (rapides, en Node) :
 - **CSS** : accolades équilibrées par fichier ; tout `var(--x)` utilisé est défini
   dans `variables.css` ; **aucune couleur en dur** hors `variables.css`.
 - **Plancher Bitcount** : aucune règle `--font-display` sous 16 px.
+- **Contraste** : à faire **sur le DOM rendu**, pas sur les jetons — le fond réel
+  d'un texte dépend des surfaces empilées au-dessus, des opacités d'ancêtres et
+  parfois d'un pseudo-élément (le curseur d'onglets). Recette : une page qui
+  charge `index.html` dans une `<iframe>`, attend la fin du démarrage, injecte
+  `*{transition:none!important;animation:none!important}` dans le document de
+  l'iframe (sans quoi on mesure une couleur en cours d'interpolation), puis pour
+  chaque élément porteur de texte remonte la chaîne des fonds jusqu'au premier
+  opaque et calcule le rapport WCAG. Capturer le rapport avec `--dump-dom`.
+  Trois pièges à reproduire : multiplier les `opacity` de tous les ancêtres ;
+  n'accepter un `::before`/`::after` comme fond que s'il **couvre** l'élément
+  mesuré ; tenir compte de son `transform` (sinon la pilule d'onglet est
+  attribuée aux quatre onglets). Seuil : 4,5:1, ou 3:1 au-delà de 24 px.
+  **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
 - **Service worker** : tout fichier servi est dans `CORE`, et `CORE` ne référence
   aucun fichier disparu.
 - **Logique métier** : tests ad hoc en Node ESM avec une persistance **simulée**

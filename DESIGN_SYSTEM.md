@@ -62,34 +62,70 @@ Trois teintes de service complètent l'ensemble, et ne sortent jamais de leur r�
 | `--surface-2` | `#eeeade` | `#262320` | zones enfoncées : pistes, sous-blocs |
 | `--surface-hover` | `#e2ddcf` | `#302c28` | survol |
 | `--skeleton` | `#dcd7c8` | `#2c2825` | placeholder de chargement |
+| `--ctl` / `--ctl-hover` | 7 % / 13 % d'encre | idem | fond des contrôles **translucide** |
+
+**Trois niveaux, jamais quatre** : page (`--bg`) → panneau (`--surface`) → creux
+(`--surface-2` : pistes, tuiles, champs, sous-blocs). Une carte est une carte —
+pas un filet pointillé sur le fond de page.
+
+Corollaire : un contrôle qui vaut `--surface` **disparaît** dans un panneau
+`--surface`. Les pilules, mini-boutons, selects et champs de recherche ne
+nomment donc pas de surface — ils **teintent leur hôte** (`--ctl`). Une valeur,
+aucun cas particulier, et rien à réécrire quand une carte change de fond.
+C'est le même piège que la modale avait révélé une première fois.
 
 ### Texte, accent, inversion
 
 | Jeton | Jour | Nuit | Usage |
 |---|---|---|---|
 | `--text` | `#131a20` | `#f2eee3` | texte primaire, afficheurs |
-| `--text-soft` | `#5c6873` | `#a79f92` | corps secondaire |
-| `--text-faint` | `#8d97a0` | `#726b61` | légendes, placeholders |
+| `--text-soft` | `#475159` | `#aea699` | corps secondaire (≥ 6,4:1) |
+| `--text-faint` | `#60666d` | `#948a7e` | légendes, surtitres, axes (≥ 4,6:1) |
 | `--accent` | `#1e5273` | `#74b6d9` | **N3** — la seule couleur de ce qui se clique |
 | `--accent-text` | `#ffffff` | `#06121c` | texte sur accent |
 | `--accent-soft` / `--accent-wash` | `#4b7f9e` / `#d9e3e9` | `#4d87a5` / `#1a2c36` | variantes (reprise, fonds doux) |
 | `--inverse-bg` / `--inverse-fg` | `#131a20` / `#f2efe6` | `#f2eee3` / `#131211` | **N2** |
 
+**Les trois encres passent toutes le seuil AA sur les trois surfaces.** Elles se
+ressemblent donc plus qu'avant, et c'est le point : la hiérarchie se joue sur la
+**taille et la casse** — un surtitre de 9,5 px en capitales espacées ne se
+confond pas avec un nom de tâche de 15 px, même à contraste égal. Elle ne peut
+pas se jouer sur la pâleur, parce qu'un texte pâle ne se lit pas, il se devine.
+Ne jamais rabaisser `--text-faint` « pour faire discret » : pour faire discret,
+on réduit la taille ou on met des capitales, pas le contraste.
+
+**Ne jamais atténuer du texte à l'opacité** non plus : `opacity: .62` sur une
+ligne de la pile de précédence la faisait tomber à 2,5:1. Pour reculer un
+élément, on lui retire son fond ou on descend d'un cran d'encre.
+
 ### Teintes de service
 
-| Jeton | Jour | Nuit | Wash (jour / nuit) |
-|---|---|---|---|
-| `--stop` | `#d8402b` | `#ff6a4a` | `#f6dfd8` / `#3b1d15` |
-| `--pause` | `#b8781a` | `#e5a93f` | `#f0e2c4` / `#382b12` |
-| `--play` = `--finish` | `#3f7a4e` | `#63b473` | `#d9e7d9` / `#182f1d` |
-| `--new` = `--accent` · `--resume` = `--accent-soft` | — | — | — |
+Chaque teinte existe en **deux intensités**, parce qu'une couleur ne se comporte
+pas pareil selon qu'elle porte le texte ou qu'elle le supporte :
+
+- `--x` — l'**aplat** : fond de bouton, barre, filet, gros chiffre ;
+- `--x-ink` — l'**encre** : petit texte de cette couleur, y compris sur son wash.
+
+En thème sombre les deux coïncident (la teinte y est déjà claire). Le texte posé
+**sur** un aplat de service prend `--on-signal` (blanc le jour, encre la nuit) :
+le blanc sur l'ambre nocturne valait 2,08:1.
+
+| Jeton | Jour | Nuit | Encre (jour) | Wash (jour / nuit) |
+|---|---|---|---|---|
+| `--stop` | `#cc3823` | `#ff6a4a` | `#b93320` | `#f6dfd8` / `#3b1d15` |
+| `--pause` | `#a3690f` | `#e5a93f` | `#8b590d` | `#f0e2c4` / `#382b12` |
+| `--play` = `--finish` | `#367044` | `#63b473` | = `--play` | `#d9e7d9` / `#182f1d` |
+| `--on-signal` | `#ffffff` | `#131211` | — | — |
+| `--new` = `--accent` · `--resume` = `--accent-soft` | — | — | — | — |
 
 `--ring` (focus) est un minium à 45 % : le focus se voit, toujours.
 
 ### Types de tâche
 
 Dérivés, jamais recopiés : `dev` → `--accent-wash` / `--accent`, `support` →
-`--stop-wash` / `--stop`, `autre` → `--text` à 8 % / `--text-soft`.
+`--stop-wash` / `--stop-ink`, `autre` → `--text` à 8 % / `--text-soft`. Le badge
+porte l'**encre** de la teinte, pas son aplat : c'est du texte de 9 px sur un
+wash.
 
 ### Intensité (rythme de Stats)
 
@@ -108,6 +144,13 @@ Un libellé posé **sur** une couleur de tâche ne peut pas choisir sa couleur e
 palette est libre) : `utils/color.js` calcule la luminance et la vue pose `on-dark` /
 `on-light`. Le seuil (0,198) est le point d'équilibre des contrastes WCAG entre un texte
 blanc et un texte encre — calculé, pas tâtonné.
+
+Au point d'équilibre, les deux choix valent ~4,15:1 : il existe donc une bande de
+luminance où **aucun** texte ne passe le seuil. Les teintes de `PALETTES` sont
+choisies hors de cette bande (cinq d'entre elles ont été décalées de quelques
+points pour cela). Une couleur saisie à la main par l'utilisateur peut toujours y
+tomber — c'est le prix d'une palette libre, et `color.js` prend alors le meilleur
+des deux.
 
 ---
 
@@ -130,13 +173,19 @@ sont écrits par l'application, latin-ext n'y sert à rien.
 
 ### Échelle de texte
 
+Le rapport entre le plus petit et le plus grand est de **1 à 8 sur une même page**.
+C'est lui qui rend l'information immédiate — pas la décoration, et pas la couleur.
+
 | Usage | Taille | Police |
 |---|---|---|
-| Total de la période (Stats) | clamp(40 → 68) | display |
-| Chrono héros | clamp(38 → 52) | display |
-| Total du jour | 46 | display |
+| Total de la période (Stats) | clamp(44 → 78) | display |
+| Total du jour | clamp(40 → 56) | display |
+| Chrono héros | clamp(38 → 54) | display |
 | Afficheur du convertisseur | clamp(30 → 46) | display |
 | Titre de page | clamp(28 → 38) | head |
+| Brut / net (Outils) | 34 | display |
+| Format converti | 31 | display |
+| Tuile de stats | 29 | display |
 | Total de la journée (rail) | 26 | display |
 | Durée d'une tâche | 21 | display |
 | Ventilation, couverture | 20 / 21 | display |
@@ -183,7 +232,12 @@ infobulles, popover de remplissage.
 - **Fond réactif au curseur** (`BgDots`, optionnel) : **même pas de 22 px** — il éclaire ce
   grain au lieu d'y superposer un second réseau (moiré assuré sinon).
 - **Grille de points** (pistes, timeline, graphiques) : `--dot-grid` (10 %), pas 11 px.
-- **Filet pointillé** (séparateurs) : `1px dotted var(--dot)` (16 %).
+- **Filet pointillé** (séparateurs de lignes) : `1px dotted var(--dot)` (16 %).
+- **Perforation** (`.perf`) : la bande détachable du carnet de pointage — une rangée de
+  trous de `--perf` (21 %), pas 19 px. C'est le **seul ornement** de l'app, et il porte
+  une information : ici on change de registre. Deux emplois, pas plus — entre
+  l'instrument et le journal (Journée), entre la tête de période et les blocs
+  d'analyse (Stats). En mettre partout la réduirait à une décoration.
 - **Graduation horaire** : `--rule-hour` (12 %) toutes les heures, `--rule-hour-maj` (24 %)
   toutes les deux.
 - **Glyphes dot-matrix** : SVG grille **7×7**, `r="0.5"` jointifs, `fill` plein. Le set est
@@ -208,28 +262,64 @@ infobulles, popover de remplissage.
 ## 6 · Composants
 
 ### Boutons d'action (les 4)
-Cœur de l'app. **74 px de haut**, glyphe dot-matrix à gauche en `--accent`, libellé 15 px,
-raccourci en Plex Mono. Play/Pause est **un tiers plus large** : c'est l'action qu'on vise
-le plus souvent. En marche, il devient **plein minium** — comme la carte à côté. Au repos,
-carte neutre : le vert ne dit qu'une chose ici, « c'est acquis ».
+Cœur de l'app. **74 px de haut**, glyphe dot-matrix à gauche, libellé 15 px et raccourci
+en Plex Mono **empilés** contre le glyphe (étirés d'un bord à l'autre, ils faisaient lire
+une ligne de tableau). Play/Pause est **un tiers plus large** : c'est l'action qu'on vise
+le plus souvent.
+
+**Un seul glyphe coloré**, celui de Play : dans une rangée où tout se clique, l'accent ne
+peut plus dire « cliquable », il dit « celui-là ». Et la couleur du bouton principal dit
+**ce qu'il va faire** — accent au repos, minium en marche. En marche : lavis `--stop-wash`
++ filet de 3 px, pas un aplat plein. L'aplat faisait de la mise en pause l'élément le plus
+fort de la page, plus fort que le chrono qu'elle arrête.
+
+Ce **filet minium de 3 px** est la signature de « c'est celle-là qui tourne » : carte du
+chrono, bouton Play, ligne de tâche active. Trois endroits, un seul geste.
 
 ### Carte de tâche active
 Quand ça tourne : filet minium de 3 px au bord gauche, pastille qui bat (`livePulse`),
 chrono en `--stop`. En pause, tout s'atténue.
 
 ### Carte « Total du jour »
-Contraste **inversé** (N2), scène dot-matrix animée en filigrane plein cadre, total géant.
+Contraste **inversé** (N2), scène dot-matrix animée en filigrane plein cadre, total géant
+(`clamp(40, 4.6vw, 56)`), puis les deux autres unités de report en Plex Mono : décimal et
+Jira. H:mm est la seule des trois qu'on ne colle jamais nulle part — la carte ne pouvait
+pas s'arrêter là, et son bas restait vide.
 Affiche toujours le **jour réel**, indépendamment du jour sélectionné.
 
 ### Onglets segmentés · nav de jour · chips
-Onglets et chips actifs = `--accent` (N3). Nav de jour = **inversée** (N2), date en Plex
-Mono. Le curseur glisse en `spring`.
+
+**Deux étages d'« actif », et un seul aplat plein.**
+
+| Étage | Rendu | Où |
+|---|---|---|
+| navigation principale | aplat `--accent` + `--accent-text` | la barre d'onglets, et rien d'autre |
+| sélection secondaire | **lavis** `--accent-wash` + `--accent` + anneau 1,5 px | chips, jours travaillés, contrôle segmenté, sous-nav des Réglages, interrupteur en pilule |
+
+Sans cette distinction, les Stats alignaient quatre pilules bleues pleines dans leurs
+400 premiers pixels — onglet, période, granularité, mode — quatre fois le même signal
+maximal pour quatre niveaux de décision différents. L'anneau vient de la pile de
+précédence des horaires : c'est la même idée, « celui-ci l'emporte ».
+
+La barre d'onglets est **pleine largeur** : centrée sur 460 px, elle flottait au milieu
+d'une page vide, et son aplat bleu devenait l'objet le plus saturé de l'écran, posé sur
+rien. Étalée, elle redevient de la structure. Le curseur glisse en `spring`.
+
+Nav de jour = **inversée** (N2), compacte, date en Plex Mono ; à sa droite, ce que la
+journée **prévoit** (durée planifiée + créneaux retenus) — sans ce dénominateur, la
+couverture et les trous ne se comparent à rien.
+
+Exception : dans la légende du graphe d'évolution, « actif » veut dire « série
+affichée », pas « option choisie » — ni lavis ni anneau, l'opacité des séries masquées
+suffit.
 
 ### Réglages
 Grille à deux colonnes : **sous-nav collante** (la section visible s'allume) + contenu.
 **Une ligne = un réglage** (`.set-row`) : libellé et explication à gauche, contrôle aligné
 à droite. C'est cette colonne de droite qui rend la page lisible. Interrupteurs dessinés
 sur l'`input` lui-même (`appearance:none` + `::after`) — le JS ne connaît que `.checked`.
+**Un groupe = une carte** : à nu sur le fond de page, les cinq groupes se suivaient sans
+frontière, et seuls les titres minuscules disaient qu'on avait changé de sujet.
 
 ### Pile de précédence des horaires
 Les trois niveaux (base, jour de semaine, date) affichés **pour une date de référence**, le
@@ -237,14 +327,31 @@ gagnant cerclé d'encre, plus un **ruban** dessinant le planning retenu à l'éc
 pure de `Settings.blocksFor()` : aucune règle n'est réimplémentée dans la vue.
 
 ### Outils
-La saisie du convertisseur **est** l'afficheur (Bitcount). Les quatre formats sont des
-cartes copiables, Jira devant sur `--accent-wash`. Le calcul brut/net **se dessine** : un
-ruban montre l'intervalle en hachures et, par-dessus, les portions comptées en encre
-(`TimeCalculator.workRangesBetween`).
+**Un outil = une carte.** La saisie du convertisseur **est** l'afficheur (Bitcount). Les
+quatre formats sont des cartes copiables, Jira devant sur `--accent-wash`. Le calcul
+brut/net **se dessine** : un ruban montre l'intervalle en hachures et, par-dessus, les
+portions comptées en encre (`TimeCalculator.workRangesBetween`).
 
 ### Stats
-**Bandeau de tête** en contraste inversé : total de la période en Bitcount jusqu'à 68 px +
-écart en pastille. Les cinq autres indicateurs reculent d'un cran.
+**Une tête de période, pas deux rangées** : le bandeau inversé et ses cinq tuiles vivent
+dans une seule carte. Séparés, ils se lisaient comme deux blocs de poids égal, et la
+question « alors, cette période ? » restait sans réponse.
+
+Le bandeau : total en Bitcount jusqu'à **78 px** à gauche ; à droite l'écart en pastille
+et la **composition de la période** (barre empilée + légende). Sans elle, l'aplat inversé
+était vide aux deux tiers, et la ventilation par type n'apparaissait qu'en bas de page.
+Sur fond inversé la barre se nuance en `currentColor` : les couleurs de type y seraient
+illisibles.
+
+Les cinq tuiles reculent d'un cran (`--surface-2` dans la carte). Seule « Couverture »
+porte une jauge — c'est la seule des cinq qui soit une **part** ; sur une durée ou un
+compteur, une barre ne voudrait rien dire.
+
+### Barres de part
+Une seule grammaire pour toute proportion, quel que soit l'écran : piste en encre à 8-10 %,
+remplissage plein, coins en pilule. Emplois : part d'une tâche dans la journée, composition
+du jour (rail Totaux), couverture du jour, semaines des Stats, jauge de couverture,
+composition de la période, occupation du stockage.
 
 ### Champs de formulaire
 Pas de bordure : le fond enfoncé suffit. Focus = anneau minium. Select au chevron maison.
@@ -336,6 +443,14 @@ semaine, dans le convertisseur et dans le calcul brut/net.
 
 ## 10 · Accessibilité & garde-fous
 
+- **Contraste ≥ 4,5:1 pour tout texte** (≥ 3:1 au-delà de 24 px), vérifié sur le DOM
+  **rendu** et non sur les jetons : le fond effectif se calcule en remontant les surfaces,
+  opacités d'ancêtres et pseudo-éléments compris (cf. CLAUDE.md §9). Zéro défaut sur les
+  six écrans, dans les deux thèmes — c'est un état à maintenir, pas un objectif atteint
+  une fois.
+- Ne jamais atténuer du texte à l'`opacity`, ni rabaisser `--text-faint` « pour faire
+  discret » : pour reculer un élément, on réduit sa taille, on passe en capitales, ou on
+  lui retire son fond.
 - Anneau de focus minium visible partout ; cibles tactiles ≥ 30 px, ≥ 44 px pour les
   actions principales.
 - `prefers-reduced-motion` coupe l'ensemble des animations.
