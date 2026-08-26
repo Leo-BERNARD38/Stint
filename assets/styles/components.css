@@ -326,6 +326,30 @@
 .untracked:has(.untracked-zero) { background: var(--play-wash); }
 .untracked:has(.untracked-zero) .untracked-head .k { color: var(--play); }
 
+/* ---------- Couverture du jour (rail Totaux) ----------
+   L'autre face du « temps non tracé » : la part de la journée PLANIFIÉE qui est
+   effectivement tracée. Une barre, pas un anneau — c'est le seul repère
+   circulaire qu'aurait porté l'interface, et il n'aurait ressemblé à rien
+   d'autre. Elle reprend exactement la grammaire de la barre de part des tâches
+   et de la jauge de stockage. */
+.coverage { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: 7px; padding: 0 var(--sp-1); }
+.cov-top { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+/* Bitcount ne descend jamais sous 16 px : la matrice se refermerait. */
+.cov-pct { font-family: var(--font-display); font-weight: 400; font-size: 21px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--accent); }
+.cov-k { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--text-faint); }
+.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); }
+.cov-track i { display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width .4s var(--ease-out); }
+.cov-lab { display: flex; justify-content: space-between; gap: var(--sp-3);
+  font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+/* Journée bouclée : le vert dit « c'est acquis », ici comme partout ailleurs. */
+.coverage.is-done .cov-pct, .coverage.is-done .cov-track i { color: var(--play); background: var(--play); }
+.coverage.is-done .cov-pct { background: none; }
+
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {
   position: relative; overflow: hidden;
