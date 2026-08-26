@@ -95,13 +95,26 @@
       <!-- Héros 2 colonnes : tâche active (gauche) + total du jour (droite, day-glyph) -->
       <div class="hero">
         <div class="active-card" id="activeCard">
-          <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
-          <div class="active-meta">
-            <div class="active-label" id="activeLabel">Tâche active</div>
-            <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
-            <div class="active-extra" id="activeExtra"></div>
+          <div class="active-main">
+            <div class="active-dot" id="activeDot" style="background: var(--text-faint)"></div>
+            <div class="active-meta">
+              <div class="active-label" id="activeLabel">Tâche active</div>
+              <div class="active-name idle" id="activeName">Aucune tâche en cours</div>
+              <div class="active-extra" id="activeExtra"></div>
+            </div>
+            <div class="active-timer idle" id="activeTimer">0:00:00</div>
           </div>
-          <div class="active-timer idle" id="activeTimer">0:00:00</div>
+          <!-- Repos des yeux (20-20-20). Affiché seulement quand le rappel est
+               actif ET qu'un chrono tourne : c'est du temps d'écran continu, il
+               n'a de sens que pendant qu'on en accumule. Cliquer repousse le
+               repos ; pendant le repos, l'achève. -->
+          <button type="button" class="eye-strip" id="eyeStrip" hidden>
+            <span class="eye-ic" data-icon="eye" data-icon-size="14"></span>
+            <span class="eye-lab" id="eyeLabel" aria-live="polite">Repos des yeux</span>
+            <span class="eye-since" id="eyeSince"></span>
+            <span class="eye-count" id="eyeCount"></span>
+            <span class="eye-track"><i id="eyeFill"></i></span>
+          </button>
         </div>
         <!-- Carte « Total du jour » (toujours visible) : remplie par DayTotalView,
              scène day-glyph animée en fond. -->
@@ -522,7 +535,11 @@
                 <span>Règle <strong>20-20-20</strong> : toutes les 20 minutes, fixer pendant
                   20 secondes quelque chose à ~6 mètres. Le rappel ne tourne que
                   <strong>chrono en marche</strong> : il démarre au lancement d'une tâche, boucle
-                  tant que ça compte, et repart de zéro après une pause.</span>
+                  tant que ça compte, et repart de zéro après une pause — changer de tâche,
+                  lui, ne coupe rien, c'est le même temps d'écran. Une fois activé, un
+                  <strong>bandeau</strong> apparaît sous la tâche en cours : temps d'écran
+                  continu, temps restant avant le prochain repos, puis le décompte des
+                  20 secondes. Un clic dessus repousse le repos — ou l'achève.</span>
               </span>
               <span class="set-ctl"><input type="checkbox" id="setEyeBreak" class="sw"></span>
             </label>
@@ -535,7 +552,7 @@
                 </span>
               </div>
               <div class="set-row">
-                <span class="set-lab"><b>Notifications</b><span>Sans permission, le rappel s'affiche en bandeau dans l'onglet Stint.</span></span>
+                <span class="set-lab"><b>Notifications</b><span>En plus du bandeau, un rappel système — utile quand Stint n'est pas la fenêtre au premier plan. Sans permission, le bandeau reste, et un toast s'affiche dans l'onglet.</span></span>
                 <span class="set-ctl">
                   <button class="btn" id="eyeBreakAsk">Autoriser</button>
                   <button class="btn" id="eyeBreakTest">Tester</button>

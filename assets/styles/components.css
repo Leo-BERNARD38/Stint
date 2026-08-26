@@ -78,9 +78,14 @@
 .active-card {
   position: relative; overflow: hidden;
   background: var(--surface); border-radius: var(--radius-lg);
-  padding: var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 128px;
+  padding: var(--sp-5); display: flex; flex-direction: column; justify-content: center;
+  gap: var(--sp-4); min-height: 128px;
   min-width: 0; /* autorise le rétrécissement dans la grille héros (pas de débordement) */
 }
+/* La rangée d'instrument : pastille · tâche · chrono. Le bandeau du repos des
+   yeux s'empile DESSOUS quand il existe, et la carte reste centrée quand il
+   n'existe pas — c'est le cas par défaut, le rappel étant coupé d'origine. */
+.active-main { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; transition: box-shadow .2s var(--ease); }
 /* Battement : le seul mouvement permanent de l'interface. */
 @keyframes livePulse {
@@ -103,6 +108,79 @@
 .active-card.paused .active-name, .active-card.paused .active-extra,
 .active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
 .active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
+
+/* ---------- Repos des yeux (20-20-20) ----------
+   Un bandeau, pas une carte : il vit DANS la carte de l'instrument, dont il
+   commente le chrono. Creux (`--surface-2`, le troisième et dernier niveau de
+   surface), une seule ligne, et la même grammaire de barre de part que partout
+   ailleurs — piste à 9 % d'encre, remplissage plein, coins en pilule.
+
+   La barre se VIDE, avant le repos comme pendant : elle dit exactement ce que
+   dit le nombre posé à sa gauche, « ce qu'il reste ». Un remplissage qui monte
+   à côté d'un nombre qui descend, ce sont deux lectures pour une information.
+
+   Deux registres, et rien entre les deux. En attente : de l'encre douce et un
+   remplissage d'accent — c'est ce qui SE MESURE. Pendant les vingt secondes :
+   le tampon, parce que c'est le seul moment où l'application demande quelque
+   chose MAINTENANT. Le décompte est alors le nombre qui tourne, et il est en
+   Bitcount comme tous les nombres qui tournent. */
+.eye-strip {
+  display: flex; align-items: center; gap: 9px;
+  width: 100%; padding: 6px 11px; border: none; text-align: left;
+  /* Hauteur FIGÉE : le décompte des vingt secondes est plus gros que le temps
+     restant, et une bande qui grandit à l'instant du repos ferait sauter toute
+     la carte — la règle vaut ici comme ailleurs, ce qui est à l'écran ne bouge
+     pas sous les yeux. */
+  min-height: 38px;
+  background: var(--surface-2); border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  transition: background-color .2s var(--ease), color .2s var(--ease);
+}
+.eye-strip:hover { background: var(--surface-hover); }
+.eye-ic { display: flex; color: var(--text-faint); flex-shrink: 0; }
+.eye-lab {
+  font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: .17em; color: var(--text-faint); white-space: nowrap;
+}
+.eye-since {
+  font-family: var(--font-data); font-size: 11px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+/* Le décompte est la dernière chose lue avant la barre : il garde sa piste, à
+   droite, pour ne pas danser d'une seconde à l'autre. */
+.eye-count {
+  margin-left: auto; flex-shrink: 0; line-height: 1;
+  font-family: var(--font-data); font-size: 12px; font-weight: 500;
+  color: var(--text-soft); font-variant-numeric: tabular-nums;
+  text-align: right; min-width: 74px; white-space: nowrap;
+}
+.eye-track {
+  flex-shrink: 0; width: 84px; height: 6px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 9%, transparent); overflow: hidden;
+}
+.eye-track i {
+  display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width .3s linear;
+}
+/* Les vingt secondes. */
+.eye-strip.resting { background: var(--stop-wash); color: var(--stop-ink); }
+.eye-strip.resting:hover { background: color-mix(in srgb, var(--stop) 18%, var(--stop-wash)); }
+.eye-strip.resting .eye-ic,
+.eye-strip.resting .eye-lab,
+.eye-strip.resting .eye-since { color: var(--stop-ink); }
+.eye-strip.resting .eye-track { background: color-mix(in srgb, var(--stop) 22%, transparent); }
+.eye-strip.resting .eye-track i { background: var(--stop); }
+/* L'instruction n'est pas une étiquette : on la lit, on ne la survole pas. Elle
+   quitte donc les capitales mono de 9,5 px pour une vraie phrase. */
+.eye-strip.resting .eye-lab {
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  text-transform: none; letter-spacing: .01em;
+}
+.eye-strip.resting .eye-count {
+  font-family: var(--font-display); font-size: 24px; font-weight: 400;
+  color: var(--stop-ink); letter-spacing: .02em; min-width: 46px;
+}
 
 /* ---------- Gros boutons (flat : glyphe à gauche, libellé empilé) ----------
    Quatre actions, quatre vraies cibles : 74 px de haut, du souffle autour du

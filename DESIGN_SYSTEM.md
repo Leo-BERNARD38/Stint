@@ -374,6 +374,38 @@ fort que le chrono qu'elle arrête.
 Quand ça tourne : pastille qui bat (`livePulse`) et chrono en `--stop`. Deux choses, pas
 trois, et **aucun filet de bord**. En pause, tout s'atténue.
 
+### Bandeau « repos des yeux »
+Un **bandeau, pas une carte** : il vit *dans* la carte de l'instrument, dont il commente
+le chrono. Creux (`--surface-2`, le troisième et dernier niveau de surface), une ligne,
+et la grammaire de barre de part commune à toute l'app.
+
+Il n'apparaît que si le rappel est actif **et** qu'un chrono tourne. Sinon rien : on ne
+réserve pas une bande à l'écran pour une fonction qu'on n'a pas activée, et la carte se
+recentre.
+
+**Deux registres, rien entre les deux.**
+
+| | Fond | Contenu | Barre |
+|---|---|---|---|
+| En attente | `--surface-2` | étiquette mono + écran continu · « dans 12:40 » | `--accent` |
+| Les 20 s | `--stop-wash` | *phrase* « Regardez au loin, 6 mètres » · décompte Bitcount | `--stop` |
+
+Trois règles s'y appliquent, toutes déjà écrites ailleurs :
+
+- **La barre se vide**, avant le repos comme pendant. Elle dit exactement ce que dit le
+  nombre posé à sa droite : *ce qu'il reste*. Un remplissage qui monte à côté d'un nombre
+  qui descend, ce sont deux lectures pour une seule information.
+- **Le tampon pour les vingt secondes seulement.** C'est le seul moment où l'application
+  demande quelque chose *maintenant* — donc `--stop`, et le décompte est un nombre qui
+  tourne, donc en Bitcount comme tous les nombres qui tournent.
+- **Hauteur figée** entre les deux états (`min-height`). Le décompte du repos est plus
+  gros que le temps restant ; une bande qui grandit à l'instant du repos ferait sauter
+  toute la carte, et rien de ce qui est à l'écran ne bouge sous les yeux.
+
+L'étiquette change de nature avec l'état, et c'est voulu : en attente c'est un **libellé**
+(mono, capitales, 9,5 px, on le survole), pendant le repos c'est une **phrase** (corps,
+12 px, on la lit).
+
 ### Lignes de listes (tâches du jour, onglet Tâches, table Segments)
 Grille, jamais flex, et **la durée en dernière piste** — collée au bord droit, à la même
 abscisse sur toutes les lignes, quel que soit le nombre d'actions (une tâche avec lien en

@@ -6,16 +6,30 @@
  *     (`cache: "reload"`, GitHub Pages sert avec un max-age de 10 min) ;
  *   - assets même origine : cache d'abord (on sert la version précachée, le
  *     réseau ne sert qu'aux ressources oubliées de CORE) ;
- *   - navigation : réseau d'abord avec délai de garde, repli app shell en cache
- *     (ouverture instantanée même sur réseau lent) ;
+ *   - navigation : app shell EN CACHE d'abord, réseau en repli seulement. Le
+ *     réseau d'abord semblait plus sûr : il ne l'était pas. `fetch()` consulte le
+ *     cache HTTP, et GitHub Pages sert avec `max-age=600` — pendant dix minutes
+ *     après un déploiement, la navigation renvoyait donc l'ANCIEN index.html
+ *     depuis le disque, pendant que les assets, eux, venaient du précache de la
+ *     NOUVELLE version (rempli avec `cache:"reload"`). Vieux HTML + CSS/JS neufs :
+ *     exactement le panachage que ce fichier prétend interdire, et la seule raison
+ *     pour laquelle il fallait un Ctrl+F5. Le précache, lui, contient l'index.html
+ *     de SA version : servi d'abord, la cohérence est garantie, et c'est la mise à
+ *     jour du service worker (et elle seule) qui fait passer à la version
+ *     suivante ;
  *   - polices : auto-hébergées et précachées (CORE) → servies cache-d'abord
  *     comme les autres assets même origine, aucune requête tierce ;
  *   - nouvelle version : purge de l'ancien cache, prise de contrôle, puis la
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v95";
+const CACHE = "stint-v96";
 const NAV_TIMEOUT_MS = 2500;
+/* Racine de l'application (sw.js est à côté d'index.html) : « /Stint/ » sur
+   GitHub Pages, « / » ailleurs. Sert à ne réclamer QUE les navigations de
+   l'app — une autre page servie par le même hôte ne doit pas recevoir sa
+   coquille. */
+const SCOPE = new URL("./", self.location.href).pathname;
 
 const CORE = [
   "./",
@@ -134,10 +148,19 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
 
-  // Navigations : réseau d'abord, mais sans attendre un réseau lent (délai de
-  // garde) — l'app shell en cache assure une ouverture instantanée.
+  // Navigations : app shell précaché d'abord (ouverture instantanée ET cohérente
+  // avec les assets de la même version), réseau seulement s'il manque — première
+  // visite, ou cache purgé par le navigateur. Voir l'en-tête du fichier : c'est
+  // ici que se jouait le « il faut faire Ctrl+F5 après un déploiement ».
   if (req.mode === "navigate") {
+    // Une seule page dans cette app : sa racine et son index.html. Toute autre
+    // navigation dans la portée (une page voisine posée sur le même hôte) part
+    // au réseau sans que le service worker s'en mêle.
+    const path = url.pathname;
+    if (path !== SCOPE && path !== SCOPE + "index.html") return;
     event.respondWith((async () => {
+      const shell = await caches.match("./index.html", { cacheName: CACHE });
+      if (shell) return shell;
       try {
         return await Promise.race([
           fetch(req),

@@ -18,17 +18,82 @@
  * Notification : `registration.showNotification` quand un service worker
  * contrôle la page (seule voie sur Android/PWA), sinon `new Notification`.
  * Sans permission accordée, repli sur le toast interne — jamais de silence.
+ *
+ * Le module tient aussi l'ÉTAT que l'interface affiche (bandeau du héros, cf.
+ * `HeroView`) : temps restant avant le prochain repos, durée d'écran continu, et
+ * le repos lui-même — 20 secondes décomptées dans la page. Une notification
+ * système se rate (fenêtre au premier plan, « ne pas déranger », permission
+ * refusée) ; le bandeau, lui, est toujours là. Ce sont deux canaux du même
+ * évènement, pas deux fonctionnalités.
  */
 export class EyeBreak {
   /** Titre et corps de la notification (règle 20-20-20). */
   static TITLE = "Repos des yeux";
   static BODY = "Regardez à 6 mètres pendant 20 secondes.";
   static TAG = "stint-eye-break";
+  /** Durée du repos lui-même : les 20 secondes de la règle. Pas un réglage —
+   *  c'est la moitié du nom de la règle, et le seul chiffre qu'on ne discute pas. */
+  static REST_MS = 20_000;
+  /** Deux segments séparés de moins de cela sont le MÊME temps d'écran : les
+   *  horodatages sont à la seconde, et un changement de tâche ferme l'un et
+   *  ouvre l'autre au même instant. */
+  static TOUCH_MS = 2_000;
 
   constructor(app) {
     this.app = app;
-    this.deadline = 0;   // horodatage (ms) du prochain rappel ; 0 = désarmé
+    this.deadline = 0;    // horodatage (ms) du prochain rappel ; 0 = désarmé
+    this.restUntil = 0;   // horodatage (ms) de fin du repos en cours ; 0 = pas de repos
+    this.screenSince = 0; // début de l'écran CONTINU (survit au changement de tâche)
     this.handle = null;
+  }
+
+  /* ------------------------------------------------------------------
+     Lecture — ce dont l'interface a besoin. Toujours dérivé de l'horloge
+     murale, jamais d'un compteur : une machine en veille ne fausse rien.
+     ------------------------------------------------------------------ */
+
+  /** Le rappel est-il armé (réglage actif ET chrono qui tourne) ? */
+  get armed() { return this.deadline > 0; }
+
+  /** Sommes-nous dans les 20 secondes de repos ? */
+  get resting() { return this.restUntil > Date.now(); }
+
+  /** Millisecondes avant le prochain repos (0 pendant le repos). */
+  remainingMs() {
+    if (!this.deadline) return 0;
+    return Math.max(0, this.deadline - Date.now());
+  }
+
+  /** Millisecondes restantes du repos en cours (0 hors repos). */
+  restRemainingMs() {
+    return Math.max(0, this.restUntil - Date.now());
+  }
+
+  /** Écran continu depuis le lancement du chrono, en ms (0 si désarmé). */
+  screenMs() {
+    return this.screenSince ? Math.max(0, Date.now() - this.screenSince) : 0;
+  }
+
+  /**
+   * Part de temps RESTANTE, entre 0 et 1 — pendant le repos comme avant lui.
+   * La barre du bandeau se vide toujours : elle dit la même chose que le nombre
+   * posé à côté d'elle, et deux sens de lecture pour une seule information,
+   * c'est déjà une de trop.
+   */
+  fraction() {
+    if (this.resting) return this.restRemainingMs() / EyeBreak.REST_MS;
+    const period = this.app.store.settings.eyeBreakMs();
+    return period > 0 ? Math.min(1, this.remainingMs() / period) : 0;
+  }
+
+  /**
+   * Le bouton du bandeau. Pendant le repos : on l'achève. Avant : on le repousse
+   * d'une période pleine — parce qu'un rappel qu'on ne peut pas repousser finit
+   * par être un rappel qu'on coupe.
+   */
+  dismiss() {
+    if (this.resting) { this.restUntil = 0; return; }
+    if (this.deadline) this.deadline = Date.now() + this.app.store.settings.eyeBreakMs();
   }
 
   get supported() {
@@ -56,11 +121,46 @@ export class EyeBreak {
   sync() {
     const s = this.app.store.settings;
     const armed = s.eyeBreak.enabled && !!this.app.store.activeSegment();
-    if (!armed) { this.deadline = 0; return; }
+    if (!armed) { this.deadline = 0; this.restUntil = 0; this.screenSince = 0; return; }
     const period = s.eyeBreakMs();
-    // Démarrage du chrono, ou période raccourcie dans les réglages : on (re)part
-    // d'une période pleine à partir de maintenant.
-    if (!this.deadline || this.deadline - Date.now() > period) this.deadline = Date.now() + period;
+    if (!this.screenSince) {
+      // Premier armement de cette course. L'écran continu ne repart PAS d'une
+      // tâche à l'autre — c'est du temps passé devant l'écran, pas du temps passé
+      // sur un sujet — et il se DÉDUIT des segments, jamais de l'instant où la
+      // page a été chargée : sinon un simple rechargement à 14 h afficherait
+      // « 0:00 d'écran continu » après deux heures de travail.
+      this.screenSince = this.#runStartMs();
+      // La cadence suit l'écran continu : on vise le prochain multiple de la
+      // période depuis ce départ. Un rechargement ne décale donc plus le repos,
+      // et activer le rappel en cours de route le place au bon endroit du rythme.
+      const elapsed = Math.max(0, Date.now() - this.screenSince);
+      this.deadline = this.screenSince + (Math.floor(elapsed / period) + 1) * period;
+    } else if (this.deadline - Date.now() > period + EyeBreak.REST_MS) {
+      // Période raccourcie dans les réglages : l'échéance en cours dépasse la
+      // nouvelle période, on repart d'une période pleine.
+      this.deadline = Date.now() + period;
+    }
+  }
+
+  /**
+   * Début de la course d'écran EN COURS : on remonte, depuis le segment actif,
+   * la chaîne des segments qui se touchent. Un changement de tâche ne coupe
+   * rien ; une pause, si — elle laisse un trou, et le trou arrête la remontée.
+   */
+  #runStartMs() {
+    const store = this.app.store;
+    const active = store.activeSegment();
+    if (!active) return Date.now();
+    const done = store.segments
+      .filter((seg) => !seg.isRunning)
+      .sort((a, b) => a.startMs() - b.startMs());
+    let start = active.startMs();
+    for (let i = done.length - 1; i >= 0; i--) {
+      const seg = done[i];
+      if (seg.endMs() < start - EyeBreak.TOUCH_MS) break; // trou : la course s'arrête ici
+      if (seg.startMs() < start) start = seg.startMs();
+    }
+    return start;
   }
 
   /** Envoie un rappel tout de suite (bouton « Tester » des réglages). */
@@ -88,8 +188,14 @@ export class EyeBreak {
     if (now < this.deadline) return;
     const period = this.app.store.settings.eyeBreakMs();
     const late = now - this.deadline;
-    this.deadline = now + period;        // on réarme toujours depuis maintenant
+    // La période suivante court à partir de la FIN du repos, pas de son début :
+    // les 20 secondes qu'on passe à regarder au loin ne sont pas du temps d'écran.
+    this.deadline = now + EyeBreak.REST_MS + period;
     if (late > period) return;           // veille / onglet gelé : rappel manqué, pas de rafale
+    this.restUntil = now + EyeBreak.REST_MS;
+    // Le bandeau bascule tout de suite : sa propre horloge est celle du héros
+    // (1 s), et attendre son prochain battement ferait démarrer le décompte à 19.
+    this.app.hero?.tick?.();
     this.notify();
   }
 

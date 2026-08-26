@@ -14,7 +14,12 @@ window.addEventListener("DOMContentLoaded", () => {
 // Service worker : installable + hors-ligne (ignoré sous file://).
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").then((reg) => {
+    // `updateViaCache: "none"` : le cache HTTP n'est consulté NI pour sw.js NI
+    // pour ce qu'il importerait. Le défaut ("imports") suffirait aujourd'hui,
+    // mais la navigation étant désormais servie depuis le précache, la mise à
+    // jour du service worker est la SEULE porte de sortie vers une nouvelle
+    // version : elle ne doit dépendre d'aucun cache intermédiaire.
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((reg) => {
       // Un onglet resté ouvert (veille, arrière-plan) toute une nuit ne revérifie
       // pas forcément de lui-même une nouvelle version : il continuerait à tourner
       // avec un ancien schéma de données, et la moindre sauvegarde depuis cet
@@ -25,6 +30,11 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       const checkForUpdate = () => reg.update().catch(() => { /* sans incidence */ });
       document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(); });
       window.addEventListener("focus", checkForUpdate);
+      // Stint est une app qu'on laisse ouverte toute la journée, souvent dans sa
+      // propre fenêtre : elle peut ne perdre le focus ni ne devenir cachée de
+      // toute la journée, et alors aucune des deux vérifications ci-dessus ne
+      // tombe jamais. Un battement lent la couvre.
+      setInterval(checkForUpdate, 30 * 60_000);
     }).catch(() => { /* sans incidence */ });
   });
   // Une nouvelle version vient de prendre la main (skipWaiting + claim) : on

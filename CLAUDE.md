@@ -24,11 +24,29 @@ Contraintes fortes (ne pas casser) :
 - Le service worker ne s'active qu'en HTTP(S).
 - **Après toute modif de fichier servi : bumper `CACHE` dans `sw.js`**
   (`stint-vN` → `stint-vN+1`). (Valeur actuelle : voir `sw.js`.)
+  **C'est le seul chemin vers une nouvelle version** : la navigation elle-même est
+  servie depuis le précache (voir plus bas), donc un `CACHE` non bumpé = un
+  déploiement invisible, quoi qu'on ait poussé.
 - **Tout nouveau fichier servi doit être ajouté à `CORE` dans `sw.js`** : les
   assets sont servis **cache-d'abord** depuis le précache (une version = un
   cache cohérent). Le précache contourne le cache HTTP (`cache:"reload"`) et la
   page se recharge seule quand une nouvelle version prend la main
   (`controllerchange` dans `main.js`).
+- **La navigation aussi vient du précache** (racine et `index.html` de la portée
+  seulement ; toute autre page du même hôte part au réseau). Le réseau d'abord
+  semblait plus sûr : il ne l'était pas. `fetch()` consulte le **cache HTTP**, et
+  GitHub Pages sert en `max-age=600` — pendant dix minutes après un déploiement,
+  la navigation rendait donc l'**ancien** `index.html` pendant que les assets
+  venaient du précache **neuf**. Vieux HTML + CSS/JS neufs, c'est-à-dire
+  exactement le panachage que le service worker existe pour empêcher : c'était
+  la cause du « il faut faire Ctrl+F5 ». Corollaire : `main.js` enregistre avec
+  `updateViaCache: "none"` et revérifie à la reprise de focus, au retour de
+  visibilité **et** toutes les 30 min (une app qu'on laisse ouverte tout le jour
+  dans sa propre fenêtre ne perd jamais le focus).
+- **L'icône d'une PWA déjà installée ne se met pas à jour** en redéployant : le
+  lanceur (OS) la fige à l'installation. Changer `assets/icon-*.png` n'y suffit
+  pas — il faut désinstaller/réinstaller. À dire à l'utilisateur plutôt que de
+  chercher un correctif côté code : il n'y en a pas.
 
 ## 3. Architecture
 
@@ -64,7 +82,7 @@ src/
     App.js              CONTRÔLEUR : assemble tout, détient l'état d'UI (viewDay, screen), routage
     Timer.js            tick 1 s (EventEmitter)
     DayGlyphAnimator.js anime le glyphe « moment de la journée » image par image
-    EyeBreak.js         rappel « repos des yeux » (20-20-20) tant qu'un chrono tourne
+    EyeBreak.js         « repos des yeux » (20-20-20) : état + notification (§13)
     icons.js            pack d'icônes Lucide inline + glyphes dot-matrix (§8)
     components/         Toast · CopyButton · ScheduleEditor · TimelineTip (factories)
     views/              une vue = bind() (1×, optionnel) + render(viewDay) ; voir liste ci-dessous
@@ -393,3 +411,31 @@ hydratation). Sans lui, chaque bloc rebalaierait l'historique à chaque `App.ren
 - **Messages de commit en français**, descriptifs (sujet + corps expliquant le
   pourquoi). Garder le style des commits existants.
 - Ne pas créer de PR sauf demande explicite.
+
+
+## 13. Repos des yeux (20-20-20)
+
+`ui/EyeBreak.js` porte **l'état**, `HeroView` le **rend** (bandeau au bas de la
+carte de tâche active), `SettingsView` le **règle**. Rien n'est persisté : tout se
+déduit des segments et de l'horloge murale.
+
+- **Armé** = réglage actif **et** un chrono qui tourne. `App.render()` appelle
+  `sync()` avant les vues, comme `BgDots.setEnabled`.
+- **L'écran continu se déduit des segments** (`#runStartMs`) : on remonte la
+  chaîne des segments qui se **touchent** (à 2 s près). Changer de tâche ne coupe
+  pas la course, une pause si. Ne jamais repartir de l'instant du chargement :
+  un rechargement afficherait « 0:00 » après deux heures de travail.
+- **La cadence suit cette course** : la prochaine échéance est le **multiple
+  suivant** de la période depuis le début de la course. Un rechargement ne
+  décale donc pas le repos, et activer le rappel en cours de route le pose au bon
+  endroit du rythme.
+- **Le repos dure 20 s** (`REST_MS`, pas un réglage) et la période suivante court
+  à partir de sa **fin** : les 20 s passées à regarder au loin ne sont pas du
+  temps d'écran.
+- **Deux canaux du même évènement** : la notification système (qui se rate) et le
+  bandeau (qui ne se rate pas). Le bandeau est la source de vérité visuelle.
+- Le bandeau est un **bouton unique à deux sens** : pendant le repos il l'achève,
+  avant il le **repousse** d'une période — un rappel qu'on ne peut pas repousser
+  finit par être un rappel qu'on coupe.
+- Testé dans `checks/domaine.mjs` avec un faux `app` (le module ne touche au DOM
+  que par `app.hero?.tick?.()`).

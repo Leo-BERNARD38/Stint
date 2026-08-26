@@ -2,12 +2,25 @@ import { el, escapeHtml } from "../../utils/dom.js";
 import { fmtClock } from "../../utils/datetime.js";
 import { dotIcon } from "../icons.js";
 
+/** Décompte court : mm:ss sous l'heure, H:mm:ss au-delà. Le repos des yeux se
+ *  compte en minutes, pas en heures — `Formatter.clock` (H:mm) perdrait les
+ *  secondes, et c'est précisément ce qu'on regarde dans la dernière minute. */
+function mmss(ms) {
+  const t = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const two = (n) => String(n).padStart(2, "0");
+  return h ? `${h}:${two(m)}:${two(s)}` : `${m}:${two(s)}`;
+}
+
 /** Barre de contrôle : carte de tâche active + 4 boutons (Play/Pause, Nouvelle, Reprise, Terminer). */
 export class HeroView {
   #playMode = null; // évite de ré-injecter (et ré-animer) le glyphe à chaque rendu
   #liveTaskId = null; // tâche dont le total vif est mémoïsé (cf. tick)
   #liveBaseMs = 0;    // somme des segments TERMINÉS de cette tâche, rafraîchie à chaque render (= chaque "change")
   #shownTaskId = null; // tâche affichée (en cours OU en pause) → clic sur la pastille = édition
+  #eyeResting = null;  // dernier état du bandeau repos (évite de réécrire un libellé identique)
 
   constructor(app) {
     this.app = app;
@@ -21,6 +34,13 @@ export class HeroView {
     this.name = el("activeName");
     this.extra = el("activeExtra");
     this.timer = el("activeTimer");
+    // Bandeau « repos des yeux » (cf. EyeBreak) : rendu à chaque battement.
+    this.eye = el("eyeStrip");
+    this.eyeLabel = el("eyeLabel");
+    this.eyeSince = el("eyeSince");
+    this.eyeCount = el("eyeCount");
+    this.eyeFill = el("eyeFill");
+    this.#eyeResting = null;
   }
 
   bind() {
@@ -31,6 +51,13 @@ export class HeroView {
     // Clic sur la pastille de couleur = éditer la tâche affichée (en cours / en pause).
     this.dot.addEventListener("click", () => {
       if (this.#shownTaskId) this.app.openEditTask(this.#shownTaskId);
+    });
+    // Un seul bouton, deux sens selon l'état : pendant le repos on l'achève,
+    // avant on le repousse. C'est `EyeBreak.dismiss()` qui tranche — la vue ne
+    // décide de rien, elle rend.
+    this.eye.addEventListener("click", () => {
+      this.app.eyeBreak.dismiss();
+      this.#renderEye();
     });
   }
 
@@ -94,15 +121,59 @@ export class HeroView {
     this.tick();
   }
 
-  /** Mise à jour du timer live (appelée à chaque tick). N'actualise que le chrono
-   *  de la tâche réellement en cours (laisse figé l'affichage en pause / au repos). */
+  /** Un battement (1 s) : le chrono vif et le bandeau du repos des yeux. */
   tick() {
+    this.#tickTimer();
+    this.#renderEye();
+  }
+
+  /** N'actualise que le chrono de la tâche réellement en cours (laisse figé
+   *  l'affichage en pause / au repos). */
+  #tickTimer() {
     const seg = this.app.store.activeSegment();
     if (!seg || seg.taskId !== this.#liveTaskId) return;
     // Segments terminés mémoïsés (au dernier « change ») + part vive du segment en
     // cours : strictement égal à calc.taskTotalMs(seg.taskId), sans reparcourir
     // tout l'historique chaque seconde.
     this.timer.textContent = this.app.formatter.hms(this.#liveBaseMs + this.app.calc.segmentMs(seg));
+  }
+
+  /**
+   * Le bandeau « repos des yeux ». Trois états, dont un invisible :
+   *   - désarmé (rappel coupé, ou aucun chrono) → rien du tout, la carte se
+   *     recentre : on ne réserve pas une bande pour une fonction qu'on n'a pas
+   *     activée ;
+   *   - en attente → temps d'écran continu à gauche, temps restant à droite ;
+   *   - en repos → les vingt secondes, en tampon, décomptées dans la page.
+   */
+  #renderEye() {
+    const eb = this.app.eyeBreak;
+    if (!eb?.armed) {
+      if (!this.eye.hidden) { this.eye.hidden = true; this.#eyeResting = null; }
+      return;
+    }
+    this.eye.hidden = false;
+
+    const resting = eb.resting;
+    // Le libellé et le titre ne bougent qu'au changement d'état : les réécrire
+    // chaque seconde ferait bégayer `aria-live`.
+    if (resting !== this.#eyeResting) {
+      this.#eyeResting = resting;
+      this.eye.classList.toggle("resting", resting);
+      this.eyeLabel.textContent = resting ? "Regardez au loin, 6 mètres" : "Repos des yeux";
+      this.eye.title = resting
+        ? "Terminer le repos"
+        : "Repousser le prochain repos (règle 20-20-20)";
+    }
+
+    if (resting) {
+      this.eyeSince.textContent = "";
+      this.eyeCount.textContent = String(Math.ceil(eb.restRemainingMs() / 1000));
+    } else {
+      this.eyeSince.textContent = `· ${this.app.formatter.clock(eb.screenMs() / 60000)} d'écran continu`;
+      this.eyeCount.textContent = `dans ${mmss(eb.remainingMs())}`;
+    }
+    this.eyeFill.style.width = (eb.fraction() * 100).toFixed(1) + "%";
   }
 
   /** Somme des segments TERMINÉS d'une tâche (le segment en cours est ajouté au tick). */
