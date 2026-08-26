@@ -174,6 +174,43 @@ grande est la plus dense.
 Cinq paliers `--heat-0..4` **dérivés de `--accent`**, du vide au plein. Jamais de gradient
 arc-en-ciel : l'intensité est une seule dimension, elle se lit en une seule teinte.
 
+### La marque — « le repère »
+
+Deux formes, un accent : **une barre souple** (le temps tracé) et **un trait
+minium à angles vifs** (l'arrêt). C'est la thèse de l'app en deux rectangles —
+un intervalle, et le moment où il s'arrête.
+
+```
+ ▭▬▬▬▬▬▬▬▬▬▬▭ ▮      barre : x 5,8 → 21 · h 7,6 · rx 3,8 (pilule pleine)
+                     arrêt : x 23 → 26,2 · h 7,6 · rx 1,2 (angles vifs)
+```
+
+Ce qui a été écarté, et pourquoi — c'est le plus utile à savoir :
+
+| Piste | Écartée parce que |
+|---|---|
+| une rangée de trous (la perforation) | se lit comme des **points de suspension** |
+| une piste + un segment + un repère | **trois** éléments : illisible à 16 px |
+| un intervalle borné à deux caps | dessine un **H**, et l'app commence par un S |
+| des colonnes qui montent | se lit comme un **graphique**, pas comme un chrono |
+| l'arrêt en pilule, collé à la barre | se lit comme un **interrupteur** |
+
+Les règles qui restent : **deux éléments au maximum** (à 16 px on distingue une
+silhouette et un accent, pas davantage) ; **marges gauche et droite égales**
+(5,8) pour que la marque ne penche d'aucun côté ; et **aucune lettre**, le
+wordmark Bitcount dit déjà le nom juste à côté.
+
+La marque existe en trois exemplaires qu'il faut garder synchrones :
+
+- `index.html` (en-tête) — SVG inline peint avec les **jetons**
+  (`var(--text)` / `var(--bg)` / `var(--stop)`) : elle bascule avec le thème
+  sans qu'aucune valeur ne soit recopiée ;
+- `assets/icon.svg` (favicon) — **couleurs en dur** et `prefers-color-scheme` :
+  un favicon n'a pas accès au CSS de la page ;
+- `assets/icon-{192,512}.png` + `apple-touch-icon.png` — **plein cadre** sur
+  l'encre, contenu à 94 % (rayon maximal 10,2 pour les 12,8 de la zone sûre
+  *maskable*).
+
 ### Couleur de tâche (libre)
 
 Chaque tâche porte sa couleur (pastille + segment de timeline), attribuée cycliquement

@@ -278,6 +278,18 @@ Notes :
 - Icônes statiques du HTML : `<span data-icon="name">` rempli par
   `renderStaticIcons()` au démarrage. **Ajouter une icône** = ajouter une entrée
   dans la map `ICONS`.
+- **La marque (« le repère ») vit en trois exemplaires à garder synchrones** :
+  le SVG inline de l'en-tête (peint aux jetons, donc thémé), `assets/icon.svg`
+  (couleurs en dur + `prefers-color-scheme` : un favicon n'a pas le CSS de la
+  page) et les trois PNG. Géométrie et pistes écartées : `DESIGN_SYSTEM.md`
+  §1 « La marque ».
+- **Régénérer les PNG** : rendre le 512 avec Chromium, puis **rééchantillonner**
+  le 192 et le 180 depuis ce 512 (décodage/encodage PNG en Python pur, zlib
+  suffit). Ne pas demander directement une fenêtre de 192 ou 180 : Chromium
+  headless **clampe la hauteur de fenêtre** sous un certain seuil et rend une
+  image tronquée à mi-hauteur — sans erreur, et le PNG fait bien la taille
+  demandée. Vérifier après coup en décodant le PNG et en mesurant les bornes
+  des aplats, pas à l'œil.
 - Clic sur un bouton contenant une icône : déléguer via `e.target.closest('[data-…]')`
   (le clic peut viser le `<svg>` enfant).
 

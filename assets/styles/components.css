@@ -5,7 +5,9 @@
    ============================================================================ */
 
 /* ---------- Header / logo / wordmark ---------- */
-.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; color: var(--text); }
+/* La marque est peinte avec les jetons (fill="var(--…)" dans le SVG inline) :
+   elle bascule avec le thème sans qu'aucune valeur soit recopiée ici. */
+.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
 .wordmark {
   font-family: var(--font-display);
   font-weight: 400;

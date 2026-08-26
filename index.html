@@ -63,11 +63,14 @@
   <!-- ============================ HEADER ============================ -->
   <header>
     <div class="header-inner">
-      <svg class="logo" viewBox="0 0 32 32" fill="none" stroke="currentColor"
-           stroke-width="2.4" stroke-linecap="round" role="img" aria-label="Stint">
-        <circle cx="16" cy="16" r="12.6" />
-        <line x1="16" y1="16" x2="19.5" y2="9.9" />
-        <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
+      <!-- « Le repère » : la barre est le temps tracé, le trait minium est
+           maintenant, et le vide à droite est la journée qui reste. Les jetons
+           font le thème : encre sur papier le jour, l'inverse la nuit. La même
+           marque en autonome (favicon, PWA) vit dans assets/icon.svg. -->
+      <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="Stint">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="7.6" fill="var(--text)" />
+        <rect x="5.8" y="12.2" width="15.2" height="7.6" rx="3.8" fill="var(--bg)" />
+        <rect x="23" y="12.2" width="3.2" height="7.6" rx="1.2" fill="var(--stop)" />
       </svg>
       <input id="wordmark" class="wordmark" value="Stint" aria-label="Nom de l'application"
              spellcheck="false" autocomplete="off" />

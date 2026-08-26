@@ -1,15 +1,16 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stint">
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stint">
+  <!-- « Le repère ». La barre est le temps tracé ; le trait minium est l'arrêt.
+       Un span souple, un terminus dur : c'est toute la thèse de l'app en deux
+       formes. Marges gauche et droite égales (5,8), donc la marque est centrée
+       et ne penche d'aucun côté.
+       Couleurs en dur : un favicon n'a pas accès au CSS de la page. -->
   <style>
-    .stroke { stroke: #18181b; }
-    .fill { fill: #18181b; }
+    .sq { fill: #131a20 } .bar { fill: #e8e5dc } .stop { fill: #cc3823 }
     @media (prefers-color-scheme: dark) {
-      .stroke { stroke: #f3f3f5; }
-      .fill { fill: #f3f3f5; }
+      .sq { fill: #f2eee3 } .bar { fill: #131211 } .stop { fill: #ff6a4a }
     }
   </style>
-  <g class="stroke" stroke-width="2.4" stroke-linecap="round">
-    <circle cx="16" cy="16" r="12.6" />
-    <line x1="16" y1="16" x2="19.5" y2="9.9" />
-  </g>
-  <circle class="fill" cx="16" cy="16" r="1.5" />
+  <rect class="sq" x="1.5" y="1.5" width="29" height="29" rx="7.6"/>
+  <rect class="bar" x="5.8" y="12.2" width="15.2" height="7.6" rx="3.8"/>
+  <rect class="stop" x="23" y="12.2" width="3.2" height="7.6" rx="1.2"/>
 </svg>
