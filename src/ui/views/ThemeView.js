@@ -54,9 +54,15 @@ export class ThemeView {
     this.#updateMeta(theme);
   }
 
-  #updateMeta(theme) {
+  /**
+   * Couleur de la barre système. On lit le fond RÉELLEMENT calculé du body
+   * plutôt que de recopier deux hex ici : `--bg` est un `light-dark()`, il ne se
+   * résout qu'au calcul, et deux valeurs en dur dans le JS finiraient
+   * fatalement désynchronisées de `variables.css`.
+   */
+  #updateMeta() {
     if (!this.meta) return;
-    const dark = theme === "dark" || (theme === "system" && this.media.matches);
-    this.meta.content = dark ? "#0c0c0e" : "#ffffff";
+    const bg = getComputedStyle(document.body).backgroundColor;
+    if (bg) this.meta.content = bg;
   }
 }

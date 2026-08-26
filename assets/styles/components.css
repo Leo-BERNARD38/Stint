@@ -449,10 +449,141 @@
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .seg-dur { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* ============================================================================
+   Réglages — refonte
+   Une ligne = un réglage. Le libellé et son explication à gauche, le contrôle
+   aligné à droite : c'est l'alignement de la colonne de droite qui rend la page
+   lisible, pas la décoration. La sous-navigation collante remplace le long
+   déroulé où l'on ne savait jamais ce qui restait plus bas.
+   ============================================================================ */
+.set { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+@media (max-width: 860px) { .set { grid-template-columns: 1fr; gap: var(--sp-4); } }
+
+.set-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 84px; align-self: start; }
+@media (max-width: 860px) { .set-nav { position: static; flex-direction: row; flex-wrap: wrap; } }
+.set-nav a {
+  display: flex; align-items: baseline; gap: 10px; padding: 9px 13px; border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 500; color: var(--text-soft); text-decoration: none;
+  transition: background-color .16s var(--ease), color .16s var(--ease);
+}
+.set-nav a:hover { background: var(--surface); color: var(--text); }
+/* Section en cours de lecture (posée par SettingsView via IntersectionObserver). */
+.set-nav a.on { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.set-nav a.on .n { color: inherit; opacity: .65; }
+.set-nav a .n { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
+.set-nav a:hover .n { color: inherit; }
+
+.set-body { display: flex; flex-direction: column; gap: var(--sp-7); min-width: 0; }
+.set-group { display: flex; flex-direction: column; scroll-margin-top: 84px; }
+/* Le contrôle segmenté ne doit pas s'étirer sur toute la colonne : c'est un
+   sélecteur, pas une barre d'outils. */
+.set-group > .seg-control { align-self: flex-start; }
+.set-group > h3 {
+  font-family: var(--font-head); font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .13em; font-variation-settings: "wdth" 108; color: var(--text);
+  margin: 0 0 var(--sp-3);
+}
+.set-group > .muted { margin-bottom: var(--sp-3); }
+
+.set-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-5);
+  align-items: center; padding: 15px 0; border-bottom: 1px dotted var(--dot); margin: 0;
+}
+.set-group > .set-row:last-child, .set-row:last-child { border-bottom: none; }
+label.set-row { cursor: pointer; }
+.set-lab { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.set-lab b { font-size: 14.5px; font-weight: 600; }
+.set-lab > span, .set-note { font-size: 12.5px; color: var(--text-soft); line-height: 1.55; max-width: 62ch; }
+.set-lab strong { color: var(--text); font-weight: 600; }
+.set-ctl { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
+.set-row.is-danger .set-lab b { color: var(--stop); }
+@media (max-width: 620px) {
+  .set-row { grid-template-columns: 1fr; gap: var(--sp-3); }
+  .set-ctl { justify-content: flex-start; }
+}
+
+/* Saisie de données (heure, nombre) : police de données, fond enfoncé. */
+.tinput {
+  font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums;
+  background: var(--surface); border: none; border-radius: var(--radius-sm);
+  padding: 8px 11px; color: var(--text); min-width: 76px;
+}
+.tinput:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.prec-sep { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
+.hours-ctl .se-dash { color: var(--text-faint); }
+
+/* Interrupteur — dessiné sur l'input lui-même : le JS des réglages continue de
+   lire `.checked` et d'écouter `change`, il n'a rien à savoir de l'apparence. */
+input.sw {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 42px; height: 24px; border-radius: var(--radius-pill);
+  background: var(--surface-hover); position: relative; cursor: pointer;
+  transition: background-color .18s var(--ease);
+}
+input.sw::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--bg); transition: transform .2s var(--ease);
+}
+input.sw:checked { background: var(--accent); }
+input.sw:checked::after { transform: translateX(18px); background: #fff; }
+input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* ---------- Pile de précédence des horaires ----------
+   Le point aveugle de l'ancienne page : trois niveaux se superposaient (base,
+   jour de semaine, date) sans qu'on voie jamais lequel l'emportait. On montre
+   les trois pour une date donnée, et on cercle celui qui gagne. */
+.prec-wrap { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.prec-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.prec-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .15em; color: var(--text-faint); }
+.prec { display: flex; flex-direction: column; gap: 5px; }
+.prec-row {
+  display: grid; grid-template-columns: 18px 116px minmax(0, 1fr) auto; gap: var(--sp-3);
+  align-items: center; padding: 9px 12px; border-radius: var(--radius-sm);
+  background: var(--surface-2); opacity: .5;
+}
+/* Le niveau qui gagne : pleine opacité et cerclé d'encre. */
+.prec-row.wins { opacity: 1; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.prec-step { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); text-align: center; }
+.prec-k { font-size: 13px; font-weight: 600; }
+.prec-v { font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prec-v.off { font-style: italic; color: var(--text-faint); }
+.prec-tag { font-family: var(--font-data); font-size: 9px; letter-spacing: .11em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-text); }
+.prec-row:not(.wins) .prec-tag { background: transparent; color: var(--text-faint); }
+@media (max-width: 560px) {
+  .prec-row { grid-template-columns: 18px minmax(0, 1fr) auto; }
+  .prec-row .prec-v { grid-column: 2 / -1; }
+}
+
+/* Ruban du jour : les créneaux effectivement retenus, dessinés à l'échelle. */
+.strip-wrap { display: flex; flex-direction: column; gap: 5px; }
+.strip { position: relative; height: 38px; border-radius: var(--radius-sm); overflow: hidden;
+  background-color: var(--surface-2);
+  background-image: radial-gradient(circle at center, var(--dot-grid) 1px, transparent 1.3px);
+  background-size: 11px 11px; background-position: center; }
+.strip i { position: absolute; top: 6px; bottom: 6px; border-radius: var(--radius-xs); background: var(--accent); }
+.strip .strip-off { position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-data); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-faint); }
+.strip-ax { position: relative; height: 13px; font-family: var(--font-data); font-size: 9.5px;
+  color: var(--text-faint); }
+.strip-ax span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.strip-ax span:first-child { transform: none; }
+.strip-ax span:last-child { transform: translateX(-100%); }
+
+/* Jauge de stockage : posée dans la colonne de droite, elle a besoin d'une largeur. */
+.set-ctl .storage { display: flex; flex-direction: column; gap: 7px; width: 260px; max-width: 100%; margin: 0; }
+.set-ctl .storage-head, .set-ctl .storage-track { display: flex; }
+.set-ctl .storage-head { font-family: var(--font-data); font-size: 10.5px; }
+.set-ctl .storage-track { display: block; }
+
 /* ---------- Réglages : champs & blocs ---------- */
 .settings-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); }
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+.field label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 .field-optional { font-weight: 400; color: var(--text-faint); }
 .field input, .field select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
 .field input:focus, .field select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
@@ -508,10 +639,10 @@
 
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
 .ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
-.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 9px 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; }
+.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 13px; background: var(--surface); border-radius: var(--radius-sm); cursor: pointer; }
 .ov-item:hover { background: var(--surface-hover); }
 .ov-name { font-weight: 600; text-transform: capitalize; min-width: 96px; }
-.ov-sum { color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
+.ov-sum { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
 .ov-sum.off { color: var(--text-faint); font-style: italic; }
 .ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 .ov-rm:hover { background: var(--surface-2); color: var(--stop); }
@@ -527,9 +658,9 @@
 .sched { display: flex; flex-direction: column; gap: var(--sp-2); }
 .se-body { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 2px; }
 .se-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.se-lab { font-size: 12px; font-weight: 600; color: var(--text-soft); min-width: 72px; }
+.se-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 78px; }
 .se-dash { color: var(--text-faint); }
-.sched input[type="time"] { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
+.sched input[type="time"] { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */

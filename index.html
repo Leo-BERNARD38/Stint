@@ -9,7 +9,7 @@
 
   <!-- PWA : installable sur PC et mobile, fonctionne hors-ligne -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#e8e5dc" />
   <!-- Déclare au navigateur que les deux schémas sont gérés : indispensable pour
        qu'une PWA installée (standalone) honore un forçage clair/sombre au lieu de
        rester verrouillée sur le schéma de l'OS. -->
@@ -329,182 +329,256 @@
     </section>
     </div><!-- /#appScreen -->
 
-    <!-- ===================== ÉCRAN RÉGLAGES (page à part) ===================== -->
+    <!-- ===================== ÉCRAN RÉGLAGES (page à part) =====================
+         Une ligne = un réglage : libellé et explication à gauche, contrôle
+         aligné à droite. La sous-navigation collante remplace le long
+         déroulé de blocs, où l'on ne savait jamais ce qui restait plus bas. -->
     <section id="settingsScreen" class="settings-screen" hidden>
       <div class="page-head">
         <button id="settingsBack" class="btn-back" data-icon="chevron-left" aria-label="Retour"></button>
         <h2 class="page-title">Réglages</h2>
       </div>
-      <div class="settings-grid">
-        <div class="settings-block">
-          <div class="block-title">Apparence</div>
-          <div class="seg-field">
-            <span class="seg-label">Thème</span>
-            <div class="seg-control" id="themeSeg" role="tablist" aria-label="Thème">
-              <button type="button" data-theme-opt="system" role="tab">Système</button>
-              <button type="button" data-theme-opt="light" role="tab">Clair</button>
-              <button type="button" data-theme-opt="dark" role="tab">Sombre</button>
-            </div>
-          </div>
-        </div>
 
-        <div class="settings-block">
-          <div class="block-title">Horaires</div>
-          <div class="seg-control" id="hoursSeg" role="tablist" aria-label="Type d'horaire">
-            <button type="button" data-hours="base" class="active" role="tab">De base</button>
-            <button type="button" data-hours="weekday" role="tab">Par jour</button>
-            <button type="button" data-hours="date" role="tab">Par date</button>
-          </div>
+      <div class="set">
+        <nav class="set-nav" id="setNav" aria-label="Sections des réglages">
+          <a href="#set-apparence"><span class="n">01</span> Apparence</a>
+          <a href="#set-horaires"><span class="n">02</span> Horaires</a>
+          <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
+          <a href="#set-yeux"><span class="n">04</span> Repos des yeux</a>
+          <a href="#set-donnees"><span class="n">05</span> Données</a>
+        </nav>
 
-          <div class="hours-panel" data-hours-panel="base">
-            <p class="muted">Appliqués à tous les jours travaillés, sauf exception.</p>
-            <div class="field" style="margin-bottom:16px;">
-              <label>Jours travaillés</label>
-              <div class="weekdays" id="weekdays"></div>
+        <div class="set-body">
+          <!-- ---------------------------- 01 · Apparence ---------------------------- -->
+          <section class="set-group" id="set-apparence">
+            <h3>Apparence</h3>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Thème</b>
+                <span>Suivre le système, ou forcer le clair ou le sombre.</span>
+              </span>
+              <span class="set-ctl">
+                <span class="seg-control" id="themeSeg" role="tablist" aria-label="Thème">
+                  <button type="button" data-theme-opt="system" role="tab">Système</button>
+                  <button type="button" data-theme-opt="light" role="tab">Clair</button>
+                  <button type="button" data-theme-opt="dark" role="tab">Sombre</button>
+                </span>
+              </span>
             </div>
-            <div class="field-grid">
-              <div class="field"><label>Arrivée</label><input type="time" id="setArrival"></div>
-              <div class="field"><label>Début pause déj.</label><input type="time" id="setLunchStart"></div>
-              <div class="field"><label>Fin pause déj.</label><input type="time" id="setLunchEnd"></div>
-              <div class="field"><label>Départ</label><input type="time" id="setDeparture"></div>
-            </div>
-          </div>
+            <label class="set-row">
+              <span class="set-lab">
+                <b>Fond réactif au curseur</b>
+                <span>Une grille de points s'illumine autour du pointeur. Coupée d'office
+                  sur écran tactile, ou si vous réduisez les animations.</span>
+              </span>
+              <span class="set-ctl"><input type="checkbox" id="setBgDots" class="sw"></span>
+            </label>
+          </section>
 
-          <div class="hours-panel" data-hours-panel="weekday" hidden>
-            <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
-            <div class="ov-list" id="weekdayOvList"></div>
-            <div class="ov-editor">
-              <div class="field" style="max-width:200px;">
-                <label>Jour</label>
-                <select id="wdaySelect"></select>
+          <!-- ---------------------------- 02 · Horaires ---------------------------- -->
+          <section class="set-group" id="set-horaires">
+            <h3>Horaires</h3>
+
+            <!-- Pile de précédence : le point aveugle de l'ancienne page. Trois
+                 niveaux se superposaient sans qu'on voie jamais lequel gagnait. -->
+            <div class="prec-wrap">
+              <div class="prec-head">
+                <span class="prec-title">Ce qui s'applique le</span>
+                <input type="date" id="precDate" class="tinput" aria-label="Date de référence">
               </div>
-              <div id="wdayEditorMount"></div>
-              <div class="ov-actions">
-                <button class="btn" id="wdayReset">Revenir à la base</button>
-                <button class="btn primary" id="wdaySave">Enregistrer ce jour</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="hours-panel" data-hours-panel="date" hidden>
-            <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
-            <div class="ov-list" id="dateOvList"></div>
-            <div class="ov-editor">
-              <div class="field" style="max-width:200px;">
-                <label>Date</label>
-                <input type="date" id="dateSelect">
-              </div>
-              <div id="dateEditorMount"></div>
-              <div class="ov-actions">
-                <button class="btn danger" id="dateRemove">Supprimer cette date</button>
-                <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+              <div class="prec" id="precStack"></div>
+              <div class="strip-wrap">
+                <div class="strip" id="precStrip"></div>
+                <div class="strip-ax" id="precStripAxis"></div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div class="settings-block">
-          <div class="block-title">Conversion Jira & arrondi</div>
-          <label class="switch-row">
-            <input type="checkbox" id="setJiraAuto">
-            <span>Calculer les unités Jira depuis mes horaires</span>
-          </label>
-          <div class="auto-info" id="jiraAutoInfo"></div>
-          <div class="field-grid" id="jiraManual">
-            <div class="field"><label>Heures / jour (1d)</label><input type="number" id="setHpd" min="1" max="24" step="0.5"></div>
-            <div class="field"><label>Jours / semaine (1w)</label><input type="number" id="setDpw" min="1" max="7" step="1"></div>
-          </div>
-          <div class="field" style="margin-top:18px; max-width:220px;">
-            <label>Arrondi</label>
-            <select id="setRounding">
-              <option value="none">Aucun</option>
-              <option value="1m">1 minute</option>
-              <option value="5m">5 minutes</option>
-              <option value="15m">15 minutes</option>
-              <option value="30m">30 minutes</option>
-              <option value="1h">1 heure</option>
-            </select>
-          </div>
-          <div class="auto-info">
-            L'arrondi s'applique au <strong>total d'une tâche sur la journée</strong>
-            (pas segment par segment), et seulement quand l'interrupteur
-            « Arrondi » de l'onglet Journée est activé. Une tâche tracée ne
-            descend jamais à 0 : elle vaut au minimum un pas.
-          </div>
-        </div>
-
-        <div class="settings-block">
-          <div class="block-title">Repos des yeux</div>
-          <label class="switch-row">
-            <input type="checkbox" id="setEyeBreak">
-            <span>Me rappeler de regarder au loin</span>
-          </label>
-          <p class="muted">
-            Règle <strong>20-20-20</strong> : toutes les 20 minutes, fixer pendant 20 secondes
-            quelque chose à ~6 mètres. Le rappel ne tourne que <strong>chrono en marche</strong> :
-            il démarre au lancement d'une tâche, boucle tant que ça compte, et repart de zéro
-            après une pause.
-          </p>
-          <div id="eyeBreakOpts">
-            <div class="field" style="max-width:220px;">
-              <label>Toutes les (minutes)</label>
-              <input type="number" id="setEyeMinutes" min="1" max="240" step="1">
+            <div class="seg-control" id="hoursSeg" role="tablist" aria-label="Type d'horaire">
+              <button type="button" data-hours="base" class="active" role="tab">De base</button>
+              <button type="button" data-hours="weekday" role="tab">Par jour</button>
+              <button type="button" data-hours="date" role="tab">Par date</button>
             </div>
-            <div class="auto-info" id="eyeBreakInfo"></div>
-            <div class="ov-actions eye-actions">
-              <button class="btn" id="eyeBreakAsk">Autoriser les notifications</button>
-              <button class="btn" id="eyeBreakTest">Tester le rappel</button>
+
+            <div class="hours-panel" data-hours-panel="base">
+              <p class="muted">Appliqués à tous les jours travaillés, sauf exception.</p>
+              <div class="set-row">
+                <span class="set-lab"><b>Jours travaillés</b></span>
+                <span class="set-ctl"><span class="weekdays" id="weekdays"></span></span>
+              </div>
+              <div class="set-row">
+                <span class="set-lab"><b>Journée</b><span>Arrivée, pause déjeuner, départ.</span></span>
+                <span class="set-ctl hours-ctl">
+                  <input type="time" id="setArrival" class="tinput" aria-label="Arrivée">
+                  <span class="se-dash">–</span>
+                  <input type="time" id="setLunchStart" class="tinput" aria-label="Début de la pause déjeuner">
+                  <span class="prec-sep">·</span>
+                  <input type="time" id="setLunchEnd" class="tinput" aria-label="Fin de la pause déjeuner">
+                  <span class="se-dash">–</span>
+                  <input type="time" id="setDeparture" class="tinput" aria-label="Départ">
+                </span>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div class="settings-block">
-          <div class="block-title">Apparence</div>
-          <label class="switch-row">
-            <input type="checkbox" id="setBgDots">
-            <span>Fond dot-matrix réactif au curseur</span>
-          </label>
-          <p class="muted">Une grille de points s'illumine autour du pointeur (clair comme sombre).
-            Coupé d'office sur écran tactile ou si vous réduisez les animations.</p>
-        </div>
-
-        <div class="settings-block full">
-          <div class="block-title">Sauvegarde & données</div>
-          <p class="muted">
-            Les données sont stockées dans ce navigateur : l'<strong>historique complet</strong> dans
-            IndexedDB, et un <strong>miroir des 30 derniers jours</strong> dans <code>localStorage</code>
-            (redondance + démarrage instantané). Un nettoyage de cache peut tout effacer :
-            <strong>exportez régulièrement le JSON</strong> comme sauvegarde maître.
-          </p>
-
-          <div class="storage">
-            <div class="storage-head"><span>Espace de stockage</span><span id="storageText">…</span></div>
-            <div class="storage-track"><div class="storage-bar" id="storageBar"></div></div>
-          </div>
-
-          <div class="io-buttons">
-            <button class="btn primary" id="exportJson"><span data-icon="download" data-icon-size="16"></span> Exporter JSON</button>
-            <button class="btn" id="importJson"><span data-icon="upload" data-icon-size="16"></span> Importer JSON</button>
-            <button class="btn" id="exportCsv"><span data-icon="download" data-icon-size="16"></span> Exporter CSV (segments)</button>
-          </div>
-
-          <div class="data-maint">
-            <div class="purge-row">
-              <span class="purge-lab">Supprimer les segments de plus de</span>
-              <select id="purgeDays">
-                <option value="7">7 jours</option>
-                <option value="15">15 jours</option>
-                <option value="30" selected>30 jours</option>
-                <option value="90">90 jours</option>
-              </select>
-              <button class="btn" id="purgeBtn">Supprimer</button>
+            <div class="hours-panel" data-hours-panel="weekday" hidden>
+              <p class="muted">Un jour récurrent aux horaires différents de la base (ex. le vendredi).</p>
+              <div class="ov-list" id="weekdayOvList"></div>
+              <div class="ov-editor">
+                <div class="field" style="max-width:200px;">
+                  <label>Jour</label>
+                  <select id="wdaySelect"></select>
+                </div>
+                <div id="wdayEditorMount"></div>
+                <div class="ov-actions">
+                  <button class="btn" id="wdayReset">Revenir à la base</button>
+                  <button class="btn primary" id="wdaySave">Enregistrer ce jour</button>
+                </div>
+              </div>
             </div>
-            <div class="maint-danger">
-              <button class="btn" id="clearEntries">Vider tâches & segments <span class="hint">(garde les réglages)</span></button>
-              <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
+
+            <div class="hours-panel" data-hours-panel="date" hidden>
+              <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
+              <div class="ov-list" id="dateOvList"></div>
+              <div class="ov-editor">
+                <div class="field" style="max-width:200px;">
+                  <label>Date</label>
+                  <input type="date" id="dateSelect">
+                </div>
+                <div id="dateEditorMount"></div>
+                <div class="ov-actions">
+                  <button class="btn danger" id="dateRemove">Supprimer cette date</button>
+                  <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+                </div>
+              </div>
             </div>
-          </div>
-          <input type="file" id="fileInput" accept="application/json" style="display:none">
+          </section>
+
+          <!-- ---------------------------- 03 · Jira & arrondi ---------------------------- -->
+          <section class="set-group" id="set-jira">
+            <h3>Conversion Jira &amp; arrondi</h3>
+            <label class="set-row">
+              <span class="set-lab">
+                <b>Calculer les unités Jira depuis mes horaires</b>
+                <span id="jiraAutoInfo" class="set-note"></span>
+              </span>
+              <span class="set-ctl"><input type="checkbox" id="setJiraAuto" class="sw"></span>
+            </label>
+            <div class="set-row" id="jiraManual">
+              <span class="set-lab"><b>Unités Jira</b><span>Heures par jour (1d) et jours par semaine (1w).</span></span>
+              <span class="set-ctl">
+                <input type="number" id="setHpd" class="tinput" min="1" max="24" step="0.5" aria-label="Heures par jour">
+                <span class="prec-sep">h/j</span>
+                <input type="number" id="setDpw" class="tinput" min="1" max="7" step="1" aria-label="Jours par semaine">
+                <span class="prec-sep">j/sem</span>
+              </span>
+            </div>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Arrondi</b>
+                <span>S'applique au <strong>total d'une tâche sur la journée</strong> (pas segment
+                  par segment), et seulement quand l'interrupteur « Arrondi » de l'onglet Journée
+                  est activé. Une tâche tracée ne descend jamais à 0 : elle vaut au minimum un pas.</span>
+              </span>
+              <span class="set-ctl">
+                <span class="select-wrap">
+                  <select id="setRounding" aria-label="Pas d'arrondi">
+                    <option value="none">Aucun</option>
+                    <option value="1m">1 minute</option>
+                    <option value="5m">5 minutes</option>
+                    <option value="15m">15 minutes</option>
+                    <option value="30m">30 minutes</option>
+                    <option value="1h">1 heure</option>
+                  </select>
+                  <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+                </span>
+              </span>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 04 · Repos des yeux ---------------------------- -->
+          <section class="set-group" id="set-yeux">
+            <h3>Repos des yeux</h3>
+            <label class="set-row">
+              <span class="set-lab">
+                <b>Me rappeler de regarder au loin</b>
+                <span>Règle <strong>20-20-20</strong> : toutes les 20 minutes, fixer pendant
+                  20 secondes quelque chose à ~6 mètres. Le rappel ne tourne que
+                  <strong>chrono en marche</strong> : il démarre au lancement d'une tâche, boucle
+                  tant que ça compte, et repart de zéro après une pause.</span>
+              </span>
+              <span class="set-ctl"><input type="checkbox" id="setEyeBreak" class="sw"></span>
+            </label>
+            <div id="eyeBreakOpts">
+              <div class="set-row">
+                <span class="set-lab"><b>Période</b><span id="eyeBreakInfo" class="set-note"></span></span>
+                <span class="set-ctl">
+                  <input type="number" id="setEyeMinutes" class="tinput" min="1" max="240" step="1" aria-label="Minutes entre deux rappels">
+                  <span class="prec-sep">min</span>
+                </span>
+              </div>
+              <div class="set-row">
+                <span class="set-lab"><b>Notifications</b><span>Sans permission, le rappel s'affiche en bandeau dans l'onglet Stint.</span></span>
+                <span class="set-ctl">
+                  <button class="btn" id="eyeBreakAsk">Autoriser</button>
+                  <button class="btn" id="eyeBreakTest">Tester</button>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 05 · Données ---------------------------- -->
+          <section class="set-group" id="set-donnees">
+            <h3>Sauvegarde &amp; données</h3>
+            <p class="muted">
+              Les données sont stockées dans ce navigateur : l'<strong>historique complet</strong> dans
+              IndexedDB, et un <strong>miroir des 30 derniers jours</strong> dans <code>localStorage</code>
+              (redondance + démarrage instantané). Un nettoyage de cache peut tout effacer :
+              <strong>exportez régulièrement le JSON</strong> comme sauvegarde maître.
+            </p>
+
+            <div class="set-row">
+              <span class="set-lab"><b>Espace utilisé</b></span>
+              <span class="set-ctl">
+                <span class="storage">
+                  <span class="storage-head"><span>Stockage</span><span id="storageText">…</span></span>
+                  <span class="storage-track"><span class="storage-bar" id="storageBar"></span></span>
+                </span>
+              </span>
+            </div>
+
+            <div class="set-row">
+              <span class="set-lab"><b>Sauvegarde</b><span>Le JSON est la sauvegarde maître ; le CSV n'exporte que les segments.</span></span>
+              <span class="set-ctl io-buttons">
+                <button class="btn primary" id="exportJson"><span data-icon="download" data-icon-size="16"></span> Exporter JSON</button>
+                <button class="btn" id="importJson"><span data-icon="upload" data-icon-size="16"></span> Importer</button>
+                <button class="btn" id="exportCsv"><span data-icon="download" data-icon-size="16"></span> CSV</button>
+              </span>
+            </div>
+
+            <div class="set-row">
+              <span class="set-lab"><b>Purger les vieux segments</b><span>Supprime définitivement les segments plus anciens que le seuil choisi.</span></span>
+              <span class="set-ctl">
+                <span class="select-wrap">
+                  <select id="purgeDays" aria-label="Ancienneté">
+                    <option value="7">7 jours</option>
+                    <option value="15">15 jours</option>
+                    <option value="30" selected>30 jours</option>
+                    <option value="90">90 jours</option>
+                  </select>
+                  <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+                </span>
+                <button class="btn" id="purgeBtn">Supprimer</button>
+              </span>
+            </div>
+
+            <div class="set-row is-danger">
+              <span class="set-lab"><b>Zone sans retour</b><span>Ces deux actions sont irréversibles. Exportez d'abord.</span></span>
+              <span class="set-ctl">
+                <button class="btn" id="clearEntries">Vider tâches &amp; segments</button>
+                <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
+              </span>
+            </div>
+            <input type="file" id="fileInput" accept="application/json" style="display:none">
+          </section>
         </div>
       </div>
     </section>
