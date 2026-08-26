@@ -12,6 +12,12 @@ const HOUR_MS = 3_600_000;
 const LABEL_MIN_PCT = 7.5;   // le nom de la tâche
 const DUR_MIN_PCT = 12;      // le nom + la durée
 const LUNCH_MIN_PCT = 5;     // le mot « déjeuner » sur la bande de pause
+// Garde-fou anti-disparition, en pourcentage de la piste. Le VRAI plancher
+// est en CSS (`.tl-seg { min-width }`), en pixels : lui seul connaît la largeur
+// réelle. Celui-ci ne sert qu'à ne jamais écrire `width:0%`, et doit donc rester
+// sous le plancher CSS — à 0,6 % il le dépassait sur toute piste large de plus
+// de 500 px, et c'était lui qui épaississait les segments d'une minute.
+const SEG_MIN_PCT = 0.15;
 
 /**
  * Timeline journalière : segments colorés **redimensionnables** (poignées sur
@@ -107,7 +113,7 @@ export class TimelineView {
       const e = Math.min(seg.endMs(), de);
       if (e <= s) continue;
       const color = task ? task.color : "var(--text-faint)";
-      const width = Math.max(0.6, pct(e) - pct(s));
+      const width = Math.max(SEG_MIN_PCT, pct(e) - pct(s));
       const name = task ? task.displayName : "?";
       const dur = formatter.clock(calc.segmentMs(seg, ds, de) / 60000);
       // Le texte est posé SUR la couleur de la tâche : on choisit clair ou
@@ -260,7 +266,7 @@ export class TimelineView {
     const pct = (m) => ((m - this._win.start) / span) * 100;
     if (d.segEl) {
       d.segEl.style.left = pct(newStart) + "%";
-      d.segEl.style.width = Math.max(0.6, pct(newEnd) - pct(newStart)) + "%";
+      d.segEl.style.width = Math.max(SEG_MIN_PCT, pct(newEnd) - pct(newStart)) + "%";
     }
     const at = new Date(ms);
     this.dragTip.textContent = pad2(at.getHours()) + ":" + pad2(at.getMinutes()) + " · " + formatter.clock((newEnd - newStart) / 60000);

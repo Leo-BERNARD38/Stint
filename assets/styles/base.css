@@ -6,18 +6,31 @@ html { scrollbar-gutter: stable; }
 
 body {
   font-family: var(--font-body);
-  /* Grain de papier : une trame de points très fine sur toute la page. C'est
-     elle qui donne sa matière au fond — le blanc pur était plat. Le fond
-     réactif au curseur (BgDots) partage exactement le même pas (22 px) : il
-     éclaire ce grain au lieu d'y superposer un second réseau (moiré). */
   background-color: var(--bg);
-  background-image: radial-gradient(circle at center, var(--grain) .9px, transparent 1.3px);
-  background-size: 22px 22px;
   color: var(--text);
   line-height: 1.55;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Grain de papier : une trame de points très fine sur toute la page. C'est elle
+   qui donne sa matière au fond — le blanc pur était plat.
+
+   Une COUCHE FIXE, et non un fond de <body> : le fond du body a pour origine le
+   coin haut-gauche du document et défile avec lui, quand le projecteur au
+   curseur (`.bg-dots`) est une couche fixe centrée sur la fenêtre. Même pas de
+   22 px, donc, mais jamais la même phase — et l'écart changeait à chaque
+   défilement. On voyait deux réseaux qui se croisent au lieu d'un seul qu'on
+   éclaire. Ici les deux couches ont la même boîte (fixed inset:0), la même
+   taille de tuile, la même position et la même géométrie de point : le
+   projecteur ne fait plus qu'ALLUMER le grain déjà présent, point par point.
+   Toute modification de l'une des deux doit être reportée sur l'autre. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background-image: radial-gradient(circle at center, var(--grain) .9px, transparent 1.3px);
+  background-size: 22px 22px;
+  background-position: center;
 }
 
 /* Transition douce lors d'un changement de thème (mais pas au chargement). */

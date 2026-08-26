@@ -164,19 +164,23 @@
   --type-badge-bg: color-mix(in srgb, var(--text) 8%, transparent);
   --type-badge-text: var(--text-soft);
 
-  /* Rampe de données : une seule teinte, trois valeurs. dev/support/autre ne
-     sont pas des natures opposées, ce sont des PARTS d'un même total — donc des
-     valeurs d'une même couleur, ordonnées. Trois teintes franches faisaient
-     croire à trois sujets sans rapport, et remettaient du minium (donc du
-     « maintenant ») dans des graphiques rétrospectifs.
-     Les deux valeurs dérivées vont vers la SURFACE (jamais vers l'encre : dans
-     un thème sombre, « plus d'encre » veut dire plus clair, et la rampe
-     s'inverserait). Le dosage compte : à 52 % la bande support se noyait dans
-     sa propre piste, à 60 % elle s'en détache tout en restant plus claire que
-     le dev, ce qui est l'ordre juste — la part la plus grande est la plus
-     dense. */
+  /* Les trois séries de données. Une rampe d'une seule teinte suffisait tant
+     qu'on empilait — dans une barre, les bandes se touchent, et deux valeurs
+     voisines se distinguent par leur frontière. Elle échoue dès qu'on SUPERPOSE :
+     en mode « séparé », trois courbes qui se croisent au milieu d'un cadre ne
+     sont plus séparées par rien, et deux valeurs d'un même bleu deviennent la
+     même ligne. Le support prend donc sa propre teinte.
+     C'est la seule dérogation à « un accent, un tampon », et elle est bornée :
+     une TEINTE DE DONNÉES ne vit que dans un graphique légendé, jamais sur un
+     contrôle ni sur un état. L'ocre est choisie loin du minium en teinte (31°
+     contre 7°) : le tampon reste le seul rouge, et rien de ce qui se lit dans
+     une rétrospective ne peut passer pour un « maintenant ». La troisième série
+     reste neutre — trois teintes franches feraient trois sujets sans rapport
+     là où il n'y a qu'un total et ses parts. Elle est dérivée vers la SURFACE
+     (jamais vers l'encre : dans un thème sombre, « plus d'encre » veut dire
+     plus clair, et la dérivation s'inverserait). */
   --dot-dev: var(--accent);
-  --dot-support: color-mix(in srgb, var(--accent) 60%, var(--surface-2));
+  --dot-support: light-dark(#b06a1e, #dd9b45);
   --dot-autre: color-mix(in srgb, var(--text) 38%, var(--surface-2));
 
   /* Rythme (Stats) : 5 paliers d'intensité d'une journée, du vide au plein.

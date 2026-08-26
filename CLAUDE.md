@@ -208,9 +208,15 @@ Notes :
     trous de la timeline, carte « temps non tracé », hors-horaires du brut/net.
     Une absence se dessine, elle ne se peint pas en jaune. **L'acquis** se dit en
     encre, ou par la disparition de la trame.
-  - **Les catégories sont une rampe**, pas trois teintes : `--dot-dev/support/autre`
-    sont trois valeurs d'une même couleur, dérivées vers la surface (vers l'encre,
-    la rampe s'inverserait en thème sombre).
+  - **Les catégories sont trois séries, pas une rampe** : dev garde l'accent,
+    `--dot-support` prend une **ocre** (seule dérogation à « un accent, un
+    tampon »), `--dot-autre` reste neutre, dérivé vers la surface (vers l'encre,
+    il s'inverserait en thème sombre). Une rampe d'une seule teinte suffit tant
+    qu'on **empile** ; elle échoue dès qu'on **superpose** (courbes séparées),
+    où deux valeurs d'un même bleu qui se croisent ne font plus qu'une ligne.
+    Une **teinte de données** ne vit que dans un graphique légendé — jamais sur
+    un contrôle ni sur un état — et l'ocre est choisie loin du minium en teinte
+    (31° contre 7°) pour que le tampon reste le seul rouge.
   - **Aucune couleur de tâche par défaut ne doit pouvoir passer pour le tampon**
     (`PALETTES.support` est en argile/brique/prune, pas en orange vif).
 - **Contraste : tout texte à ≥ 4,5:1** (≥ 3:1 au-delà de 24 px). Les trois encres
@@ -224,11 +230,21 @@ Notes :
   d'une grille**, collée au bord droit : la colonne élastique (le nom) absorbe les
   variations d'actions et de survol. Dans un compteur de temps, une colonne de
   chiffres qui n'en est pas une trahit tout le reste.
+- **Ce qui est déjà visible ne bouge jamais au survol.** Les actions révélées au
+  survol sont légitimes ; déplacer au même instant les boutons permanents ne
+  l'est pas — on vise une cible qui fuit sous le curseur. Le groupe d'actions
+  étant collé à droite, il grandit vers la gauche : les contrôles permanents
+  (`ctrl-play/pause/finish`) **ferment donc la file** (`order: 1`), et les
+  révélés viennent occuper le vide à leur gauche.
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
   (`--surface`, `--surface-2`) et **espace**. Échelle `--sp-1..7`.
 - **Papier chaud le jour, Ardoise la nuit** — jamais de blanc ni de noir purs. Le
-  fond porte un **grain** de points (`--grain`, pas 22 px) ; le fond réactif au
-  curseur (`BgDots`) partage **le même pas**, sinon les deux trames moirent.
+  fond porte un **grain** de points (`--grain`, pas 22 px) porté par une **couche
+  fixe** (`body::before`), pas par le fond du `<body>` : le fond réactif au
+  curseur (`.bg-dots`) est lui aussi `fixed inset:0`, et les deux trames doivent
+  partager **la même boîte, le même pas, la même position et le même rayon de
+  point**. Même pas mais phases différentes, elles se croisent au lieu de
+  s'éclairer — et l'écart bouge au défilement. Modifier l'une = modifier l'autre.
 - **Contraste d'échelle** : étiquettes minuscules en capitales, chiffres énormes
   (rapport de 1 à 8 sur une même page). C'est ce qui rend l'info immédiate — pas
   la décoration.

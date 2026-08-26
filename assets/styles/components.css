@@ -169,7 +169,10 @@
   position: fixed; inset: 0; z-index: -1; pointer-events: none;
   display: none;
   --mx: 50%; --my: 50%;
-  background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.4px);
+  /* Géométrie IDENTIQUE au grain de `body::before` (base.css) : même boîte, même
+     tuile, même position, même rayon de point. C'est à cette condition seulement
+     que le projecteur allume le grain au lieu de dessiner un second réseau. */
+  background-image: radial-gradient(circle at center, var(--dot) .9px, transparent 1.3px);
   background-size: 22px 22px; background-position: center;
   -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
           mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
@@ -221,7 +224,11 @@
   text-transform: uppercase; color: var(--text-soft); white-space: nowrap; }
 /* Un segment porte son nom et sa durée dès qu'il est assez large : sans cela il
    faut survoler chaque bloc pour savoir ce qu'on a fait de sa journée. */
-.tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
+/* Plancher de largeur : de quoi ne pas disparaître, pas plus. À 6 px, sur une
+   piste d'un millier de pixels pour une dizaine d'heures, un segment d'UNE
+   minute en occupait quatre — la piste mentait sur le peu. À 3 px il reste
+   visible et cesse de grossir ce qu'il montre. */
+.tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 3px; z-index: 3;
   display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 0 15px; overflow: hidden;
   transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
 .tl-seg.on-dark { color: var(--on-color-dark); }
@@ -476,6 +483,16 @@
 .task-list.is-rounded .task-dur,
 .totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
 .task-actions { display: flex; align-items: center; gap: 4px; }
+/* Les contrôles PERMANENTS ferment la file, contre la colonne des durées.
+   Le groupe est collé au bord droit : il grandit donc vers la GAUCHE quand le
+   survol révèle les autres boutons. Placés en tête, les boutons déjà visibles
+   reculaient d'autant à cet instant précis — on visait une cible qui fuyait
+   sous le curseur au moment même où l'on arrivait dessus. Rejetés en queue, ils
+   ne bougent plus d'un pixel : ce sont les révélés qui viennent occuper le vide
+   à leur gauche. `order` ne touche ni le DOM ni l'ordre de tabulation. */
+.task-actions > *, .at-actions > * { order: 0; }
+.task-actions > .ctrl-play, .task-actions > .ctrl-pause, .task-actions > .ctrl-finish,
+.at-actions > .ctrl-play, .at-actions > .ctrl-pause, .at-actions > .ctrl-finish { order: 1; }
 /* Mini-barre de part du jour (proportion du temps de la tâche). */
 .task-share { height: 5px; background: color-mix(in srgb, var(--text) 9%, transparent); border-radius: var(--radius-pill); margin-top: 8px; overflow: hidden; max-width: 240px; }
 .task-share span { display: block; height: 100%; border-radius: var(--radius-pill); }
@@ -497,9 +514,9 @@
 @media (hover: hover) {
   /* `display:none` et non `opacity:0` : masqués mais présents, les quatre
      boutons réservaient 200 px de vide à droite de chaque ligne, et les deux
-     contrôles restants flottaient au milieu. La durée ayant sa piste fixe,
-     retirer les autres du flux ne décale aucune colonne — seul le bord gauche
-     du groupe d'actions bouge, et il est déjà à droite de tout. */
+     contrôles restants flottaient au milieu. La durée ayant sa piste fixe et
+     les contrôles permanents fermant la file (voir `order` plus haut), retirer
+     les autres du flux ne décale rien de ce qui est déjà à l'écran. */
   .task-row:not(:hover):not(:focus-within) .task-actions
     .mini-btn:not(.ctrl-play):not(.ctrl-pause):not(.ctrl-finish) { display: none; }
   .task-row:not(:hover):not(:focus-within) .task-actions .mini-btn { background: transparent; }
@@ -530,10 +547,10 @@
 .at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; justify-self: end; grid-area: 1 / 4; }
 @media (hover: hover) {
   .at-head:not(:hover):not(:focus-within) .at-actions
-    .mini-btn:not(.ctrl-play):not(.ctrl-pause) { display: none; }
+    .mini-btn:not(.ctrl-play):not(.ctrl-pause):not(.ctrl-finish) { display: none; }
 }
 @media (hover: none) {
-  .at-head .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
+  .at-head .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause):not(.ctrl-finish) { background: transparent; color: var(--text-faint); }
 }
 /* Conteneur animable : la hauteur passe de 0fr à 1fr (transition fluide). */
 .at-segs-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }

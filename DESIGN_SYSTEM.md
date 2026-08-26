@@ -155,19 +155,30 @@ plein, ça se voit.
 « dev » ou « support » — lui donner en plus une teinte, c'était trois pastilles
 de couleur de plus par ligne pour zéro information supplémentaire.
 
-### Rampe de données
+### Les trois séries de données
 
-`--dot-dev` / `--dot-support` / `--dot-autre` : **une seule teinte, trois
-valeurs**. dev / support / autre ne sont pas des natures opposées, ce sont des
-**parts d'un même total** — donc des valeurs d'une même couleur, ordonnées. Trois
-teintes franches faisaient croire à trois sujets sans rapport, et remettaient du
-minium (donc du « maintenant ») dans des graphiques rétrospectifs.
+`--dot-dev` (l'accent) · `--dot-support` (**une ocre**) · `--dot-autre` (neutre).
 
-Les deux valeurs dérivées vont vers la **surface**, jamais vers l'encre : vers
-l'encre, la rampe s'inverserait en thème sombre. Le dosage compte — à 52 % la
-bande « support » se noyait dans sa propre piste ; à 60 % elle s'en détache tout
-en restant plus claire que le dev, ce qui est l'ordre juste : la part la plus
-grande est la plus dense.
+La première version était une **rampe** : une seule teinte, trois valeurs — dev /
+support / autre n'étant pas des natures opposées mais des **parts d'un même
+total**. Le raisonnement tient tant qu'on **empile** : dans une barre ou une aire
+cumulée, les bandes se touchent, et deux valeurs voisines se distinguent par leur
+frontière. Il tombe dès qu'on **superpose**. En mode « séparé », trois courbes qui
+se croisent au milieu d'un cadre ne sont plus séparées par rien : deux valeurs
+d'un même bleu deviennent la même ligne, et la lecture qui justifiait le mode
+(« le support monte-t-il pendant que le dev descend ? ») devient impossible.
+
+Le support prend donc sa propre teinte. **C'est la seule dérogation à « un
+accent, un tampon », et elle est bornée** : une *teinte de données* ne vit que
+dans un graphique légendé — jamais sur un contrôle, jamais sur un état. L'ocre
+est choisie **loin du minium en teinte** (31° contre 7°, et nettement moins
+saturée) : le tampon reste le seul rouge de l'app, et rien de ce qui se lit dans
+une rétrospective ne peut passer pour un « maintenant ».
+
+La troisième série reste **neutre** : trois teintes franches feraient trois
+sujets sans rapport là où il n'y a qu'un total et ses parts. Elle est dérivée vers
+la **surface**, jamais vers l'encre — vers l'encre, elle s'inverserait en thème
+sombre.
 
 ### Intensité (rythme de Stats)
 
@@ -307,9 +318,15 @@ infobulles, popover de remplissage.
 
 - **Grain de papier** (fond de page) : `radial-gradient` de `--grain` (4,5 % d'encre),
   pas 22 px. À la même intensité que les pistes, la trame couvrait toute la page et
-  concurrençait le contenu.
-- **Fond réactif au curseur** (`BgDots`, optionnel) : **même pas de 22 px** — il éclaire ce
-  grain au lieu d'y superposer un second réseau (moiré assuré sinon).
+  concurrençait le contenu. Porté par une **couche fixe** (`body::before`), pas par
+  le fond du `<body>` : le fond d'un body a pour origine le coin haut-gauche du
+  **document** et défile avec lui.
+- **Fond réactif au curseur** (`BgDots`, optionnel) : une couche `fixed inset:0`
+  centrée sur la **fenêtre**. Il doit partager avec le grain **la même boîte, le
+  même pas (22 px), la même position et le même rayon de point** — à cette
+  condition seulement il *allume* le grain, point par point. Même pas mais phases
+  différentes, les deux trames se croisent au lieu de s'éclairer, et l'écart
+  change à chaque défilement. Modifier l'une = modifier l'autre.
 - **Grille de points** (pistes, timeline, graphiques) : `--dot-grid` (10 %), pas 11 px.
 - **Filet pointillé** (séparateurs de lignes) : `1px dotted var(--dot)` (16 %).
 - **Perforation** (`.perf`) : la bande détachable du carnet de pointage — une rangée de

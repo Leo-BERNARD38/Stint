@@ -195,10 +195,10 @@ export class AllTasksView {
       actions.appendChild(this.#ctrlBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id), "ctrl-play"));
     } else if (isActive) {
       actions.appendChild(this.#ctrlBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
-      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id)));
+      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
     } else if (!task.archived) {
       actions.appendChild(this.#ctrlBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
-      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id)));
+      actions.appendChild(this.#ctrlBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
     }
     actions.append(
       createCopyButton(this.app, fmt.decimal(mins), "Déc."),
