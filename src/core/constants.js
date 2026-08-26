@@ -30,20 +30,26 @@ export const SEGMENT_MERGE_GAP_MS = 120_000;
  *   - support → chaudes  (minium, terre, ambre)
  *   - autre   → neutres chauds (la famille du papier)
  */
+/* Chaque teinte est choisie pour qu'au moins un des deux textes possibles
+   (blanc ou encre) y passe le seuil AA — c'est `utils/color.js` qui tranche au
+   rendu. Cinq d'entre elles tombaient dans la bande où AUCUN des deux ne
+   passait : elles ont été décalées de quelques points, à l'œil identiques.
+   Les couleurs déjà enregistrées sur des tâches ne sont pas touchées : elles
+   vivent dans les données, pas ici. */
 export const PALETTES = {
   dev: [
-    "#1E5273", "#2C6E8F", "#276A6A", "#3D87A5", "#22757F",
-    "#1F4459", "#4B7F9E", "#2F5F86", "#357F7A", "#4A93A8",
+    "#1E5273", "#2C6E8F", "#276A6A", "#3F8BAA", "#22757F",
+    "#1F4459", "#487B98", "#2F5F86", "#357F7A", "#4A93A8",
     "#345E7E", "#1C6060",
   ],
   support: [
-    "#D8402B", "#B8781A", "#C2542A", "#A63A23", "#D06A2E",
-    "#C0392F", "#C98A2A", "#B34B3B", "#AE4B57", "#C25C4A",
+    "#D43F2A", "#B8781A", "#C2542A", "#A63A23", "#D06A2E",
+    "#C0392F", "#C98A2A", "#B34B3B", "#AE4B57", "#BA5847",
     "#94391F", "#D9903A",
   ],
   autre: [
     "#6B665C", "#8A8478", "#544F47", "#7D7668", "#605A50",
-    "#948C7D", "#4A4640", "#726B61", "#867E70", "#57534B",
+    "#948C7D", "#4A4640", "#726B61", "#8A8273", "#57534B",
     "#9C9384", "#655F55",
   ],
 };

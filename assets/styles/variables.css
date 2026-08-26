@@ -68,6 +68,10 @@
      pistes enfoncées) : à surface pleine page, une trame de même intensité
      couvre tout et concurrence le contenu. */
   --dot: color-mix(in srgb, var(--text) 16%, transparent);
+  /* Perforation : les trous de la bande détachable d'un carnet de pointage.
+     C'est le seul ornement de l'app, et il porte une information — « ici on
+     change de registre ». */
+  --perf: color-mix(in srgb, var(--text) 21%, transparent);
   --dot-grid: color-mix(in srgb, var(--text) 10%, transparent);
   --grain: color-mix(in srgb, var(--text) 4.5%, transparent);
 
@@ -92,10 +96,20 @@
   --surface-2: light-dark(#eeeade, #262320);     /* enfoncé : piste timeline, zones internes */
   --surface-hover: light-dark(#e2ddcf, #302c28);
   --skeleton: light-dark(#dcd7c8, #2c2825);      /* placeholder de chargement */
+  /* Fond des contrôles qui vivent sur PLUSIEURS surfaces (pilules, mini-boutons,
+     selects, champ de recherche). Une teinte translucide : elle assombrit son
+     hôte quel qu'il soit, là où un `--surface` en dur disparaît dès que la
+     carte qui le porte vaut elle-même `--surface`. */
+  --ctl: color-mix(in srgb, var(--text) 7%, transparent);
+  --ctl-hover: color-mix(in srgb, var(--text) 13%, transparent);
 
+  /* Trois niveaux d'encre, tous au-dessus du seuil AA (4,5:1) sur les trois
+     surfaces de l'app. La hiérarchie se joue ensuite sur la TAILLE et la casse,
+     pas sur la pâleur : un surtitre de 9,5 px délavé ne se lit pas, il se
+     devine. Mesuré : soft ≥ 6,4:1, faint ≥ 4,6:1. */
   --text: light-dark(#131a20, #f2eee3);
-  --text-soft: light-dark(#5c6873, #a79f92);
-  --text-faint: light-dark(#8d97a0, #726b61);
+  --text-soft: light-dark(#475159, #aea699);
+  --text-faint: light-dark(#60666d, #948a7e);
 
   /* N3 — bleu de Prusse : la SEULE couleur de ce qui se clique. */
   --accent: light-dark(#1e5273, #74b6d9);
@@ -117,15 +131,27 @@
   --on-color-dark: #ffffff;
   --on-color-light: #131a20;
 
+  /* ── Les trois teintes de service ──────────────────────────────────────
+     Chacune existe en DEUX intensités, parce qu'une couleur ne se comporte pas
+     pareil selon qu'elle porte le texte ou qu'elle le supporte :
+       --x       l'APLAT   (fond de bouton, barre, filet, gros chiffre) ;
+       --x-ink   l'ENCRE   (petit texte de cette couleur, y compris sur son wash).
+     En thème sombre les deux coïncident : la teinte y est déjà claire.
+     Texte posé SUR un aplat : --on-signal (blanc le jour, encre la nuit). */
   /* N1 — minium : ce qui se passe maintenant, et ce qui s'arrête. */
-  --stop: light-dark(#d8402b, #ff6a4a);
+  --stop: light-dark(#cc3823, #ff6a4a);
+  --stop-ink: light-dark(#b93320, #ff6a4a);
   --stop-wash: light-dark(#f6dfd8, #3b1d15);
   /* Ambre : ce qui manque (temps non tracé, pause). */
-  --pause: light-dark(#b8781a, #e5a93f);
+  --pause: light-dark(#a3690f, #e5a93f);
+  --pause-ink: light-dark(#8b590d, #e5a93f);
   --pause-wash: light-dark(#f0e2c4, #382b12);
   /* Vert : ce qui est acquis (journée complète, tâche terminée). */
-  --play: light-dark(#3f7a4e, #63b473);
+  --play: light-dark(#367044, #63b473);
   --play-wash: light-dark(#d9e7d9, #182f1d);
+  /* Texte et glyphes posés sur un aplat de service. Le blanc sur l'ambre clair
+     ne passait pas (2,1:1 la nuit) : la nuit, ces teintes veulent de l'encre. */
+  --on-signal: light-dark(#ffffff, #131211);
   --finish: var(--play);
   --new: var(--accent);
   --resume: var(--accent-soft);
@@ -134,12 +160,12 @@
   --finish-soft: var(--play-wash);
 
   --warn-bg: var(--pause-wash);
-  --warn-text: var(--pause);
+  --warn-text: var(--pause-ink);
 
   --type-dev-bg: var(--accent-wash);
   --type-dev-text: var(--accent);
   --type-support-bg: var(--stop-wash);
-  --type-support-text: var(--stop);
+  --type-support-text: var(--stop-ink);
   --type-autre-bg: color-mix(in srgb, var(--text) 8%, transparent);
   --type-autre-text: var(--text-soft);
   --dot-dev: var(--accent);
