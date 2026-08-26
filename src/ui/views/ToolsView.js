@@ -1,6 +1,6 @@
 import { el, createEl } from "../../utils/dom.js";
 import { createCopyButton } from "../components/CopyButton.js";
-import { startOfDay, atTime, fmtDateTimeLocal, parseDateTimeLocal } from "../../utils/datetime.js";
+import { startOfDay, atTime, fmtDateTimeLocal, parseDateTimeLocal, fmtClock, pad2 } from "../../utils/datetime.js";
 
 /** Formats affichés par le convertisseur (clé interne → libellé). */
 const CONV_FORMATS = [
@@ -9,6 +9,9 @@ const CONV_FORMATS = [
   ["clock", "Horloge"],
   ["hms", "H:mm:ss"],
 ];
+
+/** Le format qu'on vient chercher ici neuf fois sur dix : il passe devant. */
+const CONV_MAIN = "jira";
 
 /**
  * Écran « Outils » : deux utilitaires sans état persistant qui réutilisent le
@@ -25,6 +28,8 @@ export class ToolsView {
     this.bnStart = el("bnStart");
     this.bnEnd = el("bnEnd");
     this.bnOut = el("bnOut");
+    this.bnStrip = el("bnStrip");
+    this.bnStripAxis = el("bnStripAxis");
   }
 
   bind() {
@@ -74,12 +79,14 @@ export class ToolsView {
       hms: fmt.hms(ms),
     };
     for (const [key, label] of CONV_FORMATS) {
-      const line = createEl("div", {
-        className: "conv-line",
-        html: `<span class="conv-lab">${label}</span><span class="conv-val">${values[key]}</span>`,
+      const card = createEl("div", {
+        className: "conv-card" + (key === CONV_MAIN ? " is-main" : ""),
+        html: `<span class="k">${label}</span><span class="v">${values[key]}</span>`,
       });
-      line.appendChild(createCopyButton(this.app, values[key], "Copier"));
-      this.convOut.appendChild(line);
+      const copy = createCopyButton(this.app, values[key], "Copier");
+      copy.classList.add("cp");
+      card.appendChild(copy);
+      this.convOut.appendChild(card);
     }
   }
 
@@ -120,12 +127,59 @@ export class ToolsView {
   #renderBrutNet() {
     this.bnOut.innerHTML = "";
     const sv = this.bnStart.value, ev = this.bnEnd.value;
-    if (!sv || !ev) { this.#bnHint("Renseignez un début et une fin."); return; }
+    if (!sv || !ev) { this.#clearStrip(); this.#bnHint("Renseignez un début et une fin."); return; }
     const s = parseDateTimeLocal(sv).getTime();
     const e = parseDateTimeLocal(ev).getTime();
-    if (!(e > s)) { this.#bnHint("La fin doit être après le début."); return; }
+    if (!(e > s)) { this.#clearStrip(); this.#bnHint("La fin doit être après le début."); return; }
+    this.#renderStrip(s, e);
     this.bnOut.appendChild(this.#bnCard("Brut", "temps réel écoulé", e - s));
     this.bnOut.appendChild(this.#bnCard("Net", "temps ouvré (horaires)", this.app.calc.workedMs(s, e)));
+  }
+
+  /**
+   * Ruban brut/net : l'intervalle en entier, et par-dessus les portions
+   * réellement comptées. Le hors-horaires reste visible en hachures — c'est la
+   * meilleure explication possible de la règle centrale de Stint : on voit
+   * *où* le rognage a mordu, pas seulement combien il a retiré.
+   */
+  #renderStrip(s, e) {
+    const span = e - s;
+    const pct = (ms) => ((ms - s) / span) * 100;
+    const ranges = this.app.calc.workRangesBetween(s, e);
+
+    this.bnStrip.innerHTML = ranges.map(([a, b]) => {
+      const l = pct(a);
+      return `<i class="bn-net" style="left:${l}%;width:${Math.max(0.4, pct(b) - l)}%"></i>`;
+    }).join("");
+    if (!ranges.length) {
+      this.bnStrip.innerHTML = '<span class="bn-empty">rien de compté sur cet intervalle</span>';
+    }
+
+    // Repères : les deux bornes, plus les minuits traversés (le multi-jours est
+    // justement le cas où le brut et le net divergent le plus).
+    const marks = [[s, this.#stamp(s, span)], [e, this.#stamp(e, span)]];
+    let midnight = startOfDay(new Date(s)).getTime() + 86_400_000;
+    while (midnight < e && marks.length < 8) {
+      marks.push([midnight, this.#stamp(midnight, span)]);
+      midnight += 86_400_000;
+    }
+    this.bnStripAxis.innerHTML = "";
+    marks.sort((a, b) => a[0] - b[0]).forEach(([ms, text], i) => {
+      const el2 = createEl("span", { text, attrs: { style: `left:${pct(ms)}%` } });
+      if (i === 0) el2.style.transform = "none";
+      this.bnStripAxis.appendChild(el2);
+    });
+  }
+
+  /** Étiquette d'axe : l'heure seule, ou jour + heure si l'intervalle déborde. */
+  #stamp(ms, span) {
+    const d = new Date(ms);
+    return span > 86_400_000 ? `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)} ${fmtClock(d)}` : fmtClock(d);
+  }
+
+  #clearStrip() {
+    this.bnStrip.innerHTML = "";
+    this.bnStripAxis.innerHTML = "";
   }
 
   #bnHint(text) {
@@ -136,7 +190,7 @@ export class ToolsView {
     const fmt = this.app.formatter;
     const mins = ms / 60000;
     const card = createEl("div", {
-      className: "bn-card",
+      className: "bn-card" + (title === "Net" ? " is-net" : ""),
       html: `<div class="bn-title">${title}</div><div class="bn-sub">${sub}</div><div class="bn-val">${fmt.clock(mins)}</div>`,
     });
     const actions = createEl("div", { className: "bn-actions" });

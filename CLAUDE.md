@@ -41,20 +41,21 @@ commande UI ─▶ Store (mutation + persist + emit "change") ─▶ App.render(
 ```
 index.html              squelette + points de montage ; charge src/main.js (module)
 manifest.webmanifest, sw.js, .nojekyll, assets/icon*.png|svg
-assets/styles/          variables · base · layout · components   (CSS, voir §7)
+assets/styles/          fonts · variables · base · layout · components   (CSS, voir §7)
+assets/fonts/           9 woff2 auto-hébergés (Bitcount · Archivo · Plex Sans · Plex Mono)
 src/
   main.js               point d'entrée : instancie App, app.start(), enregistre le SW
   core/
     constants.js        STORAGE_KEY, SCHEMA_VERSION, DAY_MS, PALETTE, DEFAULT_SETTINGS, THEMES…
     EventEmitter.js     on/off/emit (base du Store)
-  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard · curve
+  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard · curve · color
   models/               DOMAINE
     Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
     Task.js  Segment.js modèles (fromJSON/toJSON)
     Store.js            SOURCE DE VÉRITÉ : état + commandes + persistance + events
   services/
     Persistence.js      stockage 2 zones : IndexedDB (complet) + miroir localStorage 30 j (§6)
-    TimeCalculator.js   temps ouvré (intersection créneaux), agrégats, timeline, trous
+    TimeCalculator.js   temps ouvré (workRangesBetween/workedMs), planifié, agrégats, timeline, trous
     StatsAggregator.js  agrégats rétrospectifs de l'onglet Stats (§10)
     Formatter.js        décimal / Jira / clock(H:mm) / hms ; unités Jira auto (§5)
     DataTransfer.js     export/import JSON, export CSV
@@ -102,11 +103,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v4)
+## 4. Modèle de données (schéma v8)
 
 ```jsonc
 {
-  "version": 4,
+  "version": 8,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -115,10 +116,14 @@ SettingsView, StorageView, ToolsView`.
     "weekdayHours": { "5": [["08:30","12:50"]] },     // exceptions par jour de semaine
     "dateHours": { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }, // par date ; [] = non travaillé
     "jira": { "auto": true, "hoursPerDay": 8, "daysPerWeek": 5 },
-    "rounding": "none"                                 // none|1m|5m|15m
+    "rounding": "none",                                // none|1m|5m|15m|30m|1h
+    "roundedDay": false,                               // vue arrondie de la journée (v7)
+    "bgDots": false,                                   // fond réactif au curseur (v5)
+    "eyeBreak": { "enabled": false, "minutes": 20 }    // rappel 20-20-20 (v8)
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
-              "color":"#…", "done":false, "archived":false }],
+              "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
+              "done":false, "archived":false }],
   "segments": [{ "id":"s_…", "taskId":"t_…",
                  "start":"ISO local", "end":"ISO local|null", "raw":false }],
   "meta": { "lastExport": null }
@@ -165,75 +170,126 @@ Notes :
 
 ## 7. Style / thème (CSS)
 
-- 4 feuilles : `variables.css` (jetons + thèmes), `base.css` (reset),
-  `layout.css` (structure), `components.css` (composants).
+> `DESIGN_SYSTEM.md` est la source de vérité détaillée. Résumé opérationnel ici.
+
+- 5 feuilles : `fonts.css` (@font-face), `variables.css` (jetons + thèmes),
+  `base.css` (reset), `layout.css` (structure), `components.css` (composants).
 - **Toute la sémantique de couleur est en variables**, chaque jeton défini **une
   seule fois** via `light-dark(clair, sombre)` ; `[data-theme]`
   (`light|dark|system`) ne pilote que `color-scheme`. **Aucune couleur en dur**
-  hors `variables.css`. Avant de committer du CSS, vérifier que tout `var(--x)`
-  est défini (cf. §9).
+  hors `variables.css` (seule exception : le blanc sur un fond minium plein).
+- **Trois niveaux de surface, jamais quatre** : page (`--bg`) → panneau
+  (`--surface`, une vraie carte avec un cheveu d'ombre) → creux (`--surface-2` :
+  pistes, tuiles, champs). Corollaire : un contrôle qui vaut `--surface`
+  disparaît dans un panneau `--surface` — pilules, mini-boutons, selects et
+  champs **teintent** donc leur hôte (`--ctl`, 7 % d'encre) au lieu de nommer une
+  surface.
+- **Encre sur papier, un accent, un tampon.** C'est la règle qui tient tout le
+  reste. L'app est une pointeuse : il n'y a **pas d'autre teinte** que l'accent
+  et le minium (l'ambre et le vert ont été retirés — bleu + orange vibre, et à
+  sept directions sur une page dont le sujet est un nombre, la couleur ne
+  hiérarchise plus rien).
+  - **N1 minium** (`--stop`) : ce qui exige le regard **maintenant**. Quatre
+    emplois : le nombre qui tourne (chrono, durée de la ligne en cours,
+    « en cours »), le repère « maintenant », l'action irréversible, l'anneau de
+    focus. Il marque **le nombre qui bouge**, jamais l'objet qui le contient —
+    d'où l'absence totale de liseré de bord. `--stop-ink` pour tout minium de
+    moins de 24 px ; `--on-signal` pour le texte posé sur un aplat de minium.
+  - **N2 contraste inversé** (`--inverse-bg` / `--inverse-fg`) : le registre.
+    **Deux ancres seulement** — total du jour et tête des Stats — plus le
+    sélecteur de jour.
+  - **N3 bleu de Prusse** (`--accent`) : tout ce qui se clique **et** tout ce qui
+    se mesure, en **deux intensités seulement** (l'aplat, le lavis `--accent-wash`).
+    Un seul aplat plein dans toute l'app : **la barre d'onglets**. Tout ce qui se
+    sélectionne en dessous se marque en lavis + anneau — et l'anneau est réservé
+    au choix *unique* (en sélection multiple il fait un feston).
+  - **N4** : `--text` / `--text-soft` / `--text-faint`.
+  - **Le manque se dessine en hachures** (`--hatch-img`, 45°), jamais en couleur :
+    trous de la timeline, carte « temps non tracé », hors-horaires du brut/net.
+    Une absence se dessine, elle ne se peint pas en jaune. **L'acquis** se dit en
+    encre, ou par la disparition de la trame.
+  - **Les catégories sont une rampe**, pas trois teintes : `--dot-dev/support/autre`
+    sont trois valeurs d'une même couleur, dérivées vers la surface (vers l'encre,
+    la rampe s'inverserait en thème sombre).
+  - **Aucune couleur de tâche par défaut ne doit pouvoir passer pour le tampon**
+    (`PALETTES.support` est en argile/brique/prune, pas en orange vif).
+- **Contraste : tout texte à ≥ 4,5:1** (≥ 3:1 au-delà de 24 px). Les trois encres
+  passent le seuil sur les trois surfaces ; elles se ressemblent donc, et c'est
+  voulu — la hiérarchie se joue sur la **taille et la casse**, jamais sur la
+  pâleur ni sur l'`opacity`. Contrôle automatisé (§9).
+- **La perforation** (`.perf`) est le seul ornement de l'app : la bande
+  détachable du carnet de pointage, entre l'instrument et le journal (Journée) et
+  entre la tête de période et les blocs d'analyse (Stats). Deux emplois, pas plus.
+- **Les durées s'alignent.** Dans toute liste, la durée est la **dernière piste
+  d'une grille**, collée au bord droit : la colonne élastique (le nom) absorbe les
+  variations d'actions et de survol. Dans un compteur de temps, une colonne de
+  chiffres qui n'en est pas une trahit tout le reste.
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
-  (`--surface`, `--surface-2`) et **espace**. Échelle d'espacement `--sp-1..7`.
-- **Esthétique « Nothing OS »** : **filets pointillés** (`--dot`), **grille de
-  points** sur la timeline (`--dot-grid`), **pilules** partout (rayon
-  `--radius-pill` ; petits boutons, badges, sélecteur de jour, « Aujourd'hui »),
-  point « live » rouge. **Rayons volontairement proches** (`--radius` 18 /
-  `--radius-sm` 14 / `--radius-xs` 11) : cartes au grand rayon, petits éléments en
-  pilule. Sélecteur de jour **en couleurs inversées** (comme « Total du jour »).
-- **Onglets = contrôle segmenté** avec **curseur glissant** : une pilule `::before`
-  sur `.tabs` translatée via `:has([data-tab=…].active)` (4 colonnes égales,
-  `.tabs-4`).
-- **Motion** : flat mais fluide — survol sobre des gros boutons (changement de
-  fond, sans élévation), **éclosion `dotIn`** des glyphes dot-matrix, pulsation du repère
-  « maintenant », **dépliage animé** de l'onglet Tâches (`.at-segs-wrap` en
-  `grid-template-rows 0fr→1fr`). Dans « Total journée », **scène `dayGlyph`** en
-  **fond de carte pleine largeur** (`position:absolute; inset:0`, derrière le
-  texte ; `preserveAspectRatio xMaxYMax meet` ⇒ scène jamais rognée, ancrée en
-  bas-droite, le surplus de ciel tombant à gauche sur les cartes larges) : paysage dot-matrix (grille
-  `SCENE_W`×`SCENE_H`, fine) — montagnes basses sur toute la largeur, **soleil qui
-  traverse de gauche à droite** (`SUN_X0..SUN_X1`) puis **lune + étoiles** la nuit.
-  La **trajectoire de l'astre** est tracée en fond (`trajectoryDots`, groupe à
-  **~10 % d'opacité**, très discret) : **pointillé régulier** (1 point sur 3) sur
-  tout l'arc ; les points sous la crête sont omis (l'astre émerge / plonge
-  derrière le relief). Points
-  **allumés/éteints uniquement** (aucun gris). Astres et montagnes sont des
-  **bitmaps / pics réglables** dans `icons.js`. La position évolue par tranche de
-  30 min (le nom `sky:<slot>` change ⇒ rebuild), animé **image par image** par
-  `DayGlyphAnimator` (points en JS, 1 s/frame, pas de CSS).
-  Timeline = carte au grand rayon, **infobulle maison** (`.tl-tip`, suit le
-  curseur ; pas de `title` natif — factory `attachTimelineTip` partagée par les
-  deux timelines), points en fond, blocs arrondis **affleurant le container**
-  (sans marge). Au chargement, **squelette miroitant** (`body.booting`, retiré au
-  premier rendu). Tout est neutralisé sous `prefers-reduced-motion`.
-- **2 polices seulement** : `--font-display` = **Bitcount Grid Single** (dot-matrix :
-  wordmark, titres de page/bloc, gros afficheurs comme le chrono et les totaux) ;
-  `--font-body` = **Inter** (corps **et tous les petits labels ≤ 12 px** — capitales
-  comprises — pour la lisibilité). **Pas de serif.** Durées en `tabular-nums`.
-  **Polices auto-hébergées** (aucune requête tierce, hors-ligne dès l'install) :
-  `@font-face` dans `assets/styles/fonts.css`, woff2 sous-ensembles **latin /
-  latin-ext** dans `assets/fonts/` (Inter = police **variable** 100–900, un fichier
-  par sous-ensemble ; Bitcount en 400). Les 4 woff2 + `fonts.css` sont dans `CORE`
-  (sw.js) ; `inter-latin`/`bitcount-latin` sont **préchargés** (`<link rel=preload>`)
-  dans `index.html`. Pour régénérer (nouvelles graisses/glyphes) : refaire les woff2
-  depuis l'API Google `css2` (pas d'outil de subset embarqué) puis bumper `CACHE`.
-- **Icônes des 4 gros boutons** : glyphes **monochromes en grille de points 7×7**
-  (carrée, points jointifs, traits 1 point pour « + » et « pause » ; même rendu
-  que la police), via `dotIcon()` dans `ui/icons.js`. « Reprise » = barre +
-  triangle (clé `resume`).
-  Le reste de l'UI garde les silhouettes Lucide (`icon()`).
+  (`--surface`, `--surface-2`) et **espace**. Échelle `--sp-1..7`.
+- **Papier chaud le jour, Ardoise la nuit** — jamais de blanc ni de noir purs. Le
+  fond porte un **grain** de points (`--grain`, pas 22 px) ; le fond réactif au
+  curseur (`BgDots`) partage **le même pas**, sinon les deux trames moirent.
+- **Contraste d'échelle** : étiquettes minuscules en capitales, chiffres énormes
+  (rapport de 1 à 8 sur une même page). C'est ce qui rend l'info immédiate — pas
+  la décoration.
+- **Une seule grammaire de barre de part** (piste à 8-10 % d'encre, remplissage
+  plein, coins en pilule) pour toute proportion : part d'une tâche, composition
+  du jour, couverture, semaines des Stats, stockage.
+- **Trois niveaux de surface, jamais quatre**, et jamais de carte dans une carte
+  de même fond : page (`--bg`) → panneau (`--surface`) → creux (`--surface-2`).
+- **Rayons** resserrés (`--radius-lg` 16 / `--radius` 12 / `--radius-sm` 9 /
+  `--radius-xs` 7 / `--radius-pill` 999) : l'app se lit comme un instrument de
+  mesure. Les pilules restent pour ce qui se clique.
+- **4 polices, 4 emplois** : `--font-display` **Bitcount Grid Single = LES
+  CHIFFRES** (et le wordmark) ; `--font-head` **Archivo** (titres) ;
+  `--font-body` **IBM Plex Sans** (corps, UI) ; `--font-data` **IBM Plex Mono**
+  (surtitres, libellés, axes, plages horaires).
+  **Plancher de 16 px sur Bitcount** : en dessous la matrice se referme, on
+  bascule sur Plex Mono (qui garde `tabular-nums`). Un contrôle automatique le
+  vérifie (§9).
+  **Polices auto-hébergées** (aucune requête tierce) : `@font-face` dans
+  `assets/styles/fonts.css`, woff2 dans `assets/fonts/`. Archivo, Plex Sans et
+  Plex Mono viennent de l'API Google `css2` (pas d'outil de subset embarqué) ;
+  Archivo n'embarque que le **latin** (l'UI est française). Les 9 woff2 +
+  `fonts.css` sont dans `CORE` (sw.js) ; `plexsans-latin` et `bitcount-latin`
+  sont **préchargés** dans `index.html`.
+- **Texte sur une couleur de tâche** : la palette est libre, le CSS ne peut donc
+  pas décider. `utils/color.js` calcule la luminance, la vue pose `on-dark` /
+  `on-light` (seuil 0,198 = point d'équilibre des contrastes WCAG).
 - **Couleurs des tâches** : 3 palettes **par catégorie** (`PALETTES` dans
-  `constants.js`) — dev = froides, support = chaudes, autre = neutres. Attribution
-  cyclique au sein de la catégorie (`Store.#nextColor(type)`).
-- Thème appliqué sans flash par un petit script inline dans `<head>` (lit le thème
-  stocké avant le 1ᵉʳ rendu). `ThemeView` met aussi à jour `<meta name="theme-color">`.
+  `constants.js`), rabattues sur les familles du système — dev = froides,
+  support = chaudes, autre = neutres chauds. Attribution cyclique
+  (`Store.#nextColor(type)`).
+- Thème appliqué sans flash par un script inline dans `<head>`. `ThemeView` met à
+  jour `<meta name="theme-color">` en lisant le **fond calculé** du body (jamais
+  deux hex recopiés : ils se désynchroniseraient de `variables.css`).
+- **Ce qui est figé** : les **5 glyphes dot-matrix 7×7** (`play, pause, plus,
+  resume, check`) et la **scène « moment de la journée »** (paysage, trajectoire,
+  cadrage). Réglés une fois, on n'y revient pas.
 
 ## 8. Icônes
 
 - `src/ui/icons.js` : pack **Lucide** vendu en SVG inline (aucun réseau, thémé via
   `currentColor`). `icon(name, {size, solid})` renvoie le balisage.
+- **`dotIcon()` et la scène « moment de la journée » sont figés** : les 5 glyphes
+  dot-matrix 7×7 (`play, pause, plus, resume, check`) et le paysage soleil /
+  montagnes ont été réglés une fois pour toutes. Ne pas les redessiner, ne pas en
+  ajouter, ne pas toucher au cadrage de la scène.
 - Icônes statiques du HTML : `<span data-icon="name">` rempli par
   `renderStaticIcons()` au démarrage. **Ajouter une icône** = ajouter une entrée
   dans la map `ICONS`.
+- **La marque (« le repère ») vit en trois exemplaires à garder synchrones** :
+  le SVG inline de l'en-tête (peint aux jetons, donc thémé), `assets/icon.svg`
+  (couleurs en dur + `prefers-color-scheme` : un favicon n'a pas le CSS de la
+  page) et les trois PNG. Géométrie et pistes écartées : `DESIGN_SYSTEM.md`
+  §1 « La marque ».
+- **Régénérer les PNG** : rendre le 512 avec Chromium, puis **rééchantillonner**
+  le 192 et le 180 depuis ce 512 (décodage/encodage PNG en Python pur, zlib
+  suffit). Ne pas demander directement une fenêtre de 192 ou 180 : Chromium
+  headless **clampe la hauteur de fenêtre** sous un certain seuil et rend une
+  image tronquée à mi-hauteur — sans erreur, et le PNG fait bien la taille
+  demandée. Vérifier après coup en décodant le PNG et en mesurant les bornes
+  des aplats, pas à l'œil.
 - Clic sur un bouton contenant une icône : déléguer via `e.target.closest('[data-…]')`
   (le clic peut viser le `<svg>` enfant).
 
@@ -242,15 +298,42 @@ Notes :
 Lancer ces contrôles (rapides, en Node) :
 - **Syntaxe** : `for f in $(find src -name '*.js'); do node --check "$f"; done`
 - **IDs** : tout `el("x")` du JS doit avoir un `id="x"` dans `index.html`.
-- **Icônes** : tout `data-icon="x"` doit exister dans la map `ICONS`.
+- **Icônes** : tout `data-icon="x"` doit exister dans la map `ICONS` (ou dans
+  `DOT_GLYPHS` si `data-dot="true"`).
 - **CSS** : accolades équilibrées par fichier ; tout `var(--x)` utilisé est défini
-  dans `variables.css`.
+  dans `variables.css` ; **aucune couleur en dur** hors `variables.css`.
+- **Plancher Bitcount** : aucune règle `--font-display` sous 16 px.
+- **Contraste** : à faire **sur le DOM rendu**, pas sur les jetons — le fond réel
+  d'un texte dépend des surfaces empilées au-dessus, des opacités d'ancêtres et
+  parfois d'un pseudo-élément (le curseur d'onglets). Recette : une page qui
+  charge `index.html` dans une `<iframe>`, attend la fin du démarrage, injecte
+  `*{transition:none!important;animation:none!important}` dans le document de
+  l'iframe (sans quoi on mesure une couleur en cours d'interpolation), puis pour
+  chaque élément porteur de texte remonte la chaîne des fonds jusqu'au premier
+  opaque et calcule le rapport WCAG. Capturer le rapport avec `--dump-dom`.
+  Trois pièges à reproduire : multiplier les `opacity` de tous les ancêtres ;
+  n'accepter un `::before`/`::after` comme fond que s'il **couvre** l'élément
+  mesuré ; tenir compte de son `transform` (sinon la pilule d'onglet est
+  attribuée aux quatre onglets). Seuil : 4,5:1, ou 3:1 au-delà de 24 px.
+  **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
+- **Service worker** : tout fichier servi est dans `CORE`, et `CORE` ne référence
+  aucun fichier disparu.
 - **Logique métier** : tests ad hoc en Node ESM avec une persistance **simulée**
   (objet `{loadSync, init, loadFull, save, clear}`) — ex. migration, résolution
-  d'horaires, formats. `node --input-type=module -e '…import depuis file://…'`.
+  d'horaires, `plannedMsForDay`, `workRangesBetween`, formats.
   (IndexedDB/DOM ne tournent pas en Node : on teste le domaine, pas le rendu.)
-- **Je ne peux pas voir le rendu** dans cet environnement : signaler les
-  changements visuels à valider par l'utilisateur (capture clair + sombre).
+- **Capture : simuler le survol.** Chromium headless annonce `hover: none` et
+  `pointer: coarse` — donc toute règle sous `@media (hover: hover)` est ignorée,
+  et on photographie la variante tactile en croyant voir le bureau. Ajouter
+  `--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4`
+  à **toutes** les captures et à l'audit de contraste.
+- **Rendu** : servir en HTTP et capturer avec le Chromium préinstallé
+  (`--headless --hide-scrollbars --force-prefers-reduced-motion
+  --virtual-time-budget`), en **clair et en sombre**. Attention : le service
+  worker sert **cache d'abord** — repartir d'un profil vierge, sinon la capture
+  montre l'ancienne version.
+- **Je ne peux pas juger le rendu autrement** : signaler les changements visuels
+  à valider par l'utilisateur (capture clair + sombre).
 
 ## 10. Onglet Stats (rétrospective)
 

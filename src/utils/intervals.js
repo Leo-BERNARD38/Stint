@@ -3,9 +3,10 @@
  * Utilisées pour le temps ouvré (intersection) et le temps non tracé.
  */
 
-/** Longueur du chevauchement entre [aS,aE] et [bS,bE] (0 si disjoints). */
-export function overlap(aStart, aEnd, bStart, bEnd) {
-  return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
+/** Intersection de [aS,aE] et [bS,bE], ou null si les deux sont disjoints. */
+export function intersect(aStart, aEnd, bStart, bEnd) {
+  const s = Math.max(aStart, bStart), e = Math.min(aEnd, bEnd);
+  return e > s ? [s, e] : null;
 }
 
 /** Fusionne une liste d'intervalles en intervalles disjoints triés. */

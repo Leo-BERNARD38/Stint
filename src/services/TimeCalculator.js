@@ -1,6 +1,6 @@
 import { DAY_MS } from "../core/constants.js";
 import { startOfDay, atTime, sameDay } from "../utils/datetime.js";
-import { overlap, unionIntervals, subtractIntervals } from "../utils/intervals.js";
+import { intersect, unionIntervals, subtractIntervals } from "../utils/intervals.js";
 
 /**
  * Calcule les durées ouvrées et les agrégats journaliers à partir des
@@ -22,21 +22,37 @@ export class TimeCalculator {
       .filter(([a, b]) => b > a);
   }
 
-  /** Durée ouvrée (ms) d'un intervalle, jour par jour (gère le multi-jours). */
-  workedMs(startMs, endMs) {
-    if (endMs <= startMs) return 0;
-    let total = 0;
+  /**
+   * Portions ouvrées d'un intervalle, jour par jour (gère le multi-jours).
+   * Renvoie les plages effectivement comptées, bornées à [startMs, endMs] :
+   * c'est la matière du calcul de durée comme de son dessin (ruban brut/net
+   * des Outils), et il n'y a donc qu'une seule règle à maintenir.
+   */
+  workRangesBetween(startMs, endMs) {
+    if (endMs <= startMs) return [];
+    const out = [];
     let cursor = startOfDay(new Date(startMs)).getTime();
     const guard = startOfDay(new Date(endMs)).getTime();
     let safety = 0;
     while (cursor <= guard && safety < 400) {
       for (const [rs, re] of this.workRangesForDay(new Date(cursor))) {
-        total += overlap(startMs, endMs, rs, re);
+        const part = intersect(rs, re, startMs, endMs);
+        if (part) out.push(part);
       }
       cursor += DAY_MS;
       safety += 1;
     }
-    return total;
+    return out;
+  }
+
+  /** Durée ouvrée (ms) d'un intervalle. */
+  workedMs(startMs, endMs) {
+    return this.workRangesBetween(startMs, endMs).reduce((t, [a, b]) => t + (b - a), 0);
+  }
+
+  /** Durée planifiée (ms) d'une journée : la somme de ses plages ouvrées. */
+  plannedMsForDay(day) {
+    return this.workRangesForDay(day).reduce((t, [a, b]) => t + (b - a), 0);
   }
 
   /**

@@ -27,9 +27,11 @@ export class DayTotalView {
     this.root.insertAdjacentHTML("beforeend", dayGlyph());
     this.text = createEl("div", {
       className: "total-card-text",
-      html: '<div class="k">Total aujourd\'hui</div><div class="v">0:00</div>',
+      html: '<div class="k">Total aujourd\'hui</div><div class="v">0:00</div>' +
+            '<div class="sub"></div>',
     });
     this.valueEl = this.text.querySelector(".v");
+    this.subEl = this.text.querySelector(".sub");
     this.root.appendChild(this.text);
     this.#built = true;
   }
@@ -42,7 +44,13 @@ export class DayTotalView {
   /** Met à jour le total du jour réel sans toucher au glyphe. */
   #updateValues() {
     const { total } = this.app.calc.totalsForDay(new Date());
-    this.valueEl.textContent = this.app.formatter.clock(total / 60000);
+    const min = total / 60000;
+    const fmt = this.app.formatter;
+    this.valueEl.textContent = fmt.clock(min);
+    // Les deux unités qu'on vient chercher pour reporter : décimal et Jira. La
+    // carte ne montrait que H:mm — la seule forme qu'on ne colle jamais nulle
+    // part. Et son bas restait vide.
+    this.subEl.textContent = `${fmt.decimal(min)} déc · ${fmt.jira(min)}`;
   }
 
   /** Total live au tick (1 s) : ne reconstruit ni le glyphe ni la structure. */

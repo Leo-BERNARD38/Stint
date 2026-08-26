@@ -6,7 +6,13 @@ html { scrollbar-gutter: stable; }
 
 body {
   font-family: var(--font-body);
-  background: var(--bg);
+  /* Grain de papier : une trame de points très fine sur toute la page. C'est
+     elle qui donne sa matière au fond — le blanc pur était plat. Le fond
+     réactif au curseur (BgDots) partage exactement le même pas (22 px) : il
+     éclaire ce grain au lieu d'y superposer un second réseau (moiré). */
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at center, var(--grain) .9px, transparent 1.3px);
+  background-size: 22px 22px;
   color: var(--text);
   line-height: 1.55;
   font-size: 15px;
@@ -15,14 +21,16 @@ body {
 }
 
 /* Transition douce lors d'un changement de thème (mais pas au chargement). */
-body, .active-card, .total-card, .big-btn, .settings-block, .seg-table td, input, select {
+body, .active-card, .total-card, .big-btn, .set-row, .seg-table td, input, select {
   transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
 }
 
+/* Les titres sont en Archivo (axe de largeur variable) : Bitcount est désormais
+   réservée aux CHIFFRES et au wordmark — jamais à du texte courant. */
 h1, h2, h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
+  letter-spacing: -.02em;
 }
 
 button { font-family: inherit; cursor: pointer; color: inherit; }
@@ -36,6 +44,9 @@ a { color: inherit; }
 ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 .empty { color: var(--text-faint); text-align: center; padding: var(--sp-6); font-size: 14px; }
+
+/* Chiffres : partout où une durée est affichée, les colonnes doivent s'aligner. */
+.tnum { font-variant-numeric: tabular-nums; }
 
 /* Accessibilité : neutralise les animations si l'utilisateur le demande. */
 @media (prefers-reduced-motion: reduce) {

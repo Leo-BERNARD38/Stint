@@ -100,15 +100,17 @@ export class TaskListView {
 
     const actions = createEl("div", { className: "task-actions" });
     const store = this.app.store;
-    // contrôles de cycle de vie (pastilles colorées), puis copie + édition
+    // Contrôles de cycle de vie d'abord — eux seuls restent visibles au repos
+    // (classes `ctrl-*`, cf. components.css) ; copie, lien et édition se
+    // révèlent au survol, sinon la ligne compte six cibles pour quatre nombres.
     if (task.done) {
       actions.appendChild(this.#iconBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id), "ctrl-play"));
     } else if (isActive) {
       actions.appendChild(this.#iconBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
+      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
     } else {
       actions.appendChild(this.#iconBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id)));
+      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
     }
     actions.append(
       createCopyButton(this.app, fmt.decimal(minutes), "Déc."),

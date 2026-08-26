@@ -91,19 +91,30 @@ Ainsi « Reprise » ne liste que les tâches réellement en cours.
 ## Design
 
 Interface **flat** : pas de bordures structurelles, des surfaces et de l'espace pour
-hiérarchiser. Tous les jetons de couleur vivent dans `assets/styles/variables.css` et
-sont thémés via l'attribut `[data-theme]` (`light` / `dark` / `system`).
+hiérarchiser. Papier chaud le jour, « Ardoise » la nuit — jamais de blanc ni de noir
+purs. Tous les jetons de couleur vivent dans `assets/styles/variables.css` et sont thémés
+via l'attribut `[data-theme]` (`light` / `dark` / `system`).
+
+La règle qui tient l'ensemble : **une couleur = une information**, sur quatre niveaux.
+Le **minium** dit l'instant (chrono en marche, repère « maintenant »), le **contraste
+inversé** dit le registre (total du jour, tête des Stats), le **bleu de Prusse** est la
+seule couleur de ce qui se clique, et le reste est en encre. S'y ajoutent trois teintes
+de service qui ne sortent jamais de leur rôle : ambre = ce qui manque, vert = ce qui est
+acquis. Détail complet dans `DESIGN_SYSTEM.md`.
 
 Icônes : pack [Lucide](https://lucide.dev) (licence ISC), embarqué localement en SVG
-inline (`src/ui/icons.js`) — aucune dépendance réseau, se thème via `currentColor`.
+inline (`src/ui/icons.js`) — aucune dépendance réseau, se thème via `currentColor`. Les
+quatre boutons d'action portent des glyphes maison en grille de points 7×7.
 
-Typographie : **deux polices** seulement. **Bitcount Grid Single** — la police
-« caractère », rendu display à points — pour le wordmark, les titres et les afficheurs
-(chronomètre, total du jour) ; **Inter** pour tout le corps et l'UI (lisibilité).
+Typographie : **quatre polices, quatre emplois**, toutes auto-hébergées (aucune requête
+tierce, hors-ligne dès l'installation). **Bitcount Grid Single** pour **les chiffres** et
+le wordmark — jamais sous 16 px, la matrice de points s'y referme ; **Archivo** pour les
+titres ; **IBM Plex Sans** pour le corps et l'UI ; **IBM Plex Mono** pour les surtitres,
+les axes et les plages horaires.
 
 ## Format de données
 
-Schéma **versionné** (`version: 4`), migré automatiquement depuis les versions
+Schéma **versionné** (`version: 8`), migré automatiquement depuis les versions
 antérieures à l'ouverture (champs ajoutés avec valeurs par défaut, `jiraKey`
 replié dans le nom en v3→v4). Le JSON exporté est le format maître et reste
 compatible avec une future migration vers Vite + React.

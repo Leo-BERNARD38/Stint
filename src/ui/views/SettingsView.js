@@ -1,10 +1,16 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
-import { fmtDateInput, parseDateInput } from "../../utils/datetime.js";
+import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2 } from "../../utils/datetime.js";
 import { clampEyeMinutes } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+
+/* Fenêtre par défaut du ruban de précédence : 6 h → 20 h. Assez large pour une
+   journée de bureau, assez serrée pour que les créneaux restent lisibles — mais
+   elle s'élargit si le planning déborde, sinon un horaire atypique (nuit,
+   astreinte) sortirait du cadre sans qu'on le voie. */
+const STRIP_START = 6 * 60, STRIP_END = 20 * 60;
 
 /**
  * Réglages : horaires (base + exceptions jour/date), conversion Jira, arrondi,
@@ -105,6 +111,11 @@ export class SettingsView {
       if (row) { dateSelect.value = row.dataset.date; this.#loadDate(); }
     });
 
+    // --- pile de précédence : quel niveau l'emporte, pour une date donnée ---
+    const precDate = el("precDate");
+    precDate.value = fmtDateInput(new Date());
+    precDate.addEventListener("change", () => this.#renderPrecedence());
+
     // --- onglets « Horaires » (De base / Par jour / Par date) : évite le gros scroll ---
     el("hoursSeg").addEventListener("click", (e) => {
       const b = e.target.closest("[data-hours]");
@@ -112,9 +123,28 @@ export class SettingsView {
     });
     this.#selectHoursTab("base");
 
+    this.#bindNavSpy();
+
     // pré-remplissage initial des éditeurs
     this.#loadWeekday();
     this.#loadDate();
+  }
+
+  /**
+   * Sous-navigation collante : la section visible s'allume. Sans ce repère, une
+   * nav collante ne fait qu'occuper la colonne — elle n'indique pas où l'on est.
+   */
+  #bindNavSpy() {
+    const links = [...el("setNav").querySelectorAll("a")];
+    const byId = new Map(links.map((a) => [a.getAttribute("href").slice(1), a]));
+    const seen = new Set();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id);
+      // La première section visible dans l'ordre du document fait foi.
+      const active = [...byId.keys()].find((id) => seen.has(id));
+      links.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + active));
+    }, { rootMargin: "-90px 0px -55% 0px" });
+    for (const id of byId.keys()) { const n = document.getElementById(id); if (n) io.observe(n); }
   }
 
   #selectHoursTab(name) {
@@ -174,6 +204,7 @@ export class SettingsView {
     }
 
     this.#renderOverrideLists();
+    this.#renderPrecedence();
   }
 
   /** Rappel « repos des yeux » : état de l'interrupteur, période et permission. */
@@ -193,6 +224,79 @@ export class SettingsView {
       denied: "Notifications refusées pour ce site : le rappel s'affichera en bandeau dans l'app. Réautorisez-les depuis le cadenas de la barre d'adresse.",
       unsupported: "Ce navigateur ne gère pas les notifications système : le rappel s'affichera en bandeau dans l'app.",
     }[perm];
+  }
+
+  /**
+   * Pile de précédence + ruban du jour.
+   *
+   * Les horaires se résolvent sur trois niveaux (base < jour de semaine < date)
+   * et rien, jusqu'ici, ne disait lequel gagnait : on réglait une exception sans
+   * savoir si elle servait à quelque chose. On affiche donc les trois candidats
+   * pour une date de référence, on cercle celui que `Settings.blocksFor()`
+   * retient, et on dessine le résultat à l'échelle. Lecture pure du domaine —
+   * aucune règle n'est réimplémentée ici.
+   */
+  #renderPrecedence() {
+    const s = this.settings;
+    const key = el("precDate").value;
+    if (!key) return;
+    const date = parseDateInput(key);
+    const dow = isoDow(date);
+
+    const baseBlocks = s.isWorkDay(dow) ? s.baseBlocks() : [];
+    const rows = [
+      { k: "Base", blocks: baseBlocks, set: true },
+      { k: cap(WEEKDAY_FULL[dow - 1]), blocks: s.weekdayHours[dow], set: !!s.weekdayHours[dow] },
+      { k: this.#fmtDate(key), blocks: s.dateHours[key], set: !!s.dateHours[key] },
+    ];
+    // Le plus spécifique DÉFINI l'emporte : c'est exactement l'ordre de blocksFor().
+    let winner = 0;
+    for (let i = rows.length - 1; i >= 0; i--) { if (rows[i].set) { winner = i; break; } }
+
+    el("precStack").innerHTML = rows.map((r, i) => {
+      const off = !r.set;
+      const val = off ? "suit le niveau au-dessus" : describeBlocks(r.blocks);
+      return (
+        `<div class="prec-row${i === winner ? " wins" : ""}">` +
+          `<span class="prec-step">${i + 1}</span>` +
+          `<span class="prec-k">${escapeHtml(r.k)}</span>` +
+          `<span class="prec-v${off ? " off" : ""}">${escapeHtml(val)}</span>` +
+          `<span class="prec-tag">${i === winner ? "retenu" : "ignoré"}</span>` +
+        `</div>`
+      );
+    }).join("");
+
+    this.#renderStrip(s.blocksFor(date));
+  }
+
+  /** Ruban : les créneaux retenus, dessinés à l'échelle. */
+  #renderStrip(blocks) {
+    const strip = el("precStrip");
+    const axis = el("precStripAxis");
+    const mins = (blocks ?? []).flat().map(toMin);
+    // La fenêtre s'ouvre à l'heure pleine pour englober tout le planning.
+    const from = Math.min(STRIP_START, ...mins.map((m) => Math.floor(m / 60) * 60));
+    const to = Math.max(STRIP_END, ...mins.map((m) => Math.ceil(m / 60) * 60));
+    const span = Math.max(60, to - from);
+    const pct = (min) => ((min - from) / span) * 100;
+
+    strip.innerHTML = blocks && blocks.length
+      ? blocks.map(([a, b]) => {
+          const l = pct(toMin(a));
+          return `<i style="left:${l}%;width:${Math.max(0.5, pct(toMin(b)) - l)}%"></i>`;
+        }).join("")
+      : '<span class="strip-off">jour non travaillé</span>';
+
+    // Un repère toutes les 2 h, mais jamais plus de 8 : au-delà ils se marchent
+    // dessus dès que la fenêtre s'élargit.
+    const step = Math.max(120, Math.ceil(span / 8 / 60) * 60);
+    axis.innerHTML = "";
+    for (let m = from; m <= to; m += step) {
+      axis.appendChild(createEl("span", {
+        text: pad2(Math.floor(m / 60)) + ":" + pad2(m % 60),
+        attrs: { style: `left:${pct(m)}%` },
+      }));
+    }
   }
 
   #renderOverrideLists() {

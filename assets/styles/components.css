@@ -5,10 +5,12 @@
    ============================================================================ */
 
 /* ---------- Header / logo / wordmark ---------- */
-.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; color: var(--text); }
+/* La marque est peinte avec les jetons (fill="var(--…)" dans le SVG inline) :
+   elle bascule avec le thème sans qu'aucune valeur soit recopiée ici. */
+.logo { width: 28px; height: 28px; display: block; flex-shrink: 0; }
 .wordmark {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   font-size: 22px;
   letter-spacing: 0;
   cursor: text;
@@ -28,10 +30,10 @@
   display: inline-flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
 }
 .backup-pill:hover { background: var(--surface-hover); }
-.backup-pill.warn { background: var(--warn-bg); color: var(--warn-text); }
-.backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop); }
-.backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--play); }
-.backup-pill.warn .dot { background: var(--warn-text); }
+.backup-pill.warn { color: var(--text); }
+.backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop-ink); }
+.backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.backup-pill.warn .dot { background: var(--stop); }
 .backup-pill.crit .dot { background: var(--stop); }
 
 /* ---------- Boutons icône (thème, etc.) ---------- */
@@ -42,14 +44,16 @@
 }
 .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
 .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-.icon-btn.active { background: var(--accent); color: var(--accent-text); }
+.icon-btn.active { background: var(--accent-wash); color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 /* ---------- Titres de bloc ---------- */
 .block-title {
-  font-family: var(--font-display); font-weight: 600; font-size: 17px;
-  letter-spacing: 0; margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+  font-family: var(--font-head); font-weight: 700; font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: .13em; font-variation-settings: "wdth" 108;
+  margin: 0 0 var(--sp-5); display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
 }
-.block-title .hint { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--text-faint); letter-spacing: 0; }
+.block-title .hint { font-family: var(--font-data); font-weight: 400; font-size: 11px; color: var(--text-faint); letter-spacing: 0; text-transform: none; }
 .block-title .grow { flex: 1; }
 /* Deux groupes de chips côte à côte dans un titre (Stats › Évolution) : sans
    respiration ils se lisent comme un seul contrôle segmenté. */
@@ -59,72 +63,101 @@
 /* ---------- Onglets (texte au-dessus du curseur glissant) ---------- */
 .tab {
   position: relative; z-index: 1; border: none; background: transparent;
-  padding: 9px 8px; font-weight: 600; font-size: 14.5px; color: var(--text-faint);
+  padding: 9px 8px; font-weight: 600; font-size: 14.5px; color: var(--text-soft);
   border-radius: var(--radius-pill); text-align: center;
   transition: color .22s var(--ease) .08s; /* léger délai : le texte s'allume quand le curseur arrive */
 }
 .tab:hover { color: var(--text); transition-delay: 0s; }
 .tab.active { color: var(--accent-text); }
 
-/* ---------- Carte tâche active ---------- */
+/* ---------- Carte tâche active ----------
+   C'est l'instrument. « Ça tourne » se lit à DEUX choses, jamais à un filet
+   collé sur un bord : la pastille qui bat, et le nombre en minium. Un liseré
+   latéral est un ornement de bord — il ne dit rien que le contenu ne dise, et
+   il casse la silhouette de la carte. */
 .active-card {
+  position: relative; overflow: hidden;
   background: var(--surface); border-radius: var(--radius-lg);
   padding: var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 128px;
   min-width: 0; /* autorise le rétrécissement dans la grille héros (pas de débordement) */
 }
 .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; transition: box-shadow .2s var(--ease); }
+/* Battement : le seul mouvement permanent de l'interface. */
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stop) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 13px color-mix(in srgb, var(--stop) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stop) 0%, transparent); }
+}
+.active-card.is-running .active-dot { animation: livePulse 1.9s var(--ease) infinite; }
 .active-meta { flex: 1; min-width: 0; }
-.active-label { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+.active-label { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .17em; color: var(--text-faint); }
 .active-name { font-size: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .active-name.idle { color: var(--text-faint); font-weight: 500; }
 .active-extra { display: flex; align-items: center; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
 .active-extra:empty { display: none; }
-.active-started { font-size: 12px; color: var(--text-faint); }
-.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; }
+.active-started { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
+.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.6vw, 54px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.active-card.is-running .active-timer { color: var(--stop); }
 .active-timer.idle { color: var(--text-faint); }
 /* En pause : la tâche reste affichée mais atténuée (vs en cours, pleine opacité). */
 .active-card.paused .active-name, .active-card.paused .active-extra,
 .active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
 .active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
 
-/* ---------- Gros boutons (flat : icône à gauche, libellé à droite) ---------- */
+/* ---------- Gros boutons (flat : glyphe à gauche, libellé empilé) ----------
+   Quatre actions, quatre vraies cibles : 74 px de haut, du souffle autour du
+   glyphe. Le libellé et son raccourci sont EMPILÉS contre le glyphe : étirés
+   d'un bord à l'autre, ils faisaient lire une ligne de tableau, pas un bouton.
+
+   La couleur, ici, ne décore pas. Trois glyphes bleus sur quatre boutons tous
+   également cliquables ne distinguaient rien : l'accent y était du tuning.
+   Il ne reste donc qu'UN glyphe coloré — celui de Play, l'action par défaut —
+   et la couleur du bouton principal DIT ce qu'il va faire : accent au repos
+   (« lancer »), minium en marche (« arrêter »). Les trois autres sont des
+   cartes d'encre. */
 .big-btn {
+  position: relative; overflow: hidden;
   border: none; background: var(--surface); border-radius: var(--radius);
-  padding: var(--sp-4) var(--sp-4); display: flex; flex-direction: row; align-items: center; gap: var(--sp-3);
+  min-height: 74px; padding: 0 18px; display: flex; flex-direction: row; align-items: center; gap: 15px;
   text-align: left; color: var(--text); /* transition définie dans la section motion (plus bas) */
 }
 .big-btn:hover { background: var(--surface-hover); }
 .big-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-/* Icône : monochrome, grille de points, calée à gauche. */
 .big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--text); flex-shrink: 0; }
-.big-btn .label { font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
-.big-btn .kbd { font-family: var(--font-body); font-weight: 600; font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; flex-shrink: 0; }
+.big-btn .t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.big-btn .label { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.big-btn .kbd { font-family: var(--font-data); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); }
 
-#btnPlay.is-running { background: var(--pause); color: #fff; }
-#btnPlay.is-running:hover { background: color-mix(in srgb, var(--pause) 88%, #000); }
-#btnPlay.is-stopped { background: var(--play); color: #fff; }
-#btnPlay.is-stopped:hover { background: color-mix(in srgb, var(--play) 88%, #000); }
-#btnPlay.is-running .glyph, #btnPlay.is-stopped .glyph { color: #fff; }
-#btnPlay.is-running .kbd, #btnPlay.is-stopped .kbd { color: rgba(255, 255, 255, .82); background: rgba(255, 255, 255, .16); }
-.big-btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+/* Les quatre boutons sont quatre cartes identiques. Un seul glyphe porte de la
+   couleur — celui de Play : dans une rangée où tout se clique, la couleur ne
+   peut plus dire « cliquable », elle dit « celui-là ». Et elle dit ce qu'il va
+   faire : accent au repos (lancer), minium en marche (arrêter). Le fond, lui,
+   ne bouge pas : un aplat ou un lavis de 340 px faisait de la mise en pause
+   l'élément le plus fort de la page, plus fort que le chrono qu'elle arrête. */
+#btnPlay.is-stopped .glyph { color: var(--accent); }
+#btnPlay.is-running .glyph { color: var(--stop); }
+.big-btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
-/* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ---------- */
+/* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ----------
+   Contraste inversé (N2) : le sélecteur de jour désigne le registre qu'on lit,
+   pas une action. L'accent (N3) reste réservé à ce qui se clique pour agir. */
 .daynav {
-  display: flex; align-items: center; gap: 2px;
-  width: 440px; max-width: 100%;          /* pixel-perfect avec la pilule d'onglets */
-  background: var(--accent); color: var(--accent-text); border-radius: var(--radius-pill); padding: 4px;
+  display: inline-flex; align-items: center; gap: 2px; flex: none;
+  background: var(--inverse-bg); color: var(--inverse-fg); border-radius: var(--radius-pill); padding: 4px;
 }
 .daynav button {
   border: none; background: transparent; border-radius: 50%;
-  width: 34px; height: 34px; padding: 0; color: var(--accent-text); flex-shrink: 0;
+  width: 30px; height: 30px; padding: 0; color: var(--inverse-fg); flex-shrink: 0;
 }
-.daynav button:hover { background: color-mix(in srgb, var(--accent-text) 18%, transparent); }
-.daynav .date { flex: 1; min-width: 0; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--accent-text); padding: 0 var(--sp-2); }
-/* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien badge). */
-#dayToday.is-today { color: var(--play); }
+.daynav button:hover { background: color-mix(in srgb, var(--inverse-fg) 18%, transparent); }
+.daynav .date { min-width: 0; font-family: var(--font-data); font-weight: 500; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--inverse-fg); padding: 0 var(--sp-3); }
+/* Sur aujourd'hui : le bouton n'a plus rien à proposer. Il le dit en reculant,
+   pas en s'allumant — s'allumer aurait signalé une action à faire. */
+#dayToday.is-today { color: var(--text-soft); background: transparent; }
+#dayToday.is-today:hover { background: var(--ctl); }
 /* Bouton « Aujourd'hui » : pilule pour s'accorder à la nav jour. */
-.btn-ghost { border: none; background: var(--surface); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
-.btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
+.btn-ghost { border: none; background: var(--ctl); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
+.btn-ghost:hover { background: var(--ctl-hover); color: var(--text); }
 
 /* ---------- Timeline (carte arrondie, grille de points, blocs en pilule) ---------- */
 /* ----- Fond dot-matrix « spotlight » (easter-egg, piloté par BgDots.js) -----
@@ -137,7 +170,7 @@
   display: none;
   --mx: 50%; --my: 50%;
   background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.4px);
-  background-size: 18px 18px; background-position: center;
+  background-size: 22px 22px; background-position: center;
   -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
           mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
   opacity: 0; transition: opacity .45s var(--ease);
@@ -149,12 +182,15 @@
 @media (prefers-reduced-motion: reduce) { .bg-dots { display: none !important; } }
 @media (hover: none) { .bg-dots { display: none !important; } }
 
-.timeline-wrap { position: relative; margin-bottom: var(--sp-6); }
+.timeline-wrap { position: relative; margin-bottom: var(--sp-4); }
+.timeline-wrap.dot-card { padding: var(--sp-5) var(--sp-5) var(--sp-4); }
+/* Le titre colle à la piste : il la nomme, il ne la surplombe pas. */
+.timeline-wrap .block-title { margin-bottom: var(--sp-3); }
 /* Infobulle maison (réactive, suit le curseur, flotte au-dessus du bloc survolé). */
 .tl-tip {
   position: absolute; z-index: 6; pointer-events: none;
   left: 50%; top: 0; /* centré au repos (JS pose left/top au survol) : pas de débordement hors-écran */
-  background: var(--accent); color: var(--accent-text);
+  background: var(--inverse-bg); color: var(--inverse-fg);
   border-radius: var(--radius-sm); padding: 7px 11px; box-shadow: var(--shadow-pop);
   font-size: 12.5px; line-height: 1.3; white-space: nowrap;
   opacity: 0; transform: translate(-50%, calc(-100% - 10px)) scale(.96);
@@ -165,15 +201,35 @@
 .tl-tip .nm .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .tl-tip .mt { opacity: .72; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .timeline {
-  position: relative; height: 64px; background: var(--surface-2);
+  position: relative; height: 74px; background: var(--surface-2);
   border-radius: var(--radius); overflow: hidden;
   background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
   background-size: 11px 11px; background-position: center;
 }
+/* Graduation horaire : des filets fins toutes les heures, marqués toutes les
+   deux heures. Rendus DERRIÈRE les segments (z-index 1) : ils donnent l'échelle
+   sans jamais disputer la lecture des blocs. */
+.tl-hour { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rule-hour); z-index: 2; pointer-events: none; }
+.tl-hour.maj { background: var(--rule-hour-maj); }
+
 /* Bande déjeuner : superposition sombre au-dessus des segments (DS §7.1). */
 .tl-lunch { position: absolute; top: 0; bottom: 0; z-index: 5; background: var(--lunch-overlay); pointer-events: none; }
+.tl-lunch b { position: absolute; left: 50%; top: 7px; transform: translateX(-50%);
+  font-family: var(--font-data); font-size: 9px; font-weight: 500; letter-spacing: .12em;
+  /* Le voile du déjeuner assombrit la piste : l'encre faible y repassait sous
+     le seuil. Sur une surface voilée, on monte d'un cran. */
+  text-transform: uppercase; color: var(--text-soft); white-space: nowrap; }
+/* Un segment porte son nom et sa durée dès qu'il est assez large : sans cela il
+   faut survoler chaque bloc pour savoir ce qu'on a fait de sa journée. */
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 0 15px; overflow: hidden;
   transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
+.tl-seg.on-dark { color: var(--on-color-dark); }
+.tl-seg.on-light { color: var(--on-color-light); }
+.tl-seg b { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.tl-seg i { font-family: var(--font-data); font-size: 10px; font-style: normal; opacity: .95;
+  font-variant-numeric: tabular-nums; pointer-events: none; }
 .tl-seg:hover, .tl-seg.hl { filter: brightness(1.08); }
 /* `.hl` = survol croisé depuis la ligne du tableau (même rendu que le survol direct). */
 .timeline .tl-seg:hover, .timeline .tl-seg.hl { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 32%, transparent); }
@@ -184,25 +240,38 @@
 .tl-grip.left { left: 0; } .tl-grip.right { right: 0; }
 .tl-grip span { width: 3px; height: 44%; border-radius: 2px; background: var(--grip); transition: height .2s var(--ease-out), background-color .2s var(--ease-out); }
 .tl-seg:hover .tl-grip span { height: 56%; background: var(--grip-strong); }
-/* Zones de trou (temps non tracé) : pointillé cliquable, ambre au survol. */
-.tl-gap { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs); background: var(--gap-bg);
+/* Zones de trou : un TROU se dessine, il ne se peint pas. Hachures à 45°,
+   la même trame que la carte « temps non tracé » et que le hors-horaires du
+   calcul brut/net — une seule idée graphique pour une seule idée. */
+.tl-gap { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs);
+  background-image: var(--hatch-img);
   box-shadow: inset 0 0 0 1px var(--gap-ring); display: grid; place-items: center; cursor: pointer; z-index: 2;
-  transition: background-color .22s var(--ease-out), box-shadow .22s var(--ease-out); }
-.tl-gap:hover { background: var(--gap-bg-hover); box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
-.tl-gap-lab { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+  transition: box-shadow .22s var(--ease-out); }
+.tl-gap:hover { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
+.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); white-space: nowrap; }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
-.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; z-index: 6; }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); pointer-events: none; z-index: 6; }
+.tl-now b { position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 1px 6px;
+  border-radius: var(--radius-pill); background: var(--stop); color: var(--on-signal); white-space: nowrap; }
+.tl-now.at-start b { left: 0; transform: none; }
+.tl-now.at-end b { left: auto; right: 0; transform: none; }
 /* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
 .tl-drag-tip { position: absolute; z-index: 8; pointer-events: none; opacity: 0;
   left: 50%; top: 0; /* centré au repos (JS pose left/top pendant le glisser) */
-  background: var(--accent); color: var(--accent-text); border-radius: var(--radius-pill);
-  padding: 4px 11px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+  background: var(--inverse-bg); color: var(--inverse-fg); border-radius: var(--radius-pill);
+  padding: 4px 11px; font-family: var(--font-data); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap;
   box-shadow: var(--shadow-pop); transform: translate(-50%, calc(-100% - 8px)); transition: opacity .12s var(--ease); }
 .tl-drag-tip.show { opacity: 1; }
-.tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.tl-tick { position: absolute; top: 0; white-space: nowrap; }
+.tl-axis { position: relative; height: 19px; margin-top: var(--sp-2); font-family: var(--font-data); font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.tl-tick { position: absolute; top: 4px; white-space: nowrap; }
+/* Règle graduée sous la piste : un trait par heure, plus haut toutes les deux.
+   C'est l'échelle de l'instrument — elle reste lisible même quand les blocs
+   couvrent toute la journée. */
+.tl-atick { position: absolute; top: 0; width: 1px; height: 3px; background: var(--rule-hour); }
+.tl-atick.maj { height: 6px; background: var(--rule-hour-maj); }
 
 /* ---------- Popover de remplissage d'un trou (flottant) ---------- */
 .fill-backdrop { display: none; }
@@ -212,8 +281,8 @@
   transition: opacity .16s var(--ease-out); }
 .fill-pop.show { opacity: 1; visibility: visible; }
 .fill-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-.fill-head .fill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
-.fill-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
+.fill-head .fill-dot { width: 7px; height: 7px; border-radius: 2px; background: var(--text-faint); flex-shrink: 0; }
+.fill-kicker { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--text-faint); }
 .fill-x { margin-left: auto; width: 26px; height: 26px; border: none; border-radius: 9px; background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; }
 .fill-x:hover { background: var(--surface-2); color: var(--text); }
 .fill-range { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; margin-bottom: 15px; }
@@ -236,7 +305,7 @@
 .fill-create-btn.open .o-chev { transform: rotate(180deg); }
 .fill-create { display: flex; flex-direction: column; gap: 5px; padding: 2px 2px 0; }
 .fill-create-lab { font-size: 11px; color: var(--text-faint); font-weight: 600; padding: 2px 2px 4px; }
-.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--bg); color: var(--text);
+.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--ctl); color: var(--text);
   border-radius: 11px; padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;
   transition: background-color .15s var(--ease); }
 .fill-task:hover { background: var(--surface-2); }
@@ -255,37 +324,85 @@
 }
 
 /* ---------- Bloc « Temps non tracé » (aside Journée) ---------- */
-.untracked { margin-top: var(--sp-4); background: var(--surface); border-radius: var(--radius-sm); padding: var(--sp-4); }
-.untracked-head { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.untracked-head .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; }
-.untracked-total { margin-left: auto; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
-.untracked-total.has { color: var(--pause); }
-.untracked-total.clear { color: var(--play); }
+/* Temps non tracé : une carte hachurée, pas une carte jaune. La trame dit
+   « il manque quelque chose » sans ajouter une teinte à l'écran, et le chiffre
+   se voit depuis l'autre bout de la pièce — sinon on ne comble jamais rien. */
+.untracked { margin-top: var(--sp-4); background-color: var(--surface-2);
+  background-image: var(--hatch-img); border-radius: var(--radius); padding: var(--sp-4); }
+.untracked-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-soft); }
+.untracked-total { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: 23px;
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.untracked-total.has { color: var(--text); }
+.untracked-total.clear { color: var(--text-faint); }
 .untracked-list { display: flex; flex-direction: column; gap: 9px; }
-.untracked-row { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
-.untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
+.untracked-row { display: flex; align-items: center; gap: 9px; font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 2px; background: var(--text-faint); flex-shrink: 0; }
 .untracked-row .ut-range { white-space: nowrap; }
 .untracked-row .ut-dur { font-weight: 700; color: var(--text); }
-.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--surface-2); }
-.untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--play); font-weight: 600; }
+.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; font-family: var(--font-body); font-weight: 600;
+  background: var(--surface); color: var(--text); }
+.untracked-row .ut-fill:hover { background: var(--surface-hover); }
+.untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-soft); font-weight: 600; }
+/* Journée complète : la carte n'a plus rien à réclamer. Elle perd sa trame —
+   c'est l'ABSENCE de hachures qui dit « rien ne manque ». Pas besoin de vert
+   pour féliciter : le registre est plein, ça se voit. */
+.untracked:has(.untracked-zero) { background-image: none; }
+
+/* ---------- Couverture du jour (rail Totaux) ----------
+   L'autre face du « temps non tracé » : la part de la journée PLANIFIÉE qui est
+   effectivement tracée. Une barre, pas un anneau — c'est le seul repère
+   circulaire qu'aurait porté l'interface, et il n'aurait ressemblé à rien
+   d'autre. Elle reprend exactement la grammaire de la barre de part des tâches
+   et de la jauge de stockage. */
+.coverage { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: 7px; padding: 0 var(--sp-1); }
+.cov-top { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+/* Bitcount ne descend jamais sous 16 px : la matrice se refermerait. */
+.cov-pct { font-family: var(--font-display); font-weight: 400; font-size: 21px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--accent); }
+.cov-k { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--text-faint); }
+.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); }
+.cov-track i { display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width .4s var(--ease-out); }
+.cov-lab { display: flex; justify-content: space-between; gap: var(--sp-3);
+  font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+/* Journée bouclée : la barre est pleine. C'est tout ce qu'il y a à dire, et
+   une barre pleine se voit — inutile de la repeindre. */
 
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {
   position: relative; overflow: hidden;
-  background: var(--accent); color: var(--accent-text);
+  background: var(--inverse-bg); color: var(--inverse-fg);
   border-radius: var(--radius-lg); padding: var(--sp-4) var(--sp-5);
   min-height: 128px; min-width: 0; display: flex; flex-direction: column; justify-content: center;
 }
 /* Scène « moment de la journée » : fond de carte pleine largeur (derrière le
    texte ; moitié gauche / haut gauche laissés vides par le dessin). Animée image
    par image en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
-.total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--accent-text); pointer-events: none; }
+.total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--inverse-fg); pointer-events: none; }
 .total-card-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
-.total-card .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .55; }
-.total-card .v { font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; margin-top: 4px; letter-spacing: .02em; }
+.total-card .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .17em; opacity: .72; }
+.total-card .v { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.6vw, 56px); line-height: 1.02; margin-top: 2px; letter-spacing: .02em; }
+/* Le total du jour dans les deux autres unités de report. La carte n'avait que
+   son chiffre : les deux tiers du bas restaient vides, et l'information qu'on
+   vient chercher (ce qu'on va coller dans Jira) manquait. */
+.total-card .sub { margin-top: 7px; font-family: var(--font-data); font-size: 11px;
+  font-variant-numeric: tabular-nums; opacity: .74; letter-spacing: .03em; }
 
-/* ---------- Totaux (aside Journée) ---------- */
+/* ---------- Totaux (aside Journée) ----------
+   Une barre empilée en tête du rail : la composition de la journée se lit d'un
+   coup, avant même les trois chiffres. Même grammaire que la barre de part
+   d'une tâche et que la barre d'une semaine — une seule idée de « part ».  */
 .totals { display: flex; flex-direction: column; }
+.totals-split { display: flex; height: 9px; border-radius: var(--radius-pill); overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); margin-bottom: var(--sp-3); }
+.totals-split i { display: block; transition: width .4s var(--ease-out); }
+.totals-split i.dev { background: var(--dot-dev); }
+.totals-split i.support { background: var(--dot-support); }
+.totals-split i.autre { background: var(--dot-autre); }
 .total-line { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-1); }
 .total-line + .total-line { border-top: 1px dotted var(--dot); }
 .total-line .tdot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
@@ -293,71 +410,131 @@
 .total-line .tdot.support { background: var(--dot-support); }
 .total-line .tdot.autre { background: var(--dot-autre); }
 .total-line .tname { flex: 1; color: var(--text-soft); text-transform: capitalize; }
-.total-line .tamt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.total-line .tamt { font-family: var(--font-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.15; }
 /* Ligne « Total » du jour (gras). */
 .total-sum { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-1) var(--sp-2); }
 .total-sum .tname { flex: 1; font-weight: 700; }
-.total-sum .tamt { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.total-sum .tamt { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
 
-/* Carte à filet pointillé (esthétique Nothing) : structure une section sans la
-   surcharger (pas de fond, juste le contour --dot). Format partagé par les
-   sections de Journée, les groupes de Tâches, le tableau Segments et les blocs
-   Stats (.stat-block), pour une unité visuelle d'une page à l'autre. */
-.dot-card, .stat-block { border: 1px dotted var(--dot); border-radius: var(--radius); padding: var(--sp-5); }
+/* ---------- Panneau : la carte de contenu ----------
+   Le filet pointillé sur fond de page ne portait rien : il dessinait un cadre
+   là où le système dit de distinguer par les SURFACES. Le panneau est donc une
+   vraie carte de papier posée sur le papier de fond, avec un cheveu d'ombre.
+   Trois niveaux suffisent alors partout : page (--bg) → panneau (--surface) →
+   creux (--surface-2, pistes, tuiles, champs).
+
+   Conséquence à tenir : tout contrôle qui vaut `--surface` par défaut devient
+   invisible DANS un panneau. On le descend d'un cran — la règle groupée plus
+   bas s'en charge une fois pour toutes (même piège que la modale). */
+.dot-card, .stat-block {
+  background: var(--surface); border-radius: var(--radius);
+  padding: var(--sp-5); box-shadow: var(--shadow-card);
+}
+/* Les contrôles qui apparaissent À LA FOIS sur le fond de page et dans un
+   panneau ne peuvent pas nommer une surface : `--surface` les fait disparaître
+   dans une carte `--surface`. Ils TEINTENT donc leur hôte, quel qu'il soit.
+   Une valeur, aucun cas particulier, et rien à réécrire quand une carte change
+   de fond (jetons `--ctl` / `--ctl-hover` dans variables.css). */
 
 /* ---------- Liste des tâches (espace + survol, aucune ligne) ---------- */
-.task-list { display: flex; flex-direction: column; gap: 6px; }
-.task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3); border-radius: var(--radius-sm); }
-.task-row:hover { background: var(--surface); }
+/* Filets pointillés entre les lignes. Sans eux, la barre de part collée sous
+   chaque nom se lisait comme un SOULIGNEMENT du nom, pas comme une mesure. Le
+   filet redonne à la ligne son cadre, et la barre redevient une barre. */
+.task-list { display: flex; flex-direction: column; }
+/* Grille, pas flex, et la durée en DERNIÈRE piste — donc collée au bord droit
+   de la carte, à la même abscisse sur toutes les lignes, quel que soit le
+   nombre d'actions (une tâche avec lien en a une de plus) et quel que soit
+   l'état de survol (les actions secondaires n'apparaissent qu'alors). Des
+   chiffres tabulaires qui ne s'alignent pas, dans un compteur de temps, c'est
+   le détail qui trahit tout le reste. C'est la colonne élastique — le nom —
+   qui absorbe les variations, et c'est son rôle. */
+.task-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 78px;
+  align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3);
+  border-radius: var(--radius-sm); }
+.task-row .task-actions { grid-area: 1 / 3; justify-self: end; }
+.task-row .task-dur { grid-area: 1 / 4; justify-self: end; }
+.task-row + .task-row { border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
+.task-row:hover { background: var(--surface-2); }
+/* La ligne en cours : son fond recule d'un cran, et sa durée passe en minium —
+   la même règle que le chrono du héros. Le minium ne marque pas « cette
+   ligne », il marque LE NOMBRE QUI BOUGE. C'est vrai partout, donc ça se
+   reconnaît partout, et aucun liseré latéral n'est nécessaire. */
 .task-row.active { background: var(--surface-2); }
+.task-row.active .task-dur { color: var(--stop-ink); }
 .task-row.archived { opacity: .5; }
 /* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
-.task-row.done-sep { margin-top: var(--sp-3); padding-top: 18px; border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
+/* Le groupe des terminées se démarque par l'ESPACE : le filet est le même que
+   partout, c'est la respiration au-dessus qui dit qu'on change de groupe. */
+.task-row.done-sep { margin-top: var(--sp-4); padding-top: 18px; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
-.type-badge { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
-.type-dev { background: var(--type-dev-bg); color: var(--type-dev-text); }
-.type-support { background: var(--type-support-bg); color: var(--type-support-text); }
-.type-autre { background: var(--type-autre-bg); color: var(--type-autre-text); }
-.task-dur { font-family: var(--font-body); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.type-badge { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; }
+.type-dev, .type-support, .type-autre { background: var(--type-badge-bg); color: var(--type-badge-text); }
+.task-dur { font-family: var(--font-display); font-weight: 400; font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; text-align: right; }
 /* Vue arrondie : soulignement pointillé pour rappeler que la durée n'est plus exacte. */
 .task-list.is-rounded .task-dur,
 .totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
 .task-actions { display: flex; align-items: center; gap: 4px; }
 /* Mini-barre de part du jour (proportion du temps de la tâche). */
-.task-share { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 8px; overflow: hidden; max-width: 280px; }
-.task-share span { display: block; height: 100%; border-radius: 2px; }
+.task-share { height: 5px; background: color-mix(in srgb, var(--text) 9%, transparent); border-radius: var(--radius-pill); margin-top: 8px; overflow: hidden; max-width: 240px; }
+.task-share span { display: block; height: 100%; border-radius: var(--radius-pill); }
 
-.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
-.mini-btn:hover { background: var(--surface-hover); color: var(--text); }
-.mini-btn.copied { background: var(--play); color: #fff; }
-/* Contrôles de cycle de vie : pastilles colorées, toujours visibles. */
-.mini-btn.ctrl-play { background: var(--play-soft); color: var(--play); }
-.mini-btn.ctrl-play:hover { background: color-mix(in srgb, var(--play) 24%, transparent); color: var(--play); }
-.mini-btn.ctrl-pause { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause); }
-.mini-btn.ctrl-pause:hover { background: color-mix(in srgb, var(--pause) 26%, transparent); color: var(--pause); }
-/* Les boutons discrets (copie, édition, terminer) ne montrent leur fond qu'au survol. */
-.task-row:not(:hover):not(.active) .task-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; }
+.mini-btn { border: none; background: var(--ctl); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+.mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
+.mini-btn.copied { background: var(--accent); color: var(--accent-text); }
+/* Contrôles de cycle de vie : toujours visibles (les autres se révèlent au
+   survol), mais sans teinte — un triangle et deux barres disent déjà « lancer »
+   et « mettre en pause ». Deux pastilles colorées par ligne, sur quatre lignes,
+   c'était huit taches de couleur pour zéro information. */
+.mini-btn.ctrl-play, .mini-btn.ctrl-pause { color: var(--text); }
+.mini-btn.ctrl-pause { color: var(--stop-ink); }
+/* Six contrôles par ligne, sur quatre lignes, c'est vingt-quatre cibles pour
+   une liste dont le travail est de montrer quatre nombres. Seuls les deux
+   contrôles de cycle de vie (lancer / mettre en pause, terminer) restent
+   visibles ; copie, lien et édition se révèlent au survol ou au focus clavier.
+   Sur un appareil sans survol, tout reste visible — sinon rien n'est atteignable. */
+@media (hover: hover) {
+  /* `display:none` et non `opacity:0` : masqués mais présents, les quatre
+     boutons réservaient 200 px de vide à droite de chaque ligne, et les deux
+     contrôles restants flottaient au milieu. La durée ayant sa piste fixe,
+     retirer les autres du flux ne décale aucune colonne — seul le bord gauche
+     du groupe d'actions bouge, et il est déjà à droite de tout. */
+  .task-row:not(:hover):not(:focus-within) .task-actions
+    .mini-btn:not(.ctrl-play):not(.ctrl-pause):not(.ctrl-finish) { display: none; }
+  .task-row:not(:hover):not(:focus-within) .task-actions .mini-btn { background: transparent; }
+}
 
 /* ---------- Onglet « Tâches » : liste groupée (jour / semaine / mois) ---------- */
 .all-tasks { display: flex; flex-direction: column; gap: var(--sp-4); }
-/* Chaque groupe (jour/semaine/mois) est une carte pointillée ; l'en-tête se cale
-   en haut de la carte (le padding de la carte fait l'espace). */
-.at-group .at-date { margin-top: 0; }
+/* Un groupe (jour / semaine / mois) = une carte. Le padding est resserré : à
+   24 px, un groupe d'une seule tâche faisait 120 px de carte pour une ligne. */
+.at-group { padding: var(--sp-4) var(--sp-5) var(--sp-3); }
+.at-group .at-date { margin-top: 0; margin-bottom: var(--sp-1); }
 .at-task { border-radius: var(--radius-sm); }
-.at-head { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer; border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
-.at-head:hover { background: var(--surface); }
+/* Cinq colonnes : chevron · pastille · nom · actions · durée. Même règle que
+   les Tâches du jour — la durée ferme la ligne, les actions la précèdent. */
+.at-head { display: grid; grid-template-columns: 16px 14px minmax(0, 1fr) auto 74px;
+  align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer;
+  border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
+.at-head:hover { background: var(--surface-2); }
 .at-head:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .at-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0; transition: transform .3s var(--ease-spring); }
 .at-task.open .at-chev { transform: rotate(90deg); }
 .at-main { flex: 1; min-width: 0; }
 .at-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 .at-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
-.at-total { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-/* Copie du total : boutons discrets, révélés au survol/focus de la ligne. */
-.at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.at-head:not(:hover):not(:focus-within) .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
+.at-total { font-family: var(--font-display); font-weight: 400; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; text-align: right; justify-self: end; grid-area: 1 / 5; }
+/* Copie et édition : révélées au survol/focus, comme dans les Tâches du jour.
+   Seul le contrôle de cycle de vie reste. */
+.at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; justify-self: end; grid-area: 1 / 4; }
+@media (hover: hover) {
+  .at-head:not(:hover):not(:focus-within) .at-actions
+    .mini-btn:not(.ctrl-play):not(.ctrl-pause) { display: none; }
+}
+@media (hover: none) {
+  .at-head .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
+}
 /* Conteneur animable : la hauteur passe de 0fr à 1fr (transition fluide). */
 .at-segs-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }
 .at-task.open .at-segs-wrap { grid-template-rows: 1fr; }
@@ -365,20 +542,30 @@
 .at-task.open .at-segs { opacity: 1; }
 .at-empty { color: var(--text-faint); font-size: 13px; padding: 6px var(--sp-3); }
 .at-seg { display: flex; align-items: center; gap: var(--sp-3); padding: 7px var(--sp-3); border-radius: 7px; font-size: 13.5px; cursor: pointer; transition: background-color .12s var(--ease); }
-.at-seg:hover { background: var(--surface); }
+.at-seg:hover { background: var(--surface-2); }
 .at-seg-date { color: var(--text-soft); min-width: 60px; }
-.at-seg-range { flex: 1; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.at-seg-range { flex: 1; font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .at-seg-dur { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.raw-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 1px 6px; }
+.raw-tag { font-family: var(--font-data); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 2px 6px; }
 
-/* ---------- Segments (table flat lecture seule : zébrage, pas de bordures) ---------- */
-.seg-add-row { display: flex; justify-content: flex-end; margin-bottom: var(--sp-3); }
+/* ---------- Segments (table flat : ni bordures ni zébrage — des colonnes) ----------
+   Les colonnes de chiffres sont alignées à DROITE, en-têtes comprises : une
+   heure, une durée, ça se lit par le chiffre des unités. Seule la première
+   colonne (la tâche) prend la place restante ; toutes les autres se serrent sur
+   leur contenu, sinon le tableau s'étale et les nombres flottent au milieu de
+   nulle part. */
 .table-scroll { overflow-x: auto; }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.seg-table th { text-align: left; font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-faint); font-weight: 600; padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
-.seg-table td { padding: 9px 12px; vertical-align: middle; }
-.seg-table tbody tr:hover td { background: color-mix(in srgb, var(--surface) 60%, transparent); }
-.seg-table tbody tr.running td { background: color-mix(in srgb, var(--play) 10%, transparent); }
+.seg-table th { text-align: right; font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); padding: 6px 12px 10px; border-bottom: 1px dotted var(--dot); white-space: nowrap; }
+.seg-table th:first-child { text-align: left; width: 100%; }
+.seg-table th:last-child { width: 1px; }
+.seg-table td { padding: 9px 12px; vertical-align: middle; text-align: right; white-space: nowrap; }
+.seg-table td:first-child { text-align: left; }
+.seg-table tr > :first-child { padding-left: 2px; }
+.seg-table tr > :last-child { padding-right: 2px; }
+.seg-table tbody tr:hover td { background: var(--surface-2); }
+.seg-table tbody tr.running td { background: var(--surface-2); }
+.seg-table tbody tr.running .seg-dur { color: var(--stop-ink); }
 /* Survol croisé : la ligne reliée au bloc de timeline survolé (et inversement). */
 .seg-table tbody tr.hl td { background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .seg-clickable { cursor: pointer; }
@@ -386,37 +573,190 @@
 .seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
 .seg-swatch:hover { transform: scale(1.18); }
 .seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.seg-time { font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
-.seg-live { color: var(--play); font-weight: 600; }
-.seg-dash { color: var(--text-faint); }
+.seg-time { font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
+.seg-live { color: var(--stop-ink); font-weight: 600; }
+.seg-dash { color: var(--text-soft); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
-.seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+/* Mêmes mœurs que les lignes de tâche : les boutons de copie se révèlent au
+   survol de la ligne, pour que la table reste une table. */
+@media (hover: hover) {
+  .seg-table tbody tr:not(:hover):not(:focus-within) .seg-actions .mini-btn { display: none; }
+  /* La colonne garde sa largeur : sans réserve, la table sursauterait au survol. */
+  .seg-table tbody td:last-child { min-width: 138px; }
+}
+.seg-dur { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ============================================================================
+   Réglages — refonte
+   Une ligne = un réglage. Le libellé et son explication à gauche, le contrôle
+   aligné à droite : c'est l'alignement de la colonne de droite qui rend la page
+   lisible, pas la décoration. La sous-navigation collante remplace le long
+   déroulé où l'on ne savait jamais ce qui restait plus bas.
+   ============================================================================ */
+.set { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+@media (max-width: 860px) { .set { grid-template-columns: 1fr; gap: var(--sp-4); } }
+
+.set-nav { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 84px; align-self: start; }
+@media (max-width: 860px) { .set-nav { position: static; flex-direction: row; flex-wrap: wrap; } }
+.set-nav a {
+  display: flex; align-items: baseline; gap: 10px; padding: 9px 13px; border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 500; color: var(--text-soft); text-decoration: none;
+  transition: background-color .16s var(--ease), color .16s var(--ease);
+}
+.set-nav a:hover { background: var(--surface); color: var(--text); }
+/* Section en cours de lecture (posée par SettingsView via IntersectionObserver). */
+.set-nav a.on { background: var(--accent-wash); color: var(--accent); font-weight: 600;
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
+.set-nav a.on .n { color: inherit; opacity: 1; font-weight: 500; }
+.set-nav a .n { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
+.set-nav a:hover .n { color: inherit; }
+
+.set-body { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+/* Un groupe = une carte. Posés à nu sur le fond de page, les cinq groupes se
+   suivaient sans frontière : seuls les titres minuscules disaient qu'on avait
+   changé de sujet. La carte fait ce travail, et raccorde la page au reste. */
+.set-group { display: flex; flex-direction: column; scroll-margin-top: 84px;
+  background: var(--surface); border-radius: var(--radius); padding: var(--sp-5);
+  box-shadow: var(--shadow-card); }
+/* Le contrôle segmenté ne doit pas s'étirer sur toute la colonne : c'est un
+   sélecteur, pas une barre d'outils. */
+.set-group > .seg-control { align-self: flex-start; }
+.set-group > h3 {
+  font-family: var(--font-head); font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .13em; font-variation-settings: "wdth" 108; color: var(--text);
+  margin: 0 0 var(--sp-3);
+}
+.set-group > .muted { margin-bottom: var(--sp-3); }
+
+.set-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-5);
+  align-items: center; padding: 15px 0; border-bottom: 1px dotted var(--dot); margin: 0;
+}
+.set-group > .set-row:last-child, .set-row:last-child { border-bottom: none; }
+label.set-row { cursor: pointer; }
+.set-lab { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.set-lab b { font-size: 14.5px; font-weight: 600; }
+.set-lab > span, .set-note { font-size: 12.5px; color: var(--text-soft); line-height: 1.55; max-width: 62ch; }
+.set-lab strong { color: var(--text); font-weight: 600; }
+.set-ctl { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
+.set-row.is-danger .set-lab b { color: var(--stop-ink); }
+@media (max-width: 620px) {
+  .set-row { grid-template-columns: 1fr; gap: var(--sp-3); }
+  .set-ctl { justify-content: flex-start; }
+}
+
+/* Saisie de données (heure, nombre) : police de données, fond enfoncé. */
+.tinput {
+  font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums;
+  background: var(--ctl); border: none; border-radius: var(--radius-sm);
+  padding: 8px 11px; color: var(--text); min-width: 76px;
+}
+.tinput:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.prec-sep { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
+.hours-ctl .se-dash { color: var(--text-faint); }
+
+/* Interrupteur — dessiné sur l'input lui-même : le JS des réglages continue de
+   lire `.checked` et d'écouter `change`, il n'a rien à savoir de l'apparence. */
+input.sw {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 42px; height: 24px; border-radius: var(--radius-pill);
+  background: var(--dot); position: relative; cursor: pointer;
+  transition: background-color .18s var(--ease);
+}
+input.sw::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--surface);
+  transition: transform .2s var(--ease);
+}
+input.sw:checked { background: var(--accent); }
+input.sw:checked::after { transform: translateX(18px); background: var(--accent-text); }
+input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+/* ---------- Pile de précédence des horaires ----------
+   Le point aveugle de l'ancienne page : trois niveaux se superposaient (base,
+   jour de semaine, date) sans qu'on voie jamais lequel l'emportait. On montre
+   les trois pour une date donnée, et on cercle celui qui gagne. */
+/* Pas de carte dans la carte : la pile vit directement dans le groupe, et ce
+   sont ses lignes qui portent la surface. Un bloc `--surface-2` contenant une
+   piste `--surface` inversait la profondeur — le creux paraissait en relief. */
+.prec-wrap { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.prec-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.prec-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .15em; color: var(--text-faint); }
+.prec { display: flex; flex-direction: column; gap: 5px; }
+.prec-row {
+  display: grid; grid-template-columns: 18px 116px minmax(0, 1fr) auto; gap: var(--sp-3);
+  align-items: center; padding: 9px 12px; border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+/* Le niveau qui gagne : cerclé d'encre. Les perdants reculent par la SURFACE
+   (fond retiré) et par la couleur du texte — pas par l'opacité : à 0,62 leur
+   libellé tombait à 2,5:1, or « ce niveau existe mais ne s'applique pas » est
+   précisément ce qu'on a besoin de pouvoir lire. */
+.prec-row:not(.wins) { background: transparent; }
+.prec-row:not(.wins) .prec-k, .prec-row:not(.wins) .prec-v { color: var(--text-faint); }
+.prec-row.wins { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.prec-step { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); text-align: center; }
+.prec-k { font-size: 13px; font-weight: 600; }
+.prec-v { font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prec-v.off { font-style: italic; color: var(--text-faint); }
+.prec-tag { font-family: var(--font-data); font-size: 9px; letter-spacing: .11em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-text); }
+.prec-row:not(.wins) .prec-tag { background: transparent; color: var(--text-faint); }
+@media (max-width: 560px) {
+  .prec-row { grid-template-columns: 18px minmax(0, 1fr) auto; }
+  .prec-row .prec-v { grid-column: 2 / -1; }
+}
+
+/* Ruban du jour : les créneaux effectivement retenus, dessinés à l'échelle. */
+.strip-wrap { display: flex; flex-direction: column; gap: 5px; }
+.strip { position: relative; height: 38px; border-radius: var(--radius-sm); overflow: hidden;
+  background-color: var(--surface-2);
+  background-image: radial-gradient(circle at center, var(--dot-grid) 1px, transparent 1.3px);
+  background-size: 11px 11px; background-position: center; }
+.strip i { position: absolute; top: 6px; bottom: 6px; border-radius: var(--radius-xs); background: var(--accent); }
+.strip .strip-off { position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-data); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-faint); }
+.strip-ax { position: relative; height: 13px; font-family: var(--font-data); font-size: 9.5px;
+  color: var(--text-faint); }
+.strip-ax span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.strip-ax span:first-child { transform: none; }
+.strip-ax span:last-child { transform: translateX(-100%); }
+
+/* Jauge de stockage : posée dans la colonne de droite, elle a besoin d'une largeur. */
+.set-ctl .storage { display: flex; flex-direction: column; gap: 7px; width: 260px; max-width: 100%; margin: 0; }
+.set-ctl .storage-head, .set-ctl .storage-track { display: flex; }
+.set-ctl .storage-head { font-family: var(--font-data); font-size: 10.5px; }
+.set-ctl .storage-track { display: block; }
 
 /* ---------- Réglages : champs & blocs ---------- */
-.settings-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); }
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+.field label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 .field-optional { font-weight: 400; color: var(--text-faint); }
-.field input, .field select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
+.field input, .field select { border: none; background: var(--ctl); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
 .field input:focus, .field select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
-.weekdays button { border: none; background: var(--bg); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
+.weekdays button { border: none; background: var(--ctl); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
 .weekdays button:hover { color: var(--text); }
-.weekdays button.on { background: var(--accent); color: var(--accent-text); }
+/* Sélection MULTIPLE : le lavis suffit, sans anneau. Cinq pilules cerclées
+   côte à côte faisaient un feston ; l'anneau est réservé au choix unique, où il
+   désigne « celui-là et pas les autres ». */
+.weekdays button.on { background: var(--accent-wash); color: var(--accent); font-weight: 700; }
 
 /* Contrôle segmenté (thème, type d'horaire) : piste pilule + curseur glissant. */
-.seg-field { display: flex; flex-direction: column; gap: 9px; }
-.seg-label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
 .seg-control { --seg-i: 0; position: relative; display: inline-grid; grid-template-columns: repeat(3, 1fr);
-  background: var(--bg); border-radius: var(--radius-pill); padding: 4px; min-width: 280px; max-width: 100%; }
+  background: var(--ctl); border-radius: var(--radius-pill); padding: 4px; min-width: 280px; max-width: 100%; }
 .seg-control::before { content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
   width: calc((100% - 8px) / 3); height: calc(100% - 8px); border-radius: var(--radius-pill);
-  background: var(--accent); transform: translateX(calc(var(--seg-i) * 100%)); transition: transform .34s var(--ease-spring); }
+  background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent);
+  transform: translateX(calc(var(--seg-i) * 100%)); transition: transform .34s var(--ease-spring); }
 .seg-control button { position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
-  padding: 8px 14px; font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--text-faint);
+  padding: 8px 14px; font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--text-soft);
   border-radius: var(--radius-pill); text-align: center; transition: color .22s var(--ease) .04s; }
 .seg-control button:hover { color: var(--text); transition-delay: 0s; }
-.seg-control button.active { color: var(--accent-text); }
+.seg-control button.active { color: var(--accent); }
 .seg-control button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Onglets « Horaires » : un panneau visible à la fois. */
 .hours-panel { margin-top: var(--sp-5); }
@@ -424,12 +764,12 @@
 @media (max-width: 480px) { .seg-control { min-width: 0; width: 100%; } }
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
-.btn:hover { background: var(--surface-hover); }
+.btn { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
+.btn:hover { background: var(--ctl-hover); }
 .btn.primary { background: var(--accent); color: var(--accent-text); }
 .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--bg)); }
-.btn.danger { color: var(--stop); background: transparent; }
-.btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
+.btn.danger { color: var(--stop-ink); background: transparent; }
+.btn.danger:hover { background: var(--stop-wash); }
 
 /* ---------- Jauge de stockage ---------- */
 .storage { margin: var(--sp-2) 0 var(--sp-5); }
@@ -437,60 +777,49 @@
 .storage-head #storageText { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
 .storage-track { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .storage-bar { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .35s var(--ease), background-color .2s; }
-.storage-bar.warn { background: var(--pause); }
+.storage-bar.warn { background: var(--stop-ink); }
 .storage-bar.crit { background: var(--stop); }
-
-/* ---------- Maintenance des données ---------- */
-.data-maint { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
-.purge-row { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
-.purge-lab { font-size: 13.5px; color: var(--text-soft); }
-.purge-row select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
-.purge-row select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-.maint-danger { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
-#clearEntries .hint { font-weight: 400; color: var(--text-faint); }
 
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
 .ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
-.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 9px 12px; background: var(--bg); border-radius: var(--radius-sm); cursor: pointer; }
+.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 13px; background: var(--surface-2); border-radius: var(--radius-sm); cursor: pointer; }
 .ov-item:hover { background: var(--surface-hover); }
 .ov-name { font-weight: 600; text-transform: capitalize; min-width: 96px; }
-.ov-sum { color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
+.ov-sum { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
 .ov-sum.off { color: var(--text-faint); font-style: italic; }
 .ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
-.ov-rm:hover { background: var(--surface-2); color: var(--stop); }
+.ov-rm:hover { background: var(--surface-2); color: var(--stop-ink); }
 .ov-empty { color: var(--text-faint); font-size: 13.5px; padding: 2px; margin-bottom: var(--sp-3); }
 .ov-editor { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .ov-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
 .ov-editor .field select, .ov-editor .field input { background: var(--bg); }
 
-/* Actions du rappel « repos des yeux » : alignées à gauche, sous l'encart d'info. */
-.eye-actions { justify-content: flex-start; margin-top: var(--sp-3); }
-
 /* Éditeur de planning d'une journée */
 .sched { display: flex; flex-direction: column; gap: var(--sp-2); }
 .se-body { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 2px; }
 .se-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.se-lab { font-size: 12px; font-weight: 600; color: var(--text-soft); min-width: 72px; }
+.se-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 78px; }
 .se-dash { color: var(--text-faint); }
-.sched input[type="time"] { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
+.sched input[type="time"] { border: none; background: var(--ctl); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, #000 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
 .modal-backdrop.open { display: flex; }
-.modal { position: relative; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
-.modal h3 { font-family: var(--font-display); margin: 0 0 4px; font-size: 21px; font-weight: 600; padding-right: 34px; }
+.modal { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
+.modal h3 { font-family: var(--font-head); margin: 0 0 4px; font-size: 21px; font-weight: 700; letter-spacing: -.02em; padding-right: 34px; }
 .modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border: none; border-radius: var(--radius-xs); background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; transition: background-color .15s var(--ease), color .15s var(--ease); }
-.modal-close:hover { background: var(--surface); color: var(--text); }
+.modal-close:hover { background: var(--surface-2); color: var(--text); }
 .modal-close:active { transform: scale(.92); }
 .modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
-.resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface); text-align: left; width: 100%; }
+.resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
 .resume-item:hover { background: var(--surface-hover); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
+.resume-item.is-running .du { color: var(--stop-ink); font-weight: 700; }
 
 /* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -505,7 +834,7 @@
 .color-pick::-webkit-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-focus-inner { border: 0; padding: 0; }
-.color-hex { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; min-width: 72px; }
+.color-hex { font-family: var(--font-data); font-size: 13px; text-transform: uppercase; min-width: 72px; }
 
 /* ---------- Icônes ---------- */
 .icon { display: block; flex-shrink: 0; }
@@ -514,7 +843,8 @@
 .daynav button { display: inline-grid; place-items: center; line-height: 0; }
 
 /* Titre de page (Réglages) + bouton retour */
-.page-title { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin: 0; letter-spacing: 0; }
+.page-title { font-family: var(--font-head); font-size: clamp(28px, 4vw, 38px); font-weight: 700; margin: 0;
+  letter-spacing: -.02em; font-variation-settings: "wdth" 112; }
 .btn-back { width: 38px; height: 38px; border: none; border-radius: 50%; background: var(--surface); color: var(--text-soft); display: grid; place-items: center; flex-shrink: 0; }
 .btn-back:hover { background: var(--surface-hover); color: var(--text); }
 .btn-back:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
@@ -526,30 +856,32 @@
 /* Variante compacte, en pilule, posée à droite d'un titre de bloc (ex. « Arrondi »).
    Actif = couleurs inversées, comme le sélecteur de jour. */
 .switch-mini {
-  align-self: center; font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint);
-  gap: 8px; padding: 5px 12px 5px 10px; background: var(--surface-2);
+  align-self: center; font-family: var(--font-data); font-size: 10px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
+  gap: 8px; padding: 5px 12px 5px 10px; background: var(--ctl);
   border-radius: var(--radius-pill);
   transition: background .18s var(--ease), color .18s var(--ease);
 }
 .switch-mini input { width: 14px; height: 14px; }
 .switch-mini:hover { color: var(--text-soft); }
-.switch-mini.on { background: var(--accent); color: var(--accent-text); }
-.switch-mini.on input { accent-color: var(--accent-text); }
-.switch-mini.on:hover { color: var(--accent-text); }
+.switch-mini.on { background: var(--accent-wash); color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
+.switch-mini.on input { accent-color: var(--accent); }
+.switch-mini.on:hover { color: var(--accent); }
 .switch-mini.off { opacity: .55; cursor: not-allowed; }
 .switch-mini.off input { cursor: not-allowed; }
-.auto-info { margin-top: 12px; font-size: 13px; color: var(--text-soft); background: var(--bg); border-radius: var(--radius-sm); padding: 10px 13px; font-variant-numeric: tabular-nums; }
 
 /* État « terminé » */
-.badge-done { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; background: var(--surface-2); color: var(--text-faint); }
+.badge-done { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; background: var(--type-badge-bg); color: var(--type-badge-text); }
 .task-row.done { opacity: .62; }
 .task-row.done .task-dur { color: var(--text-soft); }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
+.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--inverse-bg); color: var(--inverse-fg); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.toast .icon { color: var(--play); flex-shrink: 0; }
+/* Le toast est toujours en contraste inversé : une teinte calibrée pour le
+   fond de page y devient illisible. Le pictogramme reprend donc l'encre. */
+.toast .icon { color: inherit; opacity: .75; flex-shrink: 0; }
 .toast span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Page Guide ---------- */
@@ -557,30 +889,27 @@
 .guide-intro { font-size: 16px; color: var(--text-soft); line-height: 1.65; margin: 0; max-width: 660px; }
 /* Sommaire collant (gauche) */
 .guide-toc { position: sticky; top: 84px; align-self: start; background: var(--surface); border-radius: var(--radius); padding: 22px; }
-.guide-toc-title { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-faint); font-weight: 600; margin-bottom: 14px; }
+.guide-toc-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-faint); margin-bottom: 14px; }
 .guide-toc a { display: flex; gap: 12px; align-items: baseline; text-decoration: none; color: var(--text-soft); padding: 8px 0; border-bottom: 1px dotted var(--dot); transition: color .15s var(--ease); }
 .guide-toc a:last-child { border-bottom: none; }
 .guide-toc a:hover { color: var(--text); }
-.guide-toc a .num { font-family: var(--font-display); font-size: 12px; color: var(--text-faint); }
+.guide-toc a .num { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
 /* Contenu (droite) */
 .guide-content { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
 .guide-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); scroll-margin-top: 84px; }
-.guide-block h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0 0 var(--sp-3); letter-spacing: 0; }
+.guide-block h3 { font-family: var(--font-head); font-size: 17px; font-weight: 700; margin: 0 0 var(--sp-3); letter-spacing: -.02em; }
 .guide-block p { margin: 0 0 var(--sp-2); color: var(--text-soft); line-height: 1.65; font-size: 14.5px; }
 .guide-block p:last-child { margin-bottom: 0; }
 .guide-block b { color: var(--text); font-weight: 600; }
-.guide kbd { font-family: var(--font-body); font-weight: 600; font-size: 10.5px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 1px 7px; margin-left: 6px; }
-.guide code { font-family: var(--font-body); font-size: 13px; background: var(--surface-2); border-radius: 5px; padding: 1px 6px; }
+.guide kbd { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); background: var(--surface-2); border-radius: 5px; padding: 2px 7px; margin-left: 6px; }
+.guide code { font-family: var(--font-data); font-size: 12.5px; background: var(--surface-2); border-radius: 5px; padding: 1px 6px; }
 .guide-actions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
 .guide-actions li { display: flex; gap: var(--sp-3); align-items: flex-start; }
 .guide-actions li div { min-width: 0; }
 .guide-actions b { font-weight: 600; }
 .guide-actions p { margin: 4px 0 0; }
 .ga-icon { width: 38px; height: 38px; border-radius: var(--radius-sm); background: var(--surface-2); display: grid; place-items: center; flex-shrink: 0; color: var(--text); }
-.ga-icon.play { color: var(--play); }
-.ga-icon.new { color: var(--new); }
-.ga-icon.resume { color: var(--resume); }
-.ga-icon.finish { color: var(--finish); }
+.ga-icon.play, .ga-icon.new, .ga-icon.resume, .ga-icon.finish { color: var(--accent); }
 
 /* ============================================================================
    Micro-interactions & motion — feedback tactile, transitions douces et
@@ -623,60 +952,122 @@
 .modal-backdrop.open { animation: backdropIn .18s var(--ease); }
 .modal-backdrop.open .modal { animation: modalIn .26s var(--ease-spring); }
 
-/* ============================ Écran Outils ============================ */
-/* Convertisseur de durée : saisie + sorties empilées (une pilule par format). */
-.conv-row { display: flex; gap: var(--sp-4); flex-wrap: wrap; align-items: flex-end; }
-.conv-row .field { flex: 1; min-width: 200px; margin: 0; }
-.conv-out { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-4); }
-.conv-line { display: flex; align-items: center; gap: var(--sp-3); padding: 10px var(--sp-4);
-  background: var(--surface); border-radius: var(--radius-sm); }
-.conv-lab { min-width: 86px; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase;
-  color: var(--text-faint); }
-.conv-val { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text);
-  word-break: break-word; }
-.conv-empty { padding: 10px 2px; color: var(--text-faint); }
+/* ============================ Écran Outils ============================
+   La page souffrait d'une hiérarchie inversée : une calculette dont la saisie
+   faisait 200 px et l'explication trois lignes. La saisie devient l'afficheur,
+   les résultats des cartes copiables, et le calcul brut/net se DESSINE.
+   ====================================================================== */
+.tools-grid { display: flex; flex-direction: column; gap: var(--sp-4); }
+/* Un outil = une carte, comme un groupe de réglages ou un bloc de stats. */
+.tool-block { display: flex; flex-direction: column;
+  background: var(--surface); border-radius: var(--radius); padding: var(--sp-5);
+  box-shadow: var(--shadow-card); }
 
-/* Calcul brut/net : deux cartes côte à côte (brut · net). */
-.bn-out { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); }
-.bn-card { flex: 1; min-width: 180px; padding: var(--sp-4) var(--sp-4) var(--sp-3);
-  background: var(--surface); border-radius: var(--radius); }
-.bn-title { font-family: var(--font-display); font-size: 1.05rem; }
-.bn-sub { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
-.bn-val { margin: var(--sp-2) 0 var(--sp-3); font-family: var(--font-display); font-size: 1.9rem;
-  font-variant-numeric: tabular-nums; }
+/* ---------- Convertisseur ---------- */
+.conv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: end; }
+@media (max-width: 640px) { .conv { grid-template-columns: 1fr; align-items: stretch; } }
+.conv-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.conv-field label { font-family: var(--font-data); font-size: 10px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--text-faint); }
+.conv-field .select-wrap, .conv-field .select-wrap select { width: 100%; }
+.conv-field .tinput { width: 100%; padding: 12px 14px; font-size: 14px; }
+.tool-block .field input, .tool-block .field select { background: var(--surface-2); }
+
+/* La saisie EST l'afficheur : même police, même échelle que les résultats. */
+.conv-in {
+  font-family: var(--font-display); font-size: clamp(30px, 5vw, 46px); font-weight: 400;
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+  background: var(--surface-2); border: none; border-radius: var(--radius);
+  padding: 10px 18px; color: var(--text); width: 100%;
+  box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .16s var(--ease);
+}
+.conv-in::placeholder { color: var(--text-faint); }
+.conv-in:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+.conv-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--sp-2); margin-top: var(--sp-4); }
+.conv-card { position: relative; background: var(--surface-2); border-radius: var(--radius);
+  padding: 13px 15px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.conv-card .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text-faint); }
+.conv-card .v { font-family: var(--font-display); font-size: 31px; line-height: 1.08;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* Le format Jira passe devant : c'est celui qu'on vient chercher. */
+.conv-card.is-main { background: var(--accent-wash); }
+.conv-card.is-main .v { color: var(--accent); }
+.conv-card .cp { position: absolute; top: 8px; right: 8px; background: transparent; }
+.conv-card:hover .cp { background: var(--ctl-hover); }
+.conv-empty { padding: 12px 2px; color: var(--text-faint); grid-column: 1 / -1; }
+.conv-note { margin: var(--sp-3) 0 0; }
+
+/* ---------- Calcul brut / net ---------- */
+.bn-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.bn-strip-wrap { display: flex; flex-direction: column; gap: 5px; }
+/* Le fond hachuré = le temps qui S'ÉCOULE ; les blocs pleins = le temps qui
+   COMPTE. La différence entre les deux, c'est tout le sujet de la page. */
+.bn-strip { position: relative; height: 46px; border-radius: var(--radius-sm); overflow: hidden;
+  background-color: var(--surface-2);
+  background-image: var(--hatch-img); }
+.bn-strip .bn-net { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs);
+  background: var(--accent); }
+.bn-strip .bn-empty { position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-data); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-faint); }
+.bn-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-3); margin-top: var(--sp-4); }
+.bn-card { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--surface-2);
+  border-radius: var(--radius); }
+.bn-card.is-net { background: var(--accent-wash); }
+.bn-card.is-net .bn-val { color: var(--accent); }
+.bn-sub { margin-top: 2px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); }
+.bn-val { margin: var(--sp-2) 0 var(--sp-3); font-family: var(--font-display); font-size: 34px;
+  line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bn-actions { display: flex; gap: var(--sp-2); }
-
 
 /* ============================ Onglet Tâches : filtres & regroupement ============================ */
 .at-controls { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .at-controls-row { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: center; }
 .at-groupby { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.at-groupby-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+.at-groupby-label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-faint); }
 
 /* Pilules de filtre (type, regroupement) — contrôle inversé une fois actif. */
 .chip-group { display: inline-flex; gap: var(--sp-2); flex-wrap: wrap; }
-.chip { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill);
+.chip { border: none; background: var(--ctl); color: var(--text-soft); border-radius: var(--radius-pill);
   padding: 7px 14px; font-size: 13px; font-weight: 600; transition: background-color .14s var(--ease), color .14s var(--ease); }
-.chip:hover { background: var(--surface-hover); color: var(--text); }
+.chip:hover { background: var(--ctl-hover); color: var(--text); }
 .chip:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-.chip.active { background: var(--accent); color: var(--accent-text); }
+/* Sélectionné, second étage : LAVIS d'accent, pas aplat. La page Stats
+   alignait quatre pilules bleues pleines dans ses 400 premiers pixels (onglet,
+   période, granularité, mode) — quatre fois le même signal maximal pour quatre
+   niveaux de décision différents. L'aplat plein reste à la barre d'onglets ;
+   tout ce qui se choisit en dessous se marque en lavis. */
+.chip.active { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chip.active:hover { background: color-mix(in srgb, var(--accent) 16%, var(--accent-wash)); }
 .chip.is-type::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   margin-right: 6px; vertical-align: middle; background: var(--dot-autre); }
 .chip.is-type[data-type="dev"]::before { background: var(--dot-dev); }
 .chip.is-type[data-type="support"]::before { background: var(--dot-support); }
 /* Type désactivé : pilule estompée (on voit qu'il est exclu). */
-.chip.is-type:not(.active) { opacity: .5; }
+.chip.is-type:not(.active) { opacity: .62; }
+/* Active, la pilule est pleine d'accent : un point « dev » (lui aussi accent) y
+   disparaîtrait. Le point reprend donc la couleur du texte — le libellé porte
+   déjà le type, et la pastille ne sert plus qu'à équilibrer la pilule. */
+.chip.is-type.active::before { background: currentColor; }
+/* Le lavis d'accent est trop proche de la surface pour porter seul un état :
+   la pilule active gagne le poids de son texte. */
+.chip.active { font-weight: 700; }
 
-.at-search { flex: 1; min-width: 180px; border: none; background: var(--surface); color: var(--text);
+.at-search { flex: 1; min-width: 180px; border: none; background: var(--ctl); color: var(--text);
   font-family: var(--font-body); border-radius: var(--radius-pill); padding: 9px 14px; font-size: 13.5px; }
 .at-search:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* Select stylé maison : pilule + chevron en superposition (flèche native masquée). */
 .select-wrap { position: relative; display: inline-flex; }
-.select-wrap select { appearance: none; -webkit-appearance: none; border: none; background: var(--surface);
+.select-wrap select { appearance: none; -webkit-appearance: none; border: none; background: var(--ctl);
   color: var(--text); font-family: var(--font-body); font-size: 13.5px; font-weight: 600;
   border-radius: var(--radius-pill); padding: 9px 38px 9px 16px; cursor: pointer; }
-.select-wrap select:hover { background: var(--surface-hover); }
+.select-wrap select:hover { background: var(--ctl-hover); }
 .select-wrap select:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .select-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   display: grid; place-items: center; color: var(--text-faint); pointer-events: none; }
@@ -686,23 +1077,67 @@
 /* En-tête de groupe : étiquette + total + récap Jira du groupe. */
 .at-date { display: flex; align-items: center; gap: var(--sp-3); margin: var(--sp-5) 0 var(--sp-2); }
 .at-date:first-child { margin-top: 0; }
-.at-date-label { font-family: var(--font-body); font-weight: 600; font-size: 12px; text-transform: uppercase;
-  letter-spacing: .05em; color: var(--text-faint); }
+.at-date-label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .15em; color: var(--text-faint); }
 .at-date-copy { margin-left: auto; }
 
 /* ============================ Onglet Stats ============================ */
-/* Cartes de synthèse (afficheurs en police display). */
-.stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--sp-3);
-  margin-bottom: var(--sp-4); }
-.stat-card { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5);
+/* Bandeau de tête : la réponse à « alors, cette période ? ». Contraste inversé,
+   chiffre géant. Avec le total du jour, c'est la SECONDE et dernière ancre
+   inversée de l'app — au-delà, l'inversion cesse de hiérarchiser quoi que ce soit. */
+.stats-lead {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-4); align-items: center;
+  background: var(--inverse-bg); color: var(--inverse-fg);
+  border-radius: var(--radius); padding: 16px 22px 17px; margin-bottom: var(--sp-3);
+}
+@media (max-width: 700px) { .stats-lead { grid-template-columns: 1fr; } }
+/* Moitié droite : l'écart, puis la composition de la période. */
+.stats-lead .r { display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  min-width: 0; width: min(280px, 40vw); }
+@media (max-width: 700px) { .stats-lead .r { align-items: stretch; width: auto; } }
+.stats-lead .lead-split { display: flex; width: 100%; height: 8px; overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, currentColor 20%, transparent); }
+.stats-lead .lead-split i { display: block; }
+.stats-lead .lead-split i.dev { background: currentColor; }
+.stats-lead .lead-split i.support { background: color-mix(in srgb, currentColor 62%, transparent); }
+.stats-lead .lead-split i.autre { background: color-mix(in srgb, currentColor 34%, transparent); }
+.stats-lead .lead-legend { font-family: var(--font-data); font-size: 10.5px; opacity: .74;
+  font-variant-numeric: tabular-nums; text-align: right; letter-spacing: .03em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.stats-lead .l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats-lead .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .17em;
+  text-transform: uppercase; opacity: .72; }
+.stats-lead .v { font-family: var(--font-display); font-size: clamp(44px, 8vw, 78px);
+  line-height: 1.02; font-variant-numeric: tabular-nums; }
+.stats-lead .st-delta { display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-data); font-size: 12px; padding: 7px 14px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--inverse-fg) 13%, transparent); white-space: nowrap; }
+
+/* Tête de période : bandeau + tuiles dans UNE carte. Posés côte à côte sur le
+   fond de page, le bandeau et sa rangée de cartes se lisaient comme deux blocs
+   indépendants de même poids ; réunis, la rangée devient la note de bas du
+   chiffre géant, ce qu'elle est. */
+.stats-top { background: var(--surface); border-radius: var(--radius);
+  padding: var(--sp-3); box-shadow: var(--shadow-card); margin-bottom: var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3); }
+.stats-top .stats-lead { margin-bottom: 0; }
+.stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--sp-2);
+  margin-bottom: 0; }
+.stat-card { background: var(--surface-2); border-radius: var(--radius-sm); padding: 13px var(--sp-4) 12px;
   transition: background-color .15s var(--ease); }
-.stat-card:first-child { background: var(--accent); color: var(--accent-text); }
-.stat-card:first-child .stat-lab { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
-.stat-val { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.stat-lab { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+/* Carte « Couverture » : le chiffre seul ne se compare à rien. Sa jauge le
+   pose sur l'échelle 0–100 %, avec la même grammaire de barre que partout. */
+.stat-card .stat-gauge { margin-top: 9px; height: 5px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+.stat-card .stat-gauge i { display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width .4s var(--ease-out); }
+.stat-val { font-family: var(--font-display); font-size: 29px; line-height: 1.08; font-variant-numeric: tabular-nums; }
+.stat-lab { margin-top: 5px; font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 
 /* Blocs Stats : cartes pleines sur le fond de page. */
 .stat-block { margin-bottom: var(--sp-4); }
+.stat-block:first-of-type { margin-top: var(--sp-4); }
 .stat-block .block-title { margin-bottom: var(--sp-4); }
 
 /* Répartition par type : badge + barre proportionnelle + durée. */
@@ -715,14 +1150,13 @@
 
 /* ---------- Tête d'onglet : fenêtre d'analyse ---------- */
 .stats-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
-.stats-head .hint { font-size: 12.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.stats-head .hint { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 
 /* Écart avec la période précédente : information, pas jugement — donc pas de
    code couleur vert/rouge, juste une flèche discrète. */
-.stat-delta { margin-top: 4px; font-size: 11px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
-.stat-card:first-child .stat-delta { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+.stat-delta { margin-top: 4px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 
-.sub-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint);
+.sub-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-faint);
   margin-bottom: var(--sp-4); }
 .stats-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
 @media (max-width: 760px) { .stats-split { grid-template-columns: 1fr; gap: var(--sp-6); } }
@@ -736,7 +1170,7 @@
 .chart-body { display: flex; gap: var(--sp-3); }
 .chart-y { position: relative; width: var(--chart-gutter); flex-shrink: 0; }
 .chart-y-lab { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap;
-  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .chart-plot { position: relative; flex: 1; min-width: 0; height: 200px; overflow: hidden;
   background: var(--surface-2); border-radius: var(--radius-sm);
   background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
@@ -751,15 +1185,15 @@
 .chart-hit:hover::before { opacity: .5; }
 .chart-x { position: relative; height: 15px; margin-top: var(--sp-2);
   margin-left: calc(var(--chart-gutter) + var(--sp-3));
-  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .chart-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
 .chart-legend { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
 .chart-legend .chip-val { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
-/* Ici « actif » veut dire « série affichée » : on reste sobre plutôt que de
-   remplir trois pilules à l'accent. */
-.chart-legend .chip.active { background: var(--surface); color: var(--text); }
-.chart-legend .chip.active:hover { background: var(--surface-hover); }
-.chart-legend .chip:not(.active) { opacity: .42; }
+/* Ici « actif » veut dire « série affichée », pas « option choisie » : ni lavis
+   ni anneau — l'opacité des séries masquées suffit à faire la différence. */
+.chart-legend .chip.active { background: var(--ctl); color: var(--text); box-shadow: none; font-weight: 600; }
+.chart-legend .chip.active:hover { background: var(--ctl-hover); }
+.chart-legend .chip:not(.active) { opacity: .58; }
 
 /* ---------- Rythme : une pastille par jour ----------
    Colonnes = semaines, lignes = jours (lundi en haut). Les libellés de jour
@@ -770,10 +1204,10 @@
 .hm-months, .hm-cells { justify-self: start; width: 100%;
   max-width: calc(var(--hm-cols) * 22px); min-width: calc(var(--hm-cols) * 7px); }
 .hm-months { display: grid; grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); gap: 3px;
-  font-size: 10px; color: var(--text-faint); }
+  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); }
 .hm-months span { white-space: nowrap; }
 .hm-dows { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; align-items: center;
-  font-size: 9.5px; color: var(--text-faint); }
+  font-family: var(--font-data); font-size: 9px; color: var(--text-faint); }
 .hm-cells { display: grid; grid-auto-flow: column; gap: 3px;
   grid-template-rows: repeat(7, 1fr); grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); }
 .hm-cell, .hm-hole, .hm-swatch { aspect-ratio: 1; border-radius: 50%; max-width: 18px; }
@@ -787,7 +1221,7 @@
 .hm-cell[data-day] { cursor: pointer; transition: box-shadow .12s var(--ease); }
 .hm-cell[data-day]:hover { box-shadow: 0 0 0 2px var(--dot); }
 .hm-legend { display: flex; align-items: center; gap: 4px; margin-top: var(--sp-4);
-  font-size: 10.5px; color: var(--text-faint); }
+  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); }
 .hm-legend .hm-swatch { width: 11px; }
 
 /* ---------- Semaine par semaine ---------- */
@@ -797,24 +1231,24 @@
 .wk { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
   padding: var(--sp-3); margin: 0 calc(var(--sp-3) * -1); border-radius: var(--radius-sm);
   cursor: pointer; transition: background-color .15s var(--ease); }
-.wk:hover { background: var(--surface); }
+.wk:hover { background: var(--surface-2); }
 .wk:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .wk-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0;
   transition: transform .3s var(--ease-spring); }
 .wk-item.open .wk-chev { transform: rotate(90deg); }
 .wk-id { width: 108px; flex-shrink: 0; }
-.wk-num { display: block; font-family: var(--font-display); font-size: 15px; }
-.wk-sub { display: block; font-size: 11px; color: var(--text-faint); }
+.wk-num { display: block; font-family: var(--font-display); font-size: 17px; line-height: 1.15; }
+.wk-sub { display: block; font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
 .wk-track { flex: 1 1 140px; min-width: 90px; height: 8px; background: var(--surface-2);
   border-radius: var(--radius-pill); overflow: hidden; }
 .wk-fill { display: flex; height: 100%; border-radius: var(--radius-pill); overflow: hidden;
   transition: width .4s var(--ease-out); }
 .wk-fill span { display: block; }
-.wk-total { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+.wk-total { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
   font-variant-numeric: tabular-nums; }
-.wk-meta { width: 104px; text-align: right; font-size: 11.5px; color: var(--text-faint);
+.wk-meta { width: 104px; text-align: right; font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
-.wk-delta { width: 66px; text-align: right; font-size: 12px; color: var(--text-soft);
+.wk-delta { width: 66px; text-align: right; font-family: var(--font-data); font-size: 11px; color: var(--text-soft);
   font-variant-numeric: tabular-nums; }
 .wk-copy { margin-left: auto; flex-shrink: 0; }
 .wk-more { margin-top: var(--sp-4); align-self: flex-start; }
@@ -830,7 +1264,7 @@
 .wk-item.open .wk-tasks { opacity: 1; }
 .wk-task { display: flex; align-items: center; gap: var(--sp-3); padding: 6px var(--sp-3);
   border-radius: 7px; font-size: 13.5px; transition: background-color .12s var(--ease); }
-.wk-task:hover { background: var(--surface); }
+.wk-task:hover { background: var(--surface-2); }
 .wk-task-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wk-task-name .type-badge, .wk-task-name .badge-done { flex-shrink: 0; }
@@ -849,7 +1283,7 @@
 /* ---------- Profil par jour de semaine ---------- */
 .weekday-profile { display: flex; align-items: stretch; gap: var(--sp-2); height: 146px; }
 .wd { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-.wd-val { height: 13px; font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.wd-val { height: 13px; font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .wd.peak .wd-val { color: var(--text); font-weight: 700; }
 .wd-track { position: relative; flex: 1; width: 100%; background: var(--surface-2);
   border-radius: var(--radius-xs); overflow: hidden;
@@ -861,14 +1295,14 @@
   background: color-mix(in srgb, var(--accent) 46%, var(--surface-2));
   border-radius: var(--radius-xs); transition: height .4s var(--ease-out); }
 .wd.peak .wd-bar { background: var(--accent); }
-.wd-lab { font-size: 11px; color: var(--text-faint); }
+.wd-lab { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
 
 /* ---------- Top tâches ---------- */
 .top-tasks { display: flex; flex-direction: column; }
 .tt { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0;
   border-bottom: 1px dotted var(--dot); cursor: pointer; }
 .tt:last-child { border-bottom: none; }
-.tt:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.tt:hover { background: var(--surface-2); }
 .tt-main { flex: 1; min-width: 0; }
 .tt-name { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 7px;
   font-size: 14px; min-width: 0; }
@@ -878,7 +1312,7 @@
 .tt-name .type-badge, .tt-name .badge-done { flex-shrink: 0; }
 .tt-share { width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
-.tt-dur { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+.tt-dur { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
   font-variant-numeric: tabular-nums; }
 .tt-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
 .tt-rest { padding-top: var(--sp-4); font-size: 12.5px; color: var(--text-faint); }
@@ -903,14 +1337,14 @@
 .daynav-mini { border: none; background: var(--surface-2); color: var(--text-soft); width: 32px; height: 32px;
   border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
 .daynav-mini:hover { background: var(--surface-hover); color: var(--text); }
-.st-nav-label { min-width: 132px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; text-transform: capitalize; }
+.st-nav-label { min-width: 132px; text-align: center; font-family: var(--font-data); font-weight: 500; font-variant-numeric: tabular-nums; text-transform: capitalize; }
 .st-nav .btn-ghost { margin-left: var(--sp-2); }
 .st-timeline { position: relative; }
 .st-axis { position: relative; height: 14px; margin-bottom: 6px; margin-left: calc(96px + var(--sp-3));
-  font-size: 10.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 .st-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
 .st-row { display: flex; align-items: center; gap: var(--sp-3); padding: 1.5px 0; }
-.st-row-label { width: 96px; flex-shrink: 0; font-size: 11.5px; color: var(--text-soft);
+.st-row-label { width: 96px; flex-shrink: 0; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft);
   font-variant-numeric: tabular-nums; white-space: nowrap; text-transform: capitalize; }
 .st-row.weekend .st-row-label { color: var(--text-faint); }
 .st-row.today .st-row-label { color: var(--accent); font-weight: 700; }
@@ -949,7 +1383,7 @@ body.booting #activeTimer {
   display: inline-block;
   background: var(--skeleton);
 }
-/* Sur le sélecteur de jour (fond accent inversé) : teinte dérivée du texte. */
+/* Sur le sélecteur de jour (fond inversé) : teinte dérivée du texte. */
 body.booting #dayLabel {
-  background: color-mix(in srgb, var(--accent-text) 18%, transparent);
+  background: color-mix(in srgb, var(--inverse-fg) 18%, transparent);
 }

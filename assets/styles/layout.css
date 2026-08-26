@@ -27,7 +27,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-  padding: var(--sp-7) 0 var(--sp-3);
+  padding: var(--sp-7) 0 var(--sp-5);
 }
 /* Héros 2 colonnes : tâche active (gauche) + total du jour (droite). */
 .hero {
@@ -42,18 +42,27 @@ header {
   gap: var(--sp-3);
 }
 @media (min-width: 720px) {
-  .control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
+  /* Play/Pause est l'action qu'on vise le plus souvent : elle prend un tiers de
+     largeur en plus que les trois autres. */
+  .control-buttons { grid-template-columns: 1.32fr 1fr 1fr 1fr; gap: var(--sp-3); }
 }
 
-/* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ---------- */
+/* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ----------
+   Contenue et centrée, PAS pleine largeur. Étalée sur toute la colonne, la
+   barre pesait autant que le héros au-dessus et que les cartes en dessous :
+   trois bandes de 1180 px empilées, donc plus de hiérarchie du tout. Ramassée
+   au centre, elle redevient un contrôle — et le contraste de largeur fait le
+   travail que la couleur n'a plus à faire. C'est le SEUL aplat d'accent plein
+   de l'app ; tous les autres états « sélectionné » passent en lavis. */
 .tabs {
   position: relative;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  width: 360px; max-width: 100%;
+  width: 380px; max-width: 100%;
   background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
-  margin: var(--sp-7) auto var(--sp-5); /* centré (signature Nothing) + air sous le héros */
+  box-shadow: var(--shadow-card);
+  margin: var(--sp-5) auto var(--sp-5);
 }
-.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 460px; }
+.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 480px; }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
 .tabs::before {
   content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
@@ -66,9 +75,20 @@ header {
 .tabs:has([data-tab="taches"].active)::before { transform: translateX(200%); }
 .tabs:has([data-tab="stats"].active)::before { transform: translateX(300%); }
 
+/* ---------- Perforation ----------
+   La bande détachable du carnet de pointage : une rangée de trous qui sépare
+   deux registres là où une ligne pleine n'aurait été qu'une bordure de plus
+   (le système est flat : on distingue par surfaces et par espace). */
+.perf {
+  height: 15px;
+  background-repeat: repeat-x; background-position: center;
+  background-image: radial-gradient(circle at center, var(--perf) 2.5px, transparent 3.1px);
+  background-size: 19px 15px;
+}
+
 /* ---------- Écrans (application / réglages / guide) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); margin-inline: auto; }
-.settings-screen { max-width: 880px; }
+.settings-screen { max-width: 1000px; }
 .guide-screen { max-width: 980px; }
 /* Guide : sommaire collant (gauche) + contenu (droite). */
 .guide-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
@@ -85,7 +105,11 @@ header {
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Sélecteur de jour (sous les onglets, commun à Journée et Segments) ---------- */
-.day-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-5); }
+.day-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-4); }
+/* Le contrat du jour, poussé à droite : ce que les horaires prévoient. */
+.day-planned { margin-left: auto; font-family: var(--font-data); font-size: 11px;
+  color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: right;
+  letter-spacing: .04em; }
 
 /* ---------- Grille de la journée ---------- */
 .journee-grid {
@@ -95,12 +119,11 @@ header {
   align-items: start;
 }
 @media (min-width: 900px) {
-  .journee-grid { grid-template-columns: minmax(0, 2.1fr) minmax(248px, 1fr); gap: var(--sp-7); }
+  .journee-grid { grid-template-columns: minmax(0, 2.1fr) minmax(272px, 1fr); gap: var(--sp-5); }
   .journee-aside { position: sticky; top: 84px; }
 }
 
-/* ---------- Réglages ---------- */
-.settings-grid { display: flex; flex-direction: column; gap: var(--sp-5); }
+/* ---------- Formulaires (modales) ---------- */
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-4); }
 
 /* ============================ Responsive ============================ */
@@ -116,14 +139,18 @@ header {
   .backup-pill { padding: 7px; }
   .control { padding-top: var(--sp-5); }
   .tabs { margin: var(--sp-4) 0 var(--sp-3); }
+  .perf { height: 12px; background-size: 16px 12px; }
+  .day-planned { flex-basis: 100%; margin-left: 0; text-align: left; }
   .day-head { margin: 0 0 var(--sp-4); }
   .daynav .date { min-width: 0; font-size: 14px; }
-  /* les actions de tâche passent sur leur propre ligne (évite le débordement) */
-  .task-row { flex-wrap: wrap; }
-  .task-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
-  /* idem pour l'en-tête de tâche de l'onglet « Tâches » (mêmes contrôles) */
-  .at-head { flex-wrap: wrap; }
-  .at-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
+  /* Les actions passent sur leur propre rangée (évite le débordement). La
+     durée garde sa piste : c'est la colonne qu'on lit, elle ne bouge pas. */
+  .task-row { grid-template-columns: 14px minmax(0, 1fr) 78px; }
+  .task-row .task-dur { grid-area: 1 / 3; }
+  .task-row .task-actions { grid-area: 2 / 1 / 3 / -1; justify-content: flex-end; margin-top: 4px; }
+  .at-head { grid-template-columns: 16px 14px minmax(0, 1fr) 74px; }
+  .at-head .at-total { grid-area: 1 / 4; }
+  .at-head .at-actions { grid-area: 2 / 1 / 3 / -1; justify-content: flex-end; margin-top: 4px; }
 }
 
 /* Héros : sur petit écran, le chrono passe sur sa propre ligne (la police
@@ -137,7 +164,7 @@ header {
 @media (max-width: 520px) {
   .wordmark { max-width: 130px; font-size: 20px; }
   .active-card { padding: var(--sp-4); gap: var(--sp-3); }
-  .big-btn { padding: var(--sp-3) var(--sp-2); }
+  .big-btn { min-height: 62px; padding: 0 var(--sp-3); gap: var(--sp-3); }
   .big-btn .kbd { display: none; }
   .big-btn .label { font-size: 13.5px; }
 }

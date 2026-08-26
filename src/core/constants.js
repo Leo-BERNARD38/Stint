@@ -21,25 +21,41 @@ export const SEGMENT_MERGE_GAP_MS = 120_000;
  * au premier coup d'œil, tandis que les petites variations au sein d'une famille
  * permettent de différencier les tâches entre elles. Généreuses et **cycliques**
  * (on repart au début une fois la palette épuisée).
- *   - dev     → froides (indigo, bleu, cyan, sarcelle)
- *   - support → chaudes (rouge, orange, ambre, rose)
- *   - autre   → neutres (ardoise, gris, pierre, zinc)
+ *
+ * Accordées à la direction artistique : des teintes **rabattues**, tirées des
+ * trois familles du système (bleu de Prusse, minium, neutres chauds). Des
+ * couleurs saturées type « nuancier d'écran » cassaient le papier et arrivaient
+ * toujours plus fort que le chrono, qui doit rester le point le plus vif.
+ *   - dev     → froides  (bleu de Prusse, sarcelle, ardoise bleutée)
+ *   - support → chaudes  (minium, terre, ambre)
+ *   - autre   → neutres chauds (la famille du papier)
  */
+/* Chaque teinte est choisie pour qu'au moins un des deux textes possibles
+   (blanc ou encre) y passe le seuil AA — c'est `utils/color.js` qui tranche au
+   rendu. Cinq d'entre elles tombaient dans la bande où AUCUN des deux ne
+   passait : elles ont été décalées de quelques points, à l'œil identiques.
+   Les couleurs déjà enregistrées sur des tâches ne sont pas touchées : elles
+   vivent dans les données, pas ici. */
 export const PALETTES = {
   dev: [
-    "#4F46E5", "#2563EB", "#0EA5E9", "#0891B2", "#0D9488",
-    "#6366F1", "#1D4ED8", "#0284C7", "#0E7490", "#0F766E",
-    "#3B82F6", "#4338CA",
+    "#1E5273", "#2C6E8F", "#276A6A", "#3F8BAA", "#22757F",
+    "#1F4459", "#487B98", "#2F5F86", "#357F7A", "#4A93A8",
+    "#345E7E", "#1C6060",
   ],
+  // Support : chaud, mais RABATTU — argile, brique, prune. La famille était
+  // faite d'oranges et de rouges vifs ; sur l'écran, une tâche de support
+  // ressemblait donc à une alarme, et disputait son sens au minium, qui ne dit
+  // qu'une chose : « ça, maintenant ». Aucune teinte par défaut ne doit plus
+  // pouvoir être confondue avec le tampon.
   support: [
-    "#DC2626", "#EA580C", "#F59E0B", "#E11D48", "#DB2777",
-    "#B91C1C", "#C2410C", "#D97706", "#BE123C", "#BE185D",
-    "#F43F5E", "#EF4444",
+    "#8B5041", "#924F58", "#7E543E", "#874F64", "#9B5550",
+    "#71513D", "#82404F", "#996656", "#8E5773", "#794239",
+    "#844D4F", "#91604B",
   ],
   autre: [
-    "#475569", "#64748B", "#334155", "#525252", "#737373",
-    "#57534E", "#78716C", "#52525B", "#6B7280", "#404040",
-    "#44403C", "#3F3F46",
+    "#6B665C", "#8A8478", "#544F47", "#7D7668", "#605A50",
+    "#948C7D", "#4A4640", "#726B61", "#8A8273", "#57534B",
+    "#9C9384", "#655F55",
   ],
 };
 

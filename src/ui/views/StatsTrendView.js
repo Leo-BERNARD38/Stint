@@ -149,7 +149,9 @@ export class StatsTrendView {
       const top = at(values);
       const color = `var(--dot-${type})`;
 
-      out += `<path d="${areaPath(top, under)}" fill="${color}" opacity="${stacked ? ".5" : ".12"}" />`;
+      // 0,5 laissait la bande la plus claire de la rampe se dissoudre dans la
+      // piste ; à 0,64 les trois valeurs tiennent, empilées comme séparées.
+      out += `<path d="${areaPath(top, under)}" fill="${color}" opacity="${stacked ? ".64" : ".14"}" />`;
       out += `<path d="${smoothPath(top)}" fill="none" stroke="${color}" `
         + `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
       if (n <= DOTS_MAX) {

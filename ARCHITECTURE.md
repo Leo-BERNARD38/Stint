@@ -11,7 +11,9 @@ index.html                 Squelette + points de montage, charge src/main.js (ty
 manifest.webmanifest       PWA : installable (icônes, nom, couleurs)
 sw.js                      Service worker : précache versionné, hors-ligne, mises à jour cohérentes
 .nojekyll                  Désactive Jekyll sur GitHub Pages
+assets/fonts/              9 woff2 auto-hébergés (Bitcount · Archivo · Plex Sans · Plex Mono)
 assets/styles/
+  fonts.css                @font-face des quatre familles
   variables.css            Jetons de design — chaque couleur via light-dark(clair, sombre)
   base.css                 Reset + typographie
   layout.css               Mise en page (header, sections, grilles)
@@ -23,7 +25,8 @@ src/
     EventEmitter.js        Bus d'évènements minimal (on/off/emit)
   utils/
     datetime.js            Dates/heures, ISO local, jour ISO, toMin, cap
-    intervals.js           overlap / union / soustraction / découpe ouvrée d'intervalles
+    intervals.js           intersection / union / soustraction / découpe ouvrée d'intervalles
+    color.js               Luminance d'une couleur de tâche → texte clair ou sombre par-dessus
     dom.js                 Sélecteurs, escapeHtml, createEl
     curve.js               Chemins SVG : polyligne, spline monotone, aire fermée
     clipboard.js           Copie presse-papier (avec repli)
