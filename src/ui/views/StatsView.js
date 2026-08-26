@@ -1,20 +1,24 @@
-import { el, createEl } from "../../utils/dom.js";
+import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { STATS_PERIODS } from "../../services/StatsAggregator.js";
 import { cap } from "../../utils/datetime.js";
 
 /**
  * Tête de l'onglet Stats : le **sélecteur de période** (qui pilote tous les
- * blocs de l'onglet) et les cartes d'indicateurs de cette période.
+ * blocs de l'onglet), un **bandeau de tête** et les cartes d'indicateurs.
  *
- * Les cartes répondent aux questions d'une rétrospective : combien de temps,
- * à quel rythme, quel jour a été le plus dense, quelle part de mes horaires
- * est effectivement tracée.
+ * Les six cartes avaient toutes exactement le même poids, et aucune ne
+ * répondait à la première question d'une rétrospective : « alors, cette
+ * période ? ». Le total sort donc du lot — bandeau en contraste inversé,
+ * chiffre géant, écart en pastille — et les cinq autres reculent d'un cran.
+ * C'est la même mécanique que le total du jour : ce sont les deux seules
+ * ancres inversées de l'application.
  */
 export class StatsView {
   constructor(app) {
     this.app = app;
     this.periodGroup = el("stPeriod");
     this.periodLabel = el("stPeriodLabel");
+    this.lead = el("statsLead");
     this.cards = el("statsCards");
     this.anchor = this.cards;
   }
@@ -53,9 +57,17 @@ export class StatsView {
       ? cap(kpi.bestDay.date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" })).replace(".", "")
       : "—";
 
+    // Le total quitte la grille de cartes : il fait la tête de page.
+    const delta = this.#delta(kpi);
+    this.lead.innerHTML =
+      '<span class="l">' +
+        '<span class="k">Total sur la période</span>' +
+        `<span class="v">${clock(kpi.total)}</span>` +
+      "</span>" +
+      (delta ? `<span class="st-delta">${escapeHtml(delta)}</span>` : "");
+
     this.cards.innerHTML = "";
     this.cards.append(
-      this.#card(clock(kpi.total), "Total", this.#delta(kpi)),
       this.#card(clock(kpi.avgPerActiveDay), "Moy. / jour actif"),
       this.#card(String(kpi.activeDays), "Jours actifs", `sur ${kpi.workDays} ouvrés`),
       this.#card(kpi.bestDay ? clock(kpi.bestDay.ms) : "—", "Meilleur jour", best),
