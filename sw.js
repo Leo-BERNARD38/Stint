@@ -14,7 +14,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v84";
+const CACHE = "stint-v85";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
@@ -30,10 +30,15 @@ const CORE = [
   "./assets/styles/layout.css",
   "./assets/styles/components.css",
   "./assets/styles/fonts.css",
-  "./assets/fonts/inter-latin.woff2",
-  "./assets/fonts/inter-latin-ext.woff2",
   "./assets/fonts/bitcount-latin.woff2",
   "./assets/fonts/bitcount-latin-ext.woff2",
+  "./assets/fonts/archivo-latin.woff2",
+  "./assets/fonts/plexsans-latin.woff2",
+  "./assets/fonts/plexsans-latin-ext.woff2",
+  "./assets/fonts/plexmono-400-latin.woff2",
+  "./assets/fonts/plexmono-400-latin-ext.woff2",
+  "./assets/fonts/plexmono-500-latin.woff2",
+  "./assets/fonts/plexmono-500-latin-ext.woff2",
   "./src/main.js",
   "./src/core/EventEmitter.js",
   "./src/core/constants.js",

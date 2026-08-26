@@ -37,9 +37,12 @@
     })();
   </script>
 
-  <!-- Typographie auto-hébergée : Bitcount Grid Single (wordmark, titres, afficheurs)
-       + Inter (lisibilité). Aucune requête tierce → 1er rendu plus rapide, hors-ligne dès l'install. -->
-  <link rel="preload" as="font" type="font/woff2" href="assets/fonts/inter-latin.woff2" crossorigin />
+  <!-- Typographie auto-hébergée (aucune requête tierce → 1er rendu plus rapide,
+       hors-ligne dès l'install) : Bitcount Grid Single pour les chiffres et le
+       wordmark, Archivo pour les titres, IBM Plex Sans pour le corps, IBM Plex
+       Mono pour les données. On ne précharge que les deux polices présentes au
+       premier écran ; les autres suivent via fonts.css. -->
+  <link rel="preload" as="font" type="font/woff2" href="assets/fonts/plexsans-latin.woff2" crossorigin />
   <link rel="preload" as="font" type="font/woff2" href="assets/fonts/bitcount-latin.woff2" crossorigin />
   <link rel="stylesheet" href="assets/styles/fonts.css" />
 
