@@ -132,10 +132,26 @@
      la carte — la règle vaut ici comme ailleurs, ce qui est à l'écran ne bouge
      pas sous les yeux. */
   min-height: 38px;
+  position: relative; overflow: hidden;   /* le balayage est clippé par le rayon */
   background: var(--surface-2); border-radius: var(--radius-sm);
   color: var(--text-soft);
   transition: background-color .2s var(--ease), color .2s var(--ease);
 }
+/* Balayage du repos : la part ÉCOULÉE, repeinte de la couleur neutre du bandeau.
+   Le minium se RETIRE à mesure que les secondes passent — c'est la même règle
+   que pour toutes les jauges de l'app : la couleur dit ce qui reste, jamais ce
+   qui est consommé. Et c'est la seule direction qui tienne le contraste : un
+   remplissage qui ASSOMBRIT le fond ferait passer le texte sous 4,5:1 (mesuré à
+   3,6:1 dès 20 % de minium en plus), alors qu'en s'éclaircissant le bandeau ne
+   fait que gagner en lisibilité, de 4,7:1 à 4,9:1 d'un bout à l'autre du repos.
+   La largeur est posée en JS une fois par seconde, avec une transition d'une
+   seconde : les pas se raccordent bout à bout et le mouvement est continu. */
+.eye-sweep {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+  background: var(--surface-2); z-index: 0; pointer-events: none;
+  transition: width 1s linear;
+}
+.eye-strip > :not(.eye-sweep) { position: relative; z-index: 1; }
 .eye-strip:hover { background: var(--surface-hover); }
 .eye-ic { display: flex; color: var(--text-faint); flex-shrink: 0; }
 .eye-lab {
@@ -169,8 +185,10 @@
 .eye-strip.resting .eye-ic,
 .eye-strip.resting .eye-lab,
 .eye-strip.resting .eye-since { color: var(--stop-ink); }
-.eye-strip.resting .eye-track { background: color-mix(in srgb, var(--stop) 22%, transparent); }
-.eye-strip.resting .eye-track i { background: var(--stop); }
+/* Pendant le repos, le bandeau EST la jauge : la petite piste ferait doublon.
+   Masquée en `visibility` (pas en `display`) — elle garde sa place, et le
+   décompte ne bouge pas d'un pixel entre les deux états. */
+.eye-strip.resting .eye-track { visibility: hidden; }
 /* L'instruction n'est pas une étiquette : on la lit, on ne la survole pas. Elle
    quitte donc les capitales mono de 9,5 px pour une vraie phrase. */
 .eye-strip.resting .eye-lab {
@@ -302,13 +320,25 @@
   text-transform: uppercase; color: var(--text-soft); white-space: nowrap; }
 /* Un segment porte son nom et sa durée dès qu'il est assez large : sans cela il
    faut survoler chaque bloc pour savoir ce qu'on a fait de sa journée. */
-/* Plancher de largeur : de quoi ne pas disparaître, pas plus. À 6 px, sur une
-   piste d'un millier de pixels pour une dizaine d'heures, un segment d'UNE
-   minute en occupait quatre — la piste mentait sur le peu. À 3 px il reste
-   visible et cesse de grossir ce qu'il montre. */
+/* Plancher de largeur : de quoi ne pas disparaître, pas plus. Un segment ne doit
+   JAMAIS grossir ce qu'il montre — sur une piste d'un millier de pixels pour huit
+   heures, chaque pixel vaut une demi-minute, et un bloc trop large fait mentir la
+   piste ET dépasse le repère « maintenant », ce qui est proprement impossible.
+
+   AUCUN PADDING HORIZONTAL ICI, et c'est la règle à ne pas casser. Avec
+   `box-sizing: border-box` (posé sur `*`), la largeur utilisée d'une boîte ne
+   peut pas descendre sous la somme de ses paddings : `padding: 0 15px` imposait
+   donc un plancher de 30 px à TOUS les segments, quoi que dise `min-width`.
+   Mesuré : un segment de 2 minutes calculé à 0,33 % (3,6 px) était rendu à 30 px,
+   soit 14 minutes affichées, et débordait le repère de 26 px. L'inset du texte
+   est reporté sur les libellés eux-mêmes (marge, pas padding) : même rendu, et
+   plus de plancher. */
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 3px; z-index: 3;
-  display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 0 15px; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px; overflow: hidden;
   transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
+/* L'inset qui dégage le texte des deux poignées (15 px chacune). En marge, il ne
+   contraint pas la boîte : un segment sans libellé retrouve sa vraie largeur. */
+.tl-seg > b, .tl-seg > i { margin-inline: 15px; }
 .tl-seg.on-dark { color: var(--on-color-dark); }
 .tl-seg.on-light { color: var(--on-color-light); }
 .tl-seg b { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;

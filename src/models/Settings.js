@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX } from "../core/constants.js";
+import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
+         EYE_REST_MIN, EYE_REST_MAX } from "../core/constants.js";
 import { isoDow, fmtDateInput, toMin } from "../utils/datetime.js";
 
 /** Copie défensive d'une map d'horaires { clé: [[start,end], …] }. */
@@ -15,6 +16,13 @@ export function clampEyeMinutes(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.minutes;
   return Math.min(EYE_BREAK_MAX, Math.max(EYE_BREAK_MIN, n));
+}
+
+/** Durée du repos lui-même, ramenée dans ses bornes (secondes entières). */
+export function clampEyeRest(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.restSeconds;
+  return Math.min(EYE_REST_MAX, Math.max(EYE_REST_MIN, n));
 }
 
 /**
@@ -51,12 +59,18 @@ export class Settings {
     this.eyeBreak = {
       enabled: data.eyeBreak?.enabled ?? d.eyeBreak.enabled,
       minutes: clampEyeMinutes(data.eyeBreak?.minutes ?? d.eyeBreak.minutes),
+      restSeconds: clampEyeRest(data.eyeBreak?.restSeconds ?? d.eyeBreak.restSeconds),
     };
   }
 
   /** Période du rappel « repos des yeux », en millisecondes. */
   eyeBreakMs() {
     return clampEyeMinutes(this.eyeBreak.minutes) * 60_000;
+  }
+
+  /** Durée du repos lui-même, en millisecondes. */
+  eyeRestMs() {
+    return clampEyeRest(this.eyeBreak.restSeconds) * 1000;
   }
 
   /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */

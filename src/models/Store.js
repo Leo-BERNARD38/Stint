@@ -69,6 +69,8 @@ export class Store extends EventEmitter {
    * fournies par `Settings`, aucune transformation ici.
    * v7 → v8 : ajout du réglage `eyeBreak` (rappel « repos des yeux ») — purement
    * additif, valeurs par défaut fournies par `Settings`, aucune transformation ici.
+   * v8 → v9 : ajout de `eyeBreak.restSeconds` (durée du repos) — purement additif,
+   * valeur par défaut (20 s, la règle) fournie par `Settings`, rien à faire ici.
    */
   #migrate(raw) {
     if (!raw) return {};

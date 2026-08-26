@@ -1,7 +1,7 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
 import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2 } from "../../utils/datetime.js";
-import { clampEyeMinutes } from "../../models/Settings.js";
+import { clampEyeMinutes, clampEyeRest } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -58,6 +58,8 @@ export class SettingsView {
     });
     el("setEyeMinutes").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.eyeBreak.minutes = clampEyeMinutes(e.target.value); }));
+    el("setEyeSeconds").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.eyeBreak.restSeconds = clampEyeRest(e.target.value); }));
     el("eyeBreakAsk").addEventListener("click", async () => {
       await this.app.eyeBreak.ensurePermission();
       this.render();
@@ -214,12 +216,14 @@ export class SettingsView {
     el("setEyeBreak").checked = s.eyeBreak.enabled;
     const minutes = el("setEyeMinutes");
     if (document.activeElement !== minutes) minutes.value = s.eyeBreak.minutes;
+    const seconds = el("setEyeSeconds");
+    if (document.activeElement !== seconds) seconds.value = s.eyeBreak.restSeconds;
     el("eyeBreakOpts").style.display = s.eyeBreak.enabled ? "" : "none";
 
     const perm = eye.permission;
     el("eyeBreakAsk").style.display = perm === "default" ? "" : "none";
     el("eyeBreakInfo").textContent = {
-      granted: `Notifications autorisées — un rappel toutes les ${s.eyeBreak.minutes} min pendant qu'un chrono tourne.`,
+      granted: `Notifications autorisées — un rappel toutes les ${s.eyeBreak.minutes} min pendant qu'un chrono tourne, puis ${s.eyeBreak.restSeconds} s de repos.`,
       default: "Notifications pas encore autorisées : sans elles, le rappel ne s'affiche qu'en bandeau, dans l'onglet Stint.",
       denied: "Notifications refusées pour ce site : le rappel s'affichera en bandeau dans l'app. Réautorisez-les depuis le cadenas de la barre d'adresse.",
       unsupported: "Ce navigateur ne gère pas les notifications système : le rappel s'affichera en bandeau dans l'app.",

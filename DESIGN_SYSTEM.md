@@ -387,8 +387,20 @@ recentre.
 
 | | Fond | Contenu | Barre |
 |---|---|---|---|
-| En attente | `--surface-2` | étiquette mono + écran continu · « dans 12:40 » | `--accent` |
-| Les 20 s | `--stop-wash` | *phrase* « Regardez au loin, 6 mètres » · décompte Bitcount | `--stop` |
+| En attente | `--surface-2` | étiquette mono + écran continu · « dans 12:40 » | petite piste, `--accent` |
+| Le repos | `--stop-wash` | *phrase* « Regardez au loin, 6 mètres » · décompte Bitcount | **le bandeau entier** |
+
+Pendant le repos, **le bandeau EST la jauge** : un balayage repeint la part
+*écoulée* de la couleur neutre, et le minium se retire à mesure que les secondes
+passent. La petite piste est alors masquée en `visibility` — elle ferait doublon,
+mais elle garde sa place, pour que le décompte ne bouge pas d'un pixel entre les
+deux états.
+
+Le sens du balayage n'est pas un goût : un remplissage qui **assombrit** le fond
+fait passer le texte sous 4,5:1 (mesuré à 3,6:1 dès 20 % de minium en plus),
+quand l'éclaircissement fait gagner en lisibilité d'un bout à l'autre du repos
+(4,7:1 → 4,9:1). Et il dit la même chose que toutes les jauges de l'app : la
+couleur montre **ce qui reste**.
 
 Trois règles s'y appliquent, toutes déjà écrites ailleurs :
 
@@ -523,6 +535,19 @@ Saisie de données (`.tinput`) en Plex Mono. Jours travaillés = pilules.
 - La case **`brut`** d'un segment **désactive le rognage** → temps réel écoulé.
 - `workRangesBetween(s, e)` rend les portions comptées ; `workedMs()` en est la somme. Le
   ruban des Outils et le calcul partagent donc exactement la même règle.
+
+### 7.2 bis Un segment ne grossit jamais ce qu'il montre
+Sur une piste d'un millier de pixels pour huit à treize heures, **un pixel vaut une
+demi-minute**. Un bloc dessiné plus large que sa durée fait mentir la piste — et,
+quand le segment est en cours, le fait **dépasser le repère « maintenant »**, ce qui
+est proprement impossible et se voit tout de suite.
+
+Le plancher est donc en **pixels, en CSS** (`.tl-seg { min-width: 3px }`, de quoi
+ne pas disparaître) ; le garde-fou JS ne sert qu'à ne jamais écrire `width: 0%` et
+doit rester **sous** ce plancher. Et surtout : **aucun padding horizontal sur
+`.tl-seg`** — avec `box-sizing: border-box`, le padding impose un plancher de
+largeur qui ignore `min-width` (cf. CLAUDE.md §11). L'inset qui dégage le texte
+des poignées vit sur les libellés, en marge.
 
 ### 7.3 Segments — édition directe sur la timeline
 - Un **segment** = `{ taskId, start, end, raw }` ; `end:null` = en cours.

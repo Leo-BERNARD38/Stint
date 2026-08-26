@@ -121,11 +121,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v8)
+## 4. Modèle de données (schéma v9)
 
 ```jsonc
 {
-  "version": 8,
+  "version": 9,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -137,7 +137,8 @@ SettingsView, StorageView, ToolsView`.
     "rounding": "none",                                // none|1m|5m|15m|30m|1h
     "roundedDay": false,                               // vue arrondie de la journée (v7)
     "bgDots": false,                                   // fond réactif au curseur (v5)
-    "eyeBreak": { "enabled": false, "minutes": 20 }    // rappel 20-20-20 (v8)
+    // rappel 20-20-20 (v8) ; `restSeconds` = durée du repos (v9)
+    "eyeBreak": { "enabled": false, "minutes": 20, "restSeconds": 20 }
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
@@ -391,6 +392,16 @@ hydratation). Sans lui, chaque bloc rebalaierait l'historique à chaque `App.ren
 
 ## 11. Pièges déjà rencontrés (à connaître)
 
+- **`box-sizing: border-box` + padding = plancher de largeur invisible.** La
+  largeur utilisée d'une boîte `border-box` ne peut pas descendre sous la somme
+  de ses paddings. `.tl-seg` portait `padding: 0 15px` : **tout** segment de
+  timeline était donc rendu à 30 px minimum, quoi que dise `min-width` et quelle
+  que soit sa durée. Mesuré : un segment de 2 min calculé à 0,33 % (3,6 px) sortait
+  à 30 px — 14 minutes affichées — et **dépassait le repère « maintenant » de
+  26 px**, ce qui est proprement impossible. Sur tout élément dont la largeur
+  *porte une donnée*, l'inset du contenu va sur les enfants (marge), jamais en
+  padding sur la boîte.
+
 - **`hidden` annulé par `display`** : un élément avec l'attribut `hidden` mais une
   règle `display:flex/grid` reste visible. Garde-fou global présent
   (`[hidden]{display:none!important}` dans `base.css`) — ne pas le retirer.
@@ -429,9 +440,20 @@ déduit des segments et de l'horloge murale.
   suivant** de la période depuis le début de la course. Un rechargement ne
   décale donc pas le repos, et activer le rappel en cours de route le pose au bon
   endroit du rythme.
-- **Le repos dure 20 s** (`REST_MS`, pas un réglage) et la période suivante court
-  à partir de sa **fin** : les 20 s passées à regarder au loin ne sont pas du
-  temps d'écran.
+- **Les deux durées sont réglables** (`eyeBreak.minutes`, `eyeBreak.restSeconds`,
+  schéma v9). Elles portent le nom de la règle — 20 et 20 — mais une règle qu'on
+  ne peut pas adapter à sa fatigue est une règle qu'on finit par couper. La
+  période suivante court à partir de la **fin** du repos : les secondes passées à
+  regarder au loin ne sont pas du temps d'écran.
+- **Le bandeau se vide pendant le repos** : un balayage (`.eye-sweep`) repeint la
+  part **écoulée** de la couleur neutre du bandeau, si bien que le minium se
+  retire à mesure. Largeur posée en JS une fois par seconde avec
+  `transition: width 1s linear` : les pas se raccordent bout à bout (mouvement
+  continu), et sous `prefers-reduced-motion` la transition tombe sans que la
+  jauge cesse d'être juste — aucune image-clé à synchroniser avec la durée réglée.
+  Le sens n'est pas décoratif : un balayage qui **assombrirait** le fond ferait
+  passer le texte sous 4,5:1 (3,6:1 dès 20 % de minium en plus), là où en
+  s'éclaircissant le bandeau ne fait que gagner en lisibilité.
 - **Deux canaux du même évènement** : la notification système (qui se rate) et le
   bandeau (qui ne se rate pas). Le bandeau est la source de vérité visuelle.
 - Le bandeau est un **bouton unique à deux sens** : pendant le repos il l'achève,

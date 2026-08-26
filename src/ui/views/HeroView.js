@@ -40,6 +40,7 @@ export class HeroView {
     this.eyeSince = el("eyeSince");
     this.eyeCount = el("eyeCount");
     this.eyeFill = el("eyeFill");
+    this.eyeSweep = el("eyeSweep");
     this.#eyeResting = null;
   }
 
@@ -160,12 +161,19 @@ export class HeroView {
     if (resting !== this.#eyeResting) {
       this.#eyeResting = resting;
       this.eye.classList.toggle("resting", resting);
+      // Bascule d'état : on repose le balayage à zéro sans transition, sinon on
+      // le verrait reculer de 100 % à 0 % pendant une seconde au début du repos.
+      this.eyeSweep.style.transition = "none";
+      this.eyeSweep.style.width = "0%";
+      void this.eyeSweep.offsetWidth;   // force le recalcul avant de rendre la transition
+      this.eyeSweep.style.transition = "";
       this.eyeLabel.textContent = resting ? "Regardez au loin, 6 mètres" : "Repos des yeux";
       this.eye.title = resting
         ? "Terminer le repos"
         : "Repousser le prochain repos (règle 20-20-20)";
     }
 
+    const frac = eb.fraction();
     if (resting) {
       this.eyeSince.textContent = "";
       this.eyeCount.textContent = String(Math.ceil(eb.restRemainingMs() / 1000));
@@ -173,7 +181,14 @@ export class HeroView {
       this.eyeSince.textContent = `· ${this.app.formatter.clock(eb.screenMs() / 60000)} d'écran continu`;
       this.eyeCount.textContent = `dans ${mmss(eb.remainingMs())}`;
     }
-    this.eyeFill.style.width = (eb.fraction() * 100).toFixed(1) + "%";
+    this.eyeFill.style.width = (frac * 100).toFixed(1) + "%";
+    // Le balayage recouvre la part ÉCOULÉE du repos. Il avance d'un pas par
+    // seconde, avec une transition d'une seconde exactement : les pas se
+    // raccordent bout à bout, donc le mouvement est continu — et sous
+    // `prefers-reduced-motion`, la transition tombe et il redevient un pas par
+    // seconde, ce qui reste une jauge juste. Aucune image-clé, rien à
+    // synchroniser avec la durée réglée.
+    this.eyeSweep.style.width = resting ? ((1 - frac) * 100).toFixed(1) + "%" : "0%";
   }
 
   /** Somme des segments TERMINÉS d'une tâche (le segment en cours est ajouté au tick). */

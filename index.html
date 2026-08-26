@@ -109,6 +109,10 @@
                n'a de sens que pendant qu'on en accumule. Cliquer repousse le
                repos ; pendant le repos, l'achève. -->
           <button type="button" class="eye-strip" id="eyeStrip" hidden>
+            <!-- Balayage du repos : la part ÉCOULÉE reprend la couleur neutre du
+                 bandeau au repos. Le minium se retire à mesure que les secondes
+                 passent — la même règle que partout, la couleur dit ce qui RESTE. -->
+            <i class="eye-sweep" id="eyeSweep" aria-hidden="true"></i>
             <span class="eye-ic" data-icon="eye" data-icon-size="14"></span>
             <span class="eye-lab" id="eyeLabel" aria-live="polite">Repos des yeux</span>
             <span class="eye-since" id="eyeSince"></span>
@@ -549,6 +553,13 @@
                 <span class="set-ctl">
                   <input type="number" id="setEyeMinutes" class="tinput" min="1" max="240" step="1" aria-label="Minutes entre deux rappels">
                   <span class="prec-sep">min</span>
+                </span>
+              </div>
+              <div class="set-row">
+                <span class="set-lab"><b>Durée du repos</b><span>Le temps qu'on passe à regarder au loin. La règle en demande 20 ; à vous de voir.</span></span>
+                <span class="set-ctl">
+                  <input type="number" id="setEyeSeconds" class="tinput" min="5" max="300" step="5" aria-label="Secondes de repos">
+                  <span class="prec-sep">s</span>
                 </span>
               </div>
               <div class="set-row">

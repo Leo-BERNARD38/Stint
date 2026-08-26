@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -84,14 +84,20 @@ export const DEFAULT_SETTINGS = Object.freeze({
   rounding: "none",  // pas d'arrondi | 1m | 5m | 15m | 30m | 1h (cf. ROUNDING_STEPS)
   roundedDay: false, // vue « arrondi » de la journée (interrupteur des Tâches du jour)
   bgDots: false,     // fond dot-matrix réactif au curseur (easter-egg, off par défaut)
-  // Rappel « repos des yeux » (règle 20-20-20) : notification système toutes les
-  // N minutes **tant qu'un chrono tourne**. Off par défaut (demande une permission).
-  eyeBreak: { enabled: false, minutes: 20 },
+  // Rappel « repos des yeux » (règle 20-20-20) : rappel toutes les `minutes`
+  // **tant qu'un chrono tourne**, puis un repos de `restSeconds`. Off par défaut
+  // (demande une permission). Les deux nombres portent le nom de la règle — 20
+  // et 20 — mais restent réglables : une règle qu'on ne peut pas adapter à sa
+  // fatigue est une règle qu'on coupe.
+  eyeBreak: { enabled: false, minutes: 20, restSeconds: 20 },
 });
 
 /** Bornes de la période du rappel « repos des yeux », en minutes. */
 export const EYE_BREAK_MIN = 1;
 export const EYE_BREAK_MAX = 240;
+/** Bornes de la durée du repos lui-même, en secondes. */
+export const EYE_REST_MIN = 5;
+export const EYE_REST_MAX = 300;
 
 /**
  * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au

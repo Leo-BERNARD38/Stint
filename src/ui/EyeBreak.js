@@ -21,7 +21,9 @@
  *
  * Le module tient aussi l'ÉTAT que l'interface affiche (bandeau du héros, cf.
  * `HeroView`) : temps restant avant le prochain repos, durée d'écran continu, et
- * le repos lui-même — 20 secondes décomptées dans la page. Une notification
+ * le repos lui-même, décompté dans la page. Les deux durées (période et repos)
+ * portent le nom de la règle — 20 min, 20 s — mais sont RÉGLABLES : une règle
+ * qu'on ne peut pas adapter à sa fatigue est une règle qu'on finit par couper. Une notification
  * système se rate (fenêtre au premier plan, « ne pas déranger », permission
  * refusée) ; le bandeau, lui, est toujours là. Ce sont deux canaux du même
  * évènement, pas deux fonctionnalités.
@@ -29,11 +31,7 @@
 export class EyeBreak {
   /** Titre et corps de la notification (règle 20-20-20). */
   static TITLE = "Repos des yeux";
-  static BODY = "Regardez à 6 mètres pendant 20 secondes.";
   static TAG = "stint-eye-break";
-  /** Durée du repos lui-même : les 20 secondes de la règle. Pas un réglage —
-   *  c'est la moitié du nom de la règle, et le seul chiffre qu'on ne discute pas. */
-  static REST_MS = 20_000;
   /** Deux segments séparés de moins de cela sont le MÊME temps d'écran : les
    *  horodatages sont à la seconde, et un changement de tâche ferme l'un et
    *  ouvre l'autre au même instant. */
@@ -55,7 +53,10 @@ export class EyeBreak {
   /** Le rappel est-il armé (réglage actif ET chrono qui tourne) ? */
   get armed() { return this.deadline > 0; }
 
-  /** Sommes-nous dans les 20 secondes de repos ? */
+  /** Durée du repos, en ms — réglable (20 s par défaut, la règle). */
+  restMs() { return this.app.store.settings.eyeRestMs(); }
+
+  /** Sommes-nous dans le repos ? */
   get resting() { return this.restUntil > Date.now(); }
 
   /** Millisecondes avant le prochain repos (0 pendant le repos). */
@@ -81,9 +82,11 @@ export class EyeBreak {
    * c'est déjà une de trop.
    */
   fraction() {
-    if (this.resting) return this.restRemainingMs() / EyeBreak.REST_MS;
-    const period = this.app.store.settings.eyeBreakMs();
-    return period > 0 ? Math.min(1, this.remainingMs() / period) : 0;
+    // Bornée : la durée du repos peut être raccourcie dans les réglages PENDANT
+    // un repos, et le rapport dépasserait alors 1.
+    const total = this.resting ? this.restMs() : this.app.store.settings.eyeBreakMs();
+    const left = this.resting ? this.restRemainingMs() : this.remainingMs();
+    return total > 0 ? Math.min(1, Math.max(0, left / total)) : 0;
   }
 
   /**
@@ -135,7 +138,7 @@ export class EyeBreak {
       // et activer le rappel en cours de route le place au bon endroit du rythme.
       const elapsed = Math.max(0, Date.now() - this.screenSince);
       this.deadline = this.screenSince + (Math.floor(elapsed / period) + 1) * period;
-    } else if (this.deadline - Date.now() > period + EyeBreak.REST_MS) {
+    } else if (this.deadline - Date.now() > period + this.restMs()) {
       // Période raccourcie dans les réglages : l'échéance en cours dépasse la
       // nouvelle période, on repart d'une période pleine.
       this.deadline = Date.now() + period;
@@ -188,20 +191,26 @@ export class EyeBreak {
     if (now < this.deadline) return;
     const period = this.app.store.settings.eyeBreakMs();
     const late = now - this.deadline;
+    const rest = this.restMs();
     // La période suivante court à partir de la FIN du repos, pas de son début :
-    // les 20 secondes qu'on passe à regarder au loin ne sont pas du temps d'écran.
-    this.deadline = now + EyeBreak.REST_MS + period;
+    // les secondes qu'on passe à regarder au loin ne sont pas du temps d'écran.
+    this.deadline = now + rest + period;
     if (late > period) return;           // veille / onglet gelé : rappel manqué, pas de rafale
-    this.restUntil = now + EyeBreak.REST_MS;
+    this.restUntil = now + rest;
     // Le bandeau bascule tout de suite : sa propre horloge est celle du héros
     // (1 s), et attendre son prochain battement ferait démarrer le décompte à 19.
     this.app.hero?.tick?.();
     this.notify();
   }
 
+  /** Le corps de la notification, qui dit la durée réellement réglée. */
+  body() {
+    return `Regardez à 6 mètres pendant ${Math.round(this.restMs() / 1000)} secondes.`;
+  }
+
   /** Notification système si possible, toast sinon. */
   async notify() {
-    const body = EyeBreak.BODY;
+    const body = this.body();
     if (this.permission === "granted") {
       const options = {
         body,
