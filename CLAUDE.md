@@ -456,8 +456,11 @@ déduit des segments et de l'horloge murale.
   s'éclaircissant le bandeau ne fait que gagner en lisibilité.
 - **Deux canaux du même évènement** : la notification système (qui se rate) et le
   bandeau (qui ne se rate pas). Le bandeau est la source de vérité visuelle.
-- Le bandeau est un **bouton unique à deux sens** : pendant le repos il l'achève,
-  avant il le **repousse** d'une période — un rappel qu'on ne peut pas repousser
-  finit par être un rappel qu'on coupe.
+- Le bandeau est un **bouton unique à deux sens** : on **prend** le repos tout de
+  suite (`startRest`), ou on l'achève s'il court déjà. Il repoussait le prochain
+  rappel, et c'était une erreur de lecture — cliquer sur « repos des yeux » veut
+  dire « je le prends », pas « plus tard ». On ne perd rien au change : démarrer
+  le repos recale la cadence sur sa fin, donc le geste repousse quand même le
+  rappel suivant d'une période pleine, mais en ayant fait la pause.
 - Testé dans `checks/domaine.mjs` avec un faux `app` (le module ne touche au DOM
   que par `app.hero?.tick?.()`).

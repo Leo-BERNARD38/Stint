@@ -418,6 +418,11 @@ L'étiquette change de nature avec l'état, et c'est voulu : en attente c'est un
 (mono, capitales, 9,5 px, on le survole), pendant le repos c'est une **phrase** (corps,
 12 px, on la lit).
 
+Le bandeau est **cliquable dans les deux états**, et c'est le même geste : *prendre* le
+repos, ou l'*achever*. Le premier compte autant que le second — la fatigue ne se
+présente pas à l'heure dite, et un rappel qu'on ne peut qu'attendre est un rappel qu'on
+regarde passer.
+
 ### Lignes de listes (tâches du jour, onglet Tâches, table Segments)
 Grille, jamais flex, et **la durée en dernière piste** — collée au bord droit, à la même
 abscisse sur toutes les lignes, quel que soit le nombre d'actions (une tâche avec lien en

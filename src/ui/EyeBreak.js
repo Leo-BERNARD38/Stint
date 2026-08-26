@@ -90,13 +90,35 @@ export class EyeBreak {
   }
 
   /**
-   * Le bouton du bandeau. Pendant le repos : on l'achève. Avant : on le repousse
-   * d'une période pleine — parce qu'un rappel qu'on ne peut pas repousser finit
-   * par être un rappel qu'on coupe.
+   * Le bouton du bandeau : on PREND le repos maintenant, ou on l'achève s'il
+   * court déjà.
+   *
+   * Il repoussait le prochain rappel, et c'était une erreur de lecture : cliquer
+   * sur « repos des yeux » veut dire « je le prends », pas « plus tard ». On ne
+   * perd rien au change — démarrer le repos recale la cadence après lui, donc le
+   * geste repousse quand même le rappel suivant d'une période pleine, mais en
+   * ayant fait la pause.
    */
-  dismiss() {
+  toggleRest() {
     if (this.resting) { this.restUntil = 0; return; }
-    if (this.deadline) this.deadline = Date.now() + this.app.store.settings.eyeBreakMs();
+    this.startRest();
+  }
+
+  /**
+   * Démarre le repos tout de suite et recale la cadence sur sa FIN : les
+   * secondes passées à regarder au loin ne sont pas du temps d'écran. Sans
+   * notification par défaut — quand c'est un clic, on est déjà devant l'écran.
+   */
+  startRest({ notify = false } = {}) {
+    if (!this.deadline) return;   // désarmé : aucun chrono, rien à interrompre
+    const now = Date.now();
+    const rest = this.restMs();
+    this.restUntil = now + rest;
+    this.deadline = now + rest + this.app.store.settings.eyeBreakMs();
+    if (notify) this.notify();
+    // Le bandeau bascule tout de suite : sa propre horloge est celle du héros
+    // (1 s), et attendre son prochain battement ferait démarrer le décompte à 19.
+    this.app.hero?.tick?.();
   }
 
   get supported() {
@@ -184,23 +206,19 @@ export class EyeBreak {
     }
   }
 
-  /** Un pas de la boucle : notifie si l'échéance est atteinte, puis réarme. */
+  /** Un pas de la boucle : déclenche le repos si l'échéance est atteinte. */
   tick() {
     if (!this.deadline) return;
     const now = Date.now();
     if (now < this.deadline) return;
     const period = this.app.store.settings.eyeBreakMs();
-    const late = now - this.deadline;
-    const rest = this.restMs();
-    // La période suivante court à partir de la FIN du repos, pas de son début :
-    // les secondes qu'on passe à regarder au loin ne sont pas du temps d'écran.
-    this.deadline = now + rest + period;
-    if (late > period) return;           // veille / onglet gelé : rappel manqué, pas de rafale
-    this.restUntil = now + rest;
-    // Le bandeau bascule tout de suite : sa propre horloge est celle du héros
-    // (1 s), et attendre son prochain battement ferait démarrer le décompte à 19.
-    this.app.hero?.tick?.();
-    this.notify();
+    // Veille / onglet gelé : personne n'était devant l'écran, on réarme sans
+    // repos ni notification plutôt que de tirer une rafale de rappels manqués.
+    if (now - this.deadline > period) {
+      this.deadline = now + this.restMs() + period;
+      return;
+    }
+    this.startRest({ notify: true });
   }
 
   /** Le corps de la notification, qui dit la durée réellement réglée. */

@@ -53,11 +53,11 @@ export class HeroView {
     this.dot.addEventListener("click", () => {
       if (this.#shownTaskId) this.app.openEditTask(this.#shownTaskId);
     });
-    // Un seul bouton, deux sens selon l'état : pendant le repos on l'achève,
-    // avant on le repousse. C'est `EyeBreak.dismiss()` qui tranche — la vue ne
+    // Un seul bouton, deux sens selon l'état : on PREND le repos, ou on l'achève
+    // s'il court déjà. C'est `EyeBreak.toggleRest()` qui tranche — la vue ne
     // décide de rien, elle rend.
     this.eye.addEventListener("click", () => {
-      this.app.eyeBreak.dismiss();
+      this.app.eyeBreak.toggleRest();
       this.#renderEye();
     });
   }
@@ -170,7 +170,7 @@ export class HeroView {
       this.eyeLabel.textContent = resting ? "Regardez au loin, 6 mètres" : "Repos des yeux";
       this.eye.title = resting
         ? "Terminer le repos"
-        : "Repousser le prochain repos (règle 20-20-20)";
+        : "Prendre le repos maintenant";
     }
 
     const frac = eb.fraction();
