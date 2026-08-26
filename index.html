@@ -765,43 +765,56 @@
         <button id="toolsBack" class="btn-back" data-icon="chevron-left" aria-label="Retour"></button>
         <h2 class="page-title">Outils</h2>
       </div>
-      <div class="settings-grid">
-        <div class="settings-block">
-          <div class="block-title">Convertisseur de durée</div>
-          <p class="muted">
-            Saisissez une durée, obtenez tous les formats. Les unités Jira (<code>1d</code>,
-            <code>1w</code>) suivent vos horaires. Aucun arrondi ici : la durée saisie est convertie
-            telle quelle.
-          </p>
-          <div class="conv-row">
-            <div class="field">
-              <label>Durée</label>
-              <input type="text" id="convInput" placeholder="ex. 1.5  ·  1h 30m  ·  1:30" autocomplete="off" spellcheck="false">
+      <div class="tools-grid">
+        <div class="tool-block">
+          <div class="block-title">
+            Convertisseur de durée
+            <span class="hint">aucun arrondi : la durée saisie est convertie telle quelle</span>
+          </div>
+          <div class="conv">
+            <div class="conv-field">
+              <label for="convInput">Durée</label>
+              <input type="text" id="convInput" class="conv-in" placeholder="1:30"
+                     autocomplete="off" spellcheck="false" inputmode="text">
             </div>
-            <div class="field" style="max-width:220px;">
-              <label>Format saisi</label>
-              <select id="convUnit">
-                <option value="decimal">Décimal (heures)</option>
-                <option value="jira">Jira (1h 30m)</option>
-                <option value="clock">Horloge (H:mm)</option>
-                <option value="hms">H:mm:ss</option>
-              </select>
+            <div class="conv-field">
+              <label for="convUnit">Format saisi</label>
+              <span class="select-wrap">
+                <select id="convUnit">
+                  <option value="decimal">Décimal (heures)</option>
+                  <option value="jira">Jira (1h 30m)</option>
+                  <option value="clock">Horloge (H:mm)</option>
+                  <option value="hms">H:mm:ss</option>
+                </select>
+                <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+              </span>
             </div>
           </div>
           <div class="conv-out" id="convOut"></div>
+          <p class="muted conv-note">
+            Les unités Jira (<code>1d</code>, <code>1w</code>) suivent vos horaires.
+          </p>
         </div>
 
-        <div class="settings-block">
-          <div class="block-title">Calcul brut / net</div>
-          <p class="muted">
-            Temps entre deux instants : <b>brut</b> (temps réel écoulé) et <b>net</b> (rogné sur
-            vos horaires de travail, pause comprise). Pratique pour vérifier un report a posteriori.
-          </p>
-          <div class="field-grid">
-            <div class="field"><label>Début</label><input type="datetime-local" id="bnStart"></div>
-            <div class="field"><label>Fin</label><input type="datetime-local" id="bnEnd"></div>
+        <div class="tool-block">
+          <div class="block-title">
+            Calcul brut / net
+            <span class="hint">le ruban montre ce qui est compté et ce qui ne l'est pas</span>
+          </div>
+          <div class="bn-row">
+            <div class="conv-field"><label for="bnStart">Début</label><input type="datetime-local" id="bnStart" class="tinput"></div>
+            <div class="conv-field"><label for="bnEnd">Fin</label><input type="datetime-local" id="bnEnd" class="tinput"></div>
+          </div>
+          <div class="bn-strip-wrap">
+            <div class="bn-strip" id="bnStrip"></div>
+            <div class="strip-ax" id="bnStripAxis"></div>
           </div>
           <div class="bn-out" id="bnOut"></div>
+          <p class="muted">
+            <b>Brut</b> = temps réel écoulé. <b>Net</b> = rogné sur vos horaires de travail,
+            pause déjeuner comprise. C'est exactement la règle qu'applique Stint à chaque
+            segment non coché « brut ».
+          </p>
         </div>
       </div>
     </section>

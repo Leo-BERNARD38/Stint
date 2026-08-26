@@ -581,7 +581,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .set-ctl .storage-track { display: block; }
 
 /* ---------- Réglages : champs & blocs ---------- */
-.settings-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 .field-optional { font-weight: 400; color: var(--text-faint); }
@@ -593,8 +592,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .weekdays button.on { background: var(--accent); color: var(--accent-text); }
 
 /* Contrôle segmenté (thème, type d'horaire) : piste pilule + curseur glissant. */
-.seg-field { display: flex; flex-direction: column; gap: 9px; }
-.seg-label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
 .seg-control { --seg-i: 0; position: relative; display: inline-grid; grid-template-columns: repeat(3, 1fr);
   background: var(--bg); border-radius: var(--radius-pill); padding: 4px; min-width: 280px; max-width: 100%; }
 .seg-control::before { content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
@@ -628,15 +625,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .storage-bar.warn { background: var(--pause); }
 .storage-bar.crit { background: var(--stop); }
 
-/* ---------- Maintenance des données ---------- */
-.data-maint { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-4); }
-.purge-row { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
-.purge-lab { font-size: 13.5px; color: var(--text-soft); }
-.purge-row select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); }
-.purge-row select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-.maint-danger { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
-#clearEntries .hint { font-weight: 400; color: var(--text-faint); }
-
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
 .ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
 .ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 13px; background: var(--surface); border-radius: var(--radius-sm); cursor: pointer; }
@@ -650,9 +638,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .ov-editor { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .ov-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
 .ov-editor .field select, .ov-editor .field input { background: var(--bg); }
-
-/* Actions du rappel « repos des yeux » : alignées à gauche, sous l'encart d'info. */
-.eye-actions { justify-content: flex-start; margin-top: var(--sp-3); }
 
 /* Éditeur de planning d'une journée */
 .sched { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -728,7 +713,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .switch-mini.on:hover { color: var(--accent-text); }
 .switch-mini.off { opacity: .55; cursor: not-allowed; }
 .switch-mini.off input { cursor: not-allowed; }
-.auto-info { margin-top: 12px; font-size: 13px; color: var(--text-soft); background: var(--bg); border-radius: var(--radius-sm); padding: 10px 13px; font-variant-numeric: tabular-nums; }
 
 /* État « terminé » */
 .badge-done { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; background: var(--play-wash); color: var(--play); }
@@ -812,30 +796,74 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal-backdrop.open { animation: backdropIn .18s var(--ease); }
 .modal-backdrop.open .modal { animation: modalIn .26s var(--ease-spring); }
 
-/* ============================ Écran Outils ============================ */
-/* Convertisseur de durée : saisie + sorties empilées (une pilule par format). */
-.conv-row { display: flex; gap: var(--sp-4); flex-wrap: wrap; align-items: flex-end; }
-.conv-row .field { flex: 1; min-width: 200px; margin: 0; }
-.conv-out { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-4); }
-.conv-line { display: flex; align-items: center; gap: var(--sp-3); padding: 10px var(--sp-4);
-  background: var(--surface); border-radius: var(--radius-sm); }
-.conv-lab { min-width: 86px; font-family: var(--font-data); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--text-faint); }
-.conv-val { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text);
-  word-break: break-word; }
-.conv-empty { padding: 10px 2px; color: var(--text-faint); }
+/* ============================ Écran Outils ============================
+   La page souffrait d'une hiérarchie inversée : une calculette dont la saisie
+   faisait 200 px et l'explication trois lignes. La saisie devient l'afficheur,
+   les résultats des cartes copiables, et le calcul brut/net se DESSINE.
+   ====================================================================== */
+.tools-grid { display: flex; flex-direction: column; gap: var(--sp-7); }
+.tool-block { display: flex; flex-direction: column; }
 
-/* Calcul brut/net : deux cartes côte à côte (brut · net). */
-.bn-out { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); }
-.bn-card { flex: 1; min-width: 180px; padding: var(--sp-4) var(--sp-4) var(--sp-3);
-  background: var(--surface); border-radius: var(--radius); }
-.bn-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; font-variation-settings: "wdth" 108; }
-.bn-sub { margin-top: 2px; font-size: 12px; color: var(--text-faint); }
-.bn-val { margin: var(--sp-2) 0 var(--sp-3); font-family: var(--font-display); font-size: 1.9rem;
-  font-variant-numeric: tabular-nums; }
+/* ---------- Convertisseur ---------- */
+.conv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: end; }
+@media (max-width: 640px) { .conv { grid-template-columns: 1fr; align-items: stretch; } }
+.conv-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.conv-field label { font-family: var(--font-data); font-size: 10px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--text-faint); }
+.conv-field .select-wrap, .conv-field .select-wrap select { width: 100%; }
+.conv-field .tinput { width: 100%; padding: 12px 14px; font-size: 14px; }
+
+/* La saisie EST l'afficheur : même police, même échelle que les résultats. */
+.conv-in {
+  font-family: var(--font-display); font-size: clamp(30px, 5vw, 46px); font-weight: 400;
+  font-variant-numeric: tabular-nums; line-height: 1.15;
+  background: var(--surface); border: none; border-radius: var(--radius);
+  padding: 10px 18px; color: var(--text); width: 100%;
+  box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .16s var(--ease);
+}
+.conv-in::placeholder { color: var(--text-faint); }
+.conv-in:focus { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+.conv-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--sp-2); margin-top: var(--sp-4); }
+.conv-card { position: relative; background: var(--surface); border-radius: var(--radius);
+  padding: 13px 15px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.conv-card .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text-faint); }
+.conv-card .v { font-family: var(--font-display); font-size: 28px; line-height: 1.1;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* Le format Jira passe devant : c'est celui qu'on vient chercher. */
+.conv-card.is-main { background: var(--accent-wash); }
+.conv-card.is-main .v { color: var(--accent); }
+.conv-card .cp { position: absolute; top: 8px; right: 8px; background: transparent; }
+.conv-card:hover .cp { background: var(--surface-2); }
+.conv-empty { padding: 12px 2px; color: var(--text-faint); grid-column: 1 / -1; }
+.conv-note { margin: var(--sp-3) 0 0; }
+
+/* ---------- Calcul brut / net ---------- */
+.bn-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.bn-strip-wrap { display: flex; flex-direction: column; gap: 5px; }
+/* Le fond hachuré = le temps qui S'ÉCOULE ; les blocs pleins = le temps qui
+   COMPTE. La différence entre les deux, c'est tout le sujet de la page. */
+.bn-strip { position: relative; height: 46px; border-radius: var(--radius-sm); overflow: hidden;
+  background-color: var(--surface-2);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 5px, var(--dot-grid) 5px 10px); }
+.bn-strip .bn-net { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs);
+  background: var(--accent); }
+.bn-strip .bn-empty { position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-data); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-faint); }
+.bn-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-3); margin-top: var(--sp-4); }
+.bn-card { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--surface);
+  border-radius: var(--radius); }
+.bn-card.is-net { background: var(--accent-wash); }
+.bn-card.is-net .bn-val { color: var(--accent); }
+.bn-sub { margin-top: 2px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint); }
+.bn-val { margin: var(--sp-2) 0 var(--sp-3); font-family: var(--font-display); font-size: 34px;
+  line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bn-actions { display: flex; gap: var(--sp-2); }
-
 
 /* ============================ Onglet Tâches : filtres & regroupement ============================ */
 .at-controls { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
