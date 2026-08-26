@@ -42,10 +42,15 @@ export const PALETTES = {
     "#1F4459", "#487B98", "#2F5F86", "#357F7A", "#4A93A8",
     "#345E7E", "#1C6060",
   ],
+  // Support : chaud, mais RABATTU — argile, brique, prune. La famille était
+  // faite d'oranges et de rouges vifs ; sur l'écran, une tâche de support
+  // ressemblait donc à une alarme, et disputait son sens au minium, qui ne dit
+  // qu'une chose : « ça, maintenant ». Aucune teinte par défaut ne doit plus
+  // pouvoir être confondue avec le tampon.
   support: [
-    "#D43F2A", "#B8781A", "#C2542A", "#A63A23", "#D06A2E",
-    "#C0392F", "#C98A2A", "#B34B3B", "#AE4B57", "#BA5847",
-    "#94391F", "#D9903A",
+    "#8B5041", "#924F58", "#7E543E", "#874F64", "#9B5550",
+    "#71513D", "#82404F", "#996656", "#8E5773", "#794239",
+    "#844D4F", "#91604B",
   ],
   autre: [
     "#6B665C", "#8A8478", "#544F47", "#7D7668", "#605A50",

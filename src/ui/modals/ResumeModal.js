@@ -38,7 +38,9 @@ export class ResumeModal extends Modal {
           `<span class="du">${this.app.formatter.clock(minutes)}</span>`,
         on: { click: () => { store.resume(id); this.close(); } },
       });
-      if (activeSeg?.taskId === id) btn.style.borderColor = "var(--play)";
+      // La tâche déjà en cours : même règle que partout — c'est son NOMBRE qui
+      // passe en minium, pas une bordure autour du bouton.
+      if (activeSeg?.taskId === id) btn.classList.add("is-running");
       this.list.appendChild(btn);
     }
     super.open();

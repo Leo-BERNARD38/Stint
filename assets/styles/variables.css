@@ -6,14 +6,26 @@
    Toute la sémantique de couleur vit ici ; les composants n'utilisent que des
    variables (aucune couleur en dur ailleurs).
 
-   ── Hiérarchie à quatre niveaux : UNE COULEUR = UNE INFORMATION ──────────────
-   N1  l'instant           minium (--stop)   chrono en cours, repère « maintenant »
-   N2  le registre         contraste inversé total du jour, tête des Stats, nav jour
-   N3  le cliquable        bleu de Prusse    onglets, chips, boutons primaires, liens
-   N4  le reste            encre / encre douce
-   Rien d'autre ne porte de couleur. Les trois teintes de service (ambre = ce qui
-   manque, vert = ce qui est acquis, minium = ce qui s'arrête) ne sortent jamais
-   de leur rôle. C'est ce qui fait qu'un regard suffit à savoir où regarder.
+   ── ENCRE SUR PAPIER, UN ACCENT, UN TAMPON ───────────────────────────────────
+   L'app est une pointeuse : de l'encre sur du papier, et un tampon rouge.
+
+   N1  le tampon      minium (--stop)     ce qui EXIGE le regard maintenant :
+                                          le nombre qui tourne, le repère
+                                          « maintenant », l'action irréversible,
+                                          l'anneau de focus. Quatre emplois.
+   N2  le registre    contraste inversé   total du jour, tête des Stats, nav jour
+   N3  l'accent       bleu de Prusse      tout ce qui se clique ET tout ce qui se
+                                          mesure. Deux intensités seulement :
+                                          l'aplat et le lavis (--accent-wash).
+   N4  le reste       encre
+
+   Il n'y a PAS d'autre teinte. L'ambre et le vert ont été retirés : bleu +
+   orange est une paire complémentaire, elle vibre, et une interface qui vibre
+   a l'air d'un jouet. Ce qu'ils disaient se dit mieux autrement —
+     le MANQUE se dessine en HACHURES (--hatch), jamais en couleur ;
+     l'ACQUIS se dit en encre, ou par la simple absence de manque.
+   Les proportions (ventilation, séries, rythme) se lisent en VALEURS d'une
+   seule teinte, jamais en teintes différentes : une dimension, une couleur.
 
    Esthétique : papier chaud le jour, ardoise la nuit ; flat, sans bordures
    structurelles — on distingue par les surfaces et l'espace.
@@ -81,12 +93,14 @@
   --rule-hour-maj: color-mix(in srgb, var(--text) 24%, transparent);  /* toutes les 2 h */
   --grip: light-dark(rgba(19, 26, 32, .5), rgba(19, 18, 17, .55));    /* poignée (lisible sur toute couleur de segment) */
   --grip-strong: light-dark(rgba(19, 26, 32, .82), rgba(19, 18, 17, .9));
-  /* Zone de trou (temps non tracé) : ambre dès le repos — c'est une invitation,
-     pas un détail à découvrir au survol. */
-  --gap-bg: var(--pause-wash);
-  --gap-ring: color-mix(in srgb, var(--pause) 45%, transparent);
-  --gap-bg-hover: color-mix(in srgb, var(--pause) 26%, transparent);
-  --gap-ring-hover: color-mix(in srgb, var(--pause) 70%, transparent);
+  /* Le manque, partout : une trame hachurée à 45°. Un trou dans le registre
+     n'est pas une alerte, c'est une ABSENCE — et une absence se dessine, elle
+     ne se peint pas en jaune. Même trame pour les trous de la timeline, la
+     carte « temps non tracé » et le hors-horaires du calcul brut/net. */
+  --hatch: color-mix(in srgb, var(--text) 13%, transparent);
+  --hatch-img: repeating-linear-gradient(-45deg, transparent 0 5px, var(--hatch) 5px 10px);
+  --gap-ring: color-mix(in srgb, var(--text) 20%, transparent);
+  --gap-ring-hover: color-mix(in srgb, var(--text) 42%, transparent);
 
   /* ---------------------- Couleurs (clair, sombre) ----------------------
      Le jour : un papier chaud légèrement grainé, pas du blanc pur.
@@ -114,8 +128,7 @@
   /* N3 — bleu de Prusse : la SEULE couleur de ce qui se clique. */
   --accent: light-dark(#1e5273, #74b6d9);
   --accent-text: light-dark(#ffffff, #06121c);
-  --accent-soft: light-dark(#4b7f9e, #4d87a5);
-  --accent-wash: light-dark(#d9e3e9, #1a2c36);
+  --accent-wash: light-dark(#d9e3e9, #1a2c36);   /* sa seule variante */
 
   /* N2 — contraste inversé : deux ancres seulement (total du jour, tête des
      Stats) plus le sélecteur de jour. Au-delà, l'inversion cesse de hiérarchiser. */
@@ -131,46 +144,40 @@
   --on-color-dark: #ffffff;
   --on-color-light: #131a20;
 
-  /* ── Les trois teintes de service ──────────────────────────────────────
-     Chacune existe en DEUX intensités, parce qu'une couleur ne se comporte pas
-     pareil selon qu'elle porte le texte ou qu'elle le supporte :
-       --x       l'APLAT   (fond de bouton, barre, filet, gros chiffre) ;
-       --x-ink   l'ENCRE   (petit texte de cette couleur, y compris sur son wash).
-     En thème sombre les deux coïncident : la teinte y est déjà claire.
-     Texte posé SUR un aplat : --on-signal (blanc le jour, encre la nuit). */
-  /* N1 — minium : ce qui se passe maintenant, et ce qui s'arrête. */
+  /* ── N1 · LE TAMPON ────────────────────────────────────────────────────
+     Le minium est la seule teinte hors accent de toute l'interface, et il n'a
+     que quatre emplois : le nombre qui TOURNE (chrono du héros, durée de la
+     ligne en cours, « en cours » du tableau), le repère « maintenant », l'action
+     IRRÉVERSIBLE, et l'anneau de focus. Deux intensités comme l'accent —
+     l'aplat et l'encre ; le lavis ne sert qu'au survol d'une action dangereuse. */
   --stop: light-dark(#cc3823, #ff6a4a);
   --stop-ink: light-dark(#b93320, #ff6a4a);
   --stop-wash: light-dark(#f6dfd8, #3b1d15);
-  /* Ambre : ce qui manque (temps non tracé, pause). */
-  --pause: light-dark(#a3690f, #e5a93f);
-  --pause-ink: light-dark(#8b590d, #e5a93f);
-  --pause-wash: light-dark(#f0e2c4, #382b12);
-  /* Vert : ce qui est acquis (journée complète, tâche terminée). */
-  --play: light-dark(#367044, #63b473);
-  --play-wash: light-dark(#d9e7d9, #182f1d);
-  /* Texte et glyphes posés sur un aplat de service. Le blanc sur l'ambre clair
-     ne passait pas (2,1:1 la nuit) : la nuit, ces teintes veulent de l'encre. */
+  /* Texte et glyphes posés sur un aplat de minium (la nuit, la teinte est
+     claire : elle veut de l'encre, pas du blanc — 2,1:1 sinon). */
   --on-signal: light-dark(#ffffff, #131211);
-  --finish: var(--play);
   --new: var(--accent);
-  --resume: var(--accent-soft);
-  /* Pastilles douces des contrôles play/terminer dans les lignes de tâche. */
-  --play-soft: var(--play-wash);
-  --finish-soft: var(--play-wash);
 
-  --warn-bg: var(--pause-wash);
-  --warn-text: var(--pause-ink);
+  /* Étiquettes de type : purement typographiques. Le mot dit déjà « dev » ou
+     « support » — lui donner en plus une teinte, c'était trois pastilles de
+     couleur de plus par ligne pour zéro information supplémentaire. */
+  --type-badge-bg: color-mix(in srgb, var(--text) 8%, transparent);
+  --type-badge-text: var(--text-soft);
 
-  --type-dev-bg: var(--accent-wash);
-  --type-dev-text: var(--accent);
-  --type-support-bg: var(--stop-wash);
-  --type-support-text: var(--stop-ink);
-  --type-autre-bg: color-mix(in srgb, var(--text) 8%, transparent);
-  --type-autre-text: var(--text-soft);
+  /* Rampe de données : une seule teinte, trois valeurs. dev/support/autre ne
+     sont pas des natures opposées, ce sont des PARTS d'un même total — donc des
+     valeurs d'une même couleur, ordonnées. Trois teintes franches faisaient
+     croire à trois sujets sans rapport, et remettaient du minium (donc du
+     « maintenant ») dans des graphiques rétrospectifs.
+     Les deux valeurs dérivées vont vers la SURFACE (jamais vers l'encre : dans
+     un thème sombre, « plus d'encre » veut dire plus clair, et la rampe
+     s'inverserait). Le dosage compte : à 52 % la bande support se noyait dans
+     sa propre piste, à 60 % elle s'en détache tout en restant plus claire que
+     le dev, ce qui est l'ordre juste — la part la plus grande est la plus
+     dense. */
   --dot-dev: var(--accent);
-  --dot-support: var(--stop);
-  --dot-autre: var(--text-faint);
+  --dot-support: color-mix(in srgb, var(--accent) 60%, var(--surface-2));
+  --dot-autre: color-mix(in srgb, var(--text) 38%, var(--surface-2));
 
   /* Rythme (Stats) : 5 paliers d'intensité d'une journée, du vide au plein.
      Dérivés de --accent → la rampe est en bleu de Prusse, comme tout le reste
