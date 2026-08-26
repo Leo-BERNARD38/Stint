@@ -675,16 +675,20 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, #000 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
 .modal-backdrop.open { display: flex; }
-.modal { position: relative; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
+.modal { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
 .modal h3 { font-family: var(--font-head); margin: 0 0 4px; font-size: 21px; font-weight: 700; letter-spacing: -.02em; padding-right: 34px; }
 .modal-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border: none; border-radius: var(--radius-xs); background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; transition: background-color .15s var(--ease), color .15s var(--ease); }
-.modal-close:hover { background: var(--surface); color: var(--text); }
+.modal-close:hover { background: var(--surface-2); color: var(--text); }
 .modal-close:active { transform: scale(.92); }
 .modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
+/* La modale est posée sur `--surface` : tout contrôle qui vaut `--surface` par
+   défaut y deviendrait invisible. On le descend d'un cran. */
+.modal .chip:not(.active), .modal .select-wrap select { background: var(--surface-2); }
+.modal .chip:not(.active):hover, .modal .select-wrap select:hover { background: var(--surface-hover); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
-.resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface); text-align: left; width: 100%; }
+.resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
 .resume-item:hover { background: var(--surface-hover); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -908,6 +912,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .chip.is-type[data-type="support"]::before { background: var(--dot-support); }
 /* Type désactivé : pilule estompée (on voit qu'il est exclu). */
 .chip.is-type:not(.active) { opacity: .5; }
+/* Active, la pilule est pleine d'accent : un point « dev » (lui aussi accent) y
+   disparaîtrait. Le point reprend donc la couleur du texte — le libellé porte
+   déjà le type, et la pastille ne sert plus qu'à équilibrer la pilule. */
+.chip.is-type.active::before { background: currentColor; }
 
 .at-search { flex: 1; min-width: 180px; border: none; background: var(--surface); color: var(--text);
   font-family: var(--font-body); border-radius: var(--radius-pill); padding: 9px 14px; font-size: 13.5px; }
