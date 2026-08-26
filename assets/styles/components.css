@@ -28,10 +28,10 @@
   display: inline-flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
 }
 .backup-pill:hover { background: var(--surface-hover); }
-.backup-pill.warn { background: var(--warn-bg); color: var(--warn-text); }
+.backup-pill.warn { color: var(--text); }
 .backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop-ink); }
-.backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--play); }
-.backup-pill.warn .dot { background: var(--warn-text); }
+.backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.backup-pill.warn .dot { background: var(--stop); }
 .backup-pill.crit .dot { background: var(--stop); }
 
 /* ---------- Boutons icône (thème, etc.) ---------- */
@@ -69,17 +69,15 @@
 .tab.active { color: var(--accent-text); }
 
 /* ---------- Carte tâche active ----------
-   C'est l'instrument : un filet minium au bord gauche quand ça tourne, une
-   pastille qui bat, et un chrono rouge. Le minium ne sert qu'ici et sur le
-   repère « maintenant » — c'est ce qui en fait un signal et pas une décoration. */
+   C'est l'instrument. « Ça tourne » se lit à DEUX choses, jamais à un filet
+   collé sur un bord : la pastille qui bat, et le nombre en minium. Un liseré
+   latéral est un ornement de bord — il ne dit rien que le contenu ne dise, et
+   il casse la silhouette de la carte. */
 .active-card {
   position: relative; overflow: hidden;
   background: var(--surface); border-radius: var(--radius-lg);
   padding: var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 128px;
   min-width: 0; /* autorise le rétrécissement dans la grille héros (pas de débordement) */
-}
-.active-card.is-running::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--stop);
 }
 .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; transition: box-shadow .2s var(--ease); }
 /* Battement : le seul mouvement permanent de l'interface. */
@@ -128,21 +126,14 @@
 .big-btn .label { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
 .big-btn .kbd { font-family: var(--font-data); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); }
 
-/* Au repos, seul le glyphe de Play porte l'accent : dans une rangée où tout se
-   clique, la couleur ne peut plus dire « cliquable » — elle dit « celui-là ». */
+/* Les quatre boutons sont quatre cartes identiques. Un seul glyphe porte de la
+   couleur — celui de Play : dans une rangée où tout se clique, la couleur ne
+   peut plus dire « cliquable », elle dit « celui-là ». Et elle dit ce qu'il va
+   faire : accent au repos (lancer), minium en marche (arrêter). Le fond, lui,
+   ne bouge pas : un aplat ou un lavis de 340 px faisait de la mise en pause
+   l'élément le plus fort de la page, plus fort que le chrono qu'elle arrête. */
 #btnPlay.is-stopped .glyph { color: var(--accent); }
-/* En marche : lavis minium + filet de 3 px, exactement le filet que porte la
-   carte du chrono juste au-dessus. L'aplat plein, lui, faisait de la mise en
-   pause l'élément le plus fort de la page — plus fort que le chrono qu'il
-   arrête. Même information, un quart de la surface. */
-#btnPlay.is-running { background: var(--stop-wash); color: var(--stop-ink); }
-#btnPlay.is-running::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--stop);
-}
-#btnPlay.is-running:hover { background: color-mix(in srgb, var(--stop) 22%, var(--stop-wash)); }
 #btnPlay.is-running .glyph { color: var(--stop); }
-#btnPlay.is-running .label { color: var(--stop-ink); }
-#btnPlay.is-running .kbd { color: var(--stop-ink); }
 .big-btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
 /* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ----------
@@ -158,11 +149,10 @@
 }
 .daynav button:hover { background: color-mix(in srgb, var(--inverse-fg) 18%, transparent); }
 .daynav .date { min-width: 0; font-family: var(--font-data); font-weight: 500; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--inverse-fg); padding: 0 var(--sp-3); }
-/* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien
-   badge). Le vert seul sur le fond des contrôles tombait à 4,0:1 — il lui faut
-   son propre lavis pour rester au-dessus du seuil. */
-#dayToday.is-today { color: var(--play); background: var(--play-wash); }
-#dayToday.is-today:hover { background: color-mix(in srgb, var(--play) 16%, var(--play-wash)); }
+/* Sur aujourd'hui : le bouton n'a plus rien à proposer. Il le dit en reculant,
+   pas en s'allumant — s'allumer aurait signalé une action à faire. */
+#dayToday.is-today { color: var(--text-soft); background: transparent; }
+#dayToday.is-today:hover { background: var(--ctl); }
 /* Bouton « Aujourd'hui » : pilule pour s'accorder à la nav jour. */
 .btn-ghost { border: none; background: var(--ctl); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
 .btn-ghost:hover { background: var(--ctl-hover); color: var(--text); }
@@ -190,7 +180,10 @@
 @media (prefers-reduced-motion: reduce) { .bg-dots { display: none !important; } }
 @media (hover: none) { .bg-dots { display: none !important; } }
 
-.timeline-wrap { position: relative; margin-bottom: var(--sp-6); }
+.timeline-wrap { position: relative; margin-bottom: var(--sp-4); }
+.timeline-wrap.dot-card { padding: var(--sp-5) var(--sp-5) var(--sp-4); }
+/* Le titre colle à la piste : il la nomme, il ne la surplombe pas. */
+.timeline-wrap .block-title { margin-bottom: var(--sp-3); }
 /* Infobulle maison (réactive, suit le curseur, flotte au-dessus du bloc survolé). */
 .tl-tip {
   position: absolute; z-index: 6; pointer-events: none;
@@ -245,12 +238,15 @@
 .tl-grip.left { left: 0; } .tl-grip.right { right: 0; }
 .tl-grip span { width: 3px; height: 44%; border-radius: 2px; background: var(--grip); transition: height .2s var(--ease-out), background-color .2s var(--ease-out); }
 .tl-seg:hover .tl-grip span { height: 56%; background: var(--grip-strong); }
-/* Zones de trou (temps non tracé) : pointillé cliquable, ambre au survol. */
-.tl-gap { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs); background: var(--gap-bg);
+/* Zones de trou : un TROU se dessine, il ne se peint pas. Hachures à 45°,
+   la même trame que la carte « temps non tracé » et que le hors-horaires du
+   calcul brut/net — une seule idée graphique pour une seule idée. */
+.tl-gap { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs);
+  background-image: var(--hatch-img);
   box-shadow: inset 0 0 0 1px var(--gap-ring); display: grid; place-items: center; cursor: pointer; z-index: 2;
-  transition: background-color .22s var(--ease-out), box-shadow .22s var(--ease-out); }
-.tl-gap:hover { background: var(--gap-bg-hover); box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
-.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--pause-ink); white-space: nowrap; }
+  transition: box-shadow .22s var(--ease-out); }
+.tl-gap:hover { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
+.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); white-space: nowrap; }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
@@ -283,7 +279,7 @@
   transition: opacity .16s var(--ease-out); }
 .fill-pop.show { opacity: 1; visibility: visible; }
 .fill-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-.fill-head .fill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
+.fill-head .fill-dot { width: 7px; height: 7px; border-radius: 2px; background: var(--text-faint); flex-shrink: 0; }
 .fill-kicker { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--text-faint); }
 .fill-x { margin-left: auto; width: 26px; height: 26px; border: none; border-radius: 9px; background: transparent; color: var(--text-faint); display: grid; place-items: center; cursor: pointer; }
 .fill-x:hover { background: var(--surface-2); color: var(--text); }
@@ -326,27 +322,30 @@
 }
 
 /* ---------- Bloc « Temps non tracé » (aside Journée) ---------- */
-/* Temps non tracé : une carte ambre, pas une ligne de plus. L'ambre dit « il
-   manque quelque chose » — et le chiffre doit se voir depuis l'autre bout de
-   l'écran, sinon on ne comble jamais rien. */
-.untracked { margin-top: var(--sp-4); background: var(--pause-wash); border-radius: var(--radius); padding: var(--sp-4); }
+/* Temps non tracé : une carte hachurée, pas une carte jaune. La trame dit
+   « il manque quelque chose » sans ajouter une teinte à l'écran, et le chiffre
+   se voit depuis l'autre bout de la pièce — sinon on ne comble jamais rien. */
+.untracked { margin-top: var(--sp-4); background-color: var(--surface-2);
+  background-image: var(--hatch-img); border-radius: var(--radius); padding: var(--sp-4); }
 .untracked-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--pause-ink); }
+.untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-soft); }
 .untracked-total { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: 23px;
   font-variant-numeric: tabular-nums; line-height: 1; }
-.untracked-total.has { color: var(--pause-ink); }
-.untracked-total.clear { color: var(--play); }
+.untracked-total.has { color: var(--text); }
+.untracked-total.clear { color: var(--text-faint); }
 .untracked-list { display: flex; flex-direction: column; gap: 9px; }
 .untracked-row { display: flex; align-items: center; gap: 9px; font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
-.untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
+.untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 2px; background: var(--text-faint); flex-shrink: 0; }
 .untracked-row .ut-range { white-space: nowrap; }
 .untracked-row .ut-dur { font-weight: 700; color: var(--text); }
-.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--pause); color: var(--on-signal); font-family: var(--font-body); font-weight: 600; }
-.untracked-row .ut-fill:hover { background: color-mix(in srgb, var(--pause) 86%, var(--text)); color: var(--on-signal); }
-.untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--play); font-weight: 600; }
-/* Journée complète : la carte n'a plus rien à réclamer, elle passe au vert. */
-.untracked:has(.untracked-zero) { background: var(--play-wash); }
-.untracked:has(.untracked-zero) .untracked-head .k { color: var(--play); }
+.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; font-family: var(--font-body); font-weight: 600;
+  background: var(--surface); color: var(--text); }
+.untracked-row .ut-fill:hover { background: var(--surface-hover); }
+.untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-soft); font-weight: 600; }
+/* Journée complète : la carte n'a plus rien à réclamer. Elle perd sa trame —
+   c'est l'ABSENCE de hachures qui dit « rien ne manque ». Pas besoin de vert
+   pour féliciter : le registre est plein, ça se voit. */
+.untracked:has(.untracked-zero) { background-image: none; }
 
 /* ---------- Couverture du jour (rail Totaux) ----------
    L'autre face du « temps non tracé » : la part de la journée PLANIFIÉE qui est
@@ -368,9 +367,8 @@
 .cov-lab { display: flex; justify-content: space-between; gap: var(--sp-3);
   font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
-/* Journée bouclée : le vert dit « c'est acquis », ici comme partout ailleurs. */
-.coverage.is-done .cov-pct, .coverage.is-done .cov-track i { color: var(--play); background: var(--play); }
-.coverage.is-done .cov-pct { background: none; }
+/* Journée bouclée : la barre est pleine. C'est tout ce qu'il y a à dire, et
+   une barre pleine se voit — inutile de la repeindre. */
 
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {
@@ -441,18 +439,26 @@
    chaque nom se lisait comme un SOULIGNEMENT du nom, pas comme une mesure. Le
    filet redonne à la ligne son cadre, et la barre redevient une barre. */
 .task-list { display: flex; flex-direction: column; }
-.task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3);
+/* Grille, pas flex, et la durée en DERNIÈRE piste — donc collée au bord droit
+   de la carte, à la même abscisse sur toutes les lignes, quel que soit le
+   nombre d'actions (une tâche avec lien en a une de plus) et quel que soit
+   l'état de survol (les actions secondaires n'apparaissent qu'alors). Des
+   chiffres tabulaires qui ne s'alignent pas, dans un compteur de temps, c'est
+   le détail qui trahit tout le reste. C'est la colonne élastique — le nom —
+   qui absorbe les variations, et c'est son rôle. */
+.task-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 78px;
+  align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3);
   border-radius: var(--radius-sm); }
+.task-row .task-actions { grid-area: 1 / 3; justify-self: end; }
+.task-row .task-dur { grid-area: 1 / 4; justify-self: end; }
 .task-row + .task-row { border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
-.task-row { position: relative; }
 .task-row:hover { background: var(--surface-2); }
-/* La tâche en cours porte le même filet minium que la carte du chrono et que
-   le bouton Pause : une seule signature pour « c'est celle-là qui tourne ». */
+/* La ligne en cours : son fond recule d'un cran, et sa durée passe en minium —
+   la même règle que le chrono du héros. Le minium ne marque pas « cette
+   ligne », il marque LE NOMBRE QUI BOUGE. C'est vrai partout, donc ça se
+   reconnaît partout, et aucun liseré latéral n'est nécessaire. */
 .task-row.active { background: var(--surface-2); }
-.task-row.active::before {
-  content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px;
-  border-radius: 3px; background: var(--stop);
-}
+.task-row.active .task-dur { color: var(--stop-ink); }
 .task-row.archived { opacity: .5; }
 /* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
 /* Le groupe des terminées se démarque par l'ESPACE : le filet est le même que
@@ -462,10 +468,8 @@
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
 .type-badge { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; }
-.type-dev { background: var(--type-dev-bg); color: var(--type-dev-text); }
-.type-support { background: var(--type-support-bg); color: var(--type-support-text); }
-.type-autre { background: var(--type-autre-bg); color: var(--type-autre-text); }
-.task-dur { font-family: var(--font-display); font-weight: 400; font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
+.type-dev, .type-support, .type-autre { background: var(--type-badge-bg); color: var(--type-badge-text); }
+.task-dur { font-family: var(--font-display); font-weight: 400; font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; text-align: right; }
 /* Vue arrondie : soulignement pointillé pour rappeler que la durée n'est plus exacte. */
 .task-list.is-rounded .task-dur,
 .totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
@@ -476,22 +480,41 @@
 
 .mini-btn { border: none; background: var(--ctl); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
 .mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
-.mini-btn.copied { background: var(--play); color: var(--on-signal); }
-/* Contrôles de cycle de vie : pastilles colorées, toujours visibles. */
-.mini-btn.ctrl-play { background: var(--play-soft); color: var(--play); }
-.mini-btn.ctrl-play:hover { background: color-mix(in srgb, var(--play) 24%, transparent); color: var(--play); }
-.mini-btn.ctrl-pause { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause-ink); }
-.mini-btn.ctrl-pause:hover { background: color-mix(in srgb, var(--pause) 26%, transparent); color: var(--pause-ink); }
-/* Les boutons discrets (copie, édition, terminer) ne montrent leur fond qu'au survol. */
-.task-row:not(:hover):not(.active) .task-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; }
+.mini-btn.copied { background: var(--accent); color: var(--accent-text); }
+/* Contrôles de cycle de vie : toujours visibles (les autres se révèlent au
+   survol), mais sans teinte — un triangle et deux barres disent déjà « lancer »
+   et « mettre en pause ». Deux pastilles colorées par ligne, sur quatre lignes,
+   c'était huit taches de couleur pour zéro information. */
+.mini-btn.ctrl-play, .mini-btn.ctrl-pause { color: var(--text); }
+.mini-btn.ctrl-pause { color: var(--stop-ink); }
+/* Six contrôles par ligne, sur quatre lignes, c'est vingt-quatre cibles pour
+   une liste dont le travail est de montrer quatre nombres. Seuls les deux
+   contrôles de cycle de vie (lancer / mettre en pause, terminer) restent
+   visibles ; copie, lien et édition se révèlent au survol ou au focus clavier.
+   Sur un appareil sans survol, tout reste visible — sinon rien n'est atteignable. */
+@media (hover: hover) {
+  /* `display:none` et non `opacity:0` : masqués mais présents, les quatre
+     boutons réservaient 200 px de vide à droite de chaque ligne, et les deux
+     contrôles restants flottaient au milieu. La durée ayant sa piste fixe,
+     retirer les autres du flux ne décale aucune colonne — seul le bord gauche
+     du groupe d'actions bouge, et il est déjà à droite de tout. */
+  .task-row:not(:hover):not(:focus-within) .task-actions
+    .mini-btn:not(.ctrl-play):not(.ctrl-pause):not(.ctrl-finish) { display: none; }
+  .task-row:not(:hover):not(:focus-within) .task-actions .mini-btn { background: transparent; }
+}
 
 /* ---------- Onglet « Tâches » : liste groupée (jour / semaine / mois) ---------- */
 .all-tasks { display: flex; flex-direction: column; gap: var(--sp-4); }
-/* Chaque groupe (jour/semaine/mois) est une carte pointillée ; l'en-tête se cale
-   en haut de la carte (le padding de la carte fait l'espace). */
-.at-group .at-date { margin-top: 0; }
+/* Un groupe (jour / semaine / mois) = une carte. Le padding est resserré : à
+   24 px, un groupe d'une seule tâche faisait 120 px de carte pour une ligne. */
+.at-group { padding: var(--sp-4) var(--sp-5) var(--sp-3); }
+.at-group .at-date { margin-top: 0; margin-bottom: var(--sp-1); }
 .at-task { border-radius: var(--radius-sm); }
-.at-head { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer; border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
+/* Cinq colonnes : chevron · pastille · nom · actions · durée. Même règle que
+   les Tâches du jour — la durée ferme la ligne, les actions la précèdent. */
+.at-head { display: grid; grid-template-columns: 16px 14px minmax(0, 1fr) auto 74px;
+  align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer;
+  border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
 .at-head:hover { background: var(--surface-2); }
 .at-head:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .at-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0; transition: transform .3s var(--ease-spring); }
@@ -499,10 +522,17 @@
 .at-main { flex: 1; min-width: 0; }
 .at-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 .at-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
-.at-total { font-family: var(--font-display); font-weight: 400; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
-/* Copie du total : boutons discrets, révélés au survol/focus de la ligne. */
-.at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.at-head:not(:hover):not(:focus-within) .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
+.at-total { font-family: var(--font-display); font-weight: 400; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; text-align: right; justify-self: end; grid-area: 1 / 5; }
+/* Copie et édition : révélées au survol/focus, comme dans les Tâches du jour.
+   Seul le contrôle de cycle de vie reste. */
+.at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; justify-self: end; grid-area: 1 / 4; }
+@media (hover: hover) {
+  .at-head:not(:hover):not(:focus-within) .at-actions
+    .mini-btn:not(.ctrl-play):not(.ctrl-pause) { display: none; }
+}
+@media (hover: none) {
+  .at-head .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
+}
 /* Conteneur animable : la hauteur passe de 0fr à 1fr (transition fluide). */
 .at-segs-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }
 .at-task.open .at-segs-wrap { grid-template-rows: 1fr; }
@@ -516,14 +546,24 @@
 .at-seg-dur { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .raw-tag { font-family: var(--font-data); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-faint); background: var(--surface-2); border-radius: 4px; padding: 2px 6px; }
 
-/* ---------- Segments (table flat lecture seule : zébrage, pas de bordures) ---------- */
-.seg-add-row { display: flex; justify-content: flex-end; margin-bottom: var(--sp-3); }
+/* ---------- Segments (table flat : ni bordures ni zébrage — des colonnes) ----------
+   Les colonnes de chiffres sont alignées à DROITE, en-têtes comprises : une
+   heure, une durée, ça se lit par le chiffre des unités. Seule la première
+   colonne (la tâche) prend la place restante ; toutes les autres se serrent sur
+   leur contenu, sinon le tableau s'étale et les nombres flottent au milieu de
+   nulle part. */
 .table-scroll { overflow-x: auto; }
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.seg-table th { text-align: left; font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
-.seg-table td { padding: 9px 12px; vertical-align: middle; }
+.seg-table th { text-align: right; font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); padding: 6px 12px 10px; border-bottom: 1px dotted var(--dot); white-space: nowrap; }
+.seg-table th:first-child { text-align: left; width: 100%; }
+.seg-table th:last-child { width: 1px; }
+.seg-table td { padding: 9px 12px; vertical-align: middle; text-align: right; white-space: nowrap; }
+.seg-table td:first-child { text-align: left; }
+.seg-table tr > :first-child { padding-left: 2px; }
+.seg-table tr > :last-child { padding-right: 2px; }
 .seg-table tbody tr:hover td { background: var(--surface-2); }
-.seg-table tbody tr.running td { background: var(--play-wash); }
+.seg-table tbody tr.running td { background: var(--surface-2); }
+.seg-table tbody tr.running .seg-dur { color: var(--stop-ink); }
 /* Survol croisé : la ligne reliée au bloc de timeline survolé (et inversement). */
 .seg-table tbody tr.hl td { background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .seg-clickable { cursor: pointer; }
@@ -532,9 +572,16 @@
 .seg-swatch:hover { transform: scale(1.18); }
 .seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .seg-time { font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
-.seg-live { color: var(--play); font-weight: 600; }
+.seg-live { color: var(--stop-ink); font-weight: 600; }
 .seg-dash { color: var(--text-soft); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
+/* Mêmes mœurs que les lignes de tâche : les boutons de copie se révèlent au
+   survol de la ligne, pour que la table reste une table. */
+@media (hover: hover) {
+  .seg-table tbody tr:not(:hover):not(:focus-within) .seg-actions .mini-btn { display: none; }
+  /* La colonne garde sa largeur : sans réserve, la table sursauterait au survol. */
+  .seg-table tbody td:last-child { min-width: 138px; }
+}
 .seg-dur { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ============================================================================
@@ -627,8 +674,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    Le point aveugle de l'ancienne page : trois niveaux se superposaient (base,
    jour de semaine, date) sans qu'on voie jamais lequel l'emportait. On montre
    les trois pour une date donnée, et on cercle celui qui gagne. */
-.prec-wrap { background: var(--surface-2); border-radius: var(--radius); padding: var(--sp-4);
-  display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+/* Pas de carte dans la carte : la pile vit directement dans le groupe, et ce
+   sont ses lignes qui portent la surface. Un bloc `--surface-2` contenant une
+   piste `--surface` inversait la profondeur — le creux paraissait en relief. */
+.prec-wrap { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .prec-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .prec-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
   letter-spacing: .15em; color: var(--text-faint); }
@@ -636,7 +685,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .prec-row {
   display: grid; grid-template-columns: 18px 116px minmax(0, 1fr) auto; gap: var(--sp-3);
   align-items: center; padding: 9px 12px; border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: var(--surface-2);
 }
 /* Le niveau qui gagne : cerclé d'encre. Les perdants reculent par la SURFACE
    (fond retiré) et par la couleur du texte — pas par l'opacité : à 0,62 leur
@@ -661,7 +710,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Ruban du jour : les créneaux effectivement retenus, dessinés à l'échelle. */
 .strip-wrap { display: flex; flex-direction: column; gap: 5px; }
 .strip { position: relative; height: 38px; border-radius: var(--radius-sm); overflow: hidden;
-  background-color: var(--surface);
+  background-color: var(--surface-2);
   background-image: radial-gradient(circle at center, var(--dot-grid) 1px, transparent 1.3px);
   background-size: 11px 11px; background-position: center; }
 .strip i { position: absolute; top: 6px; bottom: 6px; border-radius: var(--radius-xs); background: var(--accent); }
@@ -689,8 +738,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
 .weekdays button { border: none; background: var(--ctl); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
 .weekdays button:hover { color: var(--text); }
-.weekdays button.on { background: var(--accent-wash); color: var(--accent); font-weight: 700;
-  box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* Sélection MULTIPLE : le lavis suffit, sans anneau. Cinq pilules cerclées
+   côte à côte faisaient un feston ; l'anneau est réservé au choix unique, où il
+   désigne « celui-là et pas les autres ». */
+.weekdays button.on { background: var(--accent-wash); color: var(--accent); font-weight: 700; }
 
 /* Contrôle segmenté (thème, type d'horaire) : piste pilule + curseur glissant. */
 .seg-control { --seg-i: 0; position: relative; display: inline-grid; grid-template-columns: repeat(3, 1fr);
@@ -716,7 +767,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .btn.primary { background: var(--accent); color: var(--accent-text); }
 .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--bg)); }
 .btn.danger { color: var(--stop-ink); background: transparent; }
-.btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
+.btn.danger:hover { background: var(--stop-wash); }
 
 /* ---------- Jauge de stockage ---------- */
 .storage { margin: var(--sp-2) 0 var(--sp-5); }
@@ -724,7 +775,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .storage-head #storageText { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
 .storage-track { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .storage-bar { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .35s var(--ease), background-color .2s; }
-.storage-bar.warn { background: var(--pause); }
+.storage-bar.warn { background: var(--stop-ink); }
 .storage-bar.crit { background: var(--stop); }
 
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
@@ -766,6 +817,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .resume-item:hover { background: var(--surface-hover); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
+.resume-item.is-running .du { color: var(--stop-ink); font-weight: 700; }
 
 /* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -818,7 +870,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .switch-mini.off input { cursor: not-allowed; }
 
 /* État « terminé » */
-.badge-done { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; background: var(--play-wash); color: var(--play); }
+.badge-done { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; background: var(--type-badge-bg); color: var(--type-badge-text); }
 .task-row.done { opacity: .62; }
 .task-row.done .task-dur { color: var(--text-soft); }
 
@@ -855,10 +907,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .guide-actions b { font-weight: 600; }
 .guide-actions p { margin: 4px 0 0; }
 .ga-icon { width: 38px; height: 38px; border-radius: var(--radius-sm); background: var(--surface-2); display: grid; place-items: center; flex-shrink: 0; color: var(--text); }
-.ga-icon.play { color: var(--play); }
-.ga-icon.new { color: var(--new); }
-.ga-icon.resume { color: var(--resume); }
-.ga-icon.finish { color: var(--finish); }
+.ga-icon.play, .ga-icon.new, .ga-icon.resume, .ga-icon.finish { color: var(--accent); }
 
 /* ============================================================================
    Micro-interactions & motion — feedback tactile, transitions douces et
@@ -957,7 +1006,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    COMPTE. La différence entre les deux, c'est tout le sujet de la page. */
 .bn-strip { position: relative; height: 46px; border-radius: var(--radius-sm); overflow: hidden;
   background-color: var(--surface-2);
-  background-image: repeating-linear-gradient(-45deg, transparent 0 5px, var(--dot-grid) 5px 10px); }
+  background-image: var(--hatch-img); }
 .bn-strip .bn-net { position: absolute; top: 7px; bottom: 7px; border-radius: var(--radius-xs);
   background: var(--accent); }
 .bn-strip .bn-empty { position: absolute; inset: 0; display: grid; place-items: center;

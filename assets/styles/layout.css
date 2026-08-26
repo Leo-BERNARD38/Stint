@@ -27,7 +27,7 @@ header {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-  padding: var(--sp-7) 0 var(--sp-3);
+  padding: var(--sp-7) 0 var(--sp-5);
 }
 /* Héros 2 colonnes : tâche active (gauche) + total du jour (droite). */
 .hero {
@@ -48,20 +48,21 @@ header {
 }
 
 /* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ----------
-   Pleine largeur. Centrée sur 460 px, la pilule bleue flottait au milieu d'une
-   page vide : c'était l'aplat le plus saturé de l'écran, posé sur rien. Étalée
-   sur toute la colonne, elle redevient ce qu'elle est — une barre de
-   navigation, donc de la structure. C'est le SEUL aplat d'accent plein de
-   l'app : tous les autres états « sélectionné » passent en lavis (components). */
+   Contenue et centrée, PAS pleine largeur. Étalée sur toute la colonne, la
+   barre pesait autant que le héros au-dessus et que les cartes en dessous :
+   trois bandes de 1180 px empilées, donc plus de hiérarchie du tout. Ramassée
+   au centre, elle redevient un contrôle — et le contraste de largeur fait le
+   travail que la couleur n'a plus à faire. C'est le SEUL aplat d'accent plein
+   de l'app ; tous les autres états « sélectionné » passent en lavis. */
 .tabs {
   position: relative;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  width: 100%;
+  width: 380px; max-width: 100%;
   background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
   box-shadow: var(--shadow-card);
-  margin: var(--sp-6) 0 var(--sp-5);
+  margin: var(--sp-5) auto var(--sp-5);
 }
-.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); }
+.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 480px; }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
 .tabs::before {
   content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
@@ -142,12 +143,14 @@ header {
   .day-planned { flex-basis: 100%; margin-left: 0; text-align: left; }
   .day-head { margin: 0 0 var(--sp-4); }
   .daynav .date { min-width: 0; font-size: 14px; }
-  /* les actions de tâche passent sur leur propre ligne (évite le débordement) */
-  .task-row { flex-wrap: wrap; }
-  .task-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
-  /* idem pour l'en-tête de tâche de l'onglet « Tâches » (mêmes contrôles) */
-  .at-head { flex-wrap: wrap; }
-  .at-actions { flex-basis: 100%; justify-content: flex-end; margin-top: 4px; }
+  /* Les actions passent sur leur propre rangée (évite le débordement). La
+     durée garde sa piste : c'est la colonne qu'on lit, elle ne bouge pas. */
+  .task-row { grid-template-columns: 14px minmax(0, 1fr) 78px; }
+  .task-row .task-dur { grid-area: 1 / 3; }
+  .task-row .task-actions { grid-area: 2 / 1 / 3 / -1; justify-content: flex-end; margin-top: 4px; }
+  .at-head { grid-template-columns: 16px 14px minmax(0, 1fr) 74px; }
+  .at-head .at-total { grid-area: 1 / 4; }
+  .at-head .at-actions { grid-area: 2 / 1 / 3 / -1; justify-content: flex-end; margin-top: 4px; }
 }
 
 /* Héros : sur petit écran, le chrono passe sur sa propre ligne (la police

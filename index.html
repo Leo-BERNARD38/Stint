@@ -152,7 +152,7 @@
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
     <section class="tab-panel" data-panel="journee">
-      <div class="timeline-wrap">
+      <div class="timeline-wrap dot-card">
         <div class="block-title">Timeline <span class="hint">glissez le bord d'un segment · cliquez un trou pour le combler</span></div>
         <div class="timeline" id="timeline"></div>
         <div class="tl-axis" id="tlAxis"></div>
@@ -179,18 +179,22 @@
 
     <!-- ---------------------------- Onglet : Segments ---------------------------- -->
     <section class="tab-panel" data-panel="segments" hidden>
-      <div class="block-title">
-        Segments
-        <span class="hint">survolez pour relier timeline et tableau · cliquez une ligne pour l'éditer</span>
-      </div>
-      <div class="timeline-wrap" id="segTimelineWrap">
+      <div class="timeline-wrap dot-card" id="segTimelineWrap">
+        <div class="block-title">
+          Timeline
+          <span class="hint">survolez pour relier timeline et tableau</span>
+        </div>
         <div class="timeline" id="segTimeline"></div>
         <div class="tl-axis" id="segTlAxis"></div>
       </div>
-      <div class="seg-add-row">
-        <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
-      </div>
-      <div class="table-scroll dot-card">
+      <div class="dot-card">
+        <div class="block-title">
+          Segments
+          <span class="hint">cliquez une ligne pour l'éditer</span>
+          <span class="grow"></span>
+          <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
+        </div>
+        <div class="table-scroll">
         <table class="seg-table">
           <thead>
             <tr>
@@ -204,6 +208,7 @@
           </thead>
           <tbody id="segBody"></tbody>
         </table>
+        </div>
       </div>
     </section>
 
