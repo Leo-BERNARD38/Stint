@@ -5,7 +5,18 @@
    [data-theme] ne fixe que `color-scheme` ("system" suit prefers-color-scheme).
    Toute la sémantique de couleur vit ici ; les composants n'utilisent que des
    variables (aucune couleur en dur ailleurs).
-   Esthétique : flat. On s'appuie sur des surfaces et l'espace, pas sur des bordures.
+
+   ── Hiérarchie à quatre niveaux : UNE COULEUR = UNE INFORMATION ──────────────
+   N1  l'instant           minium (--stop)   chrono en cours, repère « maintenant »
+   N2  le registre         contraste inversé total du jour, tête des Stats, nav jour
+   N3  le cliquable        bleu de Prusse    onglets, chips, boutons primaires, liens
+   N4  le reste            encre / encre douce
+   Rien d'autre ne porte de couleur. Les trois teintes de service (ambre = ce qui
+   manque, vert = ce qui est acquis, minium = ce qui s'arrête) ne sortent jamais
+   de leur rôle. C'est ce qui fait qu'un regard suffit à savoir où regarder.
+
+   Esthétique : papier chaud le jour, ardoise la nuit ; flat, sans bordures
+   structurelles — on distingue par les surfaces et l'espace.
    ============================================================================ */
 
 :root,
@@ -18,89 +29,118 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
 
-  /* Rayons — volontairement proches les uns des autres (langage « pilule »
-     Nothing) : les cartes partagent un grand rayon, les petits éléments sont
-     des pilules pleines (--radius-pill). */
-  --radius-lg: 22px;  /* cartes héros (tâche active / total du jour) */
-  --radius: 18px;
-  --radius-sm: 14px;
-  --radius-xs: 11px;
+  /* Rayons — resserrés par rapport aux « pilules » d'origine : l'app se lit
+     désormais comme un instrument de mesure, pas comme un widget. Les pilules
+     restent pour ce qui se clique (onglets, chips, nav jour). */
+  --radius-lg: 16px;  /* cartes héros (tâche active / total du jour) */
+  --radius: 12px;
+  --radius-sm: 9px;
+  --radius-xs: 7px;
   --radius-pill: 999px;
 
   --maxw: 1180px;
 
-  /* Deux polices seulement :
-     - Bitcount Grid Single : la police « caractère » (wordmark, titres, afficheurs).
-     - Inter : la lisibilité (corps, UI, libellés). */
+  /* Quatre familles, quatre emplois — voir DESIGN_SYSTEM.md §Typographie.
+     - Bitcount Grid Single : LES CHIFFRES (et le wordmark). Jamais sous 16 px :
+       en dessous, la matrice se referme et devient illisible.
+     - Archivo             : les titres (axe de largeur variable `wdth`).
+     - IBM Plex Sans       : le corps, l'UI, les noms de tâche.
+     - IBM Plex Mono       : les surtitres, libellés, axes et plages horaires. */
   --font-display: "Bitcount Grid Single", "Courier New", ui-monospace, monospace;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-head: "Archivo", "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
   /* Ombre réservée aux surfaces flottantes (modale, toast, menus). */
-  --shadow-pop: 0 12px 40px light-dark(rgba(17, 17, 19, .14), rgba(0, 0, 0, .55)),
-                0 2px 8px light-dark(rgba(17, 17, 19, .08), rgba(0, 0, 0, .4));
+  --shadow-pop: 0 12px 40px light-dark(rgba(19, 26, 32, .16), rgba(0, 0, 0, .6)),
+                0 2px 8px light-dark(rgba(19, 26, 32, .08), rgba(0, 0, 0, .45));
+  /* Ombre de carte : un cheveu, juste de quoi décoller la carte du papier. */
+  --shadow-card: 0 1px 0 light-dark(rgba(19, 26, 32, .05), rgba(0, 0, 0, .4)),
+                 0 12px 34px -22px light-dark(rgba(19, 26, 32, .5), rgba(0, 0, 0, .95));
 
   /* Courbes d'animation. */
   --ease: cubic-bezier(.4, 0, .2, 1);
   --ease-out: cubic-bezier(.16, 1, .3, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 
-  /* Filets pointillés (esthétique Nothing). Résolus au point d'usage → suivent le thème. */
-  --dot: color-mix(in srgb, var(--text) 24%, transparent);
-  --dot-grid: color-mix(in srgb, var(--text) 9%, transparent);
+  /* Filets pointillés et grain de papier. Résolus au point d'usage → suivent le thème. */
+  --dot: color-mix(in srgb, var(--text) 16%, transparent);
+  --dot-grid: color-mix(in srgb, var(--text) 10%, transparent);
 
   /* Timeline & interactions (drag, trous, bande déjeuner). */
-  --lunch-overlay: color-mix(in srgb, var(--bg) 50%, transparent); /* superposition sombre sur la pause */
-  --grip: light-dark(rgba(17, 17, 19, .5), rgba(12, 12, 14, .55));  /* trait de poignée (lisible sur toute couleur de segment) */
-  --grip-strong: light-dark(rgba(17, 17, 19, .82), rgba(12, 12, 14, .9));
-  --gap-bg: color-mix(in srgb, var(--text) 4.5%, transparent);      /* zone de trou (temps non tracé) */
-  --gap-ring: color-mix(in srgb, var(--text) 16%, transparent);
-  --gap-bg-hover: color-mix(in srgb, var(--pause) 14%, transparent); /* survol / actif → ambre */
-  --gap-ring-hover: color-mix(in srgb, var(--pause) 60%, transparent);
+  --lunch-overlay: color-mix(in srgb, var(--text) 7%, transparent);   /* pause déjeuner : un voile, pas un trou */
+  --rule-hour: color-mix(in srgb, var(--text) 9%, transparent);       /* graduation horaire fine */
+  --rule-hour-maj: color-mix(in srgb, var(--text) 20%, transparent);  /* toutes les 2 h */
+  --grip: light-dark(rgba(19, 26, 32, .5), rgba(19, 18, 17, .55));    /* poignée (lisible sur toute couleur de segment) */
+  --grip-strong: light-dark(rgba(19, 26, 32, .82), rgba(19, 18, 17, .9));
+  /* Zone de trou (temps non tracé) : ambre dès le repos — c'est une invitation,
+     pas un détail à découvrir au survol. */
+  --gap-bg: var(--pause-wash);
+  --gap-ring: color-mix(in srgb, var(--pause) 45%, transparent);
+  --gap-bg-hover: color-mix(in srgb, var(--pause) 26%, transparent);
+  --gap-ring-hover: color-mix(in srgb, var(--pause) 70%, transparent);
 
-  /* ---------------------- Couleurs (clair, sombre) ---------------------- */
-  --bg: light-dark(#ffffff, #0c0c0e);
-  --surface: light-dark(#f5f5f6, #161619);       /* zones douces : inputs, boutons secondaires, aside */
-  --surface-2: light-dark(#ececee, #1f1f23);     /* enfoncé : piste timeline, survols */
-  --surface-hover: light-dark(#efeff1, #222227);
-  --skeleton: light-dark(#e3e3e6, #2a2a31);      /* placeholder de chargement, visible sur --surface */
+  /* ---------------------- Couleurs (clair, sombre) ----------------------
+     Le jour : un papier chaud légèrement grainé, pas du blanc pur.
+     La nuit : « Ardoise » — un charbon chaud, jamais le noir absolu. */
+  --bg: light-dark(#e8e5dc, #131211);
+  --surface: light-dark(#f7f5f0, #1d1b19);       /* cartes, inputs, boutons secondaires */
+  --surface-2: light-dark(#eeeade, #262320);     /* enfoncé : piste timeline, zones internes */
+  --surface-hover: light-dark(#e2ddcf, #302c28);
+  --skeleton: light-dark(#dcd7c8, #2c2825);      /* placeholder de chargement */
 
-  --text: light-dark(#18181b, #f3f3f5);
-  --text-soft: light-dark(#5b5b63, #a6a6ae);
-  --text-faint: light-dark(#9a9aa3, #6b6b74);
+  --text: light-dark(#131a20, #f2eee3);
+  --text-soft: light-dark(#5c6873, #a79f92);
+  --text-faint: light-dark(#8d97a0, #726b61);
 
-  --accent: light-dark(#18181b, #f3f3f5);        /* primaire (presque noir / presque blanc) */
-  --accent-text: light-dark(#ffffff, #0c0c0e);
+  /* N3 — bleu de Prusse : la SEULE couleur de ce qui se clique. */
+  --accent: light-dark(#1e5273, #74b6d9);
+  --accent-text: light-dark(#ffffff, #06121c);
+  --accent-soft: light-dark(#4b7f9e, #4d87a5);
+  --accent-wash: light-dark(#d9e3e9, #1a2c36);
 
-  --ring: light-dark(rgba(24, 24, 27, .28), rgba(255, 255, 255, .35)); /* anneau de focus */
+  /* N2 — contraste inversé : deux ancres seulement (total du jour, tête des
+     Stats) plus le sélecteur de jour. Au-delà, l'inversion cesse de hiérarchiser. */
+  --inverse-bg: light-dark(#131a20, #f2eee3);
+  --inverse-fg: light-dark(#f2efe6, #131211);
 
-  --play: light-dark(#15a34a, #25b35c);
-  --pause: light-dark(#d97706, #e8941f);
-  --stop: light-dark(#e1463c, #f0584d);
-  --new: light-dark(#2f6df6, #5b8bff);
-  --resume: light-dark(#7c4dff, #9b78ff);
-  --finish: light-dark(#0d9488, #2dd4bf);
+  --ring: color-mix(in srgb, var(--stop) 45%, transparent); /* focus = minium, jamais discret */
+
+  /* N1 — minium : ce qui se passe maintenant, et ce qui s'arrête. */
+  --stop: light-dark(#d8402b, #ff6a4a);
+  --stop-wash: light-dark(#f6dfd8, #3b1d15);
+  /* Ambre : ce qui manque (temps non tracé, pause). */
+  --pause: light-dark(#b8781a, #e5a93f);
+  --pause-wash: light-dark(#f0e2c4, #382b12);
+  /* Vert : ce qui est acquis (journée complète, tâche terminée). */
+  --play: light-dark(#3f7a4e, #63b473);
+  --play-wash: light-dark(#d9e7d9, #182f1d);
+  --finish: var(--play);
+  --new: var(--accent);
+  --resume: var(--accent-soft);
   /* Pastilles douces des contrôles play/terminer dans les lignes de tâche. */
-  --play-soft: light-dark(#dcfce7, #173a26);
-  --finish-soft: light-dark(#d1fae5, #16361f);
+  --play-soft: var(--play-wash);
+  --finish-soft: var(--play-wash);
 
-  --warn-bg: light-dark(#fdf3d6, #3a2f12);
-  --warn-text: light-dark(#8a6212, #f4cf6b);
+  --warn-bg: var(--pause-wash);
+  --warn-text: var(--pause);
 
-  --type-dev-bg: light-dark(#e2ecff, #1b3052);
-  --type-dev-text: light-dark(#2451c4, #9cc0ff);
-  --type-support-bg: light-dark(#ffe1e1, #4d1f1f);
-  --type-support-text: light-dark(#b23434, #ff9f9f);
-  --type-autre-bg: light-dark(#ececee, #26262b);
-  --type-autre-text: light-dark(#5b5b63, #a6a6ae);
-  --dot-dev: light-dark(#2f6df6, #5b8bff);
-  --dot-support: light-dark(#e1463c, #f0584d);
-  --dot-autre: light-dark(#b8b8c0, #6b6b74);
+  --type-dev-bg: var(--accent-wash);
+  --type-dev-text: var(--accent);
+  --type-support-bg: var(--stop-wash);
+  --type-support-text: var(--stop);
+  --type-autre-bg: color-mix(in srgb, var(--text) 8%, transparent);
+  --type-autre-text: var(--text-soft);
+  --dot-dev: var(--accent);
+  --dot-support: var(--stop);
+  --dot-autre: var(--text-faint);
 
   /* Rythme (Stats) : 5 paliers d'intensité d'une journée, du vide au plein.
-     Dérivés de --accent pour rester justes dans les deux thèmes. */
+     Dérivés de --accent → la rampe est en bleu de Prusse, comme tout le reste
+     de ce qui se lit et se clique. */
   --heat-0: color-mix(in srgb, var(--text) 7%, transparent);
-  --heat-1: color-mix(in srgb, var(--accent) 26%, var(--surface-2));
-  --heat-2: color-mix(in srgb, var(--accent) 48%, var(--surface-2));
-  --heat-3: color-mix(in srgb, var(--accent) 72%, var(--surface-2));
+  --heat-1: color-mix(in srgb, var(--accent) 28%, var(--surface-2));
+  --heat-2: color-mix(in srgb, var(--accent) 52%, var(--surface-2));
+  --heat-3: color-mix(in srgb, var(--accent) 76%, var(--surface-2));
   --heat-4: var(--accent);
 }

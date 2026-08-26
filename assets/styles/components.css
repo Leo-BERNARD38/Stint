@@ -108,18 +108,20 @@
 #btnPlay.is-running .kbd, #btnPlay.is-stopped .kbd { color: rgba(255, 255, 255, .82); background: rgba(255, 255, 255, .16); }
 .big-btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
 
-/* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ---------- */
+/* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ----------
+   Contraste inversé (N2) : le sélecteur de jour désigne le registre qu'on lit,
+   pas une action. L'accent (N3) reste réservé à ce qui se clique pour agir. */
 .daynav {
   display: flex; align-items: center; gap: 2px;
   width: 440px; max-width: 100%;          /* pixel-perfect avec la pilule d'onglets */
-  background: var(--accent); color: var(--accent-text); border-radius: var(--radius-pill); padding: 4px;
+  background: var(--inverse-bg); color: var(--inverse-fg); border-radius: var(--radius-pill); padding: 4px;
 }
 .daynav button {
   border: none; background: transparent; border-radius: 50%;
-  width: 34px; height: 34px; padding: 0; color: var(--accent-text); flex-shrink: 0;
+  width: 34px; height: 34px; padding: 0; color: var(--inverse-fg); flex-shrink: 0;
 }
-.daynav button:hover { background: color-mix(in srgb, var(--accent-text) 18%, transparent); }
-.daynav .date { flex: 1; min-width: 0; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--accent-text); padding: 0 var(--sp-2); }
+.daynav button:hover { background: color-mix(in srgb, var(--inverse-fg) 18%, transparent); }
+.daynav .date { flex: 1; min-width: 0; font-family: var(--font-data); font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--inverse-fg); padding: 0 var(--sp-2); }
 /* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien badge). */
 #dayToday.is-today { color: var(--play); }
 /* Bouton « Aujourd'hui » : pilule pour s'accorder à la nav jour. */
@@ -137,7 +139,7 @@
   display: none;
   --mx: 50%; --my: 50%;
   background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.4px);
-  background-size: 18px 18px; background-position: center;
+  background-size: 22px 22px; background-position: center;
   -webkit-mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
           mask-image: radial-gradient(circle 190px at var(--mx) var(--my), #000 0%, transparent 72%);
   opacity: 0; transition: opacity .45s var(--ease);
@@ -154,7 +156,7 @@
 .tl-tip {
   position: absolute; z-index: 6; pointer-events: none;
   left: 50%; top: 0; /* centré au repos (JS pose left/top au survol) : pas de débordement hors-écran */
-  background: var(--accent); color: var(--accent-text);
+  background: var(--inverse-bg); color: var(--inverse-fg);
   border-radius: var(--radius-sm); padding: 7px 11px; box-shadow: var(--shadow-pop);
   font-size: 12.5px; line-height: 1.3; white-space: nowrap;
   opacity: 0; transform: translate(-50%, calc(-100% - 10px)) scale(.96);
@@ -193,12 +195,12 @@
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
-.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); pointer-events: none; z-index: 6; }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); pointer-events: none; z-index: 6; }
 /* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
 .tl-drag-tip { position: absolute; z-index: 8; pointer-events: none; opacity: 0;
   left: 50%; top: 0; /* centré au repos (JS pose left/top pendant le glisser) */
-  background: var(--accent); color: var(--accent-text); border-radius: var(--radius-pill);
-  padding: 4px 11px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap;
+  background: var(--inverse-bg); color: var(--inverse-fg); border-radius: var(--radius-pill);
+  padding: 4px 11px; font-family: var(--font-data); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap;
   box-shadow: var(--shadow-pop); transform: translate(-50%, calc(-100% - 8px)); transition: opacity .12s var(--ease); }
 .tl-drag-tip.show { opacity: 1; }
 .tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
@@ -272,14 +274,14 @@
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {
   position: relative; overflow: hidden;
-  background: var(--accent); color: var(--accent-text);
+  background: var(--inverse-bg); color: var(--inverse-fg);
   border-radius: var(--radius-lg); padding: var(--sp-4) var(--sp-5);
   min-height: 128px; min-width: 0; display: flex; flex-direction: column; justify-content: center;
 }
 /* Scène « moment de la journée » : fond de carte pleine largeur (derrière le
    texte ; moitié gauche / haut gauche laissés vides par le dessin). Animée image
    par image en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
-.total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--accent-text); pointer-events: none; }
+.total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--inverse-fg); pointer-events: none; }
 .total-card-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
 .total-card .k { font-family: var(--font-body); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; opacity: .55; }
 .total-card .v { font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; margin-top: 4px; letter-spacing: .02em; }
@@ -505,7 +507,7 @@
 .color-pick::-webkit-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-color-swatch { border: none; background: transparent; }
 .color-pick::-moz-focus-inner { border: 0; padding: 0; }
-.color-hex { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; min-width: 72px; }
+.color-hex { font-family: var(--font-data); font-size: 13px; text-transform: uppercase; min-width: 72px; }
 
 /* ---------- Icônes ---------- */
 .icon { display: block; flex-shrink: 0; }
@@ -547,7 +549,7 @@
 .task-row.done .task-dur { color: var(--text-soft); }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--accent); color: var(--accent-text); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
+.toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--inverse-bg); color: var(--inverse-fg); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 .toast .icon { color: var(--play); flex-shrink: 0; }
 .toast span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -561,7 +563,7 @@
 .guide-toc a { display: flex; gap: 12px; align-items: baseline; text-decoration: none; color: var(--text-soft); padding: 8px 0; border-bottom: 1px dotted var(--dot); transition: color .15s var(--ease); }
 .guide-toc a:last-child { border-bottom: none; }
 .guide-toc a:hover { color: var(--text); }
-.guide-toc a .num { font-family: var(--font-display); font-size: 12px; color: var(--text-faint); }
+.guide-toc a .num { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
 /* Contenu (droite) */
 .guide-content { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
 .guide-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); scroll-margin-top: 84px; }
@@ -696,8 +698,8 @@
   margin-bottom: var(--sp-4); }
 .stat-card { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4) var(--sp-5);
   transition: background-color .15s var(--ease); }
-.stat-card:first-child { background: var(--accent); color: var(--accent-text); }
-.stat-card:first-child .stat-lab { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+.stat-card:first-child { background: var(--inverse-bg); color: var(--inverse-fg); }
+.stat-card:first-child .stat-lab { color: color-mix(in srgb, var(--inverse-fg) 70%, transparent); }
 .stat-val { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-lab { margin-top: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
 
@@ -720,7 +722,7 @@
 /* Écart avec la période précédente : information, pas jugement — donc pas de
    code couleur vert/rouge, juste une flèche discrète. */
 .stat-delta { margin-top: 4px; font-size: 11px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
-.stat-card:first-child .stat-delta { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+.stat-card:first-child .stat-delta { color: color-mix(in srgb, var(--inverse-fg) 70%, transparent); }
 
 .sub-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint);
   margin-bottom: var(--sp-4); }
@@ -803,14 +805,14 @@
   transition: transform .3s var(--ease-spring); }
 .wk-item.open .wk-chev { transform: rotate(90deg); }
 .wk-id { width: 108px; flex-shrink: 0; }
-.wk-num { display: block; font-family: var(--font-display); font-size: 15px; }
+.wk-num { display: block; font-family: var(--font-display); font-size: 17px; line-height: 1.15; }
 .wk-sub { display: block; font-size: 11px; color: var(--text-faint); }
 .wk-track { flex: 1 1 140px; min-width: 90px; height: 8px; background: var(--surface-2);
   border-radius: var(--radius-pill); overflow: hidden; }
 .wk-fill { display: flex; height: 100%; border-radius: var(--radius-pill); overflow: hidden;
   transition: width .4s var(--ease-out); }
 .wk-fill span { display: block; }
-.wk-total { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+.wk-total { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
   font-variant-numeric: tabular-nums; }
 .wk-meta { width: 104px; text-align: right; font-size: 11.5px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
@@ -878,7 +880,7 @@
 .tt-name .type-badge, .tt-name .badge-done { flex-shrink: 0; }
 .tt-share { width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
-.tt-dur { width: 58px; text-align: right; font-family: var(--font-display); font-size: 15px;
+.tt-dur { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
   font-variant-numeric: tabular-nums; }
 .tt-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
 .tt-rest { padding-top: var(--sp-4); font-size: 12.5px; color: var(--text-faint); }
@@ -949,7 +951,7 @@ body.booting #activeTimer {
   display: inline-block;
   background: var(--skeleton);
 }
-/* Sur le sélecteur de jour (fond accent inversé) : teinte dérivée du texte. */
+/* Sur le sélecteur de jour (fond inversé) : teinte dérivée du texte. */
 body.booting #dayLabel {
-  background: color-mix(in srgb, var(--accent-text) 18%, transparent);
+  background: color-mix(in srgb, var(--inverse-fg) 18%, transparent);
 }
