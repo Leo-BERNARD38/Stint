@@ -209,11 +209,17 @@ Notes :
   sept directions sur une page dont le sujet est un nombre, la couleur ne
   hiérarchise plus rien).
   - **N1 minium** (`--stop`) : ce qui exige le regard **maintenant**. Quatre
-    emplois : le nombre qui tourne (chrono, durée de la ligne en cours,
-    « en cours »), le repère « maintenant », l'action irréversible, l'anneau de
-    focus. Il marque **le nombre qui bouge**, jamais l'objet qui le contient —
-    d'où l'absence totale de liseré de bord. `--stop-ink` pour tout minium de
-    moins de 24 px ; `--on-signal` pour le texte posé sur un aplat de minium.
+    emplois : le nombre qui tourne **quand il faut le désigner parmi d'autres**
+    (durée de la ligne en cours, « en cours » du tableau, décompte du repos), le
+    repère « maintenant », l'action irréversible, l'anneau de focus. Il marque
+    **le nombre qui bouge**, jamais l'objet qui le contient — d'où l'absence
+    totale de liseré de bord. `--stop-ink` pour tout minium de moins de 24 px ;
+    `--on-signal` pour le texte posé sur un aplat de minium.
+    **Pas le chrono du héros** : il l'a été, et c'était une faute d'échelle — le
+    tampon désigne *un* élément parmi plusieurs, or le héros n'en a qu'un. Un
+    nombre de 54 px repeint en rouge chaque seconde ne hiérarchise plus rien.
+    « Ça tourne » se lit à la pastille qui bat. Règle générale : **plus le nombre
+    est gros, moins il a besoin du tampon.**
   - **N2 contraste inversé** (`--inverse-bg` / `--inverse-fg`) : le registre.
     **Deux ancres seulement** — total du jour et tête des Stats — plus le
     sélecteur de jour.
@@ -456,6 +462,12 @@ déduit des segments et de l'horloge murale.
   s'éclaircissant le bandeau ne fait que gagner en lisibilité.
 - **Deux canaux du même évènement** : la notification système (qui se rate) et le
   bandeau (qui ne se rate pas). Le bandeau est la source de vérité visuelle.
+- **Le bandeau ne disparaît jamais tant que le rappel est activé** : chrono à
+  l'arrêt (pause, journée pas commencée), il reste en place, **grisé et inerte**
+  (`.idle` + `disabled`). Il disparaissait à la pause et toute la carte sautait —
+  ce qui est déjà à l'écran ne bouge pas, exactement comme pour les actions
+  révélées au survol. Il n'y a qu'un cas où il n'existe pas : le rappel coupé
+  dans les réglages.
 - Le bandeau est un **bouton unique à deux sens** : on **prend** le repos tout de
   suite (`startRest`), ou on l'achève s'il court déjà. Il repoussait le prochain
   rappel, et c'était une erreur de lecture — cliquer sur « repos des yeux » veut

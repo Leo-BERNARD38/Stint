@@ -20,7 +20,7 @@ export class HeroView {
   #liveTaskId = null; // tâche dont le total vif est mémoïsé (cf. tick)
   #liveBaseMs = 0;    // somme des segments TERMINÉS de cette tâche, rafraîchie à chaque render (= chaque "change")
   #shownTaskId = null; // tâche affichée (en cours OU en pause) → clic sur la pastille = édition
-  #eyeResting = null;  // dernier état du bandeau repos (évite de réécrire un libellé identique)
+  #eyeState = null;    // dernier état du bandeau repos : off | idle | wait | rest
 
   constructor(app) {
     this.app = app;
@@ -41,7 +41,7 @@ export class HeroView {
     this.eyeCount = el("eyeCount");
     this.eyeFill = el("eyeFill");
     this.eyeSweep = el("eyeSweep");
-    this.#eyeResting = null;
+    this.#eyeState = null;
   }
 
   bind() {
@@ -140,41 +140,56 @@ export class HeroView {
   }
 
   /**
-   * Le bandeau « repos des yeux ». Trois états, dont un invisible :
-   *   - désarmé (rappel coupé, ou aucun chrono) → rien du tout, la carte se
-   *     recentre : on ne réserve pas une bande pour une fonction qu'on n'a pas
-   *     activée ;
-   *   - en attente → temps d'écran continu à gauche, temps restant à droite ;
-   *   - en repos → les vingt secondes, en tampon, décomptées dans la page.
+   * Le bandeau « repos des yeux ». Quatre états, dont un seul fait disparaître
+   * la bande :
+   *   - `off`  — le rappel est coupé dans les réglages : rien du tout. On ne
+   *     réserve pas une bande à l'écran pour une fonction qu'on n'a pas activée ;
+   *   - `idle` — le rappel est actif mais aucun chrono ne tourne (pause, ou
+   *     journée pas encore commencée) : la bande RESTE, grisée et inerte. Elle
+   *     disparaissait à la pause, et toute la carte sautait — ce qui est déjà à
+   *     l'écran ne bouge pas ;
+   *   - `wait` — temps d'écran continu à gauche, temps restant à droite ;
+   *   - `rest` — le décompte, en tampon, avec le balayage.
    */
   #renderEye() {
     const eb = this.app.eyeBreak;
-    if (!eb?.armed) {
-      if (!this.eye.hidden) { this.eye.hidden = true; this.#eyeResting = null; }
+    const enabled = this.app.store.settings.eyeBreak.enabled;
+    const state = !enabled ? "off" : (eb.resting ? "rest" : (eb.armed ? "wait" : "idle"));
+
+    if (state === "off") {
+      if (!this.eye.hidden) { this.eye.hidden = true; this.#eyeState = "off"; }
       return;
     }
     this.eye.hidden = false;
 
-    const resting = eb.resting;
-    // Le libellé et le titre ne bougent qu'au changement d'état : les réécrire
-    // chaque seconde ferait bégayer `aria-live`.
-    if (resting !== this.#eyeResting) {
-      this.#eyeResting = resting;
-      this.eye.classList.toggle("resting", resting);
+    // Libellé, titre et classes ne bougent qu'au CHANGEMENT d'état : les
+    // réécrire chaque seconde ferait bégayer `aria-live`.
+    if (state !== this.#eyeState) {
+      this.#eyeState = state;
+      this.eye.classList.toggle("resting", state === "rest");
+      this.eye.classList.toggle("idle", state === "idle");
+      this.eye.disabled = state === "idle";   // rien à prendre tant que rien ne tourne
       // Bascule d'état : on repose le balayage à zéro sans transition, sinon on
       // le verrait reculer de 100 % à 0 % pendant une seconde au début du repos.
       this.eyeSweep.style.transition = "none";
       this.eyeSweep.style.width = "0%";
       void this.eyeSweep.offsetWidth;   // force le recalcul avant de rendre la transition
       this.eyeSweep.style.transition = "";
-      this.eyeLabel.textContent = resting ? "Regardez au loin, 6 mètres" : "Repos des yeux";
-      this.eye.title = resting
-        ? "Terminer le repos"
-        : "Prendre le repos maintenant";
+      this.eyeLabel.textContent = state === "rest" ? "Regardez au loin, 6 mètres" : "Repos des yeux";
+      this.eye.title = { rest: "Terminer le repos", wait: "Prendre le repos maintenant",
+                         idle: "Le rappel reprendra au prochain chrono" }[state];
+    }
+
+    if (state === "idle") {
+      this.eyeSince.textContent = "· chrono à l'arrêt";
+      this.eyeCount.textContent = "—";
+      this.eyeFill.style.width = "0%";
+      this.eyeSweep.style.width = "0%";
+      return;
     }
 
     const frac = eb.fraction();
-    if (resting) {
+    if (state === "rest") {
       this.eyeSince.textContent = "";
       this.eyeCount.textContent = String(Math.ceil(eb.restRemainingMs() / 1000));
     } else {
@@ -188,7 +203,7 @@ export class HeroView {
     // `prefers-reduced-motion`, la transition tombe et il redevient un pas par
     // seconde, ce qui reste une jauge juste. Aucune image-clé, rien à
     // synchroniser avec la durée réglée.
-    this.eyeSweep.style.width = resting ? ((1 - frac) * 100).toFixed(1) + "%" : "0%";
+    this.eyeSweep.style.width = state === "rest" ? ((1 - frac) * 100).toFixed(1) + "%" : "0%";
   }
 
   /** Somme des segments TERMINÉS d'une tâche (le segment en cours est ajouté au tick). */

@@ -102,7 +102,12 @@
 .active-extra:empty { display: none; }
 .active-started { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
 .active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.6vw, 54px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.active-card.is-running .active-timer { color: var(--stop); }
+/* Le chrono reste en ENCRE, même quand ça tourne. Il a été en minium, et c'était
+   une faute d'échelle : un nombre de 54 px repeint en rouge à chaque seconde ne
+   hiérarchise plus rien, il crie. « Ça tourne » se lit déjà à la pastille qui bat
+   juste à côté — et le minium garde ses emplois là où il désigne vraiment UN
+   élément parmi d'autres (la ligne en cours dans une liste, le repère
+   « maintenant » sur la piste). */
 .active-timer.idle { color: var(--text-faint); }
 /* En pause : la tâche reste affichée mais atténuée (vs en cours, pleine opacité). */
 .active-card.paused .active-name, .active-card.paused .active-extra,
@@ -152,7 +157,15 @@
   transition: width 1s linear;
 }
 .eye-strip > :not(.eye-sweep) { position: relative; z-index: 1; }
-.eye-strip:hover { background: var(--surface-hover); }
+.eye-strip:enabled:hover { background: var(--surface-hover); }
+/* Chrono à l'arrêt : la bande RESTE, inerte et en encre pâle. Elle disparaissait
+   à la pause, et toute la carte sautait — ce qui est déjà à l'écran ne bouge
+   pas, c'est la même règle que pour les actions révélées au survol. */
+.eye-strip:disabled { cursor: default; }
+.eye-strip.idle .eye-ic,
+.eye-strip.idle .eye-lab,
+.eye-strip.idle .eye-since,
+.eye-strip.idle .eye-count { color: var(--text-faint); }
 .eye-ic { display: flex; color: var(--text-faint); flex-shrink: 0; }
 .eye-lab {
   font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase;

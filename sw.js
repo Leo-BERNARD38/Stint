@@ -23,7 +23,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v98";
+const CACHE = "stint-v99";
 const NAV_TIMEOUT_MS = 2500;
 /* Racine de l'application (sw.js est à côté d'index.html) : « /Stint/ » sur
    GitHub Pages, « / » ailleurs. Sert à ne réclamer QUE les navigations de

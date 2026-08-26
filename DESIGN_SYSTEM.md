@@ -118,8 +118,9 @@ ligne de la pile de précédence la faisait tomber à 2,5:1. Pour reculer un
 complémentaire : elle vibre, et une interface qui vibre a l'air d'un jouet. Il ne
 reste qu'une teinte hors accent, le minium, et elle n'a que **quatre emplois** :
 
-1. le **nombre qui tourne** — chrono du héros, durée de la ligne en cours,
-   « en cours » du tableau des segments, durée dans la liste de reprise ;
+1. **le nombre qui tourne, quand il faut le DÉSIGNER parmi d'autres** — la durée
+   de la ligne en cours dans une liste de tâches, l'« en cours » du tableau des
+   segments, la durée dans la liste de reprise, le décompte des secondes de repos ;
 2. le repère **« maintenant »** de la timeline ;
 3. l'**action irréversible** (purge, suppression) ;
 4. l'**anneau de focus**.
@@ -127,6 +128,14 @@ reste qu'une teinte hors accent, le minium, et elle n'a que **quatre emplois** :
 Le minium ne marque jamais un objet, il marque **le nombre qui bouge**. C'est
 vrai partout, donc ça se reconnaît partout — et aucun liseré de bord n'est
 nécessaire pour dire « c'est celle-là qui tourne ».
+
+**Mais pas le chrono du héros.** Il l'a été, et c'était une faute d'échelle : le
+tampon désigne *un* élément parmi plusieurs, or dans le héros il n'y en a qu'un.
+Un nombre de 54 px repeint en rouge et redessiné chaque seconde ne hiérarchise
+plus rien — il crie, et il rend agressive la première chose qu'on regarde en
+ouvrant l'app. Il reste en **encre**. « Ça tourne » se lit à la **pastille qui
+bat** juste à côté, et une seule fois suffit. Corollaire général : plus le nombre
+est gros, moins il a besoin du tampon.
 
 | Jeton | Jour | Nuit | Emploi |
 |---|---|---|---|
@@ -371,8 +380,9 @@ un lavis, de 340 px faisait de la mise en pause l'élément le plus fort de la p
 fort que le chrono qu'elle arrête.
 
 ### Carte de tâche active
-Quand ça tourne : pastille qui bat (`livePulse`) et chrono en `--stop`. Deux choses, pas
-trois, et **aucun filet de bord**. En pause, tout s'atténue.
+Quand ça tourne : **la pastille bat** (`livePulse`), et c'est tout. Pas de filet de bord,
+pas de chrono en minium — le chrono reste en encre (voir « Le tampon »). En pause, tout
+s'atténue.
 
 ### Bandeau « repos des yeux »
 Un **bandeau, pas une carte** : il vit *dans* la carte de l'instrument, dont il commente
