@@ -443,7 +443,7 @@
 .task-list { display: flex; flex-direction: column; }
 .task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3);
   border-radius: var(--radius-sm); }
-.task-row + .task-row { box-shadow: inset 0 1px 0 0 var(--dot-grid); }
+.task-row + .task-row { border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
 .task-row { position: relative; }
 .task-row:hover { background: var(--surface-2); }
 /* La tâche en cours porte le même filet minium que la carte du chrono et que
@@ -455,8 +455,9 @@
 }
 .task-row.archived { opacity: .5; }
 /* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
-.task-row.done-sep { margin-top: var(--sp-4); padding-top: 18px; border-top: 1px dotted var(--dot);
-  box-shadow: none; border-top-left-radius: 0; border-top-right-radius: 0; }
+/* Le groupe des terminées se démarque par l'ESPACE : le filet est le même que
+   partout, c'est la respiration au-dessus qui dit qu'on change de groupe. */
+.task-row.done-sep { margin-top: var(--sp-4); padding-top: 18px; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
