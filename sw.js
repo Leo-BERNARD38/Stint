@@ -14,7 +14,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v82";
+const CACHE = "stint-v83";
 const NAV_TIMEOUT_MS = 2500;
 
 const CORE = [
@@ -50,6 +50,7 @@ const CORE = [
   "./src/ui/App.js",
   "./src/ui/BgDots.js",
   "./src/ui/DayGlyphAnimator.js",
+  "./src/ui/EyeBreak.js",
   "./src/ui/Timer.js",
   "./src/ui/icons.js",
   "./src/ui/components/CopyButton.js",
@@ -105,6 +106,19 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+// Clic sur un rappel « repos des yeux » : on ramène l'onglet Stint au premier
+// plan (ou on l'ouvre s'il a été fermé) plutôt que d'ouvrir un doublon.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of clientsList) {
+      if (c.url.startsWith(self.registration.scope) && "focus" in c) return c.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow("./");
+  })());
 });
 
 self.addEventListener("fetch", (event) => {

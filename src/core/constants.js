@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -68,7 +68,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
   rounding: "none",  // pas d'arrondi | 1m | 5m | 15m | 30m | 1h (cf. ROUNDING_STEPS)
   roundedDay: false, // vue « arrondi » de la journée (interrupteur des Tâches du jour)
   bgDots: false,     // fond dot-matrix réactif au curseur (easter-egg, off par défaut)
+  // Rappel « repos des yeux » (règle 20-20-20) : notification système toutes les
+  // N minutes **tant qu'un chrono tourne**. Off par défaut (demande une permission).
+  eyeBreak: { enabled: false, minutes: 20 },
 });
+
+/** Bornes de la période du rappel « repos des yeux », en minutes. */
+export const EYE_BREAK_MIN = 1;
+export const EYE_BREAK_MAX = 240;
 
 /**
  * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au

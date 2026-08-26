@@ -1,11 +1,15 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
 import { fmtDateInput, parseDateInput } from "../../utils/datetime.js";
+import { clampEyeMinutes } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 
-/** Réglages : horaires (base + exceptions jour/date), conversion Jira, arrondi. */
+/**
+ * Réglages : horaires (base + exceptions jour/date), conversion Jira, arrondi,
+ * rappel « repos des yeux » et apparence.
+ */
 export class SettingsView {
   constructor(app) {
     this.app = app;
@@ -37,6 +41,22 @@ export class SettingsView {
       store.updateSettings((s) => { s.rounding = e.target.value; }));
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
+
+    // --- rappel « repos des yeux » ---
+    // La permission ne peut être demandée que sur un geste utilisateur : on la
+    // sollicite au moment où l'on active l'interrupteur.
+    el("setEyeBreak").addEventListener("change", async (e) => {
+      const on = e.target.checked;
+      if (on) await this.app.eyeBreak.ensurePermission();
+      store.updateSettings((s) => { s.eyeBreak.enabled = on; });
+    });
+    el("setEyeMinutes").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.eyeBreak.minutes = clampEyeMinutes(e.target.value); }));
+    el("eyeBreakAsk").addEventListener("click", async () => {
+      await this.app.eyeBreak.ensurePermission();
+      this.render();
+    });
+    el("eyeBreakTest").addEventListener("click", () => this.app.eyeBreak.test());
 
     // --- exceptions par jour de semaine ---
     const wdaySelect = el("wdaySelect");
@@ -131,6 +151,7 @@ export class SettingsView {
     setIf("setRounding", s.rounding);
 
     el("setBgDots").checked = s.bgDots;
+    this.#renderEyeBreak();
 
     el("setJiraAuto").checked = s.jira.auto;
     el("jiraManual").style.display = s.jira.auto ? "none" : "";
@@ -153,6 +174,25 @@ export class SettingsView {
     }
 
     this.#renderOverrideLists();
+  }
+
+  /** Rappel « repos des yeux » : état de l'interrupteur, période et permission. */
+  #renderEyeBreak() {
+    const s = this.settings;
+    const eye = this.app.eyeBreak;
+    el("setEyeBreak").checked = s.eyeBreak.enabled;
+    const minutes = el("setEyeMinutes");
+    if (document.activeElement !== minutes) minutes.value = s.eyeBreak.minutes;
+    el("eyeBreakOpts").style.display = s.eyeBreak.enabled ? "" : "none";
+
+    const perm = eye.permission;
+    el("eyeBreakAsk").style.display = perm === "default" ? "" : "none";
+    el("eyeBreakInfo").textContent = {
+      granted: `Notifications autorisées — un rappel toutes les ${s.eyeBreak.minutes} min pendant qu'un chrono tourne.`,
+      default: "Notifications pas encore autorisées : sans elles, le rappel ne s'affiche qu'en bandeau, dans l'onglet Stint.",
+      denied: "Notifications refusées pour ce site : le rappel s'affichera en bandeau dans l'app. Réautorisez-les depuis le cadenas de la barre d'adresse.",
+      unsupported: "Ce navigateur ne gère pas les notifications système : le rappel s'affichera en bandeau dans l'app.",
+    }[perm];
   }
 
   #renderOverrideLists() {

@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, ROUNDING_STEPS } from "../core/constants.js";
+import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX } from "../core/constants.js";
 import { isoDow, fmtDateInput, toMin } from "../utils/datetime.js";
 
 /** Copie défensive d'une map d'horaires { clé: [[start,end], …] }. */
@@ -8,6 +8,13 @@ function cloneHours(map) {
     if (Array.isArray(blocks)) out[k] = blocks.map((p) => [p[0], p[1]]);
   }
   return out;
+}
+
+/** Période du rappel « repos des yeux » ramenée dans ses bornes (minutes entières). */
+export function clampEyeMinutes(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.minutes;
+  return Math.min(EYE_BREAK_MAX, Math.max(EYE_BREAK_MIN, n));
 }
 
 /**
@@ -41,6 +48,15 @@ export class Settings {
     this.rounding = ROUNDING_STEPS[data.rounding] != null ? data.rounding : d.rounding;
     this.roundedDay = data.roundedDay ?? d.roundedDay;
     this.bgDots = data.bgDots ?? d.bgDots;
+    this.eyeBreak = {
+      enabled: data.eyeBreak?.enabled ?? d.eyeBreak.enabled,
+      minutes: clampEyeMinutes(data.eyeBreak?.minutes ?? d.eyeBreak.minutes),
+    };
+  }
+
+  /** Période du rappel « repos des yeux », en millisecondes. */
+  eyeBreakMs() {
+    return clampEyeMinutes(this.eyeBreak.minutes) * 60_000;
   }
 
   /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */
@@ -124,6 +140,7 @@ export class Settings {
       rounding: this.rounding,
       roundedDay: this.roundedDay,
       bgDots: this.bgDots,
+      eyeBreak: { ...this.eyeBreak },
     };
   }
 }

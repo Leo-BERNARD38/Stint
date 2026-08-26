@@ -67,6 +67,8 @@ export class Store extends EventEmitter {
    * v6 → v7 : ajout du réglage `roundedDay` (vue arrondie de la journée) et de
    * nouveaux pas d'arrondi (30m, 1h) — purement additif, valeurs par défaut
    * fournies par `Settings`, aucune transformation ici.
+   * v7 → v8 : ajout du réglage `eyeBreak` (rappel « repos des yeux ») — purement
+   * additif, valeurs par défaut fournies par `Settings`, aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};

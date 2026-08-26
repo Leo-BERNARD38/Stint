@@ -431,6 +431,31 @@
         </div>
 
         <div class="settings-block">
+          <div class="block-title">Repos des yeux</div>
+          <label class="switch-row">
+            <input type="checkbox" id="setEyeBreak">
+            <span>Me rappeler de regarder au loin</span>
+          </label>
+          <p class="muted">
+            Règle <strong>20-20-20</strong> : toutes les 20 minutes, fixer pendant 20 secondes
+            quelque chose à ~6 mètres. Le rappel ne tourne que <strong>chrono en marche</strong> :
+            il démarre au lancement d'une tâche, boucle tant que ça compte, et repart de zéro
+            après une pause.
+          </p>
+          <div id="eyeBreakOpts">
+            <div class="field" style="max-width:220px;">
+              <label>Toutes les (minutes)</label>
+              <input type="number" id="setEyeMinutes" min="1" max="240" step="1">
+            </div>
+            <div class="auto-info" id="eyeBreakInfo"></div>
+            <div class="ov-actions eye-actions">
+              <button class="btn" id="eyeBreakAsk">Autoriser les notifications</button>
+              <button class="btn" id="eyeBreakTest">Tester le rappel</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-block">
           <div class="block-title">Apparence</div>
           <label class="switch-row">
             <input type="checkbox" id="setBgDots">

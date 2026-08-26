@@ -63,6 +63,7 @@ src/
     App.js              CONTRÔLEUR : assemble tout, détient l'état d'UI (viewDay, screen), routage
     Timer.js            tick 1 s (EventEmitter)
     DayGlyphAnimator.js anime le glyphe « moment de la journée » image par image
+    EyeBreak.js         rappel « repos des yeux » (20-20-20) tant qu'un chrono tourne
     icons.js            pack d'icônes Lucide inline + glyphes dot-matrix (§8)
     components/         Toast · CopyButton · ScheduleEditor · TimelineTip (factories)
     views/              une vue = bind() (1×, optionnel) + render(viewDay) ; voir liste ci-dessous
