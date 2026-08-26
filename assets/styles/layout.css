@@ -47,15 +47,21 @@ header {
   .control-buttons { grid-template-columns: 1.32fr 1fr 1fr 1fr; gap: var(--sp-3); }
 }
 
-/* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ---------- */
+/* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ----------
+   Pleine largeur. Centrée sur 460 px, la pilule bleue flottait au milieu d'une
+   page vide : c'était l'aplat le plus saturé de l'écran, posé sur rien. Étalée
+   sur toute la colonne, elle redevient ce qu'elle est — une barre de
+   navigation, donc de la structure. C'est le SEUL aplat d'accent plein de
+   l'app : tous les autres états « sélectionné » passent en lavis (components). */
 .tabs {
   position: relative;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  width: 360px; max-width: 100%;
+  width: 100%;
   background: var(--surface); border-radius: var(--radius-pill); padding: 4px;
-  margin: var(--sp-7) auto var(--sp-5); /* centré (signature Nothing) + air sous le héros */
+  box-shadow: var(--shadow-card);
+  margin: var(--sp-6) 0 var(--sp-5);
 }
-.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 460px; }
+.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
 .tabs::before {
   content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
@@ -67,6 +73,17 @@ header {
 .tabs:has([data-tab="segments"].active)::before { transform: translateX(100%); }
 .tabs:has([data-tab="taches"].active)::before { transform: translateX(200%); }
 .tabs:has([data-tab="stats"].active)::before { transform: translateX(300%); }
+
+/* ---------- Perforation ----------
+   La bande détachable du carnet de pointage : une rangée de trous qui sépare
+   deux registres là où une ligne pleine n'aurait été qu'une bordure de plus
+   (le système est flat : on distingue par surfaces et par espace). */
+.perf {
+  height: 15px;
+  background-repeat: repeat-x; background-position: center;
+  background-image: radial-gradient(circle at center, var(--perf) 2.5px, transparent 3.1px);
+  background-size: 19px 15px;
+}
 
 /* ---------- Écrans (application / réglages / guide) ---------- */
 .settings-screen, .guide-screen { animation: fade .2s ease; padding-top: var(--sp-6); margin-inline: auto; }
@@ -87,7 +104,11 @@ header {
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Sélecteur de jour (sous les onglets, commun à Journée et Segments) ---------- */
-.day-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-5); }
+.day-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-4); }
+/* Le contrat du jour, poussé à droite : ce que les horaires prévoient. */
+.day-planned { margin-left: auto; font-family: var(--font-data); font-size: 11px;
+  color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: right;
+  letter-spacing: .04em; }
 
 /* ---------- Grille de la journée ---------- */
 .journee-grid {
@@ -97,7 +118,7 @@ header {
   align-items: start;
 }
 @media (min-width: 900px) {
-  .journee-grid { grid-template-columns: minmax(0, 2.1fr) minmax(248px, 1fr); gap: var(--sp-7); }
+  .journee-grid { grid-template-columns: minmax(0, 2.1fr) minmax(272px, 1fr); gap: var(--sp-5); }
   .journee-aside { position: sticky; top: 84px; }
 }
 
@@ -117,6 +138,8 @@ header {
   .backup-pill { padding: 7px; }
   .control { padding-top: var(--sp-5); }
   .tabs { margin: var(--sp-4) 0 var(--sp-3); }
+  .perf { height: 12px; background-size: 16px 12px; }
+  .day-planned { flex-basis: 100%; margin-left: 0; text-align: left; }
   .day-head { margin: 0 0 var(--sp-4); }
   .daynav .date { min-width: 0; font-size: 14px; }
   /* les actions de tâche passent sur leur propre ligne (évite le débordement) */

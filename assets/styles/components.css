@@ -29,7 +29,7 @@
 }
 .backup-pill:hover { background: var(--surface-hover); }
 .backup-pill.warn { background: var(--warn-bg); color: var(--warn-text); }
-.backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop); }
+.backup-pill.crit { background: color-mix(in srgb, var(--stop) 16%, transparent); color: var(--stop-ink); }
 .backup-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--play); }
 .backup-pill.warn .dot { background: var(--warn-text); }
 .backup-pill.crit .dot { background: var(--stop); }
@@ -42,7 +42,8 @@
 }
 .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
 .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-.icon-btn.active { background: var(--accent); color: var(--accent-text); }
+.icon-btn.active { background: var(--accent-wash); color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 /* ---------- Titres de bloc ---------- */
 .block-title {
@@ -60,7 +61,7 @@
 /* ---------- Onglets (texte au-dessus du curseur glissant) ---------- */
 .tab {
   position: relative; z-index: 1; border: none; background: transparent;
-  padding: 9px 8px; font-weight: 600; font-size: 14.5px; color: var(--text-faint);
+  padding: 9px 8px; font-weight: 600; font-size: 14.5px; color: var(--text-soft);
   border-radius: var(--radius-pill); text-align: center;
   transition: color .22s var(--ease) .08s; /* léger délai : le texte s'allume quand le curseur arrive */
 }
@@ -95,7 +96,7 @@
 .active-extra { display: flex; align-items: center; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
 .active-extra:empty { display: none; }
 .active-started { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
-.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.6vw, 54px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .active-card.is-running .active-timer { color: var(--stop); }
 .active-timer.idle { color: var(--text-faint); }
 /* En pause : la tâche reste affichée mais atténuée (vs en cours, pleine opacité). */
@@ -103,49 +104,68 @@
 .active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
 .active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
 
-/* ---------- Gros boutons (flat : glyphe à gauche, libellé à droite) ----------
+/* ---------- Gros boutons (flat : glyphe à gauche, libellé empilé) ----------
    Quatre actions, quatre vraies cibles : 74 px de haut, du souffle autour du
-   glyphe. Compactés, ils cessaient de se lire comme les commandes principales. */
+   glyphe. Le libellé et son raccourci sont EMPILÉS contre le glyphe : étirés
+   d'un bord à l'autre, ils faisaient lire une ligne de tableau, pas un bouton.
+
+   La couleur, ici, ne décore pas. Trois glyphes bleus sur quatre boutons tous
+   également cliquables ne distinguaient rien : l'accent y était du tuning.
+   Il ne reste donc qu'UN glyphe coloré — celui de Play, l'action par défaut —
+   et la couleur du bouton principal DIT ce qu'il va faire : accent au repos
+   (« lancer »), minium en marche (« arrêter »). Les trois autres sont des
+   cartes d'encre. */
 .big-btn {
+  position: relative; overflow: hidden;
   border: none; background: var(--surface); border-radius: var(--radius);
-  min-height: 74px; padding: 0 18px; display: flex; flex-direction: row; align-items: center; gap: 14px;
+  min-height: 74px; padding: 0 18px; display: flex; flex-direction: row; align-items: center; gap: 15px;
   text-align: left; color: var(--text); /* transition définie dans la section motion (plus bas) */
 }
 .big-btn:hover { background: var(--surface-hover); }
 .big-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-/* Glyphe : monochrome, grille de points, en bleu de Prusse — c'est cliquable. */
-.big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--accent); flex-shrink: 0; }
-.big-btn .label { font-weight: 600; font-size: 15px; letter-spacing: -.01em; flex: 1; min-width: 0; }
-.big-btn .kbd { font-family: var(--font-data); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
+.big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--text); flex-shrink: 0; }
+.big-btn .t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.big-btn .label { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.big-btn .kbd { font-family: var(--font-data); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); }
 
-/* En marche, le bouton devient plein minium : il porte l'état du chrono, comme
-   la carte à côté. Au repos il redevient une carte ordinaire — le vert servait
-   d'accent décoratif, or le vert ne dit qu'une chose ici : « c'est acquis ». */
-#btnPlay.is-running { background: var(--stop); color: #fff; }
-#btnPlay.is-running:hover { background: color-mix(in srgb, var(--stop) 88%, #000); }
-#btnPlay.is-running .glyph { color: #fff; }
-#btnPlay.is-running .kbd { color: rgba(255, 255, 255, .78); }
-.big-btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+/* Au repos, seul le glyphe de Play porte l'accent : dans une rangée où tout se
+   clique, la couleur ne peut plus dire « cliquable » — elle dit « celui-là ». */
+#btnPlay.is-stopped .glyph { color: var(--accent); }
+/* En marche : lavis minium + filet de 3 px, exactement le filet que porte la
+   carte du chrono juste au-dessus. L'aplat plein, lui, faisait de la mise en
+   pause l'élément le plus fort de la page — plus fort que le chrono qu'il
+   arrête. Même information, un quart de la surface. */
+#btnPlay.is-running { background: var(--stop-wash); color: var(--stop-ink); }
+#btnPlay.is-running::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--stop);
+}
+#btnPlay.is-running:hover { background: color-mix(in srgb, var(--stop) 22%, var(--stop-wash)); }
+#btnPlay.is-running .glyph { color: var(--stop); }
+#btnPlay.is-running .label { color: var(--stop-ink); }
+#btnPlay.is-running .kbd { color: var(--stop-ink); }
+.big-btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
 /* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ----------
    Contraste inversé (N2) : le sélecteur de jour désigne le registre qu'on lit,
    pas une action. L'accent (N3) reste réservé à ce qui se clique pour agir. */
 .daynav {
-  display: flex; align-items: center; gap: 2px;
-  width: 440px; max-width: 100%;          /* pixel-perfect avec la pilule d'onglets */
+  display: inline-flex; align-items: center; gap: 2px; flex: none;
   background: var(--inverse-bg); color: var(--inverse-fg); border-radius: var(--radius-pill); padding: 4px;
 }
 .daynav button {
   border: none; background: transparent; border-radius: 50%;
-  width: 34px; height: 34px; padding: 0; color: var(--inverse-fg); flex-shrink: 0;
+  width: 30px; height: 30px; padding: 0; color: var(--inverse-fg); flex-shrink: 0;
 }
 .daynav button:hover { background: color-mix(in srgb, var(--inverse-fg) 18%, transparent); }
-.daynav .date { flex: 1; min-width: 0; font-family: var(--font-data); font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--inverse-fg); padding: 0 var(--sp-2); }
-/* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien badge). */
-#dayToday.is-today { color: var(--play); }
+.daynav .date { min-width: 0; font-family: var(--font-data); font-weight: 500; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; background: transparent; color: var(--inverse-fg); padding: 0 var(--sp-3); }
+/* Sur aujourd'hui : le bouton « Aujourd'hui » passe au vert (remplace l'ancien
+   badge). Le vert seul sur le fond des contrôles tombait à 4,0:1 — il lui faut
+   son propre lavis pour rester au-dessus du seuil. */
+#dayToday.is-today { color: var(--play); background: var(--play-wash); }
+#dayToday.is-today:hover { background: color-mix(in srgb, var(--play) 16%, var(--play-wash)); }
 /* Bouton « Aujourd'hui » : pilule pour s'accorder à la nav jour. */
-.btn-ghost { border: none; background: var(--surface); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
-.btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
+.btn-ghost { border: none; background: var(--ctl); border-radius: 999px; padding: 9px 16px; color: var(--text-soft); font-weight: 600; font-size: 13.5px; }
+.btn-ghost:hover { background: var(--ctl-hover); color: var(--text); }
 
 /* ---------- Timeline (carte arrondie, grille de points, blocs en pilule) ---------- */
 /* ----- Fond dot-matrix « spotlight » (easter-egg, piloté par BgDots.js) -----
@@ -200,8 +220,10 @@
 /* Bande déjeuner : superposition sombre au-dessus des segments (DS §7.1). */
 .tl-lunch { position: absolute; top: 0; bottom: 0; z-index: 5; background: var(--lunch-overlay); pointer-events: none; }
 .tl-lunch b { position: absolute; left: 50%; top: 7px; transform: translateX(-50%);
-  font-family: var(--font-data); font-size: 9px; font-weight: 400; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+  font-family: var(--font-data); font-size: 9px; font-weight: 500; letter-spacing: .12em;
+  /* Le voile du déjeuner assombrit la piste : l'encre faible y repassait sous
+     le seuil. Sur une surface voilée, on monte d'un cran. */
+  text-transform: uppercase; color: var(--text-soft); white-space: nowrap; }
 /* Un segment porte son nom et sa durée dès qu'il est assez large : sans cela il
    faut survoler chaque bloc pour savoir ce qu'on a fait de sa journée. */
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
@@ -211,7 +233,7 @@
 .tl-seg.on-light { color: var(--on-color-light); }
 .tl-seg b { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-.tl-seg i { font-family: var(--font-data); font-size: 10px; font-style: normal; opacity: .82;
+.tl-seg i { font-family: var(--font-data); font-size: 10px; font-style: normal; opacity: .95;
   font-variant-numeric: tabular-nums; pointer-events: none; }
 .tl-seg:hover, .tl-seg.hl { filter: brightness(1.08); }
 /* `.hl` = survol croisé depuis la ligne du tableau (même rendu que le survol direct). */
@@ -228,14 +250,14 @@
   box-shadow: inset 0 0 0 1px var(--gap-ring); display: grid; place-items: center; cursor: pointer; z-index: 2;
   transition: background-color .22s var(--ease-out), box-shadow .22s var(--ease-out); }
 .tl-gap:hover { background: var(--gap-bg-hover); box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
-.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--pause); white-space: nowrap; }
+.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--pause-ink); white-space: nowrap; }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); pointer-events: none; z-index: 6; }
 .tl-now b { position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
-  font-family: var(--font-data); font-size: 9px; font-weight: 400; padding: 1px 6px;
-  border-radius: var(--radius-pill); background: var(--stop); color: #fff; white-space: nowrap; }
+  font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 1px 6px;
+  border-radius: var(--radius-pill); background: var(--stop); color: var(--on-signal); white-space: nowrap; }
 .tl-now.at-start b { left: 0; transform: none; }
 .tl-now.at-end b { left: auto; right: 0; transform: none; }
 /* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
@@ -285,7 +307,7 @@
 .fill-create-btn.open .o-chev { transform: rotate(180deg); }
 .fill-create { display: flex; flex-direction: column; gap: 5px; padding: 2px 2px 0; }
 .fill-create-lab { font-size: 11px; color: var(--text-faint); font-weight: 600; padding: 2px 2px 4px; }
-.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--bg); color: var(--text);
+.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--ctl); color: var(--text);
   border-radius: 11px; padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;
   transition: background-color .15s var(--ease); }
 .fill-task:hover { background: var(--surface-2); }
@@ -309,18 +331,18 @@
    l'écran, sinon on ne comble jamais rien. */
 .untracked { margin-top: var(--sp-4); background: var(--pause-wash); border-radius: var(--radius); padding: var(--sp-4); }
 .untracked-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--pause); }
+.untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--pause-ink); }
 .untracked-total { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: 23px;
   font-variant-numeric: tabular-nums; line-height: 1; }
-.untracked-total.has { color: var(--pause); }
+.untracked-total.has { color: var(--pause-ink); }
 .untracked-total.clear { color: var(--play); }
 .untracked-list { display: flex; flex-direction: column; gap: 9px; }
 .untracked-row { display: flex; align-items: center; gap: 9px; font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
 .untracked-row .ut-range { white-space: nowrap; }
 .untracked-row .ut-dur { font-weight: 700; color: var(--text); }
-.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--pause); color: #fff; font-family: var(--font-body); font-weight: 600; }
-.untracked-row .ut-fill:hover { background: color-mix(in srgb, var(--pause) 86%, #000); color: #fff; }
+.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--pause); color: var(--on-signal); font-family: var(--font-body); font-weight: 600; }
+.untracked-row .ut-fill:hover { background: color-mix(in srgb, var(--pause) 86%, var(--text)); color: var(--on-signal); }
 .untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--play); font-weight: 600; }
 /* Journée complète : la carte n'a plus rien à réclamer, elle passe au vert. */
 .untracked:has(.untracked-zero) { background: var(--play-wash); }
@@ -362,11 +384,25 @@
    par image en JS (DayGlyphAnimator) ; ici on ne gère que le placement. */
 .total-card .day-glyph { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; color: var(--inverse-fg); pointer-events: none; }
 .total-card-text { position: relative; z-index: 1; } /* texte au-dessus de la scène */
-.total-card .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .17em; opacity: .58; }
-.total-card .v { font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; margin-top: 4px; letter-spacing: .02em; }
+.total-card .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .17em; opacity: .72; }
+.total-card .v { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4.6vw, 56px); line-height: 1.02; margin-top: 2px; letter-spacing: .02em; }
+/* Le total du jour dans les deux autres unités de report. La carte n'avait que
+   son chiffre : les deux tiers du bas restaient vides, et l'information qu'on
+   vient chercher (ce qu'on va coller dans Jira) manquait. */
+.total-card .sub { margin-top: 7px; font-family: var(--font-data); font-size: 11px;
+  font-variant-numeric: tabular-nums; opacity: .74; letter-spacing: .03em; }
 
-/* ---------- Totaux (aside Journée) ---------- */
+/* ---------- Totaux (aside Journée) ----------
+   Une barre empilée en tête du rail : la composition de la journée se lit d'un
+   coup, avant même les trois chiffres. Même grammaire que la barre de part
+   d'une tâche et que la barre d'une semaine — une seule idée de « part ».  */
 .totals { display: flex; flex-direction: column; }
+.totals-split { display: flex; height: 9px; border-radius: var(--radius-pill); overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); margin-bottom: var(--sp-3); }
+.totals-split i { display: block; transition: width .4s var(--ease-out); }
+.totals-split i.dev { background: var(--dot-dev); }
+.totals-split i.support { background: var(--dot-support); }
+.totals-split i.autre { background: var(--dot-autre); }
 .total-line { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-1); }
 .total-line + .total-line { border-top: 1px dotted var(--dot); }
 .total-line .tdot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
@@ -380,20 +416,47 @@
 .total-sum .tname { flex: 1; font-weight: 700; }
 .total-sum .tamt { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
 
-/* Carte à filet pointillé (esthétique Nothing) : structure une section sans la
-   surcharger (pas de fond, juste le contour --dot). Format partagé par les
-   sections de Journée, les groupes de Tâches, le tableau Segments et les blocs
-   Stats (.stat-block), pour une unité visuelle d'une page à l'autre. */
-.dot-card, .stat-block { border: 1px dotted var(--dot); border-radius: var(--radius); padding: var(--sp-5); }
+/* ---------- Panneau : la carte de contenu ----------
+   Le filet pointillé sur fond de page ne portait rien : il dessinait un cadre
+   là où le système dit de distinguer par les SURFACES. Le panneau est donc une
+   vraie carte de papier posée sur le papier de fond, avec un cheveu d'ombre.
+   Trois niveaux suffisent alors partout : page (--bg) → panneau (--surface) →
+   creux (--surface-2, pistes, tuiles, champs).
+
+   Conséquence à tenir : tout contrôle qui vaut `--surface` par défaut devient
+   invisible DANS un panneau. On le descend d'un cran — la règle groupée plus
+   bas s'en charge une fois pour toutes (même piège que la modale). */
+.dot-card, .stat-block {
+  background: var(--surface); border-radius: var(--radius);
+  padding: var(--sp-5); box-shadow: var(--shadow-card);
+}
+/* Les contrôles qui apparaissent À LA FOIS sur le fond de page et dans un
+   panneau ne peuvent pas nommer une surface : `--surface` les fait disparaître
+   dans une carte `--surface`. Ils TEINTENT donc leur hôte, quel qu'il soit.
+   Une valeur, aucun cas particulier, et rien à réécrire quand une carte change
+   de fond (jetons `--ctl` / `--ctl-hover` dans variables.css). */
 
 /* ---------- Liste des tâches (espace + survol, aucune ligne) ---------- */
-.task-list { display: flex; flex-direction: column; gap: 6px; }
-.task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3); border-radius: var(--radius-sm); }
-.task-row:hover { background: var(--surface); }
+/* Filets pointillés entre les lignes. Sans eux, la barre de part collée sous
+   chaque nom se lisait comme un SOULIGNEMENT du nom, pas comme une mesure. Le
+   filet redonne à la ligne son cadre, et la barre redevient une barre. */
+.task-list { display: flex; flex-direction: column; }
+.task-row { display: flex; align-items: center; gap: var(--sp-3); padding: 12px var(--sp-3);
+  border-radius: var(--radius-sm); }
+.task-row + .task-row { box-shadow: inset 0 1px 0 0 var(--dot-grid); }
+.task-row { position: relative; }
+.task-row:hover { background: var(--surface-2); }
+/* La tâche en cours porte le même filet minium que la carte du chrono et que
+   le bouton Pause : une seule signature pour « c'est celle-là qui tourne ». */
 .task-row.active { background: var(--surface-2); }
+.task-row.active::before {
+  content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px;
+  border-radius: 3px; background: var(--stop);
+}
 .task-row.archived { opacity: .5; }
 /* 1ʳᵉ tâche terminée : sépare le groupe des terminées (regroupées en bas). */
-.task-row.done-sep { margin-top: var(--sp-3); padding-top: 18px; border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
+.task-row.done-sep { margin-top: var(--sp-4); padding-top: 18px; border-top: 1px dotted var(--dot);
+  box-shadow: none; border-top-left-radius: 0; border-top-right-radius: 0; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -407,17 +470,17 @@
 .totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
 .task-actions { display: flex; align-items: center; gap: 4px; }
 /* Mini-barre de part du jour (proportion du temps de la tâche). */
-.task-share { height: 4px; background: color-mix(in srgb, var(--text) 8%, transparent); border-radius: var(--radius-pill); margin-top: 7px; overflow: hidden; max-width: 280px; }
+.task-share { height: 5px; background: color-mix(in srgb, var(--text) 9%, transparent); border-radius: var(--radius-pill); margin-top: 8px; overflow: hidden; max-width: 240px; }
 .task-share span { display: block; height: 100%; border-radius: var(--radius-pill); }
 
-.mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
-.mini-btn:hover { background: var(--surface-hover); color: var(--text); }
-.mini-btn.copied { background: var(--play); color: #fff; }
+.mini-btn { border: none; background: var(--ctl); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
+.mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
+.mini-btn.copied { background: var(--play); color: var(--on-signal); }
 /* Contrôles de cycle de vie : pastilles colorées, toujours visibles. */
 .mini-btn.ctrl-play { background: var(--play-soft); color: var(--play); }
 .mini-btn.ctrl-play:hover { background: color-mix(in srgb, var(--play) 24%, transparent); color: var(--play); }
-.mini-btn.ctrl-pause { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause); }
-.mini-btn.ctrl-pause:hover { background: color-mix(in srgb, var(--pause) 26%, transparent); color: var(--pause); }
+.mini-btn.ctrl-pause { background: color-mix(in srgb, var(--pause) 16%, transparent); color: var(--pause-ink); }
+.mini-btn.ctrl-pause:hover { background: color-mix(in srgb, var(--pause) 26%, transparent); color: var(--pause-ink); }
 /* Les boutons discrets (copie, édition, terminer) ne montrent leur fond qu'au survol. */
 .task-row:not(:hover):not(.active) .task-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; }
 
@@ -428,7 +491,7 @@
 .at-group .at-date { margin-top: 0; }
 .at-task { border-radius: var(--radius-sm); }
 .at-head { display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); cursor: pointer; border-radius: var(--radius-sm); transition: background-color .15s var(--ease); }
-.at-head:hover { background: var(--surface); }
+.at-head:hover { background: var(--surface-2); }
 .at-head:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .at-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0; transition: transform .3s var(--ease-spring); }
 .at-task.open .at-chev { transform: rotate(90deg); }
@@ -446,7 +509,7 @@
 .at-task.open .at-segs { opacity: 1; }
 .at-empty { color: var(--text-faint); font-size: 13px; padding: 6px var(--sp-3); }
 .at-seg { display: flex; align-items: center; gap: var(--sp-3); padding: 7px var(--sp-3); border-radius: 7px; font-size: 13.5px; cursor: pointer; transition: background-color .12s var(--ease); }
-.at-seg:hover { background: var(--surface); }
+.at-seg:hover { background: var(--surface-2); }
 .at-seg-date { color: var(--text-soft); min-width: 60px; }
 .at-seg-range { flex: 1; font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .at-seg-dur { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -458,8 +521,8 @@
 .seg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .seg-table th { text-align: left; font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); padding: 8px 14px; border-bottom: 1px dotted var(--dot); }
 .seg-table td { padding: 9px 12px; vertical-align: middle; }
-.seg-table tbody tr:hover td { background: color-mix(in srgb, var(--surface) 60%, transparent); }
-.seg-table tbody tr.running td { background: color-mix(in srgb, var(--play) 10%, transparent); }
+.seg-table tbody tr:hover td { background: var(--surface-2); }
+.seg-table tbody tr.running td { background: var(--play-wash); }
 /* Survol croisé : la ligne reliée au bloc de timeline survolé (et inversement). */
 .seg-table tbody tr.hl td { background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .seg-clickable { cursor: pointer; }
@@ -469,7 +532,7 @@
 .seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .seg-time { font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
 .seg-live { color: var(--play); font-weight: 600; }
-.seg-dash { color: var(--text-faint); }
+.seg-dash { color: var(--text-soft); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
 .seg-dur { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
@@ -492,13 +555,19 @@
 }
 .set-nav a:hover { background: var(--surface); color: var(--text); }
 /* Section en cours de lecture (posée par SettingsView via IntersectionObserver). */
-.set-nav a.on { background: var(--accent); color: var(--accent-text); font-weight: 600; }
-.set-nav a.on .n { color: inherit; opacity: .65; }
+.set-nav a.on { background: var(--accent-wash); color: var(--accent); font-weight: 600;
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
+.set-nav a.on .n { color: inherit; opacity: 1; font-weight: 500; }
 .set-nav a .n { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
 .set-nav a:hover .n { color: inherit; }
 
-.set-body { display: flex; flex-direction: column; gap: var(--sp-7); min-width: 0; }
-.set-group { display: flex; flex-direction: column; scroll-margin-top: 84px; }
+.set-body { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+/* Un groupe = une carte. Posés à nu sur le fond de page, les cinq groupes se
+   suivaient sans frontière : seuls les titres minuscules disaient qu'on avait
+   changé de sujet. La carte fait ce travail, et raccorde la page au reste. */
+.set-group { display: flex; flex-direction: column; scroll-margin-top: 84px;
+  background: var(--surface); border-radius: var(--radius); padding: var(--sp-5);
+  box-shadow: var(--shadow-card); }
 /* Le contrôle segmenté ne doit pas s'étirer sur toute la colonne : c'est un
    sélecteur, pas une barre d'outils. */
 .set-group > .seg-control { align-self: flex-start; }
@@ -520,7 +589,7 @@ label.set-row { cursor: pointer; }
 .set-lab > span, .set-note { font-size: 12.5px; color: var(--text-soft); line-height: 1.55; max-width: 62ch; }
 .set-lab strong { color: var(--text); font-weight: 600; }
 .set-ctl { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
-.set-row.is-danger .set-lab b { color: var(--stop); }
+.set-row.is-danger .set-lab b { color: var(--stop-ink); }
 @media (max-width: 620px) {
   .set-row { grid-template-columns: 1fr; gap: var(--sp-3); }
   .set-ctl { justify-content: flex-start; }
@@ -529,7 +598,7 @@ label.set-row { cursor: pointer; }
 /* Saisie de données (heure, nombre) : police de données, fond enfoncé. */
 .tinput {
   font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums;
-  background: var(--surface); border: none; border-radius: var(--radius-sm);
+  background: var(--ctl); border: none; border-radius: var(--radius-sm);
   padding: 8px 11px; color: var(--text); min-width: 76px;
 }
 .tinput:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
@@ -541,22 +610,23 @@ label.set-row { cursor: pointer; }
 input.sw {
   appearance: none; -webkit-appearance: none; margin: 0; flex: none;
   width: 42px; height: 24px; border-radius: var(--radius-pill);
-  background: var(--surface-hover); position: relative; cursor: pointer;
+  background: var(--dot); position: relative; cursor: pointer;
   transition: background-color .18s var(--ease);
 }
 input.sw::after {
   content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
-  border-radius: 50%; background: var(--bg); transition: transform .2s var(--ease);
+  border-radius: 50%; background: var(--surface);
+  transition: transform .2s var(--ease);
 }
 input.sw:checked { background: var(--accent); }
-input.sw:checked::after { transform: translateX(18px); background: #fff; }
+input.sw:checked::after { transform: translateX(18px); background: var(--accent-text); }
 input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* ---------- Pile de précédence des horaires ----------
    Le point aveugle de l'ancienne page : trois niveaux se superposaient (base,
    jour de semaine, date) sans qu'on voie jamais lequel l'emportait. On montre
    les trois pour une date donnée, et on cercle celui qui gagne. */
-.prec-wrap { background: var(--surface); border-radius: var(--radius); padding: var(--sp-4);
+.prec-wrap { background: var(--surface-2); border-radius: var(--radius); padding: var(--sp-4);
   display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .prec-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .prec-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
@@ -565,10 +635,15 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .prec-row {
   display: grid; grid-template-columns: 18px 116px minmax(0, 1fr) auto; gap: var(--sp-3);
   align-items: center; padding: 9px 12px; border-radius: var(--radius-sm);
-  background: var(--surface-2); opacity: .5;
+  background: var(--surface);
 }
-/* Le niveau qui gagne : pleine opacité et cerclé d'encre. */
-.prec-row.wins { opacity: 1; box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* Le niveau qui gagne : cerclé d'encre. Les perdants reculent par la SURFACE
+   (fond retiré) et par la couleur du texte — pas par l'opacité : à 0,62 leur
+   libellé tombait à 2,5:1, or « ce niveau existe mais ne s'applique pas » est
+   précisément ce qu'on a besoin de pouvoir lire. */
+.prec-row:not(.wins) { background: transparent; }
+.prec-row:not(.wins) .prec-k, .prec-row:not(.wins) .prec-v { color: var(--text-faint); }
+.prec-row.wins { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .prec-step { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); text-align: center; }
 .prec-k { font-size: 13px; font-weight: 600; }
 .prec-v { font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft);
@@ -585,7 +660,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Ruban du jour : les créneaux effectivement retenus, dessinés à l'échelle. */
 .strip-wrap { display: flex; flex-direction: column; gap: 5px; }
 .strip { position: relative; height: 38px; border-radius: var(--radius-sm); overflow: hidden;
-  background-color: var(--surface-2);
+  background-color: var(--surface);
   background-image: radial-gradient(circle at center, var(--dot-grid) 1px, transparent 1.3px);
   background-size: 11px 11px; background-position: center; }
 .strip i { position: absolute; top: 6px; bottom: 6px; border-radius: var(--radius-xs); background: var(--accent); }
@@ -608,24 +683,26 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 .field-optional { font-weight: 400; color: var(--text-faint); }
-.field input, .field select { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
+.field input, .field select { border: none; background: var(--ctl); border-radius: var(--radius-sm); padding: 9px 11px; color: var(--text); }
 .field input:focus, .field select:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 .weekdays { display: flex; gap: 6px; flex-wrap: wrap; }
-.weekdays button { border: none; background: var(--bg); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
+.weekdays button { border: none; background: var(--ctl); border-radius: var(--radius-pill); padding: 7px 13px; color: var(--text-soft); font-size: 13px; font-weight: 500; }
 .weekdays button:hover { color: var(--text); }
-.weekdays button.on { background: var(--accent); color: var(--accent-text); }
+.weekdays button.on { background: var(--accent-wash); color: var(--accent); font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 /* Contrôle segmenté (thème, type d'horaire) : piste pilule + curseur glissant. */
 .seg-control { --seg-i: 0; position: relative; display: inline-grid; grid-template-columns: repeat(3, 1fr);
-  background: var(--bg); border-radius: var(--radius-pill); padding: 4px; min-width: 280px; max-width: 100%; }
+  background: var(--ctl); border-radius: var(--radius-pill); padding: 4px; min-width: 280px; max-width: 100%; }
 .seg-control::before { content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
   width: calc((100% - 8px) / 3); height: calc(100% - 8px); border-radius: var(--radius-pill);
-  background: var(--accent); transform: translateX(calc(var(--seg-i) * 100%)); transition: transform .34s var(--ease-spring); }
+  background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent);
+  transform: translateX(calc(var(--seg-i) * 100%)); transition: transform .34s var(--ease-spring); }
 .seg-control button { position: relative; z-index: 1; border: none; background: transparent; cursor: pointer;
-  padding: 8px 14px; font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--text-faint);
+  padding: 8px 14px; font-family: var(--font-body); font-weight: 600; font-size: 13px; color: var(--text-soft);
   border-radius: var(--radius-pill); text-align: center; transition: color .22s var(--ease) .04s; }
 .seg-control button:hover { color: var(--text); transition-delay: 0s; }
-.seg-control button.active { color: var(--accent-text); }
+.seg-control button.active { color: var(--accent); }
 .seg-control button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* Onglets « Horaires » : un panneau visible à la fois. */
 .hours-panel { margin-top: var(--sp-5); }
@@ -633,11 +710,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 @media (max-width: 480px) { .seg-control { min-width: 0; width: 100%; } }
 
 .io-buttons { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
-.btn { border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
-.btn:hover { background: var(--surface-hover); }
+.btn { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-pill); padding: 10px 17px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 7px; }
+.btn:hover { background: var(--ctl-hover); }
 .btn.primary { background: var(--accent); color: var(--accent-text); }
 .btn.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--bg)); }
-.btn.danger { color: var(--stop); background: transparent; }
+.btn.danger { color: var(--stop-ink); background: transparent; }
 .btn.danger:hover { background: color-mix(in srgb, var(--stop) 12%, transparent); }
 
 /* ---------- Jauge de stockage ---------- */
@@ -651,13 +728,13 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* ---------- Exceptions d'horaires (jour de semaine / date) ---------- */
 .ov-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--sp-4); }
-.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 13px; background: var(--surface); border-radius: var(--radius-sm); cursor: pointer; }
+.ov-item { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 13px; background: var(--surface-2); border-radius: var(--radius-sm); cursor: pointer; }
 .ov-item:hover { background: var(--surface-hover); }
 .ov-name { font-weight: 600; text-transform: capitalize; min-width: 96px; }
 .ov-sum { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
 .ov-sum.off { color: var(--text-faint); font-style: italic; }
 .ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
-.ov-rm:hover { background: var(--surface-2); color: var(--stop); }
+.ov-rm:hover { background: var(--surface-2); color: var(--stop-ink); }
 .ov-empty { color: var(--text-faint); font-size: 13.5px; padding: 2px; margin-bottom: var(--sp-3); }
 .ov-editor { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .ov-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
@@ -669,7 +746,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .se-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .se-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 78px; }
 .se-dash { color: var(--text-faint); }
-.sched input[type="time"] { border: none; background: var(--bg); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.sched input[type="time"] { border: none; background: var(--ctl); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
@@ -682,10 +759,6 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal-close:active { transform: scale(.92); }
 .modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
-/* La modale est posée sur `--surface` : tout contrôle qui vaut `--surface` par
-   défaut y deviendrait invisible. On le descend d'un cran. */
-.modal .chip:not(.active), .modal .select-wrap select { background: var(--surface-2); }
-.modal .chip:not(.active):hover, .modal .select-wrap select:hover { background: var(--surface-hover); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
 .resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
@@ -730,15 +803,16 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .switch-mini {
   align-self: center; font-family: var(--font-data); font-size: 10px; font-weight: 500;
   letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
-  gap: 8px; padding: 5px 12px 5px 10px; background: var(--surface-2);
+  gap: 8px; padding: 5px 12px 5px 10px; background: var(--ctl);
   border-radius: var(--radius-pill);
   transition: background .18s var(--ease), color .18s var(--ease);
 }
 .switch-mini input { width: 14px; height: 14px; }
 .switch-mini:hover { color: var(--text-soft); }
-.switch-mini.on { background: var(--accent); color: var(--accent-text); }
-.switch-mini.on input { accent-color: var(--accent-text); }
-.switch-mini.on:hover { color: var(--accent-text); }
+.switch-mini.on { background: var(--accent-wash); color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
+.switch-mini.on input { accent-color: var(--accent); }
+.switch-mini.on:hover { color: var(--accent); }
 .switch-mini.off { opacity: .55; cursor: not-allowed; }
 .switch-mini.off input { cursor: not-allowed; }
 
@@ -750,7 +824,9 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 /* ---------- Toast ---------- */
 .toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--inverse-bg); color: var(--inverse-fg); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.toast .icon { color: var(--play); flex-shrink: 0; }
+/* Le toast est toujours en contraste inversé : une teinte calibrée pour le
+   fond de page y devient illisible. Le pictogramme reprend donc l'encre. */
+.toast .icon { color: inherit; opacity: .75; flex-shrink: 0; }
 .toast span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- Page Guide ---------- */
@@ -829,8 +905,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    faisait 200 px et l'explication trois lignes. La saisie devient l'afficheur,
    les résultats des cartes copiables, et le calcul brut/net se DESSINE.
    ====================================================================== */
-.tools-grid { display: flex; flex-direction: column; gap: var(--sp-7); }
-.tool-block { display: flex; flex-direction: column; }
+.tools-grid { display: flex; flex-direction: column; gap: var(--sp-4); }
+/* Un outil = une carte, comme un groupe de réglages ou un bloc de stats. */
+.tool-block { display: flex; flex-direction: column;
+  background: var(--surface); border-radius: var(--radius); padding: var(--sp-5);
+  box-shadow: var(--shadow-card); }
 
 /* ---------- Convertisseur ---------- */
 .conv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: end; }
@@ -840,12 +919,13 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
   text-transform: uppercase; color: var(--text-faint); }
 .conv-field .select-wrap, .conv-field .select-wrap select { width: 100%; }
 .conv-field .tinput { width: 100%; padding: 12px 14px; font-size: 14px; }
+.tool-block .field input, .tool-block .field select { background: var(--surface-2); }
 
 /* La saisie EST l'afficheur : même police, même échelle que les résultats. */
 .conv-in {
   font-family: var(--font-display); font-size: clamp(30px, 5vw, 46px); font-weight: 400;
   font-variant-numeric: tabular-nums; line-height: 1.15;
-  background: var(--surface); border: none; border-radius: var(--radius);
+  background: var(--surface-2); border: none; border-radius: var(--radius);
   padding: 10px 18px; color: var(--text); width: 100%;
   box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow .16s var(--ease);
 }
@@ -854,17 +934,17 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 .conv-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
   gap: var(--sp-2); margin-top: var(--sp-4); }
-.conv-card { position: relative; background: var(--surface); border-radius: var(--radius);
+.conv-card { position: relative; background: var(--surface-2); border-radius: var(--radius);
   padding: 13px 15px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .conv-card .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text-faint); }
-.conv-card .v { font-family: var(--font-display); font-size: 28px; line-height: 1.1;
+.conv-card .v { font-family: var(--font-display); font-size: 31px; line-height: 1.08;
   font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 /* Le format Jira passe devant : c'est celui qu'on vient chercher. */
 .conv-card.is-main { background: var(--accent-wash); }
 .conv-card.is-main .v { color: var(--accent); }
 .conv-card .cp { position: absolute; top: 8px; right: 8px; background: transparent; }
-.conv-card:hover .cp { background: var(--surface-2); }
+.conv-card:hover .cp { background: var(--ctl-hover); }
 .conv-empty { padding: 12px 2px; color: var(--text-faint); grid-column: 1 / -1; }
 .conv-note { margin: var(--sp-3) 0 0; }
 
@@ -884,11 +964,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
   text-transform: uppercase; color: var(--text-faint); }
 .bn-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: var(--sp-3); margin-top: var(--sp-4); }
-.bn-card { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--surface);
+.bn-card { padding: var(--sp-4) var(--sp-4) var(--sp-3); background: var(--surface-2);
   border-radius: var(--radius); }
 .bn-card.is-net { background: var(--accent-wash); }
 .bn-card.is-net .bn-val { color: var(--accent); }
-.bn-sub { margin-top: 2px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint); }
+.bn-sub { margin-top: 2px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); }
 .bn-val { margin: var(--sp-2) 0 var(--sp-3); font-family: var(--font-display); font-size: 34px;
   line-height: 1.05; font-variant-numeric: tabular-nums; }
 .bn-actions { display: flex; gap: var(--sp-2); }
@@ -901,32 +981,41 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* Pilules de filtre (type, regroupement) — contrôle inversé une fois actif. */
 .chip-group { display: inline-flex; gap: var(--sp-2); flex-wrap: wrap; }
-.chip { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill);
+.chip { border: none; background: var(--ctl); color: var(--text-soft); border-radius: var(--radius-pill);
   padding: 7px 14px; font-size: 13px; font-weight: 600; transition: background-color .14s var(--ease), color .14s var(--ease); }
-.chip:hover { background: var(--surface-hover); color: var(--text); }
+.chip:hover { background: var(--ctl-hover); color: var(--text); }
 .chip:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-.chip.active { background: var(--accent); color: var(--accent-text); }
+/* Sélectionné, second étage : LAVIS d'accent, pas aplat. La page Stats
+   alignait quatre pilules bleues pleines dans ses 400 premiers pixels (onglet,
+   période, granularité, mode) — quatre fois le même signal maximal pour quatre
+   niveaux de décision différents. L'aplat plein reste à la barre d'onglets ;
+   tout ce qui se choisit en dessous se marque en lavis. */
+.chip.active { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chip.active:hover { background: color-mix(in srgb, var(--accent) 16%, var(--accent-wash)); }
 .chip.is-type::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
   margin-right: 6px; vertical-align: middle; background: var(--dot-autre); }
 .chip.is-type[data-type="dev"]::before { background: var(--dot-dev); }
 .chip.is-type[data-type="support"]::before { background: var(--dot-support); }
 /* Type désactivé : pilule estompée (on voit qu'il est exclu). */
-.chip.is-type:not(.active) { opacity: .5; }
+.chip.is-type:not(.active) { opacity: .62; }
 /* Active, la pilule est pleine d'accent : un point « dev » (lui aussi accent) y
    disparaîtrait. Le point reprend donc la couleur du texte — le libellé porte
    déjà le type, et la pastille ne sert plus qu'à équilibrer la pilule. */
 .chip.is-type.active::before { background: currentColor; }
+/* Le lavis d'accent est trop proche de la surface pour porter seul un état :
+   la pilule active gagne le poids de son texte. */
+.chip.active { font-weight: 700; }
 
-.at-search { flex: 1; min-width: 180px; border: none; background: var(--surface); color: var(--text);
+.at-search { flex: 1; min-width: 180px; border: none; background: var(--ctl); color: var(--text);
   font-family: var(--font-body); border-radius: var(--radius-pill); padding: 9px 14px; font-size: 13.5px; }
 .at-search:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* Select stylé maison : pilule + chevron en superposition (flèche native masquée). */
 .select-wrap { position: relative; display: inline-flex; }
-.select-wrap select { appearance: none; -webkit-appearance: none; border: none; background: var(--surface);
+.select-wrap select { appearance: none; -webkit-appearance: none; border: none; background: var(--ctl);
   color: var(--text); font-family: var(--font-body); font-size: 13.5px; font-weight: 600;
   border-radius: var(--radius-pill); padding: 9px 38px 9px 16px; cursor: pointer; }
-.select-wrap select:hover { background: var(--surface-hover); }
+.select-wrap select:hover { background: var(--ctl-hover); }
 .select-wrap select:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .select-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   display: grid; place-items: center; color: var(--text-faint); pointer-events: none; }
@@ -947,28 +1036,56 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .stats-lead {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-4); align-items: center;
   background: var(--inverse-bg); color: var(--inverse-fg);
-  border-radius: var(--radius); padding: 18px 22px; margin-bottom: var(--sp-3);
+  border-radius: var(--radius); padding: 16px 22px 17px; margin-bottom: var(--sp-3);
 }
 @media (max-width: 700px) { .stats-lead { grid-template-columns: 1fr; } }
+/* Moitié droite : l'écart, puis la composition de la période. */
+.stats-lead .r { display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  min-width: 0; width: min(280px, 40vw); }
+@media (max-width: 700px) { .stats-lead .r { align-items: stretch; width: auto; } }
+.stats-lead .lead-split { display: flex; width: 100%; height: 8px; overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, currentColor 20%, transparent); }
+.stats-lead .lead-split i { display: block; }
+.stats-lead .lead-split i.dev { background: currentColor; }
+.stats-lead .lead-split i.support { background: color-mix(in srgb, currentColor 62%, transparent); }
+.stats-lead .lead-split i.autre { background: color-mix(in srgb, currentColor 34%, transparent); }
+.stats-lead .lead-legend { font-family: var(--font-data); font-size: 10.5px; opacity: .74;
+  font-variant-numeric: tabular-nums; text-align: right; letter-spacing: .03em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .stats-lead .l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .stats-lead .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .17em;
-  text-transform: uppercase; opacity: .58; }
-.stats-lead .v { font-family: var(--font-display); font-size: clamp(40px, 7vw, 68px);
-  line-height: 1.04; font-variant-numeric: tabular-nums; }
-.stats-lead .st-delta { justify-self: end; display: inline-flex; align-items: center; gap: 7px;
+  text-transform: uppercase; opacity: .72; }
+.stats-lead .v { font-family: var(--font-display); font-size: clamp(44px, 8vw, 78px);
+  line-height: 1.02; font-variant-numeric: tabular-nums; }
+.stats-lead .st-delta { display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-data); font-size: 12px; padding: 7px 14px; border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--inverse-fg) 13%, transparent); white-space: nowrap; }
 
-/* Cartes de synthèse : d'un cran en retrait, maintenant que le total les a quittées. */
+/* Tête de période : bandeau + tuiles dans UNE carte. Posés côte à côte sur le
+   fond de page, le bandeau et sa rangée de cartes se lisaient comme deux blocs
+   indépendants de même poids ; réunis, la rangée devient la note de bas du
+   chiffre géant, ce qu'elle est. */
+.stats-top { background: var(--surface); border-radius: var(--radius);
+  padding: var(--sp-3); box-shadow: var(--shadow-card); margin-bottom: var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3); }
+.stats-top .stats-lead { margin-bottom: 0; }
 .stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--sp-2);
-  margin-bottom: var(--sp-5); }
-.stat-card { background: var(--surface); border-radius: var(--radius); padding: 13px var(--sp-4) 12px;
+  margin-bottom: 0; }
+.stat-card { background: var(--surface-2); border-radius: var(--radius-sm); padding: 13px var(--sp-4) 12px;
   transition: background-color .15s var(--ease); }
-.stat-val { font-family: var(--font-display); font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+/* Carte « Couverture » : le chiffre seul ne se compare à rien. Sa jauge le
+   pose sur l'échelle 0–100 %, avec la même grammaire de barre que partout. */
+.stat-card .stat-gauge { margin-top: 9px; height: 5px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
+.stat-card .stat-gauge i { display: block; height: 100%; border-radius: var(--radius-pill);
+  background: var(--accent); transition: width .4s var(--ease-out); }
+.stat-val { font-family: var(--font-display); font-size: 29px; line-height: 1.08; font-variant-numeric: tabular-nums; }
 .stat-lab { margin-top: 5px; font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
 
 /* Blocs Stats : cartes pleines sur le fond de page. */
 .stat-block { margin-bottom: var(--sp-4); }
+.stat-block:first-of-type { margin-top: var(--sp-4); }
 .stat-block .block-title { margin-bottom: var(--sp-4); }
 
 /* Répartition par type : badge + barre proportionnelle + durée. */
@@ -1020,11 +1137,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .chart-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
 .chart-legend { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
 .chart-legend .chip-val { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
-/* Ici « actif » veut dire « série affichée » : on reste sobre plutôt que de
-   remplir trois pilules à l'accent. */
-.chart-legend .chip.active { background: var(--surface); color: var(--text); }
-.chart-legend .chip.active:hover { background: var(--surface-hover); }
-.chart-legend .chip:not(.active) { opacity: .42; }
+/* Ici « actif » veut dire « série affichée », pas « option choisie » : ni lavis
+   ni anneau — l'opacité des séries masquées suffit à faire la différence. */
+.chart-legend .chip.active { background: var(--ctl); color: var(--text); box-shadow: none; font-weight: 600; }
+.chart-legend .chip.active:hover { background: var(--ctl-hover); }
+.chart-legend .chip:not(.active) { opacity: .58; }
 
 /* ---------- Rythme : une pastille par jour ----------
    Colonnes = semaines, lignes = jours (lundi en haut). Les libellés de jour
@@ -1062,7 +1179,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .wk { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
   padding: var(--sp-3); margin: 0 calc(var(--sp-3) * -1); border-radius: var(--radius-sm);
   cursor: pointer; transition: background-color .15s var(--ease); }
-.wk:hover { background: var(--surface); }
+.wk:hover { background: var(--surface-2); }
 .wk:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .wk-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0;
   transition: transform .3s var(--ease-spring); }
@@ -1095,7 +1212,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .wk-item.open .wk-tasks { opacity: 1; }
 .wk-task { display: flex; align-items: center; gap: var(--sp-3); padding: 6px var(--sp-3);
   border-radius: 7px; font-size: 13.5px; transition: background-color .12s var(--ease); }
-.wk-task:hover { background: var(--surface); }
+.wk-task:hover { background: var(--surface-2); }
 .wk-task-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wk-task-name .type-badge, .wk-task-name .badge-done { flex-shrink: 0; }
@@ -1133,7 +1250,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .tt { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0;
   border-bottom: 1px dotted var(--dot); cursor: pointer; }
 .tt:last-child { border-bottom: none; }
-.tt:hover { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.tt:hover { background: var(--surface-2); }
 .tt-main { flex: 1; min-width: 0; }
 .tt-name { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 7px;
   font-size: 14px; min-width: 0; }
