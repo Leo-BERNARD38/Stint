@@ -29,29 +29,43 @@ l'implémentation ; tout écart entre les deux est un bug de l'un ou de l'autre.
 
 ## 1 · Couleurs
 
-### La hiérarchie à quatre niveaux
+### Encre sur papier, un accent, un tampon
 
-C'est le cœur du système. Avant, `--accent` **valait** `--text` : l'onglet actif, le
-sélecteur de jour, le total du jour, la barre de stockage et le rythme des Stats portaient
-tous le contraste maximal. Quand tout crie, plus rien ne guide.
+C'est le cœur du système, et il tient en une phrase : **l'app est une pointeuse —
+de l'encre sur du papier, et un tampon rouge.**
 
 | Niveau | Rôle | Couleur | Où, et **nulle part ailleurs** |
 |---|---|---|---|
-| **N1** | l'instant | **minium** `--stop` | chrono en marche, filet de la carte active, repère « maintenant », danger |
+| **N1** | le tampon | **minium** `--stop` | le nombre qui tourne, le repère « maintenant », l'action irréversible, le focus |
 | **N2** | le registre | **contraste inversé** `--inverse-bg` / `--inverse-fg` | total du jour, tête des Stats, sélecteur de jour |
-| **N3** | le cliquable | **bleu de Prusse** `--accent` | onglets, chips, boutons primaires, glyphes des 4 boutons, liens, rampe du rythme |
+| **N3** | l'accent | **bleu de Prusse** `--accent` | tout ce qui se clique **et** tout ce qui se mesure |
 | **N4** | le reste | `--text` / `--text-soft` / `--text-faint` | tout le contenu |
 
 > **Deux ancres inversées, pas trois.** Le total du jour et la tête des Stats. Au-delà,
 > l'inversion cesse de hiérarchiser quoi que ce soit.
 
-Trois teintes de service complètent l'ensemble, et ne sortent jamais de leur rôle :
+> **Un seul aplat d'accent plein : la barre d'onglets.** Tout ce qui se sélectionne
+> en dessous se marque en **lavis + anneau**. Sans cette distinction, les Stats
+> alignaient quatre pilules bleues pleines dans leurs 400 premiers pixels —
+> onglet, période, granularité, mode — quatre fois le même signal maximal pour
+> quatre niveaux de décision différents.
 
-| Teinte | Jeton | Dit |
-|---|---|---|
-| minium | `--stop` | ce qui se passe **maintenant**, et ce qui s'arrête |
-| ambre | `--pause` | ce qui **manque** (temps non tracé, pause) |
-| vert | `--play` / `--finish` | ce qui est **acquis** (journée bouclée, tâche terminée) |
+> **Il n'y a pas d'autre teinte.** L'ambre et le vert ont été retirés (§ *Le
+> tampon*). Deux raisons, l'une esthétique et l'autre logique : bleu + orange est
+> une paire complémentaire, elle vibre, et une interface qui vibre a l'air d'un
+> jouet ; et à sept directions sur une page dont le sujet est un nombre, la
+> couleur ne hiérarchise plus rien.
+
+**Deux erreurs à ne pas refaire**, parce qu'elles ont chacune coûté une passe :
+
+- **Un liseré latéral n'est pas un signal.** Trois filets minium de 3 px ont
+  marqué un temps « ce qui tourne » (carte du chrono, bouton Pause, ligne
+  active). C'est un ornement de bord : il ne dit rien que le contenu ne dise, et
+  il casse la silhouette de l'objet. Le minium marque **le nombre qui bouge**,
+  pas l'objet qui le contient.
+- **Une teinte de tâche ne doit jamais pouvoir passer pour le tampon.** La
+  famille « support » était faite d'oranges et de rouges vifs : une tâche de
+  support ressemblait à une alarme. Elle est passée en argile, brique et prune.
 
 ### Surfaces
 
@@ -83,7 +97,7 @@ C'est le même piège que la modale avait révélé une première fois.
 | `--text-faint` | `#60666d` | `#948a7e` | légendes, surtitres, axes (≥ 4,6:1) |
 | `--accent` | `#1e5273` | `#74b6d9` | **N3** — la seule couleur de ce qui se clique |
 | `--accent-text` | `#ffffff` | `#06121c` | texte sur accent |
-| `--accent-soft` / `--accent-wash` | `#4b7f9e` / `#d9e3e9` | `#4d87a5` / `#1a2c36` | variantes (reprise, fonds doux) |
+| `--accent-wash` | `#d9e3e9` | `#1a2c36` | **sa seule variante** (lavis) |
 | `--inverse-bg` / `--inverse-fg` | `#131a20` / `#f2efe6` | `#f2eee3` / `#131211` | **N2** |
 
 **Les trois encres passent toutes le seuil AA sur les trois surfaces.** Elles se
@@ -98,34 +112,62 @@ on réduit la taille ou on met des capitales, pas le contraste.
 ligne de la pile de précédence la faisait tomber à 2,5:1. Pour reculer un
 élément, on lui retire son fond ou on descend d'un cran d'encre.
 
-### Teintes de service
+### Le tampon — et rien d'autre
 
-Chaque teinte existe en **deux intensités**, parce qu'une couleur ne se comporte
-pas pareil selon qu'elle porte le texte ou qu'elle le supporte :
+**L'ambre et le vert ont été retirés.** Bleu + orange est une paire
+complémentaire : elle vibre, et une interface qui vibre a l'air d'un jouet. Il ne
+reste qu'une teinte hors accent, le minium, et elle n'a que **quatre emplois** :
 
-- `--x` — l'**aplat** : fond de bouton, barre, filet, gros chiffre ;
-- `--x-ink` — l'**encre** : petit texte de cette couleur, y compris sur son wash.
+1. le **nombre qui tourne** — chrono du héros, durée de la ligne en cours,
+   « en cours » du tableau des segments, durée dans la liste de reprise ;
+2. le repère **« maintenant »** de la timeline ;
+3. l'**action irréversible** (purge, suppression) ;
+4. l'**anneau de focus**.
 
-En thème sombre les deux coïncident (la teinte y est déjà claire). Le texte posé
-**sur** un aplat de service prend `--on-signal` (blanc le jour, encre la nuit) :
-le blanc sur l'ambre nocturne valait 2,08:1.
+Le minium ne marque jamais un objet, il marque **le nombre qui bouge**. C'est
+vrai partout, donc ça se reconnaît partout — et aucun liseré de bord n'est
+nécessaire pour dire « c'est celle-là qui tourne ».
 
-| Jeton | Jour | Nuit | Encre (jour) | Wash (jour / nuit) |
-|---|---|---|---|---|
-| `--stop` | `#cc3823` | `#ff6a4a` | `#b93320` | `#f6dfd8` / `#3b1d15` |
-| `--pause` | `#a3690f` | `#e5a93f` | `#8b590d` | `#f0e2c4` / `#382b12` |
-| `--play` = `--finish` | `#367044` | `#63b473` | = `--play` | `#d9e7d9` / `#182f1d` |
-| `--on-signal` | `#ffffff` | `#131211` | — | — |
-| `--new` = `--accent` · `--resume` = `--accent-soft` | — | — | — | — |
+| Jeton | Jour | Nuit | Emploi |
+|---|---|---|---|
+| `--stop` | `#cc3823` | `#ff6a4a` | l'aplat, et les grands nombres (≥ 24 px) |
+| `--stop-ink` | `#b93320` | `#ff6a4a` | **tout minium de moins de 24 px** |
+| `--stop-wash` | `#f6dfd8` | `#3b1d15` | survol d'une action irréversible, uniquement |
+| `--on-signal` | `#ffffff` | `#131211` | texte posé sur un aplat de minium |
 
 `--ring` (focus) est un minium à 45 % : le focus se voit, toujours.
 
+### Ce que l'ambre et le vert disaient
+
+**Le manque se dessine en hachures** (`--hatch-img`, 45°). Un trou dans le
+registre n'est pas une alerte, c'est une **absence** — et une absence se dessine,
+elle ne se peint pas en jaune. Une seule trame pour une seule idée : les trous de
+la timeline, la carte « temps non tracé », le hors-horaires du calcul brut/net.
+
+**L'acquis se dit en encre, ou par la disparition du manque.** Journée bouclée =
+la carte perd sa trame. Pas besoin de vert pour féliciter : le registre est
+plein, ça se voit.
+
 ### Types de tâche
 
-Dérivés, jamais recopiés : `dev` → `--accent-wash` / `--accent`, `support` →
-`--stop-wash` / `--stop-ink`, `autre` → `--text` à 8 % / `--text-soft`. Le badge
-porte l'**encre** de la teinte, pas son aplat : c'est du texte de 9 px sur un
-wash.
+**Purement typographiques** : `--type-badge-bg` (encre à 8 %) et
+`--type-badge-text` (`--text-soft`), identiques pour les trois. Le mot dit déjà
+« dev » ou « support » — lui donner en plus une teinte, c'était trois pastilles
+de couleur de plus par ligne pour zéro information supplémentaire.
+
+### Rampe de données
+
+`--dot-dev` / `--dot-support` / `--dot-autre` : **une seule teinte, trois
+valeurs**. dev / support / autre ne sont pas des natures opposées, ce sont des
+**parts d'un même total** — donc des valeurs d'une même couleur, ordonnées. Trois
+teintes franches faisaient croire à trois sujets sans rapport, et remettaient du
+minium (donc du « maintenant ») dans des graphiques rétrospectifs.
+
+Les deux valeurs dérivées vont vers la **surface**, jamais vers l'encre : vers
+l'encre, la rampe s'inverserait en thème sombre. Le dosage compte — à 52 % la
+bande « support » se noyait dans sa propre piste ; à 60 % elle s'en détache tout
+en restant plus claire que le dev, ce qui est l'ordre juste : la part la plus
+grande est la plus dense.
 
 ### Intensité (rythme de Stats)
 
@@ -267,18 +309,30 @@ en Plex Mono **empilés** contre le glyphe (étirés d'un bord à l'autre, ils f
 une ligne de tableau). Play/Pause est **un tiers plus large** : c'est l'action qu'on vise
 le plus souvent.
 
-**Un seul glyphe coloré**, celui de Play : dans une rangée où tout se clique, l'accent ne
-peut plus dire « cliquable », il dit « celui-là ». Et la couleur du bouton principal dit
-**ce qu'il va faire** — accent au repos, minium en marche. En marche : lavis `--stop-wash`
-+ filet de 3 px, pas un aplat plein. L'aplat faisait de la mise en pause l'élément le plus
-fort de la page, plus fort que le chrono qu'elle arrête.
-
-Ce **filet minium de 3 px** est la signature de « c'est celle-là qui tourne » : carte du
-chrono, bouton Play, ligne de tâche active. Trois endroits, un seul geste.
+Les quatre boutons sont **quatre cartes identiques**. Un seul glyphe porte de la couleur —
+celui de Play : dans une rangée où tout se clique, l'accent ne peut plus dire
+« cliquable », il dit « celui-là ». Et il dit ce que le bouton va faire : **accent au
+repos** (lancer), **minium en marche** (arrêter). Le fond ne bouge pas : un aplat, et même
+un lavis, de 340 px faisait de la mise en pause l'élément le plus fort de la page — plus
+fort que le chrono qu'elle arrête.
 
 ### Carte de tâche active
-Quand ça tourne : filet minium de 3 px au bord gauche, pastille qui bat (`livePulse`),
-chrono en `--stop`. En pause, tout s'atténue.
+Quand ça tourne : pastille qui bat (`livePulse`) et chrono en `--stop`. Deux choses, pas
+trois, et **aucun filet de bord**. En pause, tout s'atténue.
+
+### Lignes de listes (tâches du jour, onglet Tâches, table Segments)
+Grille, jamais flex, et **la durée en dernière piste** — collée au bord droit, à la même
+abscisse sur toutes les lignes, quel que soit le nombre d'actions (une tâche avec lien en
+a une de plus) et quel que soit l'état de survol. C'est la colonne du nom, la seule
+élastique, qui absorbe les variations. Des chiffres tabulaires qui ne s'alignent pas, dans
+un compteur de temps, c'est le détail qui trahit tout le reste.
+
+Ne restent visibles que les **contrôles de cycle de vie** ; copie, lien et édition se
+révèlent au survol — retirés du flux (`display:none`), pas rendus transparents : masqués
+mais présents, ils réservaient 200 px de vide au bout de chaque ligne. Sans survol
+possible (tactile), tout reste visible.
+
+La ligne en cours : son fond recule d'un cran et **sa durée passe en `--stop-ink`**.
 
 ### Carte « Total du jour »
 Contraste **inversé** (N2), scène dot-matrix animée en filigrane plein cadre, total géant
@@ -296,14 +350,15 @@ Affiche toujours le **jour réel**, indépendamment du jour sélectionné.
 | navigation principale | aplat `--accent` + `--accent-text` | la barre d'onglets, et rien d'autre |
 | sélection secondaire | **lavis** `--accent-wash` + `--accent` + anneau 1,5 px | chips, jours travaillés, contrôle segmenté, sous-nav des Réglages, interrupteur en pilule |
 
-Sans cette distinction, les Stats alignaient quatre pilules bleues pleines dans leurs
-400 premiers pixels — onglet, période, granularité, mode — quatre fois le même signal
-maximal pour quatre niveaux de décision différents. L'anneau vient de la pile de
-précédence des horaires : c'est la même idée, « celui-ci l'emporte ».
+L'anneau vient de la pile de précédence des horaires : c'est la même idée, « celui-ci
+l'emporte ». Il est réservé au choix **unique** — pour une sélection multiple (les jours
+travaillés), cinq pilules cerclées côte à côte font un feston : le lavis seul suffit.
 
-La barre d'onglets est **pleine largeur** : centrée sur 460 px, elle flottait au milieu
-d'une page vide, et son aplat bleu devenait l'objet le plus saturé de l'écran, posé sur
-rien. Étalée, elle redevient de la structure. Le curseur glisse en `spring`.
+La barre d'onglets est **contenue et centrée** (480 px), pas pleine largeur. Étalée sur
+toute la colonne, elle pesait autant que le héros au-dessus et que les cartes en dessous —
+trois bandes de 1180 px empilées, donc plus de hiérarchie du tout. Ramassée, elle redevient
+un contrôle, et le **contraste de largeur** fait le travail que la couleur n'a plus à
+faire. Le curseur glisse en `spring`.
 
 Nav de jour = **inversée** (N2), compacte, date en Plex Mono ; à sa droite, ce que la
 journée **prévoit** (durée planifiée + créneaux retenus) — sans ce dénominateur, la

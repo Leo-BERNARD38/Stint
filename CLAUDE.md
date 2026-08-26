@@ -184,38 +184,46 @@ Notes :
   disparaît dans un panneau `--surface` — pilules, mini-boutons, selects et
   champs **teintent** donc leur hôte (`--ctl`, 7 % d'encre) au lieu de nommer une
   surface.
-- **Hiérarchie à 4 niveaux — une couleur = une information.** C'est la règle qui
-  tient tout le reste :
-  - **N1 minium** (`--stop`) : l'instant. Chrono en marche, filet de la carte
-    active, repère « maintenant », danger. Rien d'autre.
+- **Encre sur papier, un accent, un tampon.** C'est la règle qui tient tout le
+  reste. L'app est une pointeuse : il n'y a **pas d'autre teinte** que l'accent
+  et le minium (l'ambre et le vert ont été retirés — bleu + orange vibre, et à
+  sept directions sur une page dont le sujet est un nombre, la couleur ne
+  hiérarchise plus rien).
+  - **N1 minium** (`--stop`) : ce qui exige le regard **maintenant**. Quatre
+    emplois : le nombre qui tourne (chrono, durée de la ligne en cours,
+    « en cours »), le repère « maintenant », l'action irréversible, l'anneau de
+    focus. Il marque **le nombre qui bouge**, jamais l'objet qui le contient —
+    d'où l'absence totale de liseré de bord. `--stop-ink` pour tout minium de
+    moins de 24 px ; `--on-signal` pour le texte posé sur un aplat de minium.
   - **N2 contraste inversé** (`--inverse-bg` / `--inverse-fg`) : le registre.
     **Deux ancres seulement** — total du jour et tête des Stats — plus le
-    sélecteur de jour. Au-delà, l'inversion ne hiérarchise plus rien.
-  - **N3 bleu de Prusse** (`--accent`) : **la seule couleur de ce qui se clique**,
-    et à **deux étages** — aplat plein pour la barre d'onglets et elle seule,
-    **lavis + anneau** pour tout ce qui se sélectionne en dessous (chips, jours
-    travaillés, contrôle segmenté, sous-nav des Réglages). Sans cette
-    distinction, les Stats alignaient quatre pilules bleues pleines dans leurs
-    400 premiers pixels. Un seul glyphe coloré parmi les 4 gros boutons : celui
-    de Play — dans une rangée où tout se clique, l'accent ne dit plus
-    « cliquable », il dit « celui-là ».
+    sélecteur de jour.
+  - **N3 bleu de Prusse** (`--accent`) : tout ce qui se clique **et** tout ce qui
+    se mesure, en **deux intensités seulement** (l'aplat, le lavis `--accent-wash`).
+    Un seul aplat plein dans toute l'app : **la barre d'onglets**. Tout ce qui se
+    sélectionne en dessous se marque en lavis + anneau — et l'anneau est réservé
+    au choix *unique* (en sélection multiple il fait un feston).
   - **N4** : `--text` / `--text-soft` / `--text-faint`.
-  - Trois teintes de service, jamais hors de leur rôle : **ambre** (`--pause`) =
-    ce qui manque, **vert** (`--play`/`--finish`) = ce qui est acquis, **minium**
-    = ce qui s'arrête. Chacune en **deux intensités** : `--x` l'aplat, `--x-ink`
-    le petit texte (y compris sur son wash) ; le texte posé dessus prend
-    `--on-signal`.
-  - **Le filet minium de 3 px** est la signature de « c'est celle-là qui
-    tourne » : carte du chrono, bouton Play en marche, ligne de tâche active.
-- **Contraste : tout texte à ≥ 4,5:1** (≥ 3:1 au-delà de 24 px). Les trois
-  encres (`--text` / `--text-soft` / `--text-faint`) passent le seuil sur les
-  trois surfaces ; elles se ressemblent donc, et c'est voulu — la hiérarchie se
-  joue sur la **taille et la casse**, jamais sur la pâleur ni sur l'`opacity`.
-  Contrôle automatisé (§9).
+  - **Le manque se dessine en hachures** (`--hatch-img`, 45°), jamais en couleur :
+    trous de la timeline, carte « temps non tracé », hors-horaires du brut/net.
+    Une absence se dessine, elle ne se peint pas en jaune. **L'acquis** se dit en
+    encre, ou par la disparition de la trame.
+  - **Les catégories sont une rampe**, pas trois teintes : `--dot-dev/support/autre`
+    sont trois valeurs d'une même couleur, dérivées vers la surface (vers l'encre,
+    la rampe s'inverserait en thème sombre).
+  - **Aucune couleur de tâche par défaut ne doit pouvoir passer pour le tampon**
+    (`PALETTES.support` est en argile/brique/prune, pas en orange vif).
+- **Contraste : tout texte à ≥ 4,5:1** (≥ 3:1 au-delà de 24 px). Les trois encres
+  passent le seuil sur les trois surfaces ; elles se ressemblent donc, et c'est
+  voulu — la hiérarchie se joue sur la **taille et la casse**, jamais sur la
+  pâleur ni sur l'`opacity`. Contrôle automatisé (§9).
 - **La perforation** (`.perf`) est le seul ornement de l'app : la bande
   détachable du carnet de pointage, entre l'instrument et le journal (Journée) et
-  entre la tête de période et les blocs d'analyse (Stats). Deux emplois, pas
-  plus — partout, elle ne serait plus qu'une décoration.
+  entre la tête de période et les blocs d'analyse (Stats). Deux emplois, pas plus.
+- **Les durées s'alignent.** Dans toute liste, la durée est la **dernière piste
+  d'une grille**, collée au bord droit : la colonne élastique (le nom) absorbe les
+  variations d'actions et de survol. Dans un compteur de temps, une colonne de
+  chiffres qui n'en est pas une trahit tout le reste.
 - **Design flat** : pas de bordures structurelles ; on distingue par **surfaces**
   (`--surface`, `--surface-2`) et **espace**. Échelle `--sp-1..7`.
 - **Papier chaud le jour, Ardoise la nuit** — jamais de blanc ni de noir purs. Le
@@ -227,6 +235,8 @@ Notes :
 - **Une seule grammaire de barre de part** (piste à 8-10 % d'encre, remplissage
   plein, coins en pilule) pour toute proportion : part d'une tâche, composition
   du jour, couverture, semaines des Stats, stockage.
+- **Trois niveaux de surface, jamais quatre**, et jamais de carte dans une carte
+  de même fond : page (`--bg`) → panneau (`--surface`) → creux (`--surface-2`).
 - **Rayons** resserrés (`--radius-lg` 16 / `--radius` 12 / `--radius-sm` 9 /
   `--radius-xs` 7 / `--radius-pill` 999) : l'app se lit comme un instrument de
   mesure. Les pilules restent pour ce qui se clique.
@@ -300,6 +310,11 @@ Lancer ces contrôles (rapides, en Node) :
   (objet `{loadSync, init, loadFull, save, clear}`) — ex. migration, résolution
   d'horaires, `plannedMsForDay`, `workRangesBetween`, formats.
   (IndexedDB/DOM ne tournent pas en Node : on teste le domaine, pas le rendu.)
+- **Capture : simuler le survol.** Chromium headless annonce `hover: none` et
+  `pointer: coarse` — donc toute règle sous `@media (hover: hover)` est ignorée,
+  et on photographie la variante tactile en croyant voir le bureau. Ajouter
+  `--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4`
+  à **toutes** les captures et à l'audit de contraste.
 - **Rendu** : servir en HTTP et capturer avec le Chromium préinstallé
   (`--headless --hide-scrollbars --force-prefers-reduced-motion
   --virtual-time-budget`), en **clair et en sombre**. Attention : le service
