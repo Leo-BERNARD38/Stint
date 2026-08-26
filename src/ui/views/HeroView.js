@@ -54,6 +54,9 @@ export class HeroView {
     this.endBtn.disabled = !(running || paused); // Terminer agit aussi sur la tâche en pause
 
     this.#shownTaskId = task ? task.id : null;
+    // `is-running` allume le filet minium, le battement de la pastille et le
+    // chrono rouge : tout l'état « ça tourne » tient dans une classe.
+    this.card.classList.toggle("is-running", running);
     this.card.classList.toggle("paused", paused);
     this.dot.classList.toggle("editable", !!task);
 

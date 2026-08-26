@@ -42,7 +42,9 @@ header {
   gap: var(--sp-3);
 }
 @media (min-width: 720px) {
-  .control-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
+  /* Play/Pause est l'action qu'on vise le plus souvent : elle prend un tiers de
+     largeur en plus que les trois autres. */
+  .control-buttons { grid-template-columns: 1.32fr 1fr 1fr 1fr; gap: var(--sp-3); }
 }
 
 /* ---------- Onglets (piste de la pilule segmentée + curseur glissant) ---------- */
@@ -137,7 +139,7 @@ header {
 @media (max-width: 520px) {
   .wordmark { max-width: 130px; font-size: 20px; }
   .active-card { padding: var(--sp-4); gap: var(--sp-3); }
-  .big-btn { padding: var(--sp-3) var(--sp-2); }
+  .big-btn { min-height: 62px; padding: 0 var(--sp-3); gap: var(--sp-3); }
   .big-btn .kbd { display: none; }
   .big-btn .label { font-size: 13.5px; }
 }

@@ -73,8 +73,8 @@
 
   /* Timeline & interactions (drag, trous, bande déjeuner). */
   --lunch-overlay: color-mix(in srgb, var(--text) 7%, transparent);   /* pause déjeuner : un voile, pas un trou */
-  --rule-hour: color-mix(in srgb, var(--text) 9%, transparent);       /* graduation horaire fine */
-  --rule-hour-maj: color-mix(in srgb, var(--text) 20%, transparent);  /* toutes les 2 h */
+  --rule-hour: color-mix(in srgb, var(--text) 12%, transparent);      /* graduation horaire fine */
+  --rule-hour-maj: color-mix(in srgb, var(--text) 24%, transparent);  /* toutes les 2 h */
   --grip: light-dark(rgba(19, 26, 32, .5), rgba(19, 18, 17, .55));    /* poignée (lisible sur toute couleur de segment) */
   --grip-strong: light-dark(rgba(19, 26, 32, .82), rgba(19, 18, 17, .9));
   /* Zone de trou (temps non tracé) : ambre dès le repos — c'est une invitation,
@@ -109,6 +109,13 @@
   --inverse-fg: light-dark(#f2efe6, #131211);
 
   --ring: color-mix(in srgb, var(--stop) 45%, transparent); /* focus = minium, jamais discret */
+
+  /* Texte posé SUR une couleur de tâche (choisie librement, donc inconnue du
+     CSS) : la vue calcule la luminance et pose `on-dark` / `on-light`.
+     Ces deux jetons ne suivent PAS le thème — ils sont relatifs à la couleur du
+     bloc, pas à celle de la page. */
+  --on-color-dark: #ffffff;
+  --on-color-light: #131a20;
 
   /* N1 — minium : ce qui se passe maintenant, et ce qui s'arrête. */
   --stop: light-dark(#d8402b, #ff6a4a);

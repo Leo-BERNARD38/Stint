@@ -67,46 +67,64 @@
 .tab:hover { color: var(--text); transition-delay: 0s; }
 .tab.active { color: var(--accent-text); }
 
-/* ---------- Carte tâche active ---------- */
+/* ---------- Carte tâche active ----------
+   C'est l'instrument : un filet minium au bord gauche quand ça tourne, une
+   pastille qui bat, et un chrono rouge. Le minium ne sert qu'ici et sur le
+   repère « maintenant » — c'est ce qui en fait un signal et pas une décoration. */
 .active-card {
+  position: relative; overflow: hidden;
   background: var(--surface); border-radius: var(--radius-lg);
   padding: var(--sp-5); display: flex; align-items: center; gap: var(--sp-4); min-height: 128px;
   min-width: 0; /* autorise le rétrécissement dans la grille héros (pas de débordement) */
 }
+.active-card.is-running::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--stop);
+}
 .active-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; transition: box-shadow .2s var(--ease); }
+/* Battement : le seul mouvement permanent de l'interface. */
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stop) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 13px color-mix(in srgb, var(--stop) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--stop) 0%, transparent); }
+}
+.active-card.is-running .active-dot { animation: livePulse 1.9s var(--ease) infinite; }
 .active-meta { flex: 1; min-width: 0; }
 .active-label { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .17em; color: var(--text-faint); }
 .active-name { font-size: 21px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .active-name.idle { color: var(--text-faint); font-weight: 500; }
 .active-extra { display: flex; align-items: center; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
 .active-extra:empty { display: none; }
-.active-started { font-size: 12px; color: var(--text-faint); }
-.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; }
+.active-started { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); }
+.active-timer { font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4.4vw, 52px); line-height: 1; letter-spacing: .02em; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.active-card.is-running .active-timer { color: var(--stop); }
 .active-timer.idle { color: var(--text-faint); }
 /* En pause : la tâche reste affichée mais atténuée (vs en cours, pleine opacité). */
 .active-card.paused .active-name, .active-card.paused .active-extra,
 .active-card.paused .active-timer, .active-card.paused .active-dot { opacity: .55; }
 .active-dot.editable { cursor: pointer; } /* clic sur la couleur = éditer la tâche */
 
-/* ---------- Gros boutons (flat : icône à gauche, libellé à droite) ---------- */
+/* ---------- Gros boutons (flat : glyphe à gauche, libellé à droite) ----------
+   Quatre actions, quatre vraies cibles : 74 px de haut, du souffle autour du
+   glyphe. Compactés, ils cessaient de se lire comme les commandes principales. */
 .big-btn {
   border: none; background: var(--surface); border-radius: var(--radius);
-  padding: var(--sp-4) var(--sp-4); display: flex; flex-direction: row; align-items: center; gap: var(--sp-3);
+  min-height: 74px; padding: 0 18px; display: flex; flex-direction: row; align-items: center; gap: 14px;
   text-align: left; color: var(--text); /* transition définie dans la section motion (plus bas) */
 }
 .big-btn:hover { background: var(--surface-hover); }
 .big-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-/* Icône : monochrome, grille de points, calée à gauche. */
-.big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--text); flex-shrink: 0; }
-.big-btn .label { font-weight: 600; font-size: 15px; flex: 1; min-width: 0; }
+/* Glyphe : monochrome, grille de points, en bleu de Prusse — c'est cliquable. */
+.big-btn .glyph { display: grid; place-items: center; line-height: 0; color: var(--accent); flex-shrink: 0; }
+.big-btn .label { font-weight: 600; font-size: 15px; letter-spacing: -.01em; flex: 1; min-width: 0; }
 .big-btn .kbd { font-family: var(--font-data); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--text-faint); flex-shrink: 0; }
 
-#btnPlay.is-running { background: var(--pause); color: #fff; }
-#btnPlay.is-running:hover { background: color-mix(in srgb, var(--pause) 88%, #000); }
-#btnPlay.is-stopped { background: var(--play); color: #fff; }
-#btnPlay.is-stopped:hover { background: color-mix(in srgb, var(--play) 88%, #000); }
-#btnPlay.is-running .glyph, #btnPlay.is-stopped .glyph { color: #fff; }
-#btnPlay.is-running .kbd, #btnPlay.is-stopped .kbd { color: rgba(255, 255, 255, .82); background: rgba(255, 255, 255, .16); }
+/* En marche, le bouton devient plein minium : il porte l'état du chrono, comme
+   la carte à côté. Au repos il redevient une carte ordinaire — le vert servait
+   d'accent décoratif, or le vert ne dit qu'une chose ici : « c'est acquis ». */
+#btnPlay.is-running { background: var(--stop); color: #fff; }
+#btnPlay.is-running:hover { background: color-mix(in srgb, var(--stop) 88%, #000); }
+#btnPlay.is-running .glyph { color: #fff; }
+#btnPlay.is-running .kbd { color: rgba(255, 255, 255, .78); }
 .big-btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
 
 /* ---------- Navigation jour (pilule inversée, même largeur que les onglets) ----------
@@ -168,15 +186,33 @@
 .tl-tip .nm .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .tl-tip .mt { opacity: .72; font-variant-numeric: tabular-nums; margin-top: 2px; }
 .timeline {
-  position: relative; height: 64px; background: var(--surface-2);
+  position: relative; height: 74px; background: var(--surface-2);
   border-radius: var(--radius); overflow: hidden;
   background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
   background-size: 11px 11px; background-position: center;
 }
+/* Graduation horaire : des filets fins toutes les heures, marqués toutes les
+   deux heures. Rendus DERRIÈRE les segments (z-index 1) : ils donnent l'échelle
+   sans jamais disputer la lecture des blocs. */
+.tl-hour { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--rule-hour); z-index: 2; pointer-events: none; }
+.tl-hour.maj { background: var(--rule-hour-maj); }
+
 /* Bande déjeuner : superposition sombre au-dessus des segments (DS §7.1). */
 .tl-lunch { position: absolute; top: 0; bottom: 0; z-index: 5; background: var(--lunch-overlay); pointer-events: none; }
+.tl-lunch b { position: absolute; left: 50%; top: 7px; transform: translateX(-50%);
+  font-family: var(--font-data); font-size: 9px; font-weight: 400; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+/* Un segment porte son nom et sa durée dès qu'il est assez large : sans cela il
+   faut survoler chaque bloc pour savoir ce qu'on a fait de sa journée. */
 .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-sm); cursor: pointer; min-width: 6px; z-index: 3;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 0 15px; overflow: hidden;
   transition: filter .16s var(--ease), box-shadow .16s var(--ease), left .26s var(--ease-out), width .26s var(--ease-out); }
+.tl-seg.on-dark { color: var(--on-color-dark); }
+.tl-seg.on-light { color: var(--on-color-light); }
+.tl-seg b { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.tl-seg i { font-family: var(--font-data); font-size: 10px; font-style: normal; opacity: .82;
+  font-variant-numeric: tabular-nums; pointer-events: none; }
 .tl-seg:hover, .tl-seg.hl { filter: brightness(1.08); }
 /* `.hl` = survol croisé depuis la ligne du tableau (même rendu que le survol direct). */
 .timeline .tl-seg:hover, .timeline .tl-seg.hl { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 32%, transparent); }
@@ -192,11 +228,16 @@
   box-shadow: inset 0 0 0 1px var(--gap-ring); display: grid; place-items: center; cursor: pointer; z-index: 2;
   transition: background-color .22s var(--ease-out), box-shadow .22s var(--ease-out); }
 .tl-gap:hover { background: var(--gap-bg-hover); box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
-.tl-gap-lab { font-size: 11px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+.tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--pause); white-space: nowrap; }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); pointer-events: none; z-index: 6; }
+.tl-now b { position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-data); font-size: 9px; font-weight: 400; padding: 1px 6px;
+  border-radius: var(--radius-pill); background: var(--stop); color: #fff; white-space: nowrap; }
+.tl-now.at-start b { left: 0; transform: none; }
+.tl-now.at-end b { left: auto; right: 0; transform: none; }
 /* Infobulle de glisser : pilule flottant au-dessus du bord déplacé. */
 .tl-drag-tip { position: absolute; z-index: 8; pointer-events: none; opacity: 0;
   left: 50%; top: 0; /* centré au repos (JS pose left/top pendant le glisser) */
@@ -204,8 +245,13 @@
   padding: 4px 11px; font-family: var(--font-data); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap;
   box-shadow: var(--shadow-pop); transform: translate(-50%, calc(-100% - 8px)); transition: opacity .12s var(--ease); }
 .tl-drag-tip.show { opacity: 1; }
-.tl-axis { position: relative; height: 15px; margin-top: var(--sp-2); font-family: var(--font-data); font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.tl-tick { position: absolute; top: 0; white-space: nowrap; }
+.tl-axis { position: relative; height: 19px; margin-top: var(--sp-2); font-family: var(--font-data); font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.tl-tick { position: absolute; top: 4px; white-space: nowrap; }
+/* Règle graduée sous la piste : un trait par heure, plus haut toutes les deux.
+   C'est l'échelle de l'instrument — elle reste lisible même quand les blocs
+   couvrent toute la journée. */
+.tl-atick { position: absolute; top: 0; width: 1px; height: 3px; background: var(--rule-hour); }
+.tl-atick.maj { height: 6px; background: var(--rule-hour-maj); }
 
 /* ---------- Popover de remplissage d'un trou (flottant) ---------- */
 .fill-backdrop { display: none; }
@@ -258,10 +304,14 @@
 }
 
 /* ---------- Bloc « Temps non tracé » (aside Journée) ---------- */
-.untracked { margin-top: var(--sp-4); background: var(--surface); border-radius: var(--radius-sm); padding: var(--sp-4); }
-.untracked-head { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+/* Temps non tracé : une carte ambre, pas une ligne de plus. L'ambre dit « il
+   manque quelque chose » — et le chiffre doit se voir depuis l'autre bout de
+   l'écran, sinon on ne comble jamais rien. */
+.untracked { margin-top: var(--sp-4); background: var(--pause-wash); border-radius: var(--radius); padding: var(--sp-4); }
+.untracked-head { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-3); }
 .untracked-head .k { font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .15em; color: var(--pause); }
-.untracked-total { margin-left: auto; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+.untracked-total { margin-left: auto; font-family: var(--font-display); font-weight: 400; font-size: 23px;
+  font-variant-numeric: tabular-nums; line-height: 1; }
 .untracked-total.has { color: var(--pause); }
 .untracked-total.clear { color: var(--play); }
 .untracked-list { display: flex; flex-direction: column; gap: 9px; }
@@ -269,8 +319,12 @@
 .untracked-row .ut-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pause); flex-shrink: 0; }
 .untracked-row .ut-range { white-space: nowrap; }
 .untracked-row .ut-dur { font-weight: 700; color: var(--text); }
-.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--surface-2); }
+.untracked-row .ut-fill { margin-left: auto; flex-shrink: 0; background: var(--pause); color: #fff; font-family: var(--font-body); font-weight: 600; }
+.untracked-row .ut-fill:hover { background: color-mix(in srgb, var(--pause) 86%, #000); color: #fff; }
 .untracked-zero { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--play); font-weight: 600; }
+/* Journée complète : la carte n'a plus rien à réclamer, elle passe au vert. */
+.untracked:has(.untracked-zero) { background: var(--play-wash); }
+.untracked:has(.untracked-zero) .untracked-head .k { color: var(--play); }
 
 /* ---------- Carte « Total du jour » (héros, toujours visible) ---------- */
 .total-card {
@@ -296,11 +350,11 @@
 .total-line .tdot.support { background: var(--dot-support); }
 .total-line .tdot.autre { background: var(--dot-autre); }
 .total-line .tname { flex: 1; color: var(--text-soft); text-transform: capitalize; }
-.total-line .tamt { font-weight: 600; font-variant-numeric: tabular-nums; }
+.total-line .tamt { font-family: var(--font-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.15; }
 /* Ligne « Total » du jour (gras). */
 .total-sum { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-1) var(--sp-2); }
 .total-sum .tname { flex: 1; font-weight: 700; }
-.total-sum .tamt { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.total-sum .tamt { font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.1; }
 
 /* Carte à filet pointillé (esthétique Nothing) : structure une section sans la
    surcharger (pas de fond, juste le contour --dot). Format partagé par les
@@ -323,14 +377,14 @@
 .type-dev { background: var(--type-dev-bg); color: var(--type-dev-text); }
 .type-support { background: var(--type-support-bg); color: var(--type-support-text); }
 .type-autre { background: var(--type-autre-bg); color: var(--type-autre-text); }
-.task-dur { font-family: var(--font-body); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.task-dur { font-family: var(--font-display); font-weight: 400; font-size: 21px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
 /* Vue arrondie : soulignement pointillé pour rappeler que la durée n'est plus exacte. */
 .task-list.is-rounded .task-dur,
 .totals.is-rounded .tamt { text-decoration: underline dotted var(--dot); text-underline-offset: 4px; }
 .task-actions { display: flex; align-items: center; gap: 4px; }
 /* Mini-barre de part du jour (proportion du temps de la tâche). */
-.task-share { height: 3px; background: var(--surface-2); border-radius: 2px; margin-top: 8px; overflow: hidden; max-width: 280px; }
-.task-share span { display: block; height: 100%; border-radius: 2px; }
+.task-share { height: 4px; background: color-mix(in srgb, var(--text) 8%, transparent); border-radius: var(--radius-pill); margin-top: 7px; overflow: hidden; max-width: 280px; }
+.task-share span { display: block; height: 100%; border-radius: var(--radius-pill); }
 
 .mini-btn { border: none; background: var(--surface); color: var(--text-soft); border-radius: var(--radius-pill); padding: 6px 11px; font-family: var(--font-body); font-size: 12.5px; display: inline-flex; align-items: center; gap: 5px; }
 .mini-btn:hover { background: var(--surface-hover); color: var(--text); }
@@ -357,7 +411,7 @@
 .at-main { flex: 1; min-width: 0; }
 .at-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
 .at-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
-.at-total { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.at-total { font-family: var(--font-display); font-weight: 400; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
 /* Copie du total : boutons discrets, révélés au survol/focus de la ligne. */
 .at-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
 .at-head:not(:hover):not(:focus-within) .at-actions .mini-btn:not(.ctrl-play):not(.ctrl-pause) { background: transparent; color: var(--text-faint); }
@@ -393,7 +447,7 @@
 .seg-live { color: var(--play); font-weight: 600; }
 .seg-dash { color: var(--text-faint); }
 .seg-actions { display: flex; gap: 4px; justify-content: flex-end; }
-.seg-dur { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.seg-dur { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---------- Réglages : champs & blocs ---------- */
 .settings-block { background: var(--surface); border-radius: var(--radius); padding: var(--sp-5); }

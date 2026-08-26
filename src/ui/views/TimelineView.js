@@ -2,9 +2,16 @@ import { el, createEl } from "../../utils/dom.js";
 import { DAY_MS } from "../../core/constants.js";
 import { startOfDay, sameDay, fmtClock, pad2 } from "../../utils/datetime.js";
 import { attachTimelineTip } from "../components/TimelineTip.js";
+import { onColorClass } from "../../utils/color.js";
 import { createFillPopover } from "../components/FillPopover.js";
 
 const SNAP_MS = 300_000; // calage par pas de 5 minutes
+const HOUR_MS = 3_600_000;
+/* Largeurs minimales d'un bloc pour y écrire quelque chose, en % de la piste.
+   En dessous, le texte serait rogné au milieu d'un mot : mieux vaut rien. */
+const LABEL_MIN_PCT = 7.5;   // le nom de la tâche
+const DUR_MIN_PCT = 12;      // le nom + la durée
+const LUNCH_MIN_PCT = 5;     // le mot « déjeuner » sur la bande de pause
 
 /**
  * Timeline journalière : segments colorés **redimensionnables** (poignées sur
@@ -83,45 +90,87 @@ export class TimelineView {
       }));
     }
 
-    // 2) segments (un bloc par segment, avec poignées de redimensionnement)
+    // 2) graduation horaire : l'échelle de l'instrument. Filets fins toutes les
+    //    heures, marqués toutes les deux. Posée après les trous (elle se lit donc
+    //    aussi sur les zones ambre) et avant les segments (qui la couvrent).
+    for (let h = Math.ceil(win.start / HOUR_MS) * HOUR_MS; h <= win.end; h += HOUR_MS) {
+      this.timeline.appendChild(createEl("div", {
+        className: "tl-hour" + (new Date(h).getHours() % 2 === 0 ? " maj" : ""),
+        attrs: { style: `left:${pct(h)}%` },
+      }));
+    }
+
+    // 3) segments (un bloc par segment, avec poignées de redimensionnement)
     for (const seg of store.segmentsForDay(viewDay)) {
       const task = store.taskById(seg.taskId);
       const s = Math.max(seg.startMs(), ds);
       const e = Math.min(seg.endMs(), de);
       if (e <= s) continue;
       const color = task ? task.color : "var(--text-faint)";
+      const width = Math.max(0.6, pct(e) - pct(s));
+      const name = task ? task.displayName : "?";
+      const dur = formatter.clock(calc.segmentMs(seg, ds, de) / 60000);
+      // Le texte est posé SUR la couleur de la tâche : on choisit clair ou
+      // sombre d'après sa luminance (cf. utils/color.js), jamais en dur.
       const block = createEl("div", {
-        className: "tl-seg",
+        className: "tl-seg " + (task ? onColorClass(color) : "on-dark"),
         attrs: {
-          style: `left:${pct(s)}%;width:${Math.max(0.6, pct(e) - pct(s))}%;background:${color}`,
+          style: `left:${pct(s)}%;width:${width}%;background:${color}`,
           "data-id": seg.id,
-          "data-name": task ? task.displayName : "?",
+          "data-name": name,
           "data-range": `${fmtClock(new Date(seg.startMs()))}–${seg.isRunning ? "en cours" : fmtClock(new Date(seg.endMs()))}`,
-          "data-dur": formatter.clock(calc.segmentMs(seg, ds, de) / 60000),
+          "data-dur": dur,
           "data-color": color,
         },
         on: { click: (ev) => { if (!ev.target.closest(".tl-grip") && !this._dragged) this.onSegClick(seg.id); } },
       });
+      if (width >= LABEL_MIN_PCT) {
+        block.appendChild(createEl("b", { text: name }));
+        if (width >= DUR_MIN_PCT) block.appendChild(createEl("i", { text: dur }));
+      }
       block.appendChild(createEl("div", { className: "tl-grip left", html: "<span></span>", attrs: { "data-seg": seg.id, "data-side": "left" } }));
       if (!seg.isRunning) block.appendChild(createEl("div", { className: "tl-grip right", html: "<span></span>", attrs: { "data-seg": seg.id, "data-side": "right" } }));
       this.timeline.appendChild(block);
     }
 
-    // 3) bande déjeuner : superposition sombre au-dessus des segments (DS §7.1)
+    // 4) bande déjeuner : superposition sombre au-dessus des segments (DS §7.1)
     for (let i = 0; i < ranges.length - 1; i++) {
       const ls = ranges[i][1], le = ranges[i + 1][0];
-      if (le > ls) this.timeline.appendChild(createEl("div", {
-        className: "tl-lunch", attrs: { title: "Pause", style: `left:${pct(ls)}%;width:${pct(le) - pct(ls)}%` },
+      if (le <= ls) continue;
+      const w = pct(le) - pct(ls);
+      this.timeline.appendChild(createEl("div", {
+        className: "tl-lunch",
+        html: w >= LUNCH_MIN_PCT ? "<b>pause</b>" : "",
+        attrs: { title: "Pause", style: `left:${pct(ls)}%;width:${w}%` },
       }));
     }
 
-    // 4) repère « maintenant »
+    // 5) repère « maintenant »
     const now = Date.now();
     if (sameDay(viewDay, new Date()) && now >= win.start && now <= win.end) {
-      this.timeline.appendChild(createEl("div", { className: "tl-now", attrs: { title: "Maintenant", style: `left:${pct(now)}%` } }));
+      // La piste est en `overflow:hidden` : près des bords, la pastille d'heure
+      // serait coupée. On la recale sur le bord plutôt que de la centrer.
+      const p = pct(now);
+      const edge = p > 92 ? " at-end" : p < 8 ? " at-start" : "";
+      this.timeline.appendChild(createEl("div", {
+        className: "tl-now" + edge,
+        html: `<b>${fmtClock(new Date(now))}</b>`,
+        attrs: { title: "Maintenant", style: `left:${p}%` },
+      }));
     }
 
-    // axe : bornes des plages ouvrées + extrémités de la fenêtre
+    // axe : d'abord la règle graduée (un trait par heure, plus haut toutes les
+    // deux). Les blocs couvrent la graduation posée dans la piste dès que la
+    // journée est bien remplie : c'est sous la piste que l'échelle reste
+    // toujours lisible.
+    for (let h = Math.ceil(win.start / HOUR_MS) * HOUR_MS; h <= win.end; h += HOUR_MS) {
+      this.axis.appendChild(createEl("i", {
+        className: "tl-atick" + (new Date(h).getHours() % 2 === 0 ? " maj" : ""),
+        attrs: { style: `left:${pct(h)}%` },
+      }));
+    }
+
+    // bornes des plages ouvrées + extrémités de la fenêtre
     const bounds = new Set([win.start, win.end]);
     for (const [rs, re] of ranges) { bounds.add(rs); bounds.add(re); }
     const allTicks = [...bounds].filter((t) => t >= win.start && t <= win.end).sort((a, b) => a - b);
