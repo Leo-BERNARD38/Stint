@@ -108,26 +108,26 @@
       <div class="control-buttons">
         <button id="btnPlay" class="big-btn is-stopped" aria-label="Démarrer ou mettre en pause">
           <span class="glyph" id="playGlyph"></span>
-          <span class="label" id="playLabel">Play</span>
-          <span class="kbd">Espace</span>
+          <span class="t"><span class="label" id="playLabel">Play</span><span class="kbd">Espace</span></span>
         </button>
         <button id="btnNew" class="big-btn" aria-label="Nouvelle tâche">
           <span class="glyph" data-icon="plus" data-icon-size="26" data-dot="true"></span>
-          <span class="label">Nouvelle tâche</span>
-          <span class="kbd">N</span>
+          <span class="t"><span class="label">Nouvelle tâche</span><span class="kbd">N</span></span>
         </button>
         <button id="btnResume" class="big-btn" aria-label="Reprendre une tâche">
           <span class="glyph" data-icon="resume" data-icon-size="26" data-dot="true"></span>
-          <span class="label">Reprise</span>
-          <span class="kbd">R</span>
+          <span class="t"><span class="label">Reprise</span><span class="kbd">R</span></span>
         </button>
         <button id="btnEnd" class="big-btn btn-end" aria-label="Terminer la tâche active">
           <span class="glyph" data-icon="check" data-icon-size="26" data-dot="true"></span>
-          <span class="label">Terminer</span>
-          <span class="kbd">T</span>
+          <span class="t"><span class="label">Terminer</span><span class="kbd">T</span></span>
         </button>
       </div>
     </div>
+
+    <!-- Perforation : la déchirure du carnet de pointage. Elle sépare
+         l'INSTRUMENT (ce qui tourne maintenant) du JOURNAL (ce qui est tracé). -->
+    <div class="perf" aria-hidden="true"></div>
 
     <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
     <nav class="tabs tabs-4" role="tablist">
@@ -145,6 +145,9 @@
         <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
       </div>
       <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
+      <!-- Le contrat du jour : ce que les horaires prévoient. Sans lui, la
+           couverture et les trous n'ont pas de dénominateur visible. -->
+      <span class="day-planned" id="dayPlanned"></span>
     </div>
 
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
@@ -249,11 +252,15 @@
         <span class="hint" id="stPeriodLabel">—</span>
       </div>
 
-      <!-- Bandeau de tête : la réponse à « alors, cette période ? ». Seconde et
-           dernière ancre en contraste inversé de l'app (avec le total du jour). -->
-      <div class="stats-lead" id="statsLead"></div>
+      <!-- Tête de période : le bandeau inversé (« alors, cette période ? ») et
+           ses cinq tuiles ne font qu'UN bloc. Séparés, ils se lisaient comme
+           deux rangées de même poids, et la question restait sans réponse. -->
+      <div class="stats-top">
+        <div class="stats-lead" id="statsLead"></div>
+        <div class="stats-cards" id="statsCards"></div>
+      </div>
 
-      <div class="stats-cards" id="statsCards"></div>
+      <div class="perf" aria-hidden="true"></div>
 
       <div class="stat-block">
         <div class="block-title">

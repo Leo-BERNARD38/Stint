@@ -32,6 +32,9 @@ export class TotalsView {
     if (segments.length === 0) {
       this.root.appendChild(createEl("div", { className: "empty", text: "Rien de tracé ce jour." }));
     } else {
+      // La composition du jour en une barre, avant les chiffres : trois lignes
+      // de durées ne disent pas la PART de chacune ; une barre empilée, si.
+      this.#renderSplit(byType, total);
       // ventilation par type
       for (const type of TASK_TYPES.filter((t) => byType[t] > 0)) {
         this.root.appendChild(createEl("div", {
@@ -51,6 +54,15 @@ export class TotalsView {
 
     this.#renderUntracked(viewDay, fmt);
     this.#renderCoverage(viewDay, fmt, total);
+  }
+
+  /** Barre empilée : une part par type, dans l'ordre stable de TASK_TYPES. */
+  #renderSplit(byType, total) {
+    if (total <= 0) return;
+    const parts = TASK_TYPES.filter((t) => byType[t] > 0)
+      .map((t) => `<i class="${t}" style="width:${(byType[t] / total) * 100}%"></i>`)
+      .join("");
+    this.root.appendChild(createEl("div", { className: "totals-split", html: parts }));
   }
 
   /**

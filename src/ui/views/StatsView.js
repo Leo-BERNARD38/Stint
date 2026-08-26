@@ -1,5 +1,6 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { STATS_PERIODS } from "../../services/StatsAggregator.js";
+import { TASK_TYPES } from "../../core/constants.js";
 import { cap } from "../../utils/datetime.js";
 
 /**
@@ -57,14 +58,20 @@ export class StatsView {
       ? cap(kpi.bestDay.date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" })).replace(".", "")
       : "—";
 
-    // Le total quitte la grille de cartes : il fait la tête de page.
+    // Le total quitte la grille de cartes : il fait la tête de page. La moitié
+    // droite du bandeau porte l'écart ET la composition de la période — sans
+    // elle, le bandeau était un aplat noir aux deux tiers vide, et la
+    // ventilation par type n'apparaissait qu'en bas de page.
     const delta = this.#delta(kpi);
     this.lead.innerHTML =
       '<span class="l">' +
         '<span class="k">Total sur la période</span>' +
         `<span class="v">${clock(kpi.total)}</span>` +
       "</span>" +
-      (delta ? `<span class="st-delta">${escapeHtml(delta)}</span>` : "");
+      '<span class="r">' +
+        (delta ? `<span class="st-delta">${escapeHtml(delta)}</span>` : "") +
+        this.#split(kpi, clock) +
+      "</span>";
 
     this.cards.innerHTML = "";
     this.cards.append(
@@ -75,8 +82,24 @@ export class StatsView {
       this.#card(
         kpi.coveragePct == null ? "—" : Math.round(kpi.coveragePct) + " %",
         "Couverture", "des horaires",
+        kpi.coveragePct == null ? null : Math.min(100, Math.max(0, kpi.coveragePct)),
       ),
     );
+  }
+
+  /**
+   * Composition de la période : une barre empilée + sa légende, dans la même
+   * grammaire que la barre du rail Totaux et que celle d'une semaine.
+   */
+  #split(kpi, clock) {
+    const types = TASK_TYPES.filter((t) => kpi.byType[t] > 0);
+    if (!kpi.total || types.length === 0) return "";
+    const bar = types
+      .map((t) => `<i class="${t}" style="width:${(kpi.byType[t] / kpi.total) * 100}%"></i>`)
+      .join("");
+    const legend = types.map((t) => `${t} ${clock(kpi.byType[t])}`).join(" · ");
+    return `<span class="lead-split">${bar}</span>` +
+           `<span class="lead-legend">${escapeHtml(legend)}</span>`;
   }
 
   /**
@@ -93,12 +116,22 @@ export class StatsView {
     return `${arrow} ${abs}${pct}`;
   }
 
-  #card(value, label, sub = null) {
+  /**
+   * `gauge` (0–100) ajoute une jauge sous le chiffre. Réservée à la couverture :
+   * c'est le seul indicateur de la rangée qui soit une PART — les autres sont
+   * des durées ou des compteurs, une barre n'y voudrait rien dire.
+   */
+  #card(value, label, sub = null, gauge = null) {
     const card = createEl("div", {
       className: "stat-card",
       html: `<div class="stat-val">${value}</div><div class="stat-lab">${label}</div>`,
     });
     if (sub) card.appendChild(createEl("div", { className: "stat-delta", text: sub }));
+    if (gauge != null) {
+      card.appendChild(createEl("div", {
+        className: "stat-gauge", html: `<i style="width:${gauge}%"></i>`,
+      }));
+    }
     return card;
   }
 }
