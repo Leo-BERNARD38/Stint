@@ -1,7 +1,7 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
-import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2 } from "../../utils/datetime.js";
-import { clampEyeMinutes, clampEyeRest } from "../../models/Settings.js";
+import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock } from "../../utils/datetime.js";
+import { clampEyeMinutes, clampEyeRest, clampVolume } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -65,6 +65,57 @@ export class SettingsView {
       this.render();
     });
     el("eyeBreakTest").addEventListener("click", () => this.app.eyeBreak.test());
+
+    // --- bip du repos ---
+    // Un AudioContext ne démarre que sur un geste : chacun de ces trois-là en
+    // est un, on en profite (App le débloque déjà au premier clic, mais rien
+    // n'interdit d'être sûr là où le son se règle).
+    el("setEyeSound").addEventListener("change", (e) => {
+      const on = e.target.checked;
+      if (on) this.app.chime.unlock();
+      store.updateSettings((set) => { set.eyeBreak.sound = on; });
+      if (on) this.app.chime.preview("start");   // on entend ce qu'on vient d'activer
+    });
+    el("setEyeVolume").addEventListener("input", (e) => {
+      this.app.chime.unlock();
+      store.updateSettings((set) => { set.eyeBreak.volume = clampVolume(e.target.value / 100); });
+    });
+    // Au relâchement seulement : un bip par pixel de curseur serait insupportable.
+    el("setEyeVolume").addEventListener("change", () => this.app.chime.preview("start"));
+    el("eyeSoundTest").addEventListener("click", () => {
+      this.app.chime.unlock();
+      this.app.chime.preview("end");
+    });
+
+    // --- pauses & rappels de la journée ---
+    el("setBreakLunch").addEventListener("change", async (e) => {
+      const on = e.target.checked;
+      if (on) await this.app.notifier.ensurePermission();
+      store.updateSettings((set) => { set.reminders.lunch = on; });
+    });
+    el("setBreakDayEnd").addEventListener("change", async (e) => {
+      const on = e.target.checked;
+      if (on) await this.app.notifier.ensurePermission();
+      store.updateSettings((set) => { set.reminders.dayEnd = on; });
+    });
+    el("breakAdd").addEventListener("click", async () => {
+      const entry = { label: el("breakLabel").value, time: el("breakTime").value, date: el("breakDate").value };
+      let added = null;
+      store.updateSettings((set) => { added = set.addBreak(entry); });
+      if (!added) { this.app.toast.show("Il faut au moins une heure valide"); return; }
+      await this.app.notifier.ensurePermission();
+      el("breakLabel").value = ""; el("breakTime").value = ""; el("breakDate").value = "";
+      this.app.toast.show(`« ${added.label} » à ${added.time}`);
+    });
+    el("breakList").addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-rm-break]");
+      if (rm) store.updateSettings((set) => set.removeBreak(rm.dataset.rmBreak));
+    });
+    el("remindAsk").addEventListener("click", async () => {
+      await this.app.notifier.ensurePermission();
+      this.render();
+    });
+    el("remindTest").addEventListener("click", () => this.app.reminders.test());
 
     // --- exceptions par jour de semaine ---
     const wdaySelect = el("wdaySelect");
@@ -184,6 +235,7 @@ export class SettingsView {
 
     el("setBgDots").checked = s.bgDots;
     this.#renderEyeBreak();
+    this.#renderReminders();
 
     el("setJiraAuto").checked = s.jira.auto;
     el("jiraManual").style.display = s.jira.auto ? "none" : "";
@@ -219,6 +271,10 @@ export class SettingsView {
     const seconds = el("setEyeSeconds");
     if (document.activeElement !== seconds) seconds.value = s.eyeBreak.restSeconds;
     el("eyeBreakOpts").style.display = s.eyeBreak.enabled ? "" : "none";
+    el("setEyeSound").checked = s.eyeBreak.sound;
+    el("eyeSoundOpts").style.display = s.eyeBreak.sound ? "" : "none";
+    const vol = el("setEyeVolume");
+    if (document.activeElement !== vol) vol.value = Math.round(s.eyeVolume() * 100);
 
     const perm = eye.permission;
     el("eyeBreakAsk").style.display = perm === "default" ? "" : "none";
@@ -228,6 +284,60 @@ export class SettingsView {
       denied: "Notifications refusées pour ce site : le rappel s'affichera en bandeau dans l'app. Réautorisez-les depuis le cadenas de la barre d'adresse.",
       unsupported: "Ce navigateur ne gère pas les notifications système : le rappel s'affichera en bandeau dans l'app.",
     }[perm];
+  }
+
+  /**
+   * Pauses & rappels. Les deux premières lignes n'ont **pas** d'heure à
+   * afficher : elles se déduisent des horaires du jour, et c'est justement ce
+   * qu'il faut montrer — sinon l'interrupteur promet quelque chose sans dire
+   * quand. On affiche donc l'heure calculée pour aujourd'hui, ou pourquoi il
+   * n'y en a pas.
+   */
+  #renderReminders() {
+    const s = this.settings;
+    const today = new Date();
+    const occs = this.app.reminders.occurrencesFor(today);
+    const ranges = this.app.calc.workRangesForDay(today);
+
+    el("setBreakLunch").checked = s.reminders.lunch;
+    el("setBreakDayEnd").checked = s.reminders.dayEnd;
+    // L'heure est calculée même quand l'interrupteur est coupé : on doit savoir
+    // ce qu'on allume avant de l'allumer.
+    const lunchAt = ranges.length > 1 ? fmtClock(new Date(ranges[0][1])) : null;
+    const endAt = ranges.length ? fmtClock(new Date(ranges[ranges.length - 1][1])) : null;
+    el("breakLunchInfo").textContent = lunchAt
+      ? `Déduite de vos horaires : aujourd'hui à ${lunchAt}. Elle suit vos exceptions par jour et par date, il n'y a rien à ressaisir.`
+      : "Aucune coupure dans les horaires d'aujourd'hui — rien à annoncer. L'heure vient du trou entre deux créneaux.";
+    el("breakEndInfo").textContent = endAt
+      ? `Déduite de vos horaires : aujourd'hui à ${endAt}. C'est la fin du dernier créneau, exceptions comprises.`
+      : "Journée non travaillée aujourd'hui — rien à annoncer.";
+
+    const list = el("breakList");
+    const at = new Map(occs.map((o) => [o.id, o.at]));
+    list.innerHTML = s.reminders.breaks.length
+      ? s.reminders.breaks.map((b) => this.#breakRow(b, at.has(b.id))).join("")
+      : '<div class="ov-empty">Aucun rappel — ajoutez-en un ci-dessous.</div>';
+
+    const perm = this.app.notifier.permission;
+    el("remindAsk").style.display = perm === "default" ? "" : "none";
+    el("remindInfo").textContent = {
+      granted: "Notifications autorisées — les rappels s'afficheront même si Stint n'est pas la fenêtre au premier plan.",
+      default: "Notifications pas encore autorisées : sans elles, un rappel ne s'affichera qu'en toast, dans l'onglet Stint.",
+      denied: "Notifications refusées pour ce site : les rappels s'afficheront en toast dans l'app. Réautorisez-les depuis le cadenas de la barre d'adresse.",
+      unsupported: "Ce navigateur ne gère pas les notifications système : les rappels s'afficheront en toast dans l'app.",
+    }[perm];
+  }
+
+  /** Une ligne de rappel — même grammaire que les exceptions d'horaires. */
+  #breakRow(b, todayFlag) {
+    const when = b.date ? this.#fmtDate(b.date) : "tous les jours travaillés";
+    return (
+      `<div class="ov-item brk">` +
+        `<span class="ov-name">${escapeHtml(b.label)}</span>` +
+        `<span class="ov-sum${todayFlag ? "" : " off"}">${escapeHtml(b.time)} · ${escapeHtml(when)}</span>` +
+        `<button class="ov-rm" data-rm-break="${escapeHtml(b.id)}" title="Retirer" aria-label="Retirer">×</button>` +
+      `</div>`
+    );
   }
 
   /**

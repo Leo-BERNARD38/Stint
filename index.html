@@ -381,7 +381,8 @@
           <a href="#set-horaires"><span class="n">02</span> Horaires</a>
           <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
           <a href="#set-yeux"><span class="n">04</span> Repos des yeux</a>
-          <a href="#set-donnees"><span class="n">05</span> Données</a>
+          <a href="#set-pauses"><span class="n">05</span> Pauses &amp; rappels</a>
+          <a href="#set-donnees"><span class="n">06</span> Données</a>
         </nav>
 
         <div class="set-body">
@@ -570,6 +571,83 @@
                   <button class="btn" id="eyeBreakTest">Tester</button>
                 </span>
               </div>
+              <label class="set-row">
+                <span class="set-lab">
+                  <b>Petit son</b>
+                  <span>Un bip léger au <strong>début</strong> et à la <strong>fin</strong> du repos —
+                    l'appel monte, la fin descend, on les distingue à l'oreille. C'est le seul repère
+                    utilisable pendant les vingt secondes, puisqu'on regarde justement ailleurs.</span>
+                </span>
+                <span class="set-ctl"><input type="checkbox" id="setEyeSound" class="sw"></span>
+              </label>
+              <div class="set-row" id="eyeSoundOpts">
+                <span class="set-lab"><b>Volume</b><span>Très bas par défaut : c'est un repère, pas une alarme.</span></span>
+                <span class="set-ctl">
+                  <input type="range" id="setEyeVolume" class="range" min="0" max="100" step="5" aria-label="Volume du bip">
+                  <button class="btn" id="eyeSoundTest">Écouter</button>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 05 · Pauses &amp; rappels ---------------------------- -->
+          <section class="set-group" id="set-pauses">
+            <h3>Pauses &amp; rappels</h3>
+            <p class="muted">
+              Des rappels à l'heure dite, pendant la journée. Ils ne changent
+              <strong>rien au décompte</strong> : ce sont des repères posés sur la timeline,
+              pas des coupures — une pause café ne crée pas de temps non tracé.
+            </p>
+
+            <label class="set-row">
+              <span class="set-lab">
+                <b>Pause déjeuner</b>
+                <span id="breakLunchInfo" class="set-note"></span>
+              </span>
+              <span class="set-ctl"><input type="checkbox" id="setBreakLunch" class="sw"></span>
+            </label>
+            <label class="set-row">
+              <span class="set-lab">
+                <b>Fin de journée</b>
+                <span id="breakEndInfo" class="set-note"></span>
+              </span>
+              <span class="set-ctl"><input type="checkbox" id="setBreakDayEnd" class="sw"></span>
+            </label>
+
+            <div class="set-row stack">
+              <span class="set-lab">
+                <b>Mes rappels</b>
+                <span>Sans date, le rappel vaut <strong>tous les jours travaillés</strong> (une pause café).
+                  Avec une date, ce jour-là seulement (une réunion).</span>
+              </span>
+            </div>
+            <div class="ov-list" id="breakList"></div>
+            <div class="ov-editor">
+              <div class="brk-add">
+                <div class="field">
+                  <label for="breakLabel">Intitulé</label>
+                  <input type="text" id="breakLabel" maxlength="60" placeholder="Pause café">
+                </div>
+                <div class="field">
+                  <label for="breakTime">Heure</label>
+                  <input type="time" id="breakTime">
+                </div>
+                <div class="field">
+                  <label for="breakDate">Date <span class="field-optional">facultative</span></label>
+                  <input type="date" id="breakDate">
+                </div>
+              </div>
+              <div class="ov-actions">
+                <button class="btn primary" id="breakAdd">Ajouter ce rappel</button>
+              </div>
+            </div>
+
+            <div class="set-row">
+              <span class="set-lab"><b>Notifications</b><span id="remindInfo" class="set-note"></span></span>
+              <span class="set-ctl">
+                <button class="btn" id="remindAsk">Autoriser</button>
+                <button class="btn" id="remindTest">Tester</button>
+              </span>
             </div>
           </section>
 

@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -89,7 +89,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // (demande une permission). Les deux nombres portent le nom de la règle — 20
   // et 20 — mais restent réglables : une règle qu'on ne peut pas adapter à sa
   // fatigue est une règle qu'on coupe.
-  eyeBreak: { enabled: false, minutes: 20, restSeconds: 20 },
+  // `sound` / `volume` : un bip de synthèse (aucun fichier, cf. ui/Chime.js) au
+  // début ET à la fin du repos. C'est le seul canal qui marche quand on ne
+  // regarde PAS l'écran — ce qui est précisément ce qu'on demande à l'oreille
+  // pendant les vingt secondes. Coupé par défaut : un son qu'on n'a pas
+  // demandé est une nuisance.
+  eyeBreak: { enabled: false, minutes: 20, restSeconds: 20, sound: false, volume: 0.5 },
+  // Rappels de la journée. `lunch` et `dayEnd` n'ont PAS d'heure : elles se
+  // déduisent des horaires résolus du jour (`Settings.blocksFor`) — la pause
+  // déjeuner est le trou entre deux créneaux, la fin de journée la fin du
+  // dernier. Ressaisir ces heures, c'est se garantir de les désynchroniser.
+  // `breaks` : les rappels qu'on pose soi-même. `date` nulle = tous les jours
+  // travaillés ; `date` renseignée = ce jour-là seulement (une réunion).
+  reminders: { lunch: false, dayEnd: false, breaks: [] },
 });
 
 /** Bornes de la période du rappel « repos des yeux », en minutes. */
@@ -98,6 +110,11 @@ export const EYE_BREAK_MAX = 240;
 /** Bornes de la durée du repos lui-même, en secondes. */
 export const EYE_REST_MIN = 5;
 export const EYE_REST_MAX = 300;
+
+/** Longueur maximale du libellé d'un rappel (une ligne de notification). */
+export const REMINDER_LABEL_MAX = 60;
+/** Nombre maximal de rappels enregistrés — garde-fou, pas une ambition. */
+export const REMINDER_MAX = 24;
 
 /**
  * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au

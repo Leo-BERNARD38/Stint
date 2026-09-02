@@ -380,6 +380,24 @@
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
+/* Repères des rappels de la journée (déjeuner, fin de journée, pauses posées à
+   la main). Un filet EN ENCRE, jamais en minium : le tampon ne désigne que
+   « maintenant », et un repère de 10 h n'exige rien. Posés entre la bande
+   déjeuner (5) et le repère « maintenant » (6) : ils passent au-dessus du voile
+   de midi, jamais au-dessus de l'heure qu'il est. L'étiquette est en bas de
+   piste — en haut, elle disputerait sa place à la pastille de l'heure et au mot
+   « pause ». */
+.tl-mark { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--mark-line); pointer-events: none; z-index: 5; }
+/* L'étiquette est calée par son BORD GAUCHE sur le filet, jamais centrée
+   dessus : centrée, une pastille de 120 px annonce sa position à 60 px près,
+   et sur une piste où le pixel vaut la demi-minute c'est une demi-heure de
+   flou. Le bord de la pastille EST l'instant. Elle se retourne près du bord
+   droit, où elle sortirait de la piste (`overflow: hidden`). */
+.tl-mark b { position: absolute; bottom: 3px; left: 3px;
+  font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 1px 6px;
+  border-radius: var(--radius-pill); background: var(--surface); color: var(--text-soft);
+  white-space: nowrap; max-width: 128px; overflow: hidden; text-overflow: ellipsis; }
+.tl-mark.at-end b { left: auto; right: 3px; }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--stop); pointer-events: none; z-index: 6; }
 .tl-now b { position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
   font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 1px 6px;
@@ -778,6 +796,16 @@ label.set-row { cursor: pointer; }
 .set-lab strong { color: var(--text); font-weight: 600; }
 .set-ctl { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
 .set-row.is-danger .set-lab b { color: var(--stop-ink); }
+/* Une ligne qui ne porte pas de contrôle mais titre le bloc qui la suit (la
+   liste des rappels) : elle prend toute la largeur et rend le filet au bloc. */
+.set-row.stack { grid-template-columns: 1fr; border-bottom: none; padding-bottom: 8px; }
+/* Curseur de volume : la même encre que les autres contrôles, aucune teinte
+   de plus (« un accent, un tampon »). */
+.range { width: 148px; max-width: 100%; accent-color: var(--accent); cursor: pointer; }
+.range:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); border-radius: var(--radius-pill); }
+/* Saisie d'un rappel : trois champs qui se replient d'eux-mêmes en colonne. */
+.brk-add { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--sp-3); }
+@media (max-width: 620px) { .brk-add { grid-template-columns: 1fr; } }
 @media (max-width: 620px) {
   .set-row { grid-template-columns: 1fr; gap: var(--sp-3); }
   .set-ctl { justify-content: flex-start; }
@@ -925,6 +953,13 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .ov-name { font-weight: 600; text-transform: capitalize; min-width: 96px; }
 .ov-sum { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; flex: 1; }
 .ov-sum.off { color: var(--text-faint); font-style: italic; }
+/* Un rappel porte un intitulé SAISI : on n'y touche pas. La capitale initiale
+   de `.ov-name` vaut pour un jour de semaine (« lundi » → « Lundi »), pas pour
+   « Pause café », qu'elle rendrait en « Pause Café ». Et une ligne de rappel
+   n'est pas cliquable : elle n'ouvre aucun éditeur, seule la croix agit. */
+.ov-item.brk { cursor: default; }
+.ov-item.brk:hover { background: var(--surface-2); }
+.ov-item.brk .ov-name { text-transform: none; }
 .ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 .ov-rm:hover { background: var(--surface-2); color: var(--stop-ink); }
 .ov-empty { color: var(--text-faint); font-size: 13.5px; padding: 2px; margin-bottom: var(--sp-3); }

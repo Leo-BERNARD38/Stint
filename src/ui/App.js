@@ -4,6 +4,7 @@ import { TimeCalculator } from "../services/TimeCalculator.js";
 import { Formatter } from "../services/Formatter.js";
 import { StatsAggregator } from "../services/StatsAggregator.js";
 import { DataTransfer } from "../services/DataTransfer.js";
+import { Notifier } from "../services/Notifier.js";
 import { Timer } from "./Timer.js";
 
 import { HeaderView } from "./views/HeaderView.js";
@@ -35,6 +36,8 @@ import { Toast } from "./components/Toast.js";
 import { DayGlyphAnimator } from "./DayGlyphAnimator.js";
 import { BgDots } from "./BgDots.js";
 import { EyeBreak } from "./EyeBreak.js";
+import { Chime } from "./Chime.js";
+import { Reminders } from "./Reminders.js";
 
 import { el, qsa } from "../utils/dom.js";
 import { renderStaticIcons } from "./icons.js";
@@ -63,6 +66,10 @@ export class App {
     this.statsPeriod = "3m"; // fenêtre de l'onglet Stats (état d'UI, comme viewDay)
 
     this.toast = new Toast();
+    // Le Notifier a besoin du toast (son dernier recours) : il vient donc après.
+    this.notifier = new Notifier(this.toast);  // notifications système, repli toast
+    this.chime = new Chime(this);              // bip du repos (synthèse, aucun fichier audio)
+    this.reminders = new Reminders(this);      // déjeuner, fin de journée, pauses posées à la main
     this.modals = {
       newTask: new NewTaskModal(this),
       resume: new ResumeModal(this),
@@ -129,6 +136,7 @@ export class App {
     this.dayGlyphAnimator.start(); // anime le glyphe « moment de la journée »
     this.bgDots.start();           // câble le suivi du curseur (inactif tant que coupé)
     this.eyeBreak.start();         // surveille le chrono (inactif tant que le rappel est coupé)
+    this.reminders.start();        // boucle propre : les rappels du jour tombent chrono à l'arrêt
   }
 
   /**
@@ -339,6 +347,11 @@ export class App {
   }
 
   #bindLifecycle() {
+    // Premier geste de la session : les navigateurs refusent de démarrer un
+    // AudioContext sans lui. On le débloque une fois pour toutes, sur n'importe
+    // quel clic — pas sur l'interrupteur du son, qui pourrait n'être touché
+    // qu'une seule fois, un jour, dans les réglages.
+    document.addEventListener("pointerdown", () => this.chime.unlock(), { once: true });
     // Recalcul à la reprise (PC en veille, onglet rouvert) : durées dérivées des timestamps.
     window.addEventListener("focus", () => this.render());
     document.addEventListener("visibilitychange", () => { if (!document.hidden) this.render(); });

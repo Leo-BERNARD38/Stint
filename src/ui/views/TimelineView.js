@@ -1,4 +1,4 @@
-import { el, createEl } from "../../utils/dom.js";
+import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { DAY_MS } from "../../core/constants.js";
 import { startOfDay, sameDay, fmtClock, pad2 } from "../../utils/datetime.js";
 import { attachTimelineTip } from "../components/TimelineTip.js";
@@ -151,7 +151,32 @@ export class TimelineView {
       }));
     }
 
-    // 5) repère « maintenant »
+    // 5) rappels de la journée (déjeuner, fin de journée, pauses posées à la
+    //    main) : des REPÈRES, pas des coupures — rien n'a été retranché du temps
+    //    ouvré, sans quoi une pause café deviendrait un trou à combler. En encre,
+    //    jamais en minium : le tampon ne désigne que « maintenant ».
+    //    L'étiquette est en bas de piste, où ni la pastille de l'heure (en haut)
+    //    ni le mot « pause » de la bande déjeuner ne viennent la disputer.
+    const markGap = (46 / (this.timeline.clientWidth || 600)) * 100;
+    let lastMarkPct = -Infinity;
+    for (const occ of this.app.reminders.occurrencesFor(viewDay)) {
+      if (occ.at < win.start || occ.at > win.end) continue;
+      const p = pct(occ.at);
+      // Deux étiquettes trop proches se chevauchent : on garde les deux filets
+      // (l'information de position est juste), on lâche la seconde étiquette.
+      const labelled = p - lastMarkPct >= markGap;
+      if (labelled) lastMarkPct = p;
+      // Près du bord droit l'étiquette sortirait de la piste : elle se retourne
+      // et pousse à gauche du filet, qui reste à sa place exacte.
+      const edge = p > 100 - markGap ? " at-end" : "";
+      this.timeline.appendChild(createEl("div", {
+        className: "tl-mark" + edge,
+        html: labelled ? `<b>${escapeHtml(occ.label)}</b>` : "",
+        attrs: { title: `${occ.label} · ${fmtClock(new Date(occ.at))}`, style: `left:${p}%` },
+      }));
+    }
+
+    // 6) repère « maintenant »
     const now = Date.now();
     if (sameDay(viewDay, new Date()) && now >= win.start && now <= win.end) {
       // La piste est en `overflow:hidden` : près des bords, la pastille d'heure

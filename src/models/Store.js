@@ -71,6 +71,10 @@ export class Store extends EventEmitter {
    * additif, valeurs par défaut fournies par `Settings`, aucune transformation ici.
    * v8 → v9 : ajout de `eyeBreak.restSeconds` (durée du repos) — purement additif,
    * valeur par défaut (20 s, la règle) fournie par `Settings`, rien à faire ici.
+   * v9 → v10 : ajout de `eyeBreak.sound`/`eyeBreak.volume` (bip du repos) et de
+   * `reminders` (pauses planifiées : déjeuner, fin de journée, rappels posés à
+   * la main) — purement additif, valeurs par défaut fournies par `Settings`,
+   * aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};

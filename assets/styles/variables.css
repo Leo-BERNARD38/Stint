@@ -91,6 +91,10 @@
   --lunch-overlay: color-mix(in srgb, var(--text) 7%, transparent);   /* pause déjeuner : un voile, pas un trou */
   --rule-hour: color-mix(in srgb, var(--text) 12%, transparent);      /* graduation horaire fine */
   --rule-hour-maj: color-mix(in srgb, var(--text) 24%, transparent);  /* toutes les 2 h */
+  /* Repère d'un rappel de la journée : plus marqué que la graduation (il porte
+     une information, pas une échelle), mais en encre — le minium reste au seul
+     repère « maintenant ». */
+  --mark-line: color-mix(in srgb, var(--text) 42%, transparent);
   --grip: light-dark(rgba(19, 26, 32, .5), rgba(19, 18, 17, .55));    /* poignée (lisible sur toute couleur de segment) */
   --grip-strong: light-dark(rgba(19, 26, 32, .82), rgba(19, 18, 17, .9));
   /* Le manque, partout : une trame hachurée à 45°. Un trou dans le registre

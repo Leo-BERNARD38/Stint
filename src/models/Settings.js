@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
-         EYE_REST_MIN, EYE_REST_MAX } from "../core/constants.js";
+         EYE_REST_MIN, EYE_REST_MAX, REMINDER_LABEL_MAX, REMINDER_MAX } from "../core/constants.js";
 import { isoDow, fmtDateInput, toMin } from "../utils/datetime.js";
 
 /** Copie défensive d'une map d'horaires { clé: [[start,end], …] }. */
@@ -23,6 +23,34 @@ export function clampEyeRest(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.restSeconds;
   return Math.min(EYE_REST_MAX, Math.max(EYE_REST_MIN, n));
+}
+
+/** Volume du bip, ramené dans [0, 1]. */
+export function clampVolume(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.volume;
+  return Math.min(1, Math.max(0, n));
+}
+
+/**
+ * Normalise un rappel saisi. Renvoie `null` si l'entrée n'en est pas un : sans
+ * heure valide il n'y a rien à déclencher, et un rappel muet dans la liste est
+ * pire qu'une saisie refusée.
+ */
+export function normalizeBreak(entry) {
+  if (!entry) return null;
+  const time = String(entry.time || "").trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  const label = String(entry.label || "").trim().slice(0, REMINDER_LABEL_MAX) || "Pause";
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(entry.date || "")) ? entry.date : null;
+  const id = String(entry.id || "").trim() || "r_" + Math.random().toString(36).slice(2, 10);
+  return { id, label, time, date };
+}
+
+/** Copie défensive d'une liste de rappels (entrées invalides écartées). */
+function cloneBreaks(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map(normalizeBreak).filter(Boolean).slice(0, REMINDER_MAX);
 }
 
 /**
@@ -60,6 +88,13 @@ export class Settings {
       enabled: data.eyeBreak?.enabled ?? d.eyeBreak.enabled,
       minutes: clampEyeMinutes(data.eyeBreak?.minutes ?? d.eyeBreak.minutes),
       restSeconds: clampEyeRest(data.eyeBreak?.restSeconds ?? d.eyeBreak.restSeconds),
+      sound: data.eyeBreak?.sound ?? d.eyeBreak.sound,
+      volume: clampVolume(data.eyeBreak?.volume ?? d.eyeBreak.volume),
+    };
+    this.reminders = {
+      lunch: data.reminders?.lunch ?? d.reminders.lunch,
+      dayEnd: data.reminders?.dayEnd ?? d.reminders.dayEnd,
+      breaks: cloneBreaks(data.reminders?.breaks),
     };
   }
 
@@ -71,6 +106,29 @@ export class Settings {
   /** Durée du repos lui-même, en millisecondes. */
   eyeRestMs() {
     return clampEyeRest(this.eyeBreak.restSeconds) * 1000;
+  }
+
+  /** Volume du bip, dans [0, 1]. */
+  eyeVolume() {
+    return clampVolume(this.eyeBreak.volume);
+  }
+
+  /**
+   * Ajoute un rappel. Renvoie l'entrée normalisée, ou `null` si la saisie était
+   * inexploitable (heure absente ou hors format) ou la liste pleine.
+   */
+  addBreak(entry) {
+    if (this.reminders.breaks.length >= REMINDER_MAX) return null;
+    const item = normalizeBreak(entry);
+    if (!item) return null;
+    this.reminders.breaks.push(item);
+    this.reminders.breaks.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    return item;
+  }
+
+  /** Retire un rappel par son identifiant. */
+  removeBreak(id) {
+    this.reminders.breaks = this.reminders.breaks.filter((b) => b.id !== id);
   }
 
   /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */
@@ -155,6 +213,11 @@ export class Settings {
       roundedDay: this.roundedDay,
       bgDots: this.bgDots,
       eyeBreak: { ...this.eyeBreak },
+      reminders: {
+        lunch: this.reminders.lunch,
+        dayEnd: this.reminders.dayEnd,
+        breaks: this.reminders.breaks.map((b) => ({ ...b })),
+      },
     };
   }
 }

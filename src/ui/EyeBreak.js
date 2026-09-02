@@ -15,9 +15,15 @@
  *     onglet gelé), on ne notifie pas : personne n'était devant l'écran. On
  *     réarme simplement à partir de maintenant.
  *
- * Notification : `registration.showNotification` quand un service worker
- * contrôle la page (seule voie sur Android/PWA), sinon `new Notification`.
- * Sans permission accordée, repli sur le toast interne — jamais de silence.
+ * Notification : déléguée à `services/Notifier.js` (service worker si la page
+ * en a un, `new Notification` sinon, toast en dernier recours — jamais de
+ * silence).
+ *
+ * Le repos a DEUX bords, et les deux se signalent. La fin en particulier :
+ * pendant les vingt secondes on regarde à six mètres, donc ni le bandeau ni la
+ * notification de début ne disent quand c'est terminé — il fallait compter dans
+ * sa tête. D'où `#checkRestEnd()`, et d'où le bip (`ui/Chime.js`), qui est le
+ * seul canal utilisable les yeux ailleurs.
  *
  * Le module tient aussi l'ÉTAT que l'interface affiche (bandeau du héros, cf.
  * `HeroView`) : temps restant avant le prochain repos, durée d'écran continu, et
@@ -31,6 +37,8 @@
 export class EyeBreak {
   /** Titre et corps de la notification (règle 20-20-20). */
   static TITLE = "Repos des yeux";
+  static TITLE_END = "Repos terminé";
+  /** Un seul tag : la notification de fin REMPLACE celle de début, elle ne s'empile pas. */
   static TAG = "stint-eye-break";
   /** Deux segments séparés de moins de cela sont le MÊME temps d'écran : les
    *  horodatages sont à la seconde, et un changement de tâche ferme l'un et
@@ -116,18 +124,21 @@ export class EyeBreak {
     this.restUntil = now + rest;
     this.deadline = now + rest + this.app.store.settings.eyeBreakMs();
     if (notify) this.notify();
+    // Le bip sonne aussi au clic : il confirme le geste, et surtout il apprend
+    // à l'oreille le timbre « ça commence » avant qu'on en ait besoin.
+    this.app.chime?.play("start");
     // Le bandeau bascule tout de suite : sa propre horloge est celle du héros
     // (1 s), et attendre son prochain battement ferait démarrer le décompte à 19.
     this.app.hero?.tick?.();
   }
 
   get supported() {
-    return typeof window !== "undefined" && "Notification" in window;
+    return this.app.notifier.supported;
   }
 
   /** "granted" | "denied" | "default" | "unsupported". */
   get permission() {
-    return this.supported ? Notification.permission : "unsupported";
+    return this.app.notifier.permission;
   }
 
   /** Démarre la boucle de surveillance (une seule fois, au démarrage de l'app). */
@@ -198,16 +209,12 @@ export class EyeBreak {
    * (Le navigateur exige un geste utilisateur : appelé depuis l'interrupteur.)
    */
   async ensurePermission() {
-    if (!this.supported || Notification.permission !== "default") return this.permission;
-    try {
-      return await Notification.requestPermission();
-    } catch {
-      return this.permission;
-    }
+    return this.app.notifier.ensurePermission();
   }
 
-  /** Un pas de la boucle : déclenche le repos si l'échéance est atteinte. */
+  /** Un pas de la boucle : achève le repos échu, puis déclenche le suivant. */
   tick() {
+    this.#checkRestEnd();   // AVANT le retour anticipé : la fin du repos se dit toujours
     if (!this.deadline) return;
     const now = Date.now();
     if (now < this.deadline) return;
@@ -221,30 +228,46 @@ export class EyeBreak {
     this.startRest({ notify: true });
   }
 
+  /**
+   * La fin du repos, transformée en ÉVÈNEMENT. Elle n'en était pas un : `resting`
+   * est un simple `restUntil > now` qui devenait faux tout seul, donc personne
+   * n'était prévenu — or c'est précisément l'instant où l'on ne regarde pas
+   * l'écran. Un rappel qui ne dit pas quand il s'arrête oblige à compter dans sa
+   * tête, ce qui est l'inverse d'un rappel.
+   *
+   * Les deux cas où l'on NE sonne PAS tombent tout seuls, sans code en plus :
+   * `toggleRest()` (fin au clic) et `sync()` (chrono arrêté) remettent
+   * `restUntil` à 0 avant qu'on passe ici. Dans les deux cas on est devant
+   * l'écran, ou il n'y a plus de repos à terminer.
+   */
+  #checkRestEnd() {
+    if (!this.restUntil) return;
+    const now = Date.now();
+    if (now < this.restUntil) return;
+    const late = now - this.restUntil;
+    this.restUntil = 0;
+    // Veille / onglet gelé : le repos s'est « terminé » il y a un quart d'heure,
+    // personne ne l'a vécu. On solde sans sonner dans le vide.
+    if (late > 60_000) return;
+    this.notifyEnd();
+    this.app.chime?.play("end");
+    // Le bandeau rebascule tout de suite : attendre le prochain battement du
+    // héros laisserait « 0 » affiché une seconde de plus.
+    this.app.hero?.tick?.();
+  }
+
   /** Le corps de la notification, qui dit la durée réellement réglée. */
   body() {
     return `Regardez à 6 mètres pendant ${Math.round(this.restMs() / 1000)} secondes.`;
   }
 
-  /** Notification système si possible, toast sinon. */
-  async notify() {
-    const body = this.body();
-    if (this.permission === "granted") {
-      const options = {
-        body,
-        tag: EyeBreak.TAG,       // un seul rappel à l'écran : le suivant remplace le précédent
-        renotify: true,
-        icon: "./assets/icon-192.png",
-        badge: "./assets/icon-192.png",
-        silent: false,
-      };
-      try {
-        const reg = await navigator.serviceWorker?.getRegistration();
-        if (reg?.showNotification) { await reg.showNotification(EyeBreak.TITLE, options); return; }
-        new Notification(EyeBreak.TITLE, options);
-        return;
-      } catch { /* repli ci-dessous */ }
-    }
-    this.app.toast.show(EyeBreak.TITLE + " — " + body);
+  /** « C'est l'heure » — notification système si possible, toast sinon. */
+  notify() {
+    return this.app.notifier.send(EyeBreak.TITLE, this.body(), EyeBreak.TAG);
+  }
+
+  /** « C'est fini » — même tag : elle remplace celle de début à l'écran. */
+  notifyEnd() {
+    return this.app.notifier.send(EyeBreak.TITLE_END, "Vous pouvez reprendre.", EyeBreak.TAG);
   }
 }

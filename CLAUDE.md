@@ -121,11 +121,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v9)
+## 4. Modèle de données (schéma v10)
 
 ```jsonc
 {
-  "version": 9,
+  "version": 10,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -137,8 +137,15 @@ SettingsView, StorageView, ToolsView`.
     "rounding": "none",                                // none|1m|5m|15m|30m|1h
     "roundedDay": false,                               // vue arrondie de la journée (v7)
     "bgDots": false,                                   // fond réactif au curseur (v5)
-    // rappel 20-20-20 (v8) ; `restSeconds` = durée du repos (v9)
-    "eyeBreak": { "enabled": false, "minutes": 20, "restSeconds": 20 }
+    // rappel 20-20-20 (v8) ; `restSeconds` = durée du repos (v9) ;
+    // `sound`/`volume` = le bip de synthèse aux deux bords du repos (v10)
+    "eyeBreak": { "enabled": false, "minutes": 20, "restSeconds": 20,
+                  "sound": false, "volume": 0.5 },
+    // rappels de la journée (v10). `lunch`/`dayEnd` n'ont PAS d'heure : elles se
+    // déduisent des horaires résolus du jour (§14).
+    "reminders": { "lunch": false, "dayEnd": false,
+                   "breaks": [{ "id": "r_…", "label": "Pause café",
+                                "time": "10:00", "date": null }] }
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
@@ -460,8 +467,26 @@ déduit des segments et de l'horloge murale.
   Le sens n'est pas décoratif : un balayage qui **assombrirait** le fond ferait
   passer le texte sous 4,5:1 (3,6:1 dès 20 % de minium en plus), là où en
   s'éclaircissant le bandeau ne fait que gagner en lisibilité.
-- **Deux canaux du même évènement** : la notification système (qui se rate) et le
-  bandeau (qui ne se rate pas). Le bandeau est la source de vérité visuelle.
+- **Le repos a DEUX bords, et les deux se signalent.** La fin n'était aucun
+  évènement : `resting` est un `restUntil > now` qui devenait faux tout seul, donc
+  personne n'était prévenu — or c'est précisément l'instant où l'on ne regarde pas
+  l'écran, et il fallait compter dans sa tête. `EyeBreak.#checkRestEnd()` en fait
+  une transition explicite, appelée **avant** le retour anticipé de `tick()`.
+  Les deux cas où l'on ne sonne PAS tombent sans code en plus : `toggleRest()`
+  (fin au clic) et `sync()` (chrono arrêté) remettent `restUntil` à 0 avant qu'on
+  y passe. La notification de fin porte le **même tag** que celle de début : elle
+  la remplace au lieu de s'empiler.
+- **Trois canaux du même évènement** : la notification système (qui se rate), le
+  bandeau (qui ne se rate pas… quand on le regarde) et le **bip**
+  (`ui/Chime.js`), seul canal utilisable les yeux ailleurs. Le bandeau reste la
+  source de vérité visuelle.
+- **Le bip est de la synthèse, pas un fichier** : deux oscillateurs sinus, aucune
+  dépendance, rien de plus à précacher. Deux timbres qui doivent se distinguer
+  **sans le secours des yeux** : l'appel monte (660 → 880 Hz), la fin descend
+  (880 → 660 Hz). Coupé par défaut, volume réglable, plafonné à 0,25 de gain.
+  L'`AudioContext` ne démarre que sur un geste utilisateur : `App` le débloque au
+  premier `pointerdown` du document, et `Chime.play()` se tait en silence tant
+  que rien n'a été touché — le son n'a jamais le droit de casser le rendu.
 - **Le bandeau ne disparaît jamais tant que le rappel est activé** : chrono à
   l'arrêt (pause, journée pas commencée), il reste en place, **grisé et inerte**
   (`.idle` + `disabled`). Il disparaissait à la pause et toute la carte sautait —
@@ -476,3 +501,43 @@ déduit des segments et de l'horloge murale.
   rappel suivant d'une période pleine, mais en ayant fait la pause.
 - Testé dans `checks/domaine.mjs` avec un faux `app` (le module ne touche au DOM
   que par `app.hero?.tick?.()`).
+
+## 14. Pauses & rappels de la journée
+
+`ui/Reminders.js` porte **l'état et la boucle**, `TimelineView` les **dessine**,
+`SettingsView` les **règle**. Comme le repos des yeux, rien n'est persisté au-delà
+du réglage : les échéances déjà tirées vivent en mémoire, le temps d'une journée.
+
+- **Midi et la fin de journée ne se saisissent pas, ils se déduisent.**
+  `Settings.blocksFor` connaît déjà les horaires résolus (date > jour de semaine >
+  base) : la pause déjeuner **est** le trou entre deux créneaux
+  (`ranges[0][1]`), la fin de journée **est** la fin du dernier
+  (`ranges.at(-1)[1]`). Ne pas les redemander — `lunchStart`/`departure` ne servent
+  qu'à fabriquer les créneaux de base et sont **ignorés** dès qu'une exception
+  s'applique ; deux sources pour une même heure finissent toujours par diverger.
+- **Un rappel est un repère, pas une coupure.** `workRangesForDay`, `gapsForDay`,
+  `workedMs`, `plannedMsForDay` ne sont pas touchés. Retrancher une pause café du
+  temps ouvré la transformerait mécaniquement en « trou » (≥ 5 min) à combler
+  dans la timeline, ce qui n'a aucun sens.
+- **`occurrencesFor(date)` est pure** — aucun DOM, aucun effet. C'est elle que
+  lisent la timeline, les réglages et la boucle : une seule définition de « ce
+  qui se passe ce jour-là », donc pas de dérive entre ce qu'on voit et ce qui
+  sonne. Une pause **sans date** vaut les jours travaillés (`ranges` non vide) ;
+  **avec** une date, ce jour-là seulement (une réunion).
+- **Sa propre boucle d'une seconde, et c'est obligatoire.** `App.#onTick()` sort
+  immédiatement si l'onglet est caché **ou si aucun chrono ne tourne** — or
+  « fin de journée » doit précisément tomber quand plus rien ne tourne.
+- **Garde-fou veille** : une échéance dépassée de plus de 5 min est **soldée sans
+  notifier**, et `start()` adopte de la même façon tout le passé du jour. Ouvrir
+  Stint à 15 h ne rejoue pas la pause de 10 h.
+- **Le repère de timeline est en encre, jamais en minium** : le tampon ne désigne
+  que « maintenant ». Son étiquette est calée par son **bord gauche** sur le
+  filet, jamais centrée dessus — centrée, une pastille de 120 px annoncerait sa
+  position à 60 px près, soit une demi-heure de flou sur une piste où le pixel
+  vaut la demi-minute (même faute que le padding de `.tl-seg`, cf. §11).
+- `.ov-item.brk` **annule le `text-transform: capitalize`** de `.ov-name` : la
+  capitale initiale vaut pour un jour de semaine (« lundi » → « Lundi »), pas
+  pour un intitulé saisi, qu'elle rendrait en « Pause Café ».
+- Les notifications passent par `services/Notifier.js`, partagé avec le repos des
+  yeux : un seul endroit connaît la permission, les deux voies d'émission
+  (service worker puis `new Notification`) et le repli sur le toast.
