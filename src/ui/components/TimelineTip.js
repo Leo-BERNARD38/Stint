@@ -9,8 +9,8 @@ import { createEl, escapeHtml } from "../../utils/dom.js";
  * chaque rendu). `parent` est le conteneur de positionnement qui reçoit le tip ;
  * `top` (optionnel) fixe l'ordonnée, sinon le tip s'aligne sur le bloc survolé ;
  * `selector` désigne les marques survolables — les blocs de Stats (colonnes du
- * graphique, pastilles du rythme) portent les mêmes `data-*` sans être des
- * segments de timeline.
+ * graphique, pastilles du rythme) et les repères de rappel portent les mêmes
+ * `data-*` sans être des segments de timeline.
  *
  * @returns {{ mount: () => void }} `mount()` ré-insère le tip — à rappeler
  *   après un rendu qui vide `parent` (le tip est détruit avec son contenu).
@@ -29,10 +29,17 @@ export function attachTimelineTip(host, { parent = host, top = null, selector = 
     if (!seg) { hide(); return; }
     if (seg !== current) {
       current = seg;
+      // Une marque sans durée existe : un repère de rappel est un INSTANT, pas
+      // une plage. Le séparateur ne s'écrit donc que s'il sépare quelque chose,
+      // sinon la bulle finit sur un « 10:00 · » qui pend.
+      const dur = seg.dataset.dur || "";
+      // La pastille identifie une tâche PAR SA COULEUR : un repère de rappel n'en
+      // a pas, et une pastille sans couleur ne dit rien — elle disparaît.
+      const color = seg.dataset.color || "";
       tip.innerHTML =
-        `<div class="nm"><span class="dot" style="background:${seg.dataset.color}"></span>` +
+        `<div class="nm">${color ? `<span class="dot" style="background:${color}"></span>` : ""}` +
         `${escapeHtml(seg.dataset.name)}</div>` +
-        `<div class="mt">${escapeHtml(seg.dataset.range)} · ${escapeHtml(seg.dataset.dur)}</div>`;
+        `<div class="mt">${escapeHtml(seg.dataset.range)}${dur ? " · " + escapeHtml(dur) : ""}</div>`;
     }
     tip.classList.add("show");
     const rect = parent.getBoundingClientRect();

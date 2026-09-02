@@ -393,7 +393,11 @@
    et sur une piste où le pixel vaut la demi-minute c'est une demi-heure de
    flou. Le bord de la pastille EST l'instant. Elle se retourne près du bord
    droit, où elle sortirait de la piste (`overflow: hidden`). */
-.tl-mark b { position: absolute; bottom: 3px; left: 3px;
+/* Seule la PASTILLE reçoit le curseur — c'est une vraie cible, et c'est par elle
+   qu'on lit l'heure du repère (infobulle). Le filet d'un pixel reste inerte :
+   survolable, il volerait au segment qu'il traverse une bande cliquable, et un
+   pixel n'est de toute façon pas une cible. */
+.tl-mark b { position: absolute; bottom: 3px; left: 3px; pointer-events: auto; cursor: default;
   font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 1px 6px;
   border-radius: var(--radius-pill); background: var(--surface); color: var(--text-soft);
   white-space: nowrap; max-width: 128px; overflow: hidden; text-overflow: ellipsis; }
@@ -418,6 +422,10 @@
    couvrent toute la journée. */
 .tl-atick { position: absolute; top: 0; width: 1px; height: 3px; background: var(--rule-hour); }
 .tl-atick.maj { height: 6px; background: var(--rule-hour-maj); }
+/* Sur une piste de téléphone, 128 px valent le tiers de la journée : l'étiquette
+   d'un repère cesse d'être une étiquette. Elle se resserre, et l'infobulle
+   garde le nom complet. */
+@media (max-width: 560px) { .tl-mark b { max-width: 84px; } }
 
 /* ---------- Popover de remplissage d'un trou (flottant) ---------- */
 .fill-backdrop { display: none; }
@@ -805,10 +813,10 @@ label.set-row { cursor: pointer; }
 .range:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--ring); border-radius: var(--radius-pill); }
 /* Saisie d'un rappel : trois champs qui se replient d'eux-mêmes en colonne. */
 .brk-add { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--sp-3); }
-@media (max-width: 620px) { .brk-add { grid-template-columns: 1fr; } }
 @media (max-width: 620px) {
   .set-row { grid-template-columns: 1fr; gap: var(--sp-3); }
   .set-ctl { justify-content: flex-start; }
+  .brk-add { grid-template-columns: 1fr; }
 }
 
 /* Saisie de données (heure, nombre) : police de données, fond enfoncé. */
@@ -955,11 +963,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .ov-sum.off { color: var(--text-faint); font-style: italic; }
 /* Un rappel porte un intitulé SAISI : on n'y touche pas. La capitale initiale
    de `.ov-name` vaut pour un jour de semaine (« lundi » → « Lundi »), pas pour
-   « Pause café », qu'elle rendrait en « Pause Café ». Et une ligne de rappel
-   n'est pas cliquable : elle n'ouvre aucun éditeur, seule la croix agit. */
-.ov-item.brk { cursor: default; }
-.ov-item.brk:hover { background: var(--surface-2); }
+   « Pause café », qu'elle rendrait en « Pause Café ». */
 .ov-item.brk .ov-name { text-transform: none; }
+/* La ligne en cours d'édition : on doit voir LAQUELLE des trois on est en train
+   de modifier, sinon le formulaire en dessous parle dans le vide. */
+.ov-item.editing { box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--accent-wash); }
 .ov-rm { margin-left: auto; border: none; background: transparent; color: var(--text-faint); font-size: 18px; line-height: 1; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; flex-shrink: 0; }
 .ov-rm:hover { background: var(--surface-2); color: var(--stop-ink); }
 .ov-empty { color: var(--text-faint); font-size: 13.5px; padding: 2px; margin-bottom: var(--sp-3); }

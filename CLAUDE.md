@@ -530,14 +530,43 @@ du réglage : les échéances déjà tirées vivent en mémoire, le temps d'une 
 - **Garde-fou veille** : une échéance dépassée de plus de 5 min est **soldée sans
   notifier**, et `start()` adopte de la même façon tout le passé du jour. Ouvrir
   Stint à 15 h ne rejoue pas la pause de 10 h.
+- **La clé « déjà tiré » inclut l'HEURE** (`jour|id|at`, cf. `#keyOf`), pas
+  seulement l'identifiant. Sans elle, déplacer une échéance en cours de journée
+  la condamnait : sa clé étant déjà tirée, elle ne sonnait plus. Et le cas n'a
+  rien de théorique — c'est ce qui arrive dès qu'on corrige un rappel, ou qu'on
+  saisit à 11 h une exception d'horaire qui déplace midi.
+- **`addBreak` renvoie une RAISON d'échec** (`"invalid"`, `"duplicate"`,
+  `"full"`), pas `null` : un message unique pour trois causes n'aide personne à
+  se corriger. La vue valide sur une copie **avant** de muter — `updateSettings`
+  commit, persiste et re-rend tout l'écran, il n'y a pas à payer ça pour une
+  saisie refusée. Deux rappels au même instant sont refusés : leurs
+  notifications portent le même tag, la seconde effacerait la première.
+- **La ligne se clique pour être modifiée**, comme toutes les listes `.ov-item`
+  de l'app, et `.editing` (lavis + anneau) dit laquelle — sinon le formulaire en
+  dessous parle dans le vide.
 - **Le repère de timeline est en encre, jamais en minium** : le tampon ne désigne
   que « maintenant ». Son étiquette est calée par son **bord gauche** sur le
   filet, jamais centrée dessus — centrée, une pastille de 120 px annoncerait sa
   position à 60 px près, soit une demi-heure de flou sur une piste où le pixel
   vaut la demi-minute (même faute que le padding de `.tl-seg`, cf. §11).
+- **Seule l'étiquette reçoit le curseur** (`pointer-events` sur `.tl-mark b`, le
+  filet reste inerte) : c'est par elle qu'on lit l'heure, via `attachTimelineTip`
+  et son `selector` — un `title` natif ne s'afficherait jamais sur un élément
+  sans évènements, et c'est le seul recours quand l'étiquette est tronquée ou
+  lâchée pour cause de collision. Rendre le filet survolable volerait au segment
+  qu'il traverse une bande cliquable, pour une cible d'un pixel. `TimelineTip`
+  omet donc le séparateur quand `data-dur` est vide, et la pastille de couleur
+  quand `data-color` l'est : un repère est un instant, et n'appartient à aucune
+  tâche.
 - `.ov-item.brk` **annule le `text-transform: capitalize`** de `.ov-name` : la
   capitale initiale vaut pour un jour de semaine (« lundi » → « Lundi »), pas
   pour un intitulé saisi, qu'elle rendrait en « Pause Café ».
 - Les notifications passent par `services/Notifier.js`, partagé avec le repos des
   yeux : un seul endroit connaît la permission, les deux voies d'émission
   (service worker puis `new Notification`) et le repli sur le toast.
+- **Le Guide en parle** (`g-7`, « Rappels & repos des yeux »). Son sommaire est
+  purement déclaratif — des ancres `#g-N` vers des `.guide-block`, aucun JS :
+  ajouter une section, c'est une entrée dans l'`aside` et un bloc dans
+  `.guide-content`, avec la renumérotation des deux côtés. Le Guide **tutoie**
+  (les réglages vouvoient) ; pour un raccourci, l'élément `<kbd>` est stylé,
+  `class="kbd"` ne l'est pas.

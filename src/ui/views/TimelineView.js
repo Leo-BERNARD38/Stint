@@ -44,7 +44,13 @@ export class TimelineView {
     this.onSegClick = onSegClick || ((segId) => this.app.scrollToSegment(segId));
     this.wrap = this.timeline.closest(".timeline-wrap");
     // Infobulle de survol (partagée, montée dans le wrap : survit aux re-rendus).
-    attachTimelineTip(this.timeline, { parent: this.wrap, top: () => this.timeline.offsetTop });
+    // Les repères de rappel portent le même contrat `data-*` que les segments :
+    // ils entrent donc dans l'infobulle par le `selector`, sans code en double.
+    // C'est le seul endroit où l'on peut lire l'HEURE d'un repère — et le seul
+    // recours quand son étiquette est tronquée ou lâchée pour cause de collision.
+    attachTimelineTip(this.timeline, {
+      parent: this.wrap, top: () => this.timeline.offsetTop, selector: ".tl-seg, .tl-mark",
+    });
     // Infobulle de glisser (distincte du survol) + popover de remplissage.
     this.dragTip = createEl("div", { className: "tl-drag-tip" });
     this.wrap.appendChild(this.dragTip);
@@ -172,7 +178,15 @@ export class TimelineView {
       this.timeline.appendChild(createEl("div", {
         className: "tl-mark" + edge,
         html: labelled ? `<b>${escapeHtml(occ.label)}</b>` : "",
-        attrs: { title: `${occ.label} · ${fmtClock(new Date(occ.at))}`, style: `left:${p}%` },
+        attrs: {
+          style: `left:${p}%`,
+          // Contrat de `TimelineTip` : ni `data-dur` (un repère est un instant)
+          // ni `data-color` (il n'appartient à aucune tâche, la pastille de
+          // couleur ne dirait rien). L'attribut `title` natif, lui, ne marcherait
+          // pas : seule l'étiquette reçoit les évènements, le filet reste inerte.
+          "data-name": occ.label,
+          "data-range": fmtClock(new Date(occ.at)),
+        },
       }));
     }
 

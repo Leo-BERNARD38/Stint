@@ -584,6 +584,7 @@
                 <span class="set-lab"><b>Volume</b><span>Très bas par défaut : c'est un repère, pas une alarme.</span></span>
                 <span class="set-ctl">
                   <input type="range" id="setEyeVolume" class="range" min="0" max="100" step="5" aria-label="Volume du bip">
+                  <span class="prec-sep" id="eyeVolumeVal">50&nbsp;%</span>
                   <button class="btn" id="eyeSoundTest">Écouter</button>
                 </span>
               </div>
@@ -618,7 +619,8 @@
               <span class="set-lab">
                 <b>Mes rappels</b>
                 <span>Sans date, le rappel vaut <strong>tous les jours travaillés</strong> (une pause café).
-                  Avec une date, ce jour-là seulement (une réunion).</span>
+                  Avec une date, ce jour-là seulement (une réunion).
+                  <strong>Cliquez une ligne</strong> pour la modifier.</span>
               </span>
             </div>
             <div class="ov-list" id="breakList"></div>
@@ -638,6 +640,7 @@
                 </div>
               </div>
               <div class="ov-actions">
+                <button class="btn" id="breakCancel" hidden>Annuler</button>
                 <button class="btn primary" id="breakAdd">Ajouter ce rappel</button>
               </div>
             </div>
@@ -729,10 +732,11 @@
           <a href="#g-4"><span class="num">04</span> Onglet Journée</a>
           <a href="#g-5"><span class="num">05</span> Onglet Tâches</a>
           <a href="#g-6"><span class="num">06</span> Onglet Stats</a>
-          <a href="#g-7"><span class="num">07</span> Outils</a>
-          <a href="#g-8"><span class="num">08</span> Copier pour Jira</a>
-          <a href="#g-9"><span class="num">09</span> Sauvegarde</a>
-          <a href="#g-10"><span class="num">10</span> Installer l'app</a>
+          <a href="#g-7"><span class="num">07</span> Rappels &amp; repos des yeux</a>
+          <a href="#g-8"><span class="num">08</span> Outils</a>
+          <a href="#g-9"><span class="num">09</span> Copier pour Jira</a>
+          <a href="#g-10"><span class="num">10</span> Sauvegarde</a>
+          <a href="#g-11"><span class="num">11</span> Installer l'app</a>
         </aside>
 
         <div class="guide-content">
@@ -842,7 +846,52 @@
         </div>
 
         <div class="guide-block" id="g-7">
-          <h3>Outils <span class="kbd">calculatrice</span></h3>
+          <h3>Rappels &amp; repos des yeux</h3>
+          <p>
+            Deux rappels facultatifs, coupés par défaut, qui se règlent dans
+            <b>Réglages</b> — l'un veille sur tes yeux, l'autre sur ta journée. Ni l'un ni
+            l'autre ne touche au décompte : ce sont des repères, pas des coupures.
+          </p>
+          <p>
+            <b>Repos des yeux</b> applique la règle <b>20-20-20</b> : toutes les 20 minutes,
+            regarder 20 secondes quelque chose à ~6 mètres. Il ne tourne que
+            <b>chrono en marche</b> — changer de tâche ne coupe rien, c'est le même temps
+            d'écran ; une pause, si. Un <b>bandeau</b> apparaît alors sous la tâche active :
+            temps d'écran continu, temps restant, puis le décompte du repos. Une baisse de
+            régime avant l'heure ? Un clic sur le bandeau prend le repos tout de suite, un
+            second l'achève. Les deux durées sont réglables.
+          </p>
+          <p>
+            <b>La fin du repos se signale aussi</b>, et c'est le point : pendant ces
+            20 secondes tu regardes à six mètres, donc ni le bandeau ni la notification de
+            début ne peuvent te dire que c'est terminé — il fallait compter dans sa tête.
+            Tu peux aussi activer un <b>petit son</b> : l'appel monte, la fin descend, on
+            les distingue sans rien regarder. Volume réglable. Comme tous les navigateurs
+            l'exigent, le son ne démarre qu'après ton premier clic dans la page.
+          </p>
+          <p>
+            <b>Pauses &amp; rappels</b> te prévient aux moments de la journée :
+          </p>
+          <ul>
+            <li><b>Pause déjeuner</b> et <b>Fin de journée</b> — pas d'heure à saisir, elles
+              se déduisent de tes horaires : midi est le trou entre deux créneaux, la fin de
+              journée la fin du dernier. Elles suivent donc tes exceptions par jour et par
+              date toutes seules.</li>
+            <li><b>Tes rappels</b> — un intitulé et une heure. <b>Sans date</b>, le rappel
+              vaut tous les jours travaillés : c'est la pause café de 10h. <b>Avec une
+              date</b>, il ne sonne que ce jour-là : c'est la réunion de jeudi.</li>
+          </ul>
+          <p>
+            Ils apparaissent en repère sur la <b>timeline</b> de la journée — survole une
+            pastille pour son heure. Ils ne retranchent rien du temps ouvré : une pause café
+            ne doit pas créer du temps non tracé à combler. Pour que les rappels sortent de
+            l'onglet, autorise les <b>notifications</b> quand l'app le propose ; sans elles,
+            ils s'affichent quand même, en bandeau ou en message dans l'onglet Stint.
+          </p>
+        </div>
+
+        <div class="guide-block" id="g-8">
+          <h3>Outils <kbd>calculatrice</kbd></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
             copie en un clic) et un <b>calcul brut / net</b> entre deux dates — le temps réel et le
@@ -850,7 +899,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-8">
+        <div class="guide-block" id="g-9">
           <h3>Copier pour Jira</h3>
           <p>
             Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
@@ -859,7 +908,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-9">
+        <div class="guide-block" id="g-10">
           <h3>Sauvegarde</h3>
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
@@ -874,7 +923,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-10">
+        <div class="guide-block" id="g-11">
           <h3>Installer l'application</h3>
           <p>
             Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,

@@ -32,6 +32,15 @@ export function clampVolume(value) {
   return Math.min(1, Math.max(0, n));
 }
 
+/* Identifiants de rappel : même forme que `Store.#uid` (horodatage en base 36 +
+   séquence), pas de hasard. Le compteur est local au module parce que `Settings`
+   ne peut pas dépendre de `Store` — c'est l'inverse. */
+let breakSeq = 0;
+function breakId() {
+  breakSeq += 1;
+  return "r_" + Date.now().toString(36) + breakSeq.toString(36);
+}
+
 /**
  * Normalise un rappel saisi. Renvoie `null` si l'entrée n'en est pas un : sans
  * heure valide il n'y a rien à déclencher, et un rappel muet dans la liste est
@@ -43,7 +52,7 @@ export function normalizeBreak(entry) {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
   const label = String(entry.label || "").trim().slice(0, REMINDER_LABEL_MAX) || "Pause";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(entry.date || "")) ? entry.date : null;
-  const id = String(entry.id || "").trim() || "r_" + Math.random().toString(36).slice(2, 10);
+  const id = String(entry.id || "").trim() || breakId();
   return { id, label, time, date };
 }
 
@@ -114,14 +123,25 @@ export class Settings {
   }
 
   /**
-   * Ajoute un rappel. Renvoie l'entrée normalisée, ou `null` si la saisie était
-   * inexploitable (heure absente ou hors format) ou la liste pleine.
+   * Ajoute un rappel — ou remplace celui dont on donne l'`id` (édition).
+   *
+   * Renvoie l'entrée normalisée, ou une **raison** d'échec : la vue doit pouvoir
+   * dire laquelle des trois s'est produite. Un message unique pour trois causes
+   * n'aide personne à corriger sa saisie.
+   * @returns {object | "invalid" | "full" | "duplicate"}
    */
   addBreak(entry) {
-    if (this.reminders.breaks.length >= REMINDER_MAX) return null;
     const item = normalizeBreak(entry);
-    if (!item) return null;
-    this.reminders.breaks.push(item);
+    if (!item) return "invalid";
+    const at = this.reminders.breaks.findIndex((b) => b.id === item.id);
+    // Deux rappels au même instant, c'est deux notifications qui se remplacent :
+    // la seconde efface la première, et l'on n'en voit qu'une pour deux lignes.
+    const clash = this.reminders.breaks.some(
+      (b, i) => i !== at && b.time === item.time && b.date === item.date);
+    if (clash) return "duplicate";
+    if (at >= 0) this.reminders.breaks[at] = item;
+    else if (this.reminders.breaks.length >= REMINDER_MAX) return "full";
+    else this.reminders.breaks.push(item);
     this.reminders.breaks.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
     return item;
   }
@@ -129,6 +149,11 @@ export class Settings {
   /** Retire un rappel par son identifiant. */
   removeBreak(id) {
     this.reminders.breaks = this.reminders.breaks.filter((b) => b.id !== id);
+  }
+
+  /** Le rappel d'identifiant donné, ou `null`. */
+  breakById(id) {
+    return this.reminders.breaks.find((b) => b.id === id) || null;
   }
 
   /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */

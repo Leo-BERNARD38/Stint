@@ -38,8 +38,20 @@ export class Reminders {
   constructor(app) {
     this.app = app;
     this.handle = null;
-    this.fired = new Set();  // clés "YYYY-MM-DD|id" déjà déclenchées
+    this.fired = new Set();  // clés déjà déclenchées (cf. #keyOf)
     this.day = "";           // jour couvert par `fired`
+  }
+
+  /**
+   * La clé d'une échéance inclut son HEURE, pas seulement son identifiant.
+   *
+   * Sans l'heure, déplacer une échéance en cours de journée la condamnait : le
+   * rappel de 10:00 avancé à 16:00 ne sonnait plus, sa clé étant déjà tirée. Et
+   * le cas n'a rien de théorique — c'est ce qui arrive dès qu'on corrige un
+   * rappel, ou qu'on saisit à 11 h une exception d'horaire qui déplace midi.
+   */
+  #keyOf(dayKey, occ) {
+    return dayKey + "|" + occ.id + "|" + occ.at;
   }
 
   /** Démarre la boucle (une seule fois, au démarrage de l'app). */
@@ -91,7 +103,7 @@ export class Reminders {
     if (key !== this.day) this.#reset(key, now);
 
     for (const occ of this.occurrencesFor(today)) {
-      const k = key + "|" + occ.id;
+      const k = this.#keyOf(key, occ);
       if (this.fired.has(k)) continue;
       if (now < occ.at) continue;
       this.fired.add(k);
@@ -105,7 +117,7 @@ export class Reminders {
     this.day = key;
     this.fired = new Set();
     for (const occ of this.occurrencesFor(new Date(now))) {
-      if (occ.at <= now) this.fired.add(key + "|" + occ.id);
+      if (occ.at <= now) this.fired.add(this.#keyOf(key, occ));
     }
   }
 
@@ -114,8 +126,14 @@ export class Reminders {
     return this.app.notifier.send(occ.label, "Il est " + fmtClock(new Date(occ.at)) + ".", Reminders.TAG);
   }
 
-  /** Bouton « Tester » des réglages. */
+  /**
+   * Bouton « Tester » des réglages : on montre un rappel RÉEL du jour quand il y
+   * en a un. Un essai qui annonce « Pause café » à quelqu'un qui n'en a pas
+   * n'éprouve rien — il fait douter de ce qu'on vient de régler.
+   */
   test() {
-    return this.app.notifier.send("Pause café", "Il est " + fmtClock(new Date()) + ".", Reminders.TAG);
+    const occ = this.occurrencesFor(new Date())[0];
+    const label = occ ? occ.label : "Rappel Stint";
+    return this.app.notifier.send(label, "Il est " + fmtClock(new Date()) + ".", Reminders.TAG);
   }
 }

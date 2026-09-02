@@ -1,7 +1,7 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
 import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock } from "../../utils/datetime.js";
-import { clampEyeMinutes, clampEyeRest, clampVolume } from "../../models/Settings.js";
+import { Settings, clampEyeMinutes, clampEyeRest, clampVolume } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -22,6 +22,9 @@ export class SettingsView {
     this.anchor = el("settingsScreen");
     this.wdayEditor = createScheduleEditor();
     this.dateEditor = createScheduleEditor();
+    /* Rappel en cours de modification (son id), ou null en mode ajout. C'est le
+       seul état d'UI de cette vue — le reste se relit toujours dans le Store. */
+    this.editingBreak = null;
   }
 
   get settings() { return this.app.store.settings; }
@@ -82,9 +85,12 @@ export class SettingsView {
     });
     // Au relâchement seulement : un bip par pixel de curseur serait insupportable.
     el("setEyeVolume").addEventListener("change", () => this.app.chime.preview("start"));
+    // On règle DEUX timbres : le bouton doit les faire entendre tous les deux,
+    // sinon on choisit son volume sur la moitié de ce qu'on va entendre.
     el("eyeSoundTest").addEventListener("click", () => {
       this.app.chime.unlock();
-      this.app.chime.preview("end");
+      this.app.chime.preview("start");
+      setTimeout(() => this.app.chime.preview("end"), 700);
     });
 
     // --- pauses & rappels de la journée ---
@@ -98,18 +104,26 @@ export class SettingsView {
       if (on) await this.app.notifier.ensurePermission();
       store.updateSettings((set) => { set.reminders.dayEnd = on; });
     });
-    el("breakAdd").addEventListener("click", async () => {
-      const entry = { label: el("breakLabel").value, time: el("breakTime").value, date: el("breakDate").value };
-      let added = null;
-      store.updateSettings((set) => { added = set.addBreak(entry); });
-      if (!added) { this.app.toast.show("Il faut au moins une heure valide"); return; }
-      await this.app.notifier.ensurePermission();
-      el("breakLabel").value = ""; el("breakTime").value = ""; el("breakDate").value = "";
-      this.app.toast.show(`« ${added.label} » à ${added.time}`);
-    });
+    el("breakAdd").addEventListener("click", () => this.#submitBreak());
+    el("breakCancel").addEventListener("click", () => this.#resetBreakForm());
+    // Entrée valide : un formulaire de trois champs où il faut viser le bouton
+    // à la souris est un formulaire qu'on remplit une fois.
+    for (const id of ["breakLabel", "breakTime", "breakDate"]) {
+      el(id).addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); this.#submitBreak(); }
+      });
+    }
     el("breakList").addEventListener("click", (e) => {
       const rm = e.target.closest("[data-rm-break]");
-      if (rm) store.updateSettings((set) => set.removeBreak(rm.dataset.rmBreak));
+      if (rm) {
+        // On supprimait la ligne qu'on était en train d'éditer sans sortir du
+        // mode : le formulaire visait alors un rappel disparu.
+        if (this.editingBreak === rm.dataset.rmBreak) this.#resetBreakForm();
+        store.updateSettings((set) => set.removeBreak(rm.dataset.rmBreak));
+        return;
+      }
+      const row = e.target.closest("[data-break]");
+      if (row) this.#editBreak(row.dataset.break);
     });
     el("remindAsk").addEventListener("click", async () => {
       await this.app.notifier.ensurePermission();
@@ -274,7 +288,9 @@ export class SettingsView {
     el("setEyeSound").checked = s.eyeBreak.sound;
     el("eyeSoundOpts").style.display = s.eyeBreak.sound ? "" : "none";
     const vol = el("setEyeVolume");
-    if (document.activeElement !== vol) vol.value = Math.round(s.eyeVolume() * 100);
+    const pct = Math.round(s.eyeVolume() * 100);
+    if (document.activeElement !== vol) vol.value = pct;
+    el("eyeVolumeVal").textContent = pct + "\u00a0%";
 
     const perm = eye.permission;
     el("eyeBreakAsk").style.display = perm === "default" ? "" : "none";
@@ -287,6 +303,58 @@ export class SettingsView {
   }
 
   /**
+   * Enregistre la saisie — ajout, ou remplacement du rappel en cours d'édition.
+   *
+   * On valide AVANT de muter : `updateSettings` commit, persiste et re-rend tout
+   * l'écran, et il n'y a aucune raison de payer ça pour une saisie refusée.
+   * Chaque échec a son message et renvoie le focus sur le champ fautif — un
+   * message unique pour trois causes n'aide personne à se corriger.
+   */
+  #submitBreak() {
+    const entry = {
+      id: this.editingBreak || "",
+      label: el("breakLabel").value,
+      time: el("breakTime").value,
+      date: el("breakDate").value,
+    };
+    const dry = new Settings(this.settings.toJSON()).addBreak(entry);
+    if (typeof dry === "string") {
+      const said = {
+        invalid: "Il faut une heure, au format 08:30",
+        duplicate: "Un rappel existe déjà à cette heure-là",
+        full: "Liste pleine : retirez un rappel avant d'en ajouter un",
+      }[dry];
+      this.app.toast.show(said);
+      el(dry === "full" ? "breakLabel" : "breakTime").focus();
+      return;
+    }
+    const editing = !!this.editingBreak;
+    this.app.store.updateSettings((set) => set.addBreak(entry));
+    this.app.notifier.ensurePermission();
+    this.#resetBreakForm();
+    this.app.toast.show(`« ${dry.label} » ${editing ? "modifié" : "ajouté"} à ${dry.time}`);
+  }
+
+  /** Charge un rappel dans le formulaire (clic sur sa ligne). */
+  #editBreak(id) {
+    const b = this.settings.breakById(id);
+    if (!b) return;
+    this.editingBreak = id;
+    el("breakLabel").value = b.label;
+    el("breakTime").value = b.time;
+    el("breakDate").value = b.date || "";
+    this.render();
+    el("breakLabel").focus();
+  }
+
+  /** Sort du mode édition et vide les champs. */
+  #resetBreakForm() {
+    this.editingBreak = null;
+    el("breakLabel").value = ""; el("breakTime").value = ""; el("breakDate").value = "";
+    this.render();
+  }
+
+  /**
    * Pauses & rappels. Les deux premières lignes n'ont **pas** d'heure à
    * afficher : elles se déduisent des horaires du jour, et c'est justement ce
    * qu'il faut montrer — sinon l'interrupteur promet quelque chose sans dire
@@ -296,7 +364,6 @@ export class SettingsView {
   #renderReminders() {
     const s = this.settings;
     const today = new Date();
-    const occs = this.app.reminders.occurrencesFor(today);
     const ranges = this.app.calc.workRangesForDay(today);
 
     el("setBreakLunch").checked = s.reminders.lunch;
@@ -313,10 +380,14 @@ export class SettingsView {
       : "Journée non travaillée aujourd'hui — rien à annoncer.";
 
     const list = el("breakList");
-    const at = new Map(occs.map((o) => [o.id, o.at]));
+    const todayKey = fmtDateInput(today);
     list.innerHTML = s.reminders.breaks.length
-      ? s.reminders.breaks.map((b) => this.#breakRow(b, at.has(b.id))).join("")
+      ? s.reminders.breaks.map((b) => this.#breakRow(b, todayKey)).join("")
       : '<div class="ov-empty">Aucun rappel — ajoutez-en un ci-dessous.</div>';
+    // Le formulaire dit lequel des deux gestes il fait, et sur quoi.
+    const editing = !!this.editingBreak;
+    el("breakAdd").textContent = editing ? "Mettre à jour" : "Ajouter ce rappel";
+    el("breakCancel").hidden = !editing;
 
     const perm = this.app.notifier.permission;
     el("remindAsk").style.display = perm === "default" ? "" : "none";
@@ -328,13 +399,23 @@ export class SettingsView {
     }[perm];
   }
 
-  /** Une ligne de rappel — même grammaire que les exceptions d'horaires. */
-  #breakRow(b, todayFlag) {
-    const when = b.date ? this.#fmtDate(b.date) : "tous les jours travaillés";
+  /**
+   * Une ligne de rappel — même grammaire que les exceptions d'horaires, et
+   * cliquable comme elles.
+   *
+   * `.off` (pâle et italique) est le style de « Non travaillé » : il ne vaut que
+   * pour un rappel **daté dans le passé**, qui ne sonnera plus jamais. Une
+   * réunion de la semaine prochaine, elle, est parfaitement vivante — la
+   * grisailler la ferait passer pour désactivée.
+   */
+  #breakRow(b, todayKey) {
+    const dead = !!b.date && b.date < todayKey;
+    const when = b.date ? this.#fmtDate(b.date) + (dead ? " · passé" : "") : "tous les jours travaillés";
+    const editing = this.editingBreak === b.id;
     return (
-      `<div class="ov-item brk">` +
+      `<div class="ov-item brk${editing ? " editing" : ""}" data-break="${escapeHtml(b.id)}" title="Modifier">` +
         `<span class="ov-name">${escapeHtml(b.label)}</span>` +
-        `<span class="ov-sum${todayFlag ? "" : " off"}">${escapeHtml(b.time)} · ${escapeHtml(when)}</span>` +
+        `<span class="ov-sum${dead ? " off" : ""}">${escapeHtml(b.time)} · ${escapeHtml(when)}</span>` +
         `<button class="ov-rm" data-rm-break="${escapeHtml(b.id)}" title="Retirer" aria-label="Retirer">×</button>` +
       `</div>`
     );
