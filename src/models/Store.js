@@ -75,6 +75,11 @@ export class Store extends EventEmitter {
    * `reminders` (pauses planifiées : déjeuner, fin de journée, rappels posés à
    * la main) — purement additif, valeurs par défaut fournies par `Settings`,
    * aucune transformation ici.
+   * v10 → v11 : ajout du réglage `lunch` (la pause déjeuner de la base est
+   * désormais un état, « ou non »). Rien ici non plus : un stockage v10 encodait
+   * « pas de pause » en collant `lunchStart` et `lunchEnd`, et c'est le
+   * constructeur de `Settings` qui le relit — local au champ, donc idempotent,
+   * et couvre aussi un JSON importé.
    */
   #migrate(raw) {
     if (!raw) return {};

@@ -489,6 +489,12 @@ sur l'`input` lui-même (`appearance:none` + `::after`) — le JS ne connaît qu
 **Un groupe = une carte** : à nu sur le fond de page, les cinq groupes se suivaient sans
 frontière, et seuls les titres minuscules disaient qu'on avait changé de sujet.
 
+### Exceptions de date
+Une ligne = **une période**, pas une date : les dates consécutives au même planning sont
+regroupées (« du lun. 10 au ven. 21 août »), et le « × » retire la période entière. Le
+libellé étant une phrase, `.ov-item.rng` annule le `text-transform: capitalize` de
+`.ov-name` (qui frappe chaque mot) ; la capitale initiale est posée en JS.
+
 ### Pile de précédence des horaires
 Les trois niveaux (base, jour de semaine, date) affichés **pour une date de référence**, le
 gagnant cerclé d'encre, plus un **ruban** dessinant le planning retenu à l'échelle. Lecture
@@ -533,11 +539,16 @@ Saisie de données (`.tinput`) en Plex Mono. Jours travaillés = pilules.
 - **Fenêtre d'affichage** : calculée par `TimeCalculator.timelineWindow(day)` — les plages
   ouvrées du jour, **élargies** aux segments qui débordent (nuit, heures sup). Pas de
   bornes fixes.
-- **Horaires ouvrés** sur **3 niveaux** (§ Réglages) : base (`arrival` / `lunchStart` /
-  `lunchEnd` / `departure` + `workDays`) < `weekdayHours[isoDow]` < `dateHours["YYYY-MM-DD"]`.
-  Le plus spécifique **défini** l'emporte ; `[]` = jour non travaillé.
+- **Horaires ouvrés** sur **3 niveaux** (§ Réglages) : base (`arrival` / `departure` +
+  `lunch` et sa fenêtre `lunchStart` / `lunchEnd` + `workDays`) < `weekdayHours[isoDow]` <
+  `dateHours["YYYY-MM-DD"]`. Le plus spécifique **défini** l'emporte ; `[]` = jour non
+  travaillé. Les trois niveaux se **saisissent de la même façon** : arrivée, départ, pause
+  ou non. Une **période** de dates n'est pas un quatrième niveau : elle s'écrit expansée
+  dans `dateHours` et se regroupe à l'affichage.
 - **Bande déjeuner** : superposition `--lunch-overlay` sur l'intervalle entre deux plages,
-  nommée « pause » en Plex Mono quand elle est assez large.
+  nommée « pause » en Plex Mono quand elle est assez large. Elle n'existe donc qu'à partir
+  de **deux créneaux** — c'est-à-dire seulement quand il y a une vraie pause : une journée
+  continue n'en rend aucune.
 - **Graduation** : un filet par heure dans la piste, et une **règle graduée sous la piste**
   (un trait par heure, plus haut toutes les deux). La règle est *sous* la piste parce que
   les blocs couvrent tout dès qu'une journée est bien remplie.

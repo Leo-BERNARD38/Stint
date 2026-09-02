@@ -103,3 +103,58 @@ export function isoWeek(d) {
 export function mondayOf(d) {
   return addDays(startOfDay(d), -(isoDow(d) - 1));
 }
+
+/**
+ * Nombre de jours d'une plage de dates, bornes comprises.
+ *
+ * **`Math.round`, pas `Math.floor`** : `parseDateInput` rend des minuits
+ * *locaux*, et une plage qui enjambe un changement d'heure ne fait pas un
+ * nombre entier de jours de 24 h. Du 25 au 31 mars 2026 vaut 5,958 jours —
+ * `floor` répondrait 6, il y en a 7.
+ */
+export function countDays(fromKey, toKey) {
+  const a = parseDateInput(fromKey), b = parseDateInput(toKey);
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+/**
+ * Les clés "YYYY-MM-DD" d'une plage, bornes comprises. L'itération passe par
+ * `addDays` (donc `setDate`), **jamais** par `+= DAY_MS` : c'est la même raison
+ * que ci-dessus, et un pas de 24 h dériverait au changement d'heure.
+ */
+export function eachDateKey(fromKey, toKey) {
+  const out = [];
+  const end = parseDateInput(toKey).getTime();
+  let d = parseDateInput(fromKey);
+  while (d.getTime() <= end) {
+    out.push(fmtDateInput(d));
+    d = addDays(d, 1);
+  }
+  return out;
+}
+
+/** Date courte d'une clé "YYYY-MM-DD" : « lun. 10 août 2026 ». */
+export function formatDateShort(key) {
+  return parseDateInput(key).toLocaleDateString("fr-FR", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  });
+}
+
+/**
+ * Libellé d'une plage : « du lun. 10 au ven. 21 août 2026 ». On ne répète que
+ * ce qui diffère — mois et année sortent à la fin quand ils sont communs, sinon
+ * une ligne de liste devient illisible à force de redites.
+ */
+export function formatDateRange(fromKey, toKey) {
+  if (!toKey || toKey === fromKey) return formatDateShort(fromKey);
+  const a = parseDateInput(fromKey), b = parseDateInput(toKey);
+  const fr = (d, o) => d.toLocaleDateString("fr-FR", o);
+  const sameYear = a.getFullYear() === b.getFullYear();
+  const sameMonth = sameYear && a.getMonth() === b.getMonth();
+  const left = sameMonth
+    ? fr(a, { weekday: "short", day: "numeric" })
+    : sameYear
+      ? fr(a, { weekday: "short", day: "numeric", month: "short" })
+      : formatDateShort(fromKey);
+  return `du ${left} au ${formatDateShort(toKey)}`;
+}

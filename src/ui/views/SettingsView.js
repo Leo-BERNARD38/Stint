@@ -1,7 +1,8 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
-import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock } from "../../utils/datetime.js";
-import { Settings, clampEyeMinutes, clampEyeRest, clampVolume } from "../../models/Settings.js";
+import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock,
+         formatDateShort, formatDateRange, eachDateKey } from "../../utils/datetime.js";
+import { Settings, clampEyeMinutes, clampEyeRest, clampVolume, validateDay } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -11,6 +12,22 @@ const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi
    elle s'élargit si le planning déborde, sinon un horaire atypique (nuit,
    astreinte) sortirait du cadre sans qu'on le voie. */
 const STRIP_START = 6 * 60, STRIP_END = 20 * 60;
+
+/* Une raison par cause : un message unique pour cinq fautes n'aide personne à se
+   corriger. Même contrat que les trois raisons de `addBreak`. */
+const DAY_ERRORS = {
+  invalid: "Il faut des heures valides, au format 08:30",
+  order: "Le départ doit être après l'arrivée",
+  "lunch-order": "La fin de la pause doit être après son début",
+  "lunch-outside": "La pause doit tomber entre l'arrivée et le départ",
+};
+const RANGE_ERRORS = {
+  invalid: "Il faut une date de début valide",
+  range: "La fin de la période est avant son début",
+  "too-long": "Période trop longue : un an au maximum",
+  empty: "Aucun jour travaillé dans cette période",
+  full: "Trop de dates enregistrées : retirez d'anciennes exceptions",
+};
 
 /**
  * Réglages : horaires (base + exceptions jour/date), conversion Jira, arrondi,
@@ -25,6 +42,11 @@ export class SettingsView {
     /* Rappel en cours de modification (son id), ou null en mode ajout. C'est le
        seul état d'UI de cette vue — le reste se relit toujours dans le Store. */
     this.editingBreak = null;
+    /* La période d'horaires en cours de modification : les clés du groupe chargé.
+       Sans elle, ramener « du 10 au 21 » à « du 10 au 15 » ne rétrécirait pas la
+       période, il la dédoublerait — les six derniers jours resteraient écrits. */
+    this.editingDates = null;
+    this.editingRange = null;
   }
 
   get settings() { return this.app.store.settings; }
@@ -38,8 +60,10 @@ export class SettingsView {
       setLunchEnd: "lunchEnd", setDeparture: "departure",
     };
     for (const [id, key] of Object.entries(simple)) {
-      el(id).addEventListener("change", (e) => store.updateSettings((s) => { s[key] = e.target.value; }));
+      el(id).addEventListener("change", (e) => this.#setBaseHour(key, e.target.value, id));
     }
+    el("setLunch").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.lunch = e.target.checked; }));
     el("setJiraAuto").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.jira.auto = e.target.checked; }));
     el("setHpd").addEventListener("change", (e) =>
@@ -155,27 +179,26 @@ export class SettingsView {
       if (row) { wdaySelect.value = row.dataset.wday; this.#loadWeekday(); }
     });
 
-    // --- exceptions par date ---
-    const dateSelect = el("dateSelect");
-    dateSelect.value = fmtDateInput(new Date());
+    // --- exceptions par date, ou par période ---
+    el("dateFrom").value = fmtDateInput(new Date());
     el("dateEditorMount").appendChild(this.dateEditor.element);
-    dateSelect.addEventListener("change", () => this.#loadDate());
-    el("dateSave").addEventListener("click", () => {
-      const key = dateSelect.value;
-      if (!key) return;
-      store.updateSettings((s) => s.setDateHours(key, this.dateEditor.getValue()));
-      this.app.toast.show("Horaires du " + key + " enregistrés");
-    });
-    el("dateRemove").addEventListener("click", () => {
-      const key = dateSelect.value;
-      store.updateSettings((s) => s.setDateHours(key, null));
-      this.#loadDate();
-    });
+    for (const id of ["dateFrom", "dateTo"]) {
+      // Changer les bornes à la main, c'est viser une AUTRE période : on sort du
+      // mode modification, sinon on retirerait des dates qu'on ne regarde plus.
+      el(id).addEventListener("change", () => {
+        this.editingDates = null;
+        this.editingRange = null;
+        this.#loadDate();
+      });
+    }
+    el("dateSave").addEventListener("click", () => this.#submitDate());
+    el("dateCancel").addEventListener("click", () => this.#resetDateForm());
+    el("dateRemove").addEventListener("click", () => this.#removeDates(this.#currentKeys()));
     el("dateOvList").addEventListener("click", (e) => {
-      const rm = e.target.closest("[data-rm-date]");
-      if (rm) { store.updateSettings((s) => s.setDateHours(rm.dataset.rmDate, null)); return; }
-      const row = e.target.closest("[data-date]");
-      if (row) { dateSelect.value = row.dataset.date; this.#loadDate(); }
+      const rm = e.target.closest("[data-rm-range]");
+      if (rm) { this.#removeDates(this.#keysBetween(...rm.dataset.rmRange.split(","))); return; }
+      const row = e.target.closest("[data-range]");
+      if (row) this.#editRange(...row.dataset.range.split(","));
     });
 
     // --- pile de précédence : quel niveau l'emporte, pour une date donnée ---
@@ -224,13 +247,105 @@ export class SettingsView {
 
   #loadWeekday() {
     const dow = Number(el("wdaySelect").value);
-    this.wdayEditor.setValue(this.settings.weekdayHours[dow] ?? this.settings.baseBlocks());
+    this.wdayEditor.setValue(this.settings.weekdayHours[dow] ?? this.settings.baseBlocks(), this.settings);
   }
 
   #loadDate() {
-    const key = el("dateSelect").value;
+    const key = el("dateFrom").value;
     if (!key) return;
-    this.dateEditor.setValue(this.settings.dateHours[key] ?? this.settings.blocksFor(parseDateInput(key)));
+    const s = this.settings;
+    // Sans exception propre, on part du planning résolu du jour : c'est le bon
+    // point de départ pour l'amender, et pas une journée par défaut inventée.
+    this.dateEditor.setValue(s.dateHours[key] ?? s.blocksFor(parseDateInput(key)), s);
+  }
+
+  /**
+   * Les dates qui portent une exception entre deux bornes. Une ligne de la liste
+   * ne transporte donc que ses bornes : par construction d'un groupe, toute
+   * exception qui tombe entre elles lui appartient (une autre l'aurait coupé).
+   */
+  #keysBetween(from, to) {
+    if (!from) return [];
+    const end = to || from;
+    if (end < from) return [];
+    return eachDateKey(from, end).filter((k) => this.settings.dateHours[k]);
+  }
+
+  /** Les clés couvertes par les deux champs de date — la plage telle qu'elle est saisie. */
+  #currentKeys() {
+    return this.#keysBetween(el("dateFrom").value, el("dateTo").value);
+  }
+
+  /** Charge une période de la liste dans le formulaire. */
+  #editRange(from, to) {
+    this.editingDates = this.#keysBetween(from, to);
+    this.editingRange = from + "," + to;
+    el("dateFrom").value = from;
+    el("dateTo").value = to === from ? "" : to;
+    this.#loadDate();
+    this.render();
+    el("dateFrom").focus();
+  }
+
+  #resetDateForm() {
+    this.editingDates = null;
+    this.editingRange = null;
+    el("dateFrom").value = fmtDateInput(new Date());
+    el("dateTo").value = "";
+    this.#loadDate();
+    this.render();
+  }
+
+  #removeDates(keys) {
+    if (!keys || keys.length === 0) { this.app.toast.show("Aucune exception sur ces dates"); return; }
+    let n = 0;
+    this.app.store.updateSettings((s) => { n = s.removeDateRange(keys); });
+    this.#resetDateForm();
+    this.app.toast.show(n > 1 ? `${n} dates retirées` : "Date retirée");
+  }
+
+  /** Une heure de la base, refusée plutôt qu'appliquée en silence si elle est absurde. */
+  #setBaseHour(key, value, id) {
+    const s = this.settings;
+    const day = {
+      worked: true, arrival: s.arrival, departure: s.departure,
+      lunch: s.lunch, lunchStart: s.lunchStart, lunchEnd: s.lunchEnd,
+    };
+    day[key] = value;
+    const bad = validateDay(day);
+    if (bad) {
+      this.app.toast.show(DAY_ERRORS[bad]);
+      el(id).value = s[key];
+      return;
+    }
+    this.app.store.updateSettings((set) => { set[key] = value; });
+  }
+
+  /**
+   * Enregistre la date ou la période saisie. Validation à blanc sur une copie
+   * **avant** de muter : `updateSettings` commit, persiste et re-rend tout
+   * l'écran — il n'y a pas à payer ça pour une saisie refusée.
+   */
+  #submitDate() {
+    const from = el("dateFrom").value;
+    const to = el("dateTo").value;
+    const bad = validateDay(this.dateEditor.readValue());
+    if (bad) {
+      this.app.toast.show(DAY_ERRORS[bad]);
+      return;
+    }
+    const blocks = this.dateEditor.getValue();
+    const replacing = this.editingDates || [];
+    const dry = new Settings(this.settings.toJSON()).setDateRange(from, to, blocks, { replacing });
+    if (typeof dry === "string") {
+      this.app.toast.show(RANGE_ERRORS[dry]);
+      el(dry === "range" ? "dateTo" : "dateFrom").focus();
+      return;
+    }
+    this.app.store.updateSettings((s) => s.setDateRange(from, to, blocks, { replacing }));
+    const label = formatDateRange(from, to || from);
+    this.#resetDateForm();
+    this.app.toast.show(dry > 1 ? `${dry} dates enregistrées (${label})` : `${cap(label)} enregistré`);
   }
 
   render() {
@@ -240,9 +355,14 @@ export class SettingsView {
     // base : n'écrase pas un champ en cours d'édition
     const setIf = (id, val) => { const e = el(id); if (document.activeElement !== e) e.value = val; };
     setIf("setArrival", s.arrival);
+    setIf("setDeparture", s.departure);
     setIf("setLunchStart", s.lunchStart);
     setIf("setLunchEnd", s.lunchEnd);
-    setIf("setDeparture", s.departure);
+    el("setLunch").checked = s.lunch;
+    el("lunchCtl").hidden = !s.lunch;
+    const editingDates = !!this.editingDates;
+    el("dateSave").textContent = editingDates ? "Mettre à jour" : "Enregistrer";
+    el("dateCancel").hidden = !editingDates;
     setIf("setHpd", s.jira.hoursPerDay);
     setIf("setDpw", s.jira.daysPerWeek);
     setIf("setRounding", s.rounding);
@@ -410,7 +530,7 @@ export class SettingsView {
    */
   #breakRow(b, todayKey) {
     const dead = !!b.date && b.date < todayKey;
-    const when = b.date ? this.#fmtDate(b.date) + (dead ? " · passé" : "") : "tous les jours travaillés";
+    const when = b.date ? formatDateShort(b.date) + (dead ? " · passé" : "") : "tous les jours travaillés";
     const editing = this.editingBreak === b.id;
     return (
       `<div class="ov-item brk${editing ? " editing" : ""}" data-break="${escapeHtml(b.id)}" title="Modifier">` +
@@ -442,7 +562,7 @@ export class SettingsView {
     const rows = [
       { k: "Base", blocks: baseBlocks, set: true },
       { k: cap(WEEKDAY_FULL[dow - 1]), blocks: s.weekdayHours[dow], set: !!s.weekdayHours[dow] },
-      { k: this.#fmtDate(key), blocks: s.dateHours[key], set: !!s.dateHours[key] },
+      { k: formatDateShort(key), blocks: s.dateHours[key], set: !!s.dateHours[key] },
     ];
     // Le plus spécifique DÉFINI l'emporte : c'est exactement l'ordre de blocksFor().
     let winner = 0;
@@ -504,10 +624,29 @@ export class SettingsView {
       : '<div class="ov-empty">Aucune exception — tous les jours travaillés suivent la base.</div>';
 
     const dList = el("dateOvList");
-    const dEntries = Object.keys(s.dateHours).sort();
-    dList.innerHTML = dEntries.length
-      ? dEntries.map((key) => this.#ovRow("date", key, this.#fmtDate(key), s.dateHours[key])).join("")
+    const groups = s.dateGroups();
+    dList.innerHTML = groups.length
+      ? groups.map((g) => this.#rangeRow(g)).join("")
       : '<div class="ov-empty">Aucune date spécifique.</div>';
+  }
+
+  /**
+   * Une période de la liste. Les dates consécutives au planning identique sont
+   * déjà regroupées par `dateGroups` : une ligne = une période, un « × » = la
+   * période entière.
+   */
+  #rangeRow(g) {
+    const off = !g.blocks || g.blocks.length === 0;
+    const bounds = escapeHtml(g.from + "," + g.to);
+    const label = cap(formatDateRange(g.from, g.to));
+    const editing = this.editingRange === g.from + "," + g.to;
+    return (
+      `<div class="ov-item rng${editing ? " editing" : ""}" data-range="${bounds}">` +
+        `<span class="ov-name">${escapeHtml(label)}</span>` +
+        `<span class="ov-sum${off ? " off" : ""}">${escapeHtml(describeBlocks(g.blocks))}</span>` +
+        `<button class="ov-rm" data-rm-range="${bounds}" title="Retirer" aria-label="Retirer">×</button>` +
+      `</div>`
+    );
   }
 
   #ovRow(kind, id, label, blocks) {
@@ -521,9 +660,4 @@ export class SettingsView {
     );
   }
 
-  #fmtDate(key) {
-    return parseDateInput(key).toLocaleDateString("fr-FR", {
-      weekday: "short", day: "numeric", month: "short", year: "numeric",
-    });
-  }
 }
