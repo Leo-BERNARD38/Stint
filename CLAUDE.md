@@ -125,14 +125,20 @@ SettingsView, StorageView, ToolsView`.
 
 ```jsonc
 {
-  "version": 10,
+  "version": 11,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
-    "arrival": "08:30", "lunchStart": "12:30",
-    "lunchEnd": "13:30", "departure": "17:00",
+    // Une journée se dit partout pareil : arrivée, départ, et une pause OU NON.
+    // `lunch` (v11) porte l'état, `lunchStart`/`lunchEnd` la fenêtre.
+    "arrival": "08:30", "departure": "17:00",
+    "lunch": true, "lunchStart": "12:30", "lunchEnd": "13:30",
     "weekdayHours": { "5": [["08:30","12:50"]] },     // exceptions par jour de semaine
-    "dateHours": { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }, // par date ; [] = non travaillé
+    // Par date ; [] = non travaillé. Une PÉRIODE (des congés) y est stockée
+    // **expansée**, une clé par date — pas de 4ᵉ niveau de précédence. Les jours
+    // déjà non travaillés sont sautés à l'écriture, et `Settings.dateGroups()`
+    // les enjambe pour recoller la période à l'affichage.
+    "dateHours": { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] },
     "jira": { "auto": true, "hoursPerDay": 8, "daysPerWeek": 5 },
     "rounding": "none",                                // none|1m|5m|15m|30m|1h
     "roundedDay": false,                               // vue arrondie de la journée (v7)
@@ -172,10 +178,26 @@ Notes :
 
 ## 5. Horaires & calculs
 
-- **3 niveaux**, du plus général au plus spécifique : base (4 heures + `workDays`)
-  → `weekdayHours[isoDow]` → `dateHours["YYYY-MM-DD"]`. Résolution dans
+- **Une seule grammaire de saisie, partout** : une **arrivée**, un **départ**, et une
+  **pause déjeuner ou non** (`lunch`). C'est vrai de la base comme des deux niveaux
+  d'exception — « matin / après-midi » mentait dès qu'on ne travaillait que
+  l'après-midi. `blocksFromDay` / `dayFromBlocks` (dans `Settings`) font la
+  traduction dans les deux sens ; l'éditeur et les vues n'en fabriquent jamais.
+- **3 niveaux**, du plus général au plus spécifique : base (arrivée/départ/pause +
+  `workDays`) → `weekdayHours[isoDow]` → `dateHours["YYYY-MM-DD"]`. Résolution dans
   **`Settings.blocksFor(date)`** ; précédence **date > jour de semaine > base**.
+  `scheduleFor(date)` est le même calcul **sans** le niveau date : c'est ce que
+  lisent l'écriture d'une période et son regroupement, qui ne peuvent pas consulter
+  `dateHours` qu'ils sont en train d'écrire.
   Un planning = liste de créneaux `[["HH:MM","HH:MM"], …]` ; `[]` = non travaillé.
+  **Invariant** garanti par `mergeBlocks` : créneaux disjoints et croissants. Deux
+  créneaux **jointifs** ne sont jamais rendus — ils feraient croire à une pause
+  déjeuner qui n'existe pas (`Reminders` teste `ranges.length > 1`) et
+  dédoubleraient le trou de `gapsForDay`.
+- **Une période n'est pas un niveau** : `setDateRange(from, to, blocks, {replacing})`
+  écrit une clé par date ouvrée, `dateGroups()` les recolle à l'affichage. `blocksFor`
+  — donc tout `TimeCalculator` — n'en sait rien. `replacing` porte les clés du groupe
+  en cours de modification : sans elles, rétrécir une période la dédoublerait.
 - **Temps ouvré** : `TimeCalculator.workRangesForDay` → intersection des segments
   avec les créneaux (gère le multi-jours). `seg.raw = true` ⇒ temps réel sans rognage.
 - **Unités Jira** : `Formatter.effHoursPerDay/effDaysPerWeek`. En mode `jira.auto`,
@@ -366,9 +388,11 @@ Lancer ces contrôles (rapides, en Node) :
   **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
 - **Service worker** : tout fichier servi est dans `CORE`, et `CORE` ne référence
   aucun fichier disparu.
-- **Logique métier** : tests ad hoc en Node ESM avec une persistance **simulée**
-  (objet `{loadSync, init, loadFull, save, clear}`) — ex. migration, résolution
-  d'horaires, `plannedMsForDay`, `workRangesBetween`, formats.
+- **Logique métier** : `node checks/domaine.mjs` — Node ESM, persistance **simulée**
+  (objet `{loadSync, init, loadFull, save, clear}`) : migration, résolution
+  d'horaires, périodes et regroupement, validation, `plannedMsForDay`,
+  `workRangesBetween`, invariant des unités Jira, formats. Sortie non nulle si un
+  contrôle échoue. **Y ajouter tout nouveau comportement de domaine.**
   (IndexedDB/DOM ne tournent pas en Node : on teste le domaine, pas le rendu.)
 - **Capture : simuler le survol.** Chromium headless annonce `hover: none` et
   `pointer: coarse` — donc toute règle sous `@media (hover: hover)` est ignorée,
@@ -414,6 +438,20 @@ hydratation). Sans lui, chaque bloc rebalaierait l'historique à chaque `App.ren
   26 px**, ce qui est proprement impossible. Sur tout élément dont la largeur
   *porte une donnée*, l'inset du contenu va sur les enfants (marge), jamais en
   padding sur la boîte.
+
+- **Compter des jours en `Math.floor` est faux.** `parseDateInput` rend des minuits
+  **locaux** : une plage qui enjambe un changement d'heure ne fait pas un nombre entier
+  de jours de 24 h. Du 25 au 31 mars 2026 vaut 5,958 jours — `floor(…)+1` répond 6, il y
+  en a 7. `countDays` utilise donc `Math.round`, et `eachDateKey` itère par `addDays`
+  (donc `setDate`), jamais par `+= DAY_MS`. `TimeCalculator.workRangesBetween` fait
+  encore `cursor += DAY_MS` : son garde-fou `safety < 400` le sauve, mais **ne pas
+  recopier ce motif** dans du code neuf.
+
+- **`blocksFor` rend le tableau STOCKÉ, par référence.** Un appelant qui le muterait
+  modifierait les réglages sans passer par `#commit()`. Aucun ne le fait — mais
+  l'écriture d'une période multiplie le rayon d'explosion : `setDateRange` copie donc
+  les créneaux **par clé** (`blocks.map(p => [p[0], p[1]])`), sinon retoucher un
+  créneau en retoucherait douze.
 
 - **`hidden` annulé par `display`** : un élément avec l'attribut `hidden` mais une
   règle `display:flex/grid` reste visible. Garde-fou global présent

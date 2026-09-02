@@ -965,6 +965,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    de `.ov-name` vaut pour un jour de semaine (« lundi » → « Lundi »), pas pour
    « Pause café », qu'elle rendrait en « Pause Café ». */
 .ov-item.brk .ov-name { text-transform: none; }
+/* Idem pour une période : `capitalize` frappe CHAQUE mot et rendrait
+   « du lun. 10 au ven. 21 août » en « Du Lun. 10 Au Ven. 21 Août ». La capitale
+   initiale est posée en JS. Et le libellé étant long, il cède avant le résumé. */
+.ov-item.rng .ov-name { text-transform: none; min-width: 0; }
 /* La ligne en cours d'édition : on doit voir LAQUELLE des trois on est en train
    de modifier, sinon le formulaire en dessous parle dans le vide. */
 .ov-item.editing { box-shadow: inset 0 0 0 1.5px var(--accent); background: var(--accent-wash); }
@@ -974,13 +978,24 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .ov-editor { background: var(--surface-2); border-radius: var(--radius-sm); padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .ov-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; flex-wrap: wrap; }
 .ov-editor .field select, .ov-editor .field input { background: var(--bg); }
+/* Les deux bornes d'une période, côte à côte comme les champs d'un rappel. */
+.date-range { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-3); }
+@media (max-width: 620px) { .date-range { grid-template-columns: minmax(0, 1fr); } }
+.date-note { margin: 0; font-size: 12.5px; }
 
-/* Éditeur de planning d'une journée */
+/* Éditeur de planning d'une journée : arrivée, départ, pause (ou non). */
 .sched { display: flex; flex-direction: column; gap: var(--sp-2); }
 .se-body { display: flex; flex-direction: column; gap: var(--sp-2); padding-left: 2px; }
 .se-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.se-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 78px; }
+/* La largeur fixe était taillée pour la seule étiquette « Après-midi » en tête
+   de ligne. La ligne porte maintenant DEUX étiquettes intercalées : une largeur
+   imposée y creuserait un trou au milieu. */
+.se-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 58px; }
+.se-lab2 { min-width: 0; margin-left: 4px; }
 .se-dash { color: var(--text-faint); }
+/* Un planning importé à trois créneaux : on le signale, on ne le peint pas en
+   minium — le tampon ne dit que l'irréversible, le « maintenant » et le focus. */
+.se-warn { font-size: 12.5px; color: var(--text-soft); margin: 2px 0 0; }
 .sched input[type="time"] { border: none; background: var(--ctl); border-radius: var(--radius-sm); padding: 8px 10px; color: var(--text); font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 

@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -75,11 +75,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
   theme: "system",
   workDays: [1, 2, 3, 4, 5],
   arrival: "08:30",
+  departure: "17:00",
+  // La journée se dit partout de la même façon : une arrivée, un départ, et une
+  // pause déjeuner **ou non**. `lunch` porte l'état, `lunchStart`/`lunchEnd` la
+  // fenêtre — les décorréler permet de décocher la pause sans perdre ses heures.
+  lunch: true,
   lunchStart: "12:30",
   lunchEnd: "13:30",
-  departure: "17:00",
   weekdayHours: {},  // exceptions par jour de semaine : { "5": [["08:30","12:50"]] }
-  dateHours: {},     // exceptions par date : { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }
+  // Exceptions par date : { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] }.
+  // Une PÉRIODE (des congés) y est stockée **expansée**, une clé par date :
+  // délibérément, pour ne pas ajouter un 4ᵉ niveau de précédence à `blocksFor`.
+  // C'est l'affichage qui regroupe (`Settings.dateGroups`).
+  dateHours: {},
   jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
   rounding: "none",  // pas d'arrondi | 1m | 5m | 15m | 30m | 1h (cf. ROUNDING_STEPS)
   roundedDay: false, // vue « arrondi » de la journée (interrupteur des Tâches du jour)
@@ -115,6 +123,16 @@ export const EYE_REST_MAX = 300;
 export const REMINDER_LABEL_MAX = 60;
 /** Nombre maximal de rappels enregistrés — garde-fou, pas une ambition. */
 export const REMINDER_MAX = 24;
+
+/**
+ * Bornes de la saisie d'horaires par période. Le coût d'une plage n'est pas au
+ * calcul (`blocksFor` est un accès de map) mais au **stockage** : `dateHours`
+ * part dans `toJSON()`, donc dans IndexedDB *et* dans le miroir localStorage, à
+ * chaque sauvegarde. Une faute de frappe sur l'année (2026 → 2036) écrirait
+ * 3 653 clés réécrites à chaque commit, pour toujours.
+ */
+export const DATE_RANGE_MAX_DAYS = 366;   // une année pleine reste exprimable
+export const DATE_HOURS_MAX = 1500;       // ~45 dates par an → une trentaine d'années
 
 /**
  * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au

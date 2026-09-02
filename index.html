@@ -443,15 +443,23 @@
                 <span class="set-ctl"><span class="weekdays" id="weekdays"></span></span>
               </div>
               <div class="set-row">
-                <span class="set-lab"><b>Journée</b><span>Arrivée, pause déjeuner, départ.</span></span>
+                <span class="set-lab"><b>Journée</b><span>L'heure d'arrivée et l'heure de départ.</span></span>
                 <span class="set-ctl hours-ctl">
                   <input type="time" id="setArrival" class="tinput" aria-label="Arrivée">
                   <span class="se-dash">–</span>
-                  <input type="time" id="setLunchStart" class="tinput" aria-label="Début de la pause déjeuner">
-                  <span class="prec-sep">·</span>
-                  <input type="time" id="setLunchEnd" class="tinput" aria-label="Fin de la pause déjeuner">
-                  <span class="se-dash">–</span>
                   <input type="time" id="setDeparture" class="tinput" aria-label="Départ">
+                </span>
+              </div>
+              <label class="set-row">
+                <span class="set-lab"><b>Pause déjeuner</b><span>Décochez si vous n'en prenez pas : la journée est alors continue.</span></span>
+                <span class="set-ctl"><input type="checkbox" id="setLunch" class="sw"></span>
+              </label>
+              <div class="set-row" id="lunchCtl">
+                <span class="set-lab"><b>Fenêtre de la pause</b><span>Début et fin.</span></span>
+                <span class="set-ctl hours-ctl">
+                  <input type="time" id="setLunchStart" class="tinput" aria-label="Début de la pause déjeuner">
+                  <span class="se-dash">–</span>
+                  <input type="time" id="setLunchEnd" class="tinput" aria-label="Fin de la pause déjeuner">
                 </span>
               </div>
             </div>
@@ -473,17 +481,28 @@
             </div>
 
             <div class="hours-panel" data-hours-panel="date" hidden>
-              <p class="muted">Des horaires particuliers pour une date précise (roulement support, congé…).</p>
+              <p class="muted">
+                Des horaires particuliers pour une date, ou pour toute une période — des congés
+                se posent d'un coup. <strong>Cliquez une ligne</strong> pour la modifier.
+              </p>
               <div class="ov-list" id="dateOvList"></div>
               <div class="ov-editor">
-                <div class="field" style="max-width:200px;">
-                  <label>Date</label>
-                  <input type="date" id="dateSelect">
+                <div class="date-range">
+                  <div class="field">
+                    <label for="dateFrom">Du</label>
+                    <input type="date" id="dateFrom">
+                  </div>
+                  <div class="field">
+                    <label for="dateTo">Au <span class="field-optional">facultatif</span></label>
+                    <input type="date" id="dateTo">
+                  </div>
                 </div>
                 <div id="dateEditorMount"></div>
+                <p class="muted date-note">« Au » vide : ce jour-là seulement. Sur une période, les jours déjà non travaillés (week-ends) sont laissés de côté.</p>
                 <div class="ov-actions">
-                  <button class="btn danger" id="dateRemove">Supprimer cette date</button>
-                  <button class="btn primary" id="dateSave">Enregistrer cette date</button>
+                  <button class="btn" id="dateCancel" hidden>Annuler</button>
+                  <button class="btn danger" id="dateRemove">Supprimer</button>
+                  <button class="btn primary" id="dateSave">Enregistrer</button>
                 </div>
               </div>
             </div>
@@ -777,13 +796,20 @@
             lundi matin ne compte donc <i>pas</i> le week-end.
           </p>
           <p>
+            Pour des <b>congés</b>, la troisième pile prend une <b>période</b> : « du 10 au
+            21 août », décoché « Jour travaillé », et c'est posé. Les week-ends compris dans
+            la plage sont laissés de côté, et la période reste une seule ligne, qui se retire
+            d'un clic.
+          </p>
+          <p>
             La case <b>Brut</b> d'un segment désactive ce rognage : on compte le <b>temps réel
             écoulé</b>, pratique pour une session de nuit ou des heures sup.
           </p>
           <p>
-            Tes horaires se règlent sur 3 niveaux : des <b>horaires de base</b>, des exceptions
-            <b>par jour de la semaine</b> (ex. le vendredi) et des exceptions <b>par date</b>
-            (roulement, congé). La plus précise l'emporte.
+            Une journée se décrit partout pareil : une <b>arrivée</b>, un <b>départ</b>, et une
+            <b>pause déjeuner</b> — ou pas, si tu n'en prends pas. Tes horaires se règlent sur
+            3 niveaux : des <b>horaires de base</b>, des exceptions <b>par jour de la semaine</b>
+            (ex. le vendredi) et des exceptions <b>par date</b>. La plus précise l'emporte.
           </p>
         </div>
 
