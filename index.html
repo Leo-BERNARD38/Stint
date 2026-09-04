@@ -79,6 +79,7 @@
         <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
           <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
         </button>
+        <button id="memoBtn" class="icon-btn memo-btn" data-icon="sticky-note" aria-label="Mémos" title="Mémos (M)"><span class="memo-count" id="memoCount" hidden>0</span></button>
         <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
         <button id="toolsBtn" class="icon-btn" data-icon="calculator" aria-label="Outils" title="Outils"></button>
         <button id="helpBtn" class="icon-btn" data-icon="help" aria-label="Guide" title="Guide"></button>
@@ -796,7 +797,7 @@
             <div class="set-row is-danger">
               <span class="set-lab"><b>Zone sans retour</b><span>Ces deux actions sont irréversibles. Exportez d'abord.</span></span>
               <span class="set-ctl">
-                <button class="btn" id="clearEntries">Vider tâches &amp; segments</button>
+                <button class="btn" id="clearEntries">Vider tâches, segments &amp; mémos</button>
                 <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
               </span>
             </div>
@@ -1098,6 +1099,25 @@
     </section>
   </main>
 
+  <!-- Panneau des mémos : « pour demain », général ou sur une tâche. Fixe à
+       droite, sous l'en-tête, non modal — le reste de l'app reste cliquable.
+       Ouvert depuis l'en-tête ou M, fermé par sa croix, Échap ou un changement
+       d'écran. -->
+  <aside id="memoPanel" class="memo-panel" hidden aria-label="Mémos">
+    <div class="memo-head">
+      <span class="block-title">Mémos <span class="hint">pour demain, ou pour une tâche</span></span>
+      <button id="memoClose" class="modal-close memo-close" data-icon="x" aria-label="Fermer" title="Fermer (Échap)"></button>
+    </div>
+    <div class="memo-add">
+      <input type="text" id="memoText" class="memo-input" maxlength="200" placeholder="Noter… (Entrée)" autocomplete="off" spellcheck="false" aria-label="Nouveau mémo">
+      <div class="select-wrap">
+        <select id="memoTask" aria-label="Tâche du mémo"></select>
+        <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+      </div>
+    </div>
+    <div class="memo-list" id="memoList"></div>
+  </aside>
+
   <!-- ============================ MODALES ============================ -->
   <div class="modal-backdrop" id="newTaskModal">
     <div class="modal">
@@ -1163,6 +1183,13 @@
           <input type="color" id="etColor" class="color-pick" aria-label="Couleur de la tâche">
           <span class="color-hex" id="etColorHex"></span>
         </div>
+      </div>
+      <!-- Les mémos de la tâche : même liste que le panneau, sans la puce de
+           tâche (on sait où l'on est). Entrée ajoute. -->
+      <div class="field et-memos" style="margin-top:14px;">
+        <label>Mémos</label>
+        <div class="memo-list" id="etMemos"></div>
+        <input type="text" id="etMemoText" class="memo-input" maxlength="200" placeholder="Noter sur cette tâche… (Entrée)" autocomplete="off" spellcheck="false" aria-label="Nouveau mémo sur la tâche">
       </div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="btn danger" id="etDelete">Supprimer</button>

@@ -27,6 +27,7 @@ import { StatsBreakdownView } from "./views/StatsBreakdownView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
+import { MemoPanelView } from "./views/MemoPanelView.js";
 
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
@@ -116,6 +117,7 @@ export class App {
       new SettingsView(this),
       new StorageView(this),
       new ToolsView(this),
+      this.memoPanel = new MemoPanelView(this),
     ];
   }
 
@@ -166,10 +168,16 @@ export class App {
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
 
+  /* ----------------- mémos (panneau latéral, tous écrans) ----------------- */
+  openMemos(taskId = null) { this.memoPanel.open(taskId); this.header.render(); }
+  closeMemos() { this.memoPanel.close(); this.header.render(); }
+  toggleMemos() { this.memoPanel.isOpen ? this.closeMemos() : this.openMemos(); }
+
   /* ----------------- écrans (app / réglages / guide / outils) ----------------- */
   showScreen(name) {
     this.screen = name;
     this.closeFill(); // ferme un éventuel popover de trou resté ouvert
+    this.memoPanel?.close(); // le panneau ne suit pas d'un écran à l'autre
     el("appScreen").hidden = name !== "app";
     el("settingsScreen").hidden = name !== "settings";
     el("guideScreen").hidden = name !== "guide";
@@ -313,7 +321,7 @@ export class App {
     this.toast.show("Données effacées");
   }
   clearEntries() {
-    if (!confirm("Vider toutes les tâches et tous les segments ? Les réglages sont conservés.")) return;
+    if (!confirm("Vider toutes les tâches, tous les segments et tous les mémos ? Les réglages sont conservés.")) return;
     this.store.clearEntries();
     this.viewDay = startOfDay(new Date());
     this.toast.show("Tâches et segments vidés (réglages conservés)");
@@ -357,6 +365,7 @@ export class App {
       if (e.key === "Escape") {
         const open = qsa(".modal-backdrop.open");
         if (open.length) open.forEach((m) => m.classList.remove("open"));
+        else if (this.memoPanel.isOpen) this.closeMemos();
         else if (this.screen !== "app") this.backToApp();
         return;
       }
@@ -364,6 +373,8 @@ export class App {
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (qsa(".modal-backdrop.open").length) return;
+      // Les mémos vivent sur tous les écrans : M aussi.
+      if (e.key.toLowerCase() === "m") { e.preventDefault(); this.toggleMemos(); return; }
       if (this.screen !== "app") return; // raccourcis d'action désactivés hors de l'écran principal
       const k = e.key.toLowerCase();
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }

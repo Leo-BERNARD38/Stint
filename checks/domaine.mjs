@@ -540,5 +540,43 @@ section("vides justifiés (hors tâche, v13)");
   eq(m2.toJSON().segments, m.toJSON().segments, "ré-hydratation idempotente");
 }
 
+/* ----------------------------------------------------------------- §13 */
+section("mémos (v14)");
+{
+  const store = new Store(fakePersistence());
+  store.hydrate({ version: 14, settings: {}, tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  eq(store.memos, [], "v13 → v14 : memos vaut []");
+  eq(store.addMemo({ text: "   " }), "invalid", "addMemo : texte vide → invalid");
+  const g = store.addMemo({ text: "Relancer Paul" });
+  ok(g && g.taskId === null, "mémo général : taskId nul");
+  const a = store.addMemo({ text: "Écrire le test", taskId: "tA" });
+  eq(a.taskId, "tA", "mémo rattaché à une tâche");
+  const orphan = store.addMemo({ text: "Vers nulle part", taskId: "tZ" });
+  eq(orphan.taskId, null, "tâche inconnue → mémo général");
+  eq(store.openMemos().map((m) => m.text), ["Vers nulle part", "Écrire le test", "Relancer Paul"], "ouverts : les plus récents en haut");
+  store.toggleMemo(orphan.id);
+  eq(store.allMemos().map((m) => m.text), ["Écrire le test", "Relancer Paul", "Vers nulle part"], "les faits passent en bas");
+  eq(store.openMemos().length, 2, "openMemos ignore les faits");
+  eq(store.openMemoCountFor("tA"), 1, "openMemoCountFor");
+  eq(store.memosFor("tA").map((m) => m.id), [a.id], "memosFor(tâche)");
+  eq(store.memosFor(null).length, 2, "memosFor(null) = les généraux");
+  store.updateMemo(a.id, { text: "  " });
+  eq(store.memos.find((m) => m.id === a.id).text, "Écrire le test", "updateMemo : texte vide ignoré");
+  store.updateMemo(a.id, { text: "x".repeat(500) });
+  eq(store.memos.find((m) => m.id === a.id).text.length, 200, "updateMemo : texte borné à 200");
+  const back = new Store(fakePersistence());
+  back.hydrate(store.toJSON());
+  eq(back.toJSON().memos, store.toJSON().memos, "round-trip JSON");
+  const imp = new Store(fakePersistence());
+  imp.hydrate({ version: 14, settings: {}, tasks: [], segments: [], memos: [{ id: "m1", text: "Seul", taskId: "tGone" }], meta: {} });
+  eq(imp.memos[0].taskId, null, "import : un taskId inconnu est normalisé à null");
+  store.deleteTask("tA");
+  eq(store.memos.map((m) => m.text).sort(), ["Relancer Paul", "Vers nulle part"], "deleteTask emporte ses mémos");
+  store.deleteMemo(g.id);
+  eq(store.memos.length, 1, "deleteMemo");
+  store.clearEntries();
+  eq(store.memos, [], "clearEntries vide les mémos");
+}
+
 console.log(`\n${total - failed}/${total} contrôles passés`);
 if (failed) process.exitCode = 1;

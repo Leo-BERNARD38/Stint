@@ -46,6 +46,51 @@
 .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .icon-btn.active { background: var(--accent-wash); color: var(--accent);
   box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* Compteur de mémos ouverts sur le bouton d'en-tête : un chiffre en lavis
+   d'accent (N3, « ça se clique »), jamais en minium — un mémo n'exige rien
+   maintenant. Posé en coin, il ne déplace rien. */
+.memo-btn { position: relative; }
+.memo-count { position: absolute; top: -3px; right: -4px; min-width: 17px; height: 17px; padding: 0 5px;
+  border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-text);
+  font-family: var(--font-data); font-size: 10px; font-weight: 600; line-height: 17px; text-align: center; }
+
+/* ---------- Panneau des mémos ----------
+   Un panneau (--surface, deuxième niveau) fixé à droite sous l'en-tête, entre
+   l'en-tête (20) et les modales (100). Ses champs en --ctl, sa liste dans la
+   grammaire `.ov-item`. Pleine largeur sur mobile. */
+.memo-panel { position: fixed; top: 64px; right: 0; bottom: 0; width: 340px; max-width: 100vw; z-index: 30;
+  background: var(--surface); box-shadow: var(--shadow-pop); padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  display: flex; flex-direction: column; gap: var(--sp-3); overflow: hidden;
+  border-top-left-radius: var(--radius-lg); }
+.memo-head { display: flex; align-items: center; gap: var(--sp-2); }
+.memo-head .block-title { margin: 0; flex: 1; }
+.memo-close { position: static; }
+.memo-add { display: flex; flex-direction: column; gap: 6px; }
+.memo-input { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-sm); padding: 10px 11px; font-size: 14px; width: 100%; }
+.memo-input:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.memo-add .select-wrap select { width: 100%; }
+.memo-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; flex: 1; padding: 2px; }
+.memo-item { display: flex; align-items: flex-start; gap: var(--sp-2); padding: 9px 10px 9px 12px; background: var(--surface-2); border-radius: var(--radius-sm); }
+.memo-item.done { opacity: .62; }
+.memo-item.done .memo-text { text-decoration: line-through; color: var(--text-soft); }
+.memo-check { display: grid; place-items: center; padding-top: 2px; }
+.memo-check input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+.memo-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.memo-text { font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.memo-task { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border: none; background: transparent; padding: 0;
+  font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); cursor: pointer; max-width: 100%; }
+.memo-task .swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.memo-task:hover { color: var(--text); }
+.memo-item .ov-rm { margin-left: 0; margin-top: -2px; }
+.et-memos .memo-list { max-height: 180px; flex: none; margin-bottom: 6px; }
+/* Indicateur sur une ligne de tâche : dans la colonne élastique (rien ne
+   bouge), en lavis comme le compteur — c'est un lien vers le panneau. */
+.memo-badge { display: inline-flex; align-items: center; gap: 3px; border: none; background: var(--accent-wash); color: var(--accent);
+  border-radius: var(--radius-pill); padding: 2px 7px 2px 5px; font-family: var(--font-data); font-size: 10px; font-weight: 600; cursor: pointer; }
+.memo-badge:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+@media (max-width: 760px) {
+  .memo-panel { width: 100vw; top: 56px; border-top-left-radius: 0; }
+}
 
 /* ---------- Titres de bloc ---------- */
 .block-title {

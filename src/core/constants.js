@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -128,6 +128,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // libellé en clair : retirer un épinglé ne touche pas l'historique.
   offReasons: ["Pause", "Réunion", "Discussion"],
 });
+
+/** Longueur maximale d'un mémo : une ligne à se laisser, pas un cahier. */
+export const MEMO_TEXT_MAX = 200;
 
 /** Bornes de la liste des motifs épinglés et de leur libellé. */
 export const OFF_REASON_MAX = 12;

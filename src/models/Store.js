@@ -1,8 +1,9 @@
 import { EventEmitter } from "../core/EventEmitter.js";
-import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS } from "../core/constants.js";
+import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS, MEMO_TEXT_MAX } from "../core/constants.js";
 import { Settings, normalizeOffLabel, offKey } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
+import { Memo } from "./Memo.js";
 import { startOfDay, toLocalISO } from "../utils/datetime.js";
 
 /**
@@ -22,6 +23,7 @@ export class Store extends EventEmitter {
     this.settings = new Settings();
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.meta = { lastExport: null };
     // Compteur de révision : incrémenté à chaque mutation committée (et à chaque
     // hydratation). Sert de clé de cache aux agrégats coûteux (StatsAggregator)
@@ -52,6 +54,12 @@ export class Store extends EventEmitter {
     this.settings = Settings.fromJSON(data.settings);
     this.tasks = (data.tasks ?? []).map(Task.fromJSON);
     this.segments = (data.segments ?? []).map(Segment.fromJSON);
+    // Un mémo rattaché à une tâche disparue redevient général plutôt que de
+    // pointer dans le vide (import d'un JSON partiel) — normalisation
+    // idempotente, à l'hydratation comme le repli de `jiraKey`.
+    const ids = new Set(this.tasks.map((t) => t.id));
+    this.memos = (data.memos ?? []).map(Memo.fromJSON).filter((m) => m.text);
+    for (const m of this.memos) if (m.taskId && !ids.has(m.taskId)) m.taskId = null;
     this.meta = { lastExport: null, ...(data.meta ?? {}) };
     this.rev += 1;
   }
@@ -87,6 +95,8 @@ export class Store extends EventEmitter {
    * alors nul) et `settings.offReasons` (motifs épinglés). Additif : un segment
    * sans `reason` est une tâche comme avant, c'est le constructeur de `Segment`
    * qui tient l'invariant « une tâche OU un motif ».
+   * v13 → v14 : ajout de `memos` (une ligne de texte, rattachée ou non à une
+   * tâche) — additif ; `hydrate` rend général tout mémo dont la tâche manque.
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -111,6 +121,7 @@ export class Store extends EventEmitter {
       settings: this.settings.toJSON(),
       tasks: this.tasks.map((t) => t.toJSON()),
       segments: this.segments.map((s) => s.toJSON()),
+      memos: this.memos.map((m) => m.toJSON()),
       meta: { ...this.meta },
     };
   }
@@ -313,14 +324,75 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
+  /** Supprime une tâche et, en cascade, ses segments ET ses mémos. */
   deleteTask(id) {
     this.segments = this.segments.filter((s) => s.taskId !== id);
+    this.memos = this.memos.filter((m) => m.taskId !== id);
     this.tasks = this.tasks.filter((t) => t.id !== id);
     this.#commit();
   }
 
   segmentCountFor(taskId) {
     return this.segments.filter((s) => s.taskId === taskId).length;
+  }
+
+  /* ----------------- mémos ----------------- */
+  /**
+   * Ouverts d'abord, puis faits ; les plus récents en haut dans chaque groupe.
+   * Deux mémos nés dans la même milliseconde se départagent par leur ordre
+   * d'insertion (le dernier écrit en haut), sinon le tri serait instable.
+   */
+  #sortMemos(list) {
+    const pos = new Map(this.memos.map((m, i) => [m.id, i]));
+    return list.sort((a, b) =>
+      (a.done - b.done) ||
+      (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0) ||
+      (pos.get(b.id) - pos.get(a.id)));
+  }
+
+  /** Tous les mémos, triés (cf. `#sortMemos`). */
+  allMemos() { return this.#sortMemos([...this.memos]); }
+
+  /** Les mémos non faits. */
+  openMemos() { return this.#sortMemos(this.memos.filter((m) => !m.done)); }
+
+  /** Les mémos d'une tâche (`null` = les généraux), triés. */
+  memosFor(taskId) { return this.#sortMemos(this.memos.filter((m) => m.taskId === (taskId ?? null))); }
+
+  /** Nombre de mémos ouverts d'une tâche — l'indicateur des lignes de tâche. */
+  openMemoCountFor(taskId) { return this.memos.filter((m) => m.taskId === taskId && !m.done).length; }
+
+  /** Ajoute un mémo. Renvoie le mémo, ou `"invalid"` (texte vide). Une tâche inconnue → mémo général. */
+  addMemo({ text, taskId = null }) {
+    const memo = new Memo({ id: this.#uid("m_"), text, taskId: this.taskById(taskId) ? taskId : null });
+    if (!memo.text) return "invalid";
+    this.memos.push(memo);
+    this.#commit();
+    return memo;
+  }
+
+  toggleMemo(id) {
+    const m = this.memos.find((x) => x.id === id);
+    if (!m) return;
+    m.done = !m.done;
+    this.#commit();
+  }
+
+  /** Corrige le texte et/ou le rattachement d'un mémo (texte vide ignoré). */
+  updateMemo(id, patch) {
+    const m = this.memos.find((x) => x.id === id);
+    if (!m) return;
+    if ("text" in patch) {
+      const t = String(patch.text ?? "").trim();
+      if (t) m.text = t.slice(0, MEMO_TEXT_MAX);
+    }
+    if ("taskId" in patch) m.taskId = this.taskById(patch.taskId) ? patch.taskId : null;
+    this.#commit();
+  }
+
+  deleteMemo(id) {
+    this.memos = this.memos.filter((m) => m.id !== id);
+    this.#commit();
   }
 
   /* ----------------- commandes segments ----------------- */
@@ -490,14 +562,16 @@ export class Store extends EventEmitter {
     this.settings = new Settings();
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.meta = { lastExport: null };
     this.#commit();
   }
 
-  /** Vide tâches et segments en conservant les réglages et le méta. */
+  /** Vide tâches, segments et mémos en conservant les réglages et le méta. */
   clearEntries() {
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.#commit();
   }
 

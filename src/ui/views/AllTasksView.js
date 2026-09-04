@@ -2,6 +2,7 @@ import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { TASK_TYPES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 import { createCopyButton } from "../components/CopyButton.js";
+import { memoBadge } from "../components/MemoList.js";
 import {
   sameDay, addDays, mondayOf, startOfDay, fmtClock, fmtDateInput, pad2, cap,
 } from "../../utils/datetime.js";
@@ -206,6 +207,8 @@ export class AllTasksView {
     );
     if (task.link) actions.appendChild(this.#linkBtn(task.link));
     actions.appendChild(this.#ctrlBtn("pencil", "Éditer la tâche", () => this.app.openEditTask(task.id)));
+    const badge = memoBadge(this.app, task.id);
+    if (badge) head.querySelector(".at-name")?.appendChild(badge);
     head.appendChild(actions);
     card.appendChild(head);
 

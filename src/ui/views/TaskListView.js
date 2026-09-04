@@ -2,6 +2,7 @@ import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { sameDay } from "../../utils/datetime.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import { icon } from "../icons.js";
+import { memoBadge } from "../components/MemoList.js";
 
 /**
  * Liste des tâches du jour : durée, copie, et actions selon le cycle de vie.
@@ -129,6 +130,8 @@ export class TaskListView {
 
     row.appendChild(actions);
     row.querySelector(".swatch").addEventListener("click", () => this.app.openEditTask(task.id));
+    const badge = memoBadge(this.app, task.id);
+    if (badge) row.querySelector(".task-name").appendChild(badge);
     return row;
   }
 

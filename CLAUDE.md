@@ -69,7 +69,8 @@ src/
   utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard · curve · color
   models/               DOMAINE
     Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
-    Task.js  Segment.js modèles (fromJSON/toJSON)
+    Task.js  Segment.js modèles (fromJSON/toJSON) ; Segment porte une tâche OU un motif (§15)
+    Memo.js             mémo : texte, tâche optionnelle, fait (§16)
     Store.js            SOURCE DE VÉRITÉ : état + commandes + persistance + events
   services/
     Persistence.js      stockage 2 zones : IndexedDB (complet) + miroir localStorage 30 j (§6)
@@ -84,7 +85,7 @@ src/
     DayGlyphAnimator.js anime le glyphe « moment de la journée » image par image
     EyeBreak.js         « repos des yeux » (20-20-20) : état + notification (§13)
     icons.js            pack d'icônes Lucide inline + glyphes dot-matrix (§8)
-    components/         Toast · CopyButton · ScheduleEditor · TimelineTip (factories)
+    components/         Toast · CopyButton · ScheduleEditor · TimelineTip · FillPopover · MemoList (factories)
     views/              une vue = bind() (1×, optionnel) + render(viewDay) ; voir liste ci-dessous
     modals/             Modal (base) · NewTask · Resume · EditTask
 ```
@@ -93,7 +94,7 @@ Vues (toutes ajoutées à `App.views`) :
 `HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView, TotalsView,
 TaskListView, SegmentTableView, StatsView, StatsTrendView, StatsHeatmapView,
 StatsWeeksView, StatsBreakdownView, StatsTimelineView, AllTasksView,
-SettingsView, StorageView, ToolsView`.
+SettingsView, StorageView, ToolsView, MemoPanelView`.
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
 - Constructeur `(app)` ; récupère ses éléments via `el("id")`.
@@ -121,11 +122,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v13)
+## 4. Modèle de données (schéma v14)
 
 ```jsonc
 {
-  "version": 13,
+  "version": 14,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -168,6 +169,10 @@ SettingsView, StorageView, ToolsView`.
   // tâche), jamais les deux — `taskId` est nul dès qu'un motif est posé.
   "segments": [{ "id":"s_…", "taskId":"t_…|null", "reason":"Pause|null",
                  "start":"ISO local", "end":"ISO local|null", "raw":false }],
+  // mémos (v14) : une ligne « pour demain », générale (`taskId` nul) ou sur une
+  // tâche ; `done` la barre sans l'effacer (§16)
+  "memos": [{ "id":"m_…", "text":"…", "taskId":"t_…|null",
+              "done":false, "createdAt":"ISO" }],
   "meta": { "lastExport": null }
 }
 ```
@@ -662,3 +667,30 @@ depuis la modale, qui ne fait que le corriger.
   **deux parts** (accent = tracé, encre = justifié). CSV : `type` = `hors`,
   `jira` vide, colonne `kind` (`task|off`).
 - Testé dans `checks/domaine.mjs` §12.
+
+## 16. Mémos
+
+Une ligne de texte à se laisser (« pour demain »), **générale** ou **rattachée à
+une tâche**. `models/Memo.js` (texte ≤ 200 car., `done`, `createdAt`),
+commandes dans `Store` (`addMemo` → mémo ou `"invalid"`, `toggleMemo`,
+`updateMemo`, `deleteMemo` ; requêtes `allMemos`, `openMemos`, `memosFor`,
+`openMemoCountFor`). Ordre : ouverts d'abord, puis faits, les plus récents en
+haut — départagés par ordre d'insertion à la même milliseconde.
+
+- **Un seul composant de liste** (`components/MemoList.js`, factory comme
+  `FillPopover`) sert le panneau **et** la modale de tâche ; `memoBadge()` est
+  l'indicateur des lignes de tâche (Tâches du jour, onglet Tâches), posé dans la
+  colonne élastique du nom — rien ne bouge — et qui ouvre le panneau sur la tâche.
+- **Le panneau** (`views/MemoPanelView`, `#memoPanel`) est fixé à droite sous
+  l'en-tête, **non modal**, accessible depuis tous les écrans (bouton d'en-tête
+  avec compteur des ouverts, ou `M`). Son `anchor` est le panneau lui-même :
+  `App.render()` le saute fermé. Échap le ferme **après** les modales et
+  **avant** le retour à l'écran app ; changer d'écran le ferme. Le select des
+  tâches n'est jamais réécrit sous le focus (patron `setIf`).
+- **Cascade et normalisation** : `deleteTask` emporte les mémos de la tâche (le
+  `confirm` de la modale le dit) ; `clearEntries` et `reset` les vident ;
+  `hydrate` rend **général** tout mémo dont la tâche manque (import partiel),
+  idempotent. Export/import JSON suivent `toJSON`/`hydrate` sans code.
+- Le compteur et l'indicateur sont en **lavis d'accent** (N3, « ça se
+  clique »), jamais en minium : un mémo n'exige rien maintenant.
+- Testé dans `checks/domaine.mjs` §13.
