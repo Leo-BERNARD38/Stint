@@ -79,6 +79,9 @@
         <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
           <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
         </button>
+        <!-- L'icône vit dans un span : `renderStaticIcons` remplace le contenu de
+             tout [data-icon], le compteur ne doit pas être dedans. -->
+        <button id="memoBtn" class="icon-btn memo-btn" aria-label="Mémos" title="Mémos (M)"><span data-icon="sticky-note"></span><span class="memo-count" id="memoCount" hidden>0</span></button>
         <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
         <button id="toolsBtn" class="icon-btn" data-icon="calculator" aria-label="Outils" title="Outils"></button>
         <button id="helpBtn" class="icon-btn" data-icon="help" aria-label="Guide" title="Guide"></button>
@@ -160,9 +163,9 @@
     <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
     <div class="day-head" id="dayHead">
       <div class="daynav">
-        <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
+        <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent" title="Jour précédent (←)"></button>
         <div class="date" id="dayLabel">—</div>
-        <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
+        <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant" title="Jour suivant (→)"></button>
       </div>
       <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
       <!-- Le contrat du jour : ce que les horaires prévoient. Sans lui, la
@@ -173,7 +176,7 @@
     <!-- ---------------------------- Onglet : Journée ---------------------------- -->
     <section class="tab-panel" data-panel="journee">
       <div class="timeline-wrap dot-card">
-        <div class="block-title">Timeline <span class="hint">glissez le bord d'un segment · cliquez un trou pour le combler</span></div>
+        <div class="block-title">Timeline <span class="hint">glissez le bord d'un segment · cliquez un segment pour l'éditer · cliquez un trou pour le combler</span></div>
         <div class="timeline" id="timeline"></div>
         <div class="tl-axis" id="tlAxis"></div>
       </div>
@@ -212,7 +215,7 @@
           Segments
           <span class="hint">cliquez une ligne pour l'éditer</span>
           <span class="grow"></span>
-          <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
+          <button class="mini-btn" id="addSegment" title="Segment manuel (S)"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
         </div>
         <div class="table-scroll">
         <table class="seg-table">
@@ -344,6 +347,17 @@
         <div class="top-tasks" id="statsTopTasks"></div>
       </div>
 
+      <!-- Les vides justifiés de la période : épinglés d'abord, puis les
+           exceptionnels repliés en une ligne — un an de motifs uniques ne doit
+           pas faire un bloc d'un mètre. -->
+      <div class="stat-block">
+        <div class="block-title">
+          Hors tâche
+          <span class="hint">les vides justifiés · part du hors tâche</span>
+        </div>
+        <div class="stats-off" id="statsOff"></div>
+      </div>
+
       <div class="stat-block">
         <div class="block-title">
           Timeline
@@ -380,9 +394,11 @@
           <a href="#set-apparence"><span class="n">01</span> Apparence</a>
           <a href="#set-horaires"><span class="n">02</span> Horaires</a>
           <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
-          <a href="#set-yeux"><span class="n">04</span> Repos des yeux</a>
-          <a href="#set-pauses"><span class="n">05</span> Pauses &amp; rappels</a>
-          <a href="#set-donnees"><span class="n">06</span> Données</a>
+          <a href="#set-segments"><span class="n">04</span> Segments</a>
+          <a href="#set-hors"><span class="n">05</span> Hors tâche</a>
+          <a href="#set-yeux"><span class="n">06</span> Repos des yeux</a>
+          <a href="#set-pauses"><span class="n">07</span> Pauses &amp; rappels</a>
+          <a href="#set-donnees"><span class="n">08</span> Données</a>
         </nav>
 
         <div class="set-body">
@@ -550,7 +566,69 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 04 · Repos des yeux ---------------------------- -->
+          <!-- ---------------------------- 04 · Segments ---------------------------- -->
+          <section class="set-group" id="set-segments">
+            <h3>Segments</h3>
+            <p class="muted">Deux garde-fous du chrono, pour une timeline qui ne se fragmente pas.
+              Ils ne concernent que <strong>Play, Pause, Reprendre et Terminer</strong> — jamais un
+              segment saisi à la main ni un bord glissé sur la timeline.</p>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Fusion des micro-pauses</b>
+                <span>Reprendre la <strong>même tâche</strong> dans ce délai rouvre le segment
+                  précédent au lieu d'en créer un nouveau. 0 = jamais.</span>
+              </span>
+              <span class="set-ctl">
+                <input type="number" id="setMergeGap" class="tinput" min="0" max="30" step="1" aria-label="Délai de fusion des micro-pauses, en minutes">
+                <span class="prec-sep">min</span>
+              </span>
+            </div>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Segments courts ignorés</b>
+                <span>Un segment que le chrono arrête <strong>avant cette durée</strong> est
+                  supprimé, pas conservé : un double-clic sur Play ou une reprise sur la mauvaise
+                  tâche ne laissent pas de confetti de douze secondes. 0 = tout garder.</span>
+              </span>
+              <span class="set-ctl">
+                <input type="number" id="setMinSeg" class="tinput" min="0" max="15" step="1" aria-label="Durée minimale d'un segment du chrono, en minutes">
+                <span class="prec-sep">min</span>
+              </span>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 05 · Hors tâche ---------------------------- -->
+          <section class="set-group" id="set-hors">
+            <h3>Hors tâche</h3>
+            <p class="muted">
+              Un <strong>vide justifié</strong> explique un trou de la journée (pause café,
+              réunion, papotage) sans être du travail : il compte dans la couverture, jamais dans
+              le total ni dans Jira, et n'apparaît dans aucune liste de tâches. On le pose depuis
+              le <strong>temps non tracé</strong> — un trou de la timeline, ou « Combler » dans Totaux.
+            </p>
+            <div class="set-row stack">
+              <span class="set-lab">
+                <b>Motifs épinglés</b>
+                <span>Proposés en un clic quand vous comblez un vide. Un motif tapé à la volée reste
+                  <strong>exceptionnel</strong> et n'entre pas ici — sauf si vous cochez
+                  « Garder dans la liste ». Retirer un motif ne touche pas l'historique.</span>
+              </span>
+            </div>
+            <div class="ov-list" id="offList"></div>
+            <div class="ov-editor">
+              <div class="off-add">
+                <div class="field">
+                  <label for="offLabel">Nouveau motif</label>
+                  <input type="text" id="offLabel" maxlength="40" placeholder="Réunion d'équipe" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="ov-actions">
+                  <button class="btn primary" id="offAdd">Épingler</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 06 · Repos des yeux ---------------------------- -->
           <section class="set-group" id="set-yeux">
             <h3>Repos des yeux</h3>
             <label class="set-row">
@@ -610,7 +688,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 05 · Pauses &amp; rappels ---------------------------- -->
+          <!-- ---------------------------- 07 · Pauses &amp; rappels ---------------------------- -->
           <section class="set-group" id="set-pauses">
             <h3>Pauses &amp; rappels</h3>
             <p class="muted">
@@ -673,7 +751,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 05 · Données ---------------------------- -->
+          <!-- ---------------------------- 08 · Données ---------------------------- -->
           <section class="set-group" id="set-donnees">
             <h3>Sauvegarde &amp; données</h3>
             <p class="muted">
@@ -721,7 +799,7 @@
             <div class="set-row is-danger">
               <span class="set-lab"><b>Zone sans retour</b><span>Ces deux actions sont irréversibles. Exportez d'abord.</span></span>
               <span class="set-ctl">
-                <button class="btn" id="clearEntries">Vider tâches &amp; segments</button>
+                <button class="btn" id="clearEntries">Vider tâches, segments &amp; mémos</button>
                 <button class="btn danger" id="resetAll"><span data-icon="trash" data-icon-size="16"></span> Tout effacer</button>
               </span>
             </div>
@@ -749,13 +827,15 @@
           <a href="#g-2"><span class="num">02</span> Pause ou Terminer&nbsp;?</a>
           <a href="#g-3"><span class="num">03</span> Temps ouvré &amp; brut</a>
           <a href="#g-4"><span class="num">04</span> Onglet Journée</a>
-          <a href="#g-5"><span class="num">05</span> Onglet Tâches</a>
-          <a href="#g-6"><span class="num">06</span> Onglet Stats</a>
-          <a href="#g-7"><span class="num">07</span> Rappels &amp; repos des yeux</a>
-          <a href="#g-8"><span class="num">08</span> Outils</a>
-          <a href="#g-9"><span class="num">09</span> Copier pour Jira</a>
-          <a href="#g-10"><span class="num">10</span> Sauvegarde</a>
-          <a href="#g-11"><span class="num">11</span> Installer l'app</a>
+          <a href="#g-5"><span class="num">05</span> Onglet Segments</a>
+          <a href="#g-6"><span class="num">06</span> Onglet Tâches</a>
+          <a href="#g-7"><span class="num">07</span> Onglet Stats</a>
+          <a href="#g-8"><span class="num">08</span> Mémos</a>
+          <a href="#g-9"><span class="num">09</span> Rappels &amp; repos des yeux</a>
+          <a href="#g-10"><span class="num">10</span> Outils</a>
+          <a href="#g-11"><span class="num">11</span> Copier pour Jira</a>
+          <a href="#g-12"><span class="num">12</span> Sauvegarde</a>
+          <a href="#g-13"><span class="num">13</span> Installer l'app</a>
         </aside>
 
         <div class="guide-content">
@@ -780,6 +860,8 @@
             </li>
           </ul>
           <p>La carte « Tâche active » en haut affiche le <b>temps total cumulé</b> de la tâche en cours (tous ses segments).</p>
+          <p>Et au clavier, hors d'un champ de saisie : <kbd>←</kbd> <kbd>→</kbd> changer de jour ·
+            <kbd>S</kbd> segment manuel · <kbd>Échap</kbd> fermer.</p>
         </div>
 
         <div class="guide-block" id="g-2">
@@ -814,12 +896,28 @@
         </div>
 
         <div class="guide-block" id="g-4">
-          <h3>Onglet Journée — timeline & temps non tracé</h3>
+          <h3>Onglet Journée — timeline, trous &amp; vides justifiés</h3>
           <p>
-            La barre représente ta journée, chaque bloc une tâche. Les vides entre les blocs sont
-            du <b>temps non tracé</b> : le raccourci « Combler » t'aide à le rattraper. Le trait
-            vertical marque l'heure actuelle. L'onglet <b>Segments</b> permet d'éditer les heures,
-            la tâche ou le mode brut, et d'ajouter une saisie manuelle.
+            La barre représente ta journée, chaque bloc une tâche ; le trait vertical marque
+            l'heure actuelle. <b>Clique un bloc</b> pour l'éditer (tâche, heures, brut, couper,
+            fusionner — voir l'onglet Segments), <b>glisse son bord</b> pour l'ajuster (calé à
+            5 min ; un segment en cours n'a qu'un bord gauche). Survoler un bloc allume la ligne
+            de sa tâche en dessous, et réciproquement.
+          </p>
+          <p>
+            Les zones <b>hachurées</b> sont du <b>temps non tracé</b>. Clique-en une (ou
+            « Combler » dans Totaux) : tu peux <b>prolonger</b> le segment voisin, <b>créer un
+            segment</b> sur une tâche, ou <b>justifier le vide</b> — une pause café, une réunion,
+            un papotage. Un vide justifié n'est pas du travail : il ne compte ni dans le total,
+            ni dans Jira, ni dans les tâches. Mais il <b>explique</b> le trou : il sort du temps
+            non tracé et entre dans la <b>couverture</b> de la journée (la barre a alors deux
+            parts, le tracé et le justifié), et il a son propre bloc dans Totaux et dans Stats.
+          </p>
+          <p>
+            Les motifs <b>épinglés</b> (Réglages › Hors tâche) se posent en un clic. Un motif
+            exceptionnel se tape dans « Autre motif… » et ne rejoint la liste que si tu coches
+            « Garder dans la liste » — sinon elle grossirait sans fin. Sur la timeline, un vide
+            justifié garde la forme du trou, sans hachures ni couleur : c'est le trou, expliqué.
           </p>
           <p>
             À droite de <b>Tâches du jour</b>, l'interrupteur <b>Arrondi</b> bascule la journée sur
@@ -830,6 +928,30 @@
         </div>
 
         <div class="guide-block" id="g-5">
+          <h3>Onglet Segments — corriger finement</h3>
+          <p>
+            La même timeline, avec le <b>tableau</b> de tous les segments du jour en dessous
+            (survoler relie les deux). Le tableau est en lecture seule : <b>clique une ligne</b>
+            pour ouvrir sa modale — tâche, début, fin, case <b>brut</b>, suppression — et
+            <b>Segment manuel</b> (<kbd>S</kbd>) en ajoute un à la main, fin vide pour « en cours ».
+          </p>
+          <p>
+            Deux outils de plus dans la modale. <b>Couper à</b> une heure sépare le segment en
+            deux moitiés qui gardent tâche et brut : « en fait j'ai changé de tâche à 14 h 30 »,
+            c'est couper, puis changer la tâche de la moitié droite. <b>Fusionner avec</b> le
+            précédent ou le suivant ne fait qu'un segment des deux, en absorbant l'écart — il faut
+            la même tâche, et rien entre les deux ; sinon le bouton est grisé et dit pourquoi.
+          </p>
+          <p>
+            Et deux garde-fous du chrono, réglables (Réglages › Segments) : reprendre la
+            <b>même tâche</b> dans les 2 minutes rouvre le segment plutôt que d'en créer un ; un
+            segment arrêté avant <b>1 minute</b> est jeté, pas conservé — un double-clic sur Play
+            ou une reprise sur la mauvaise tâche ne laissent pas de confetti dans la timeline.
+            Rien de tout cela ne touche à un segment saisi à la main.
+          </p>
+        </div>
+
+        <div class="guide-block" id="g-6">
           <h3>Onglet Tâches — rechercher, filtrer, regrouper</h3>
           <p>
             Toutes tes tâches, avec <b>recherche</b> (nom ou clé Jira), <b>filtres</b> par type
@@ -843,7 +965,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-6">
+        <div class="guide-block" id="g-7">
           <h3>Onglet Stats — rétrospective</h3>
           <p>
             La page « qu'est-ce que j'ai fait ces derniers temps ». Tout y suit une
@@ -853,7 +975,7 @@
           <ul>
             <li><b>Cartes</b> — total (avec l'écart vs la période précédente), moyenne par jour
               actif, jours actifs, meilleur jour, série en cours, et <b>couverture</b> : la part de
-              tes horaires réellement tracée.</li>
+              tes horaires tracée <b>ou justifiée</b> (les vides expliqués comptent, cf. Journée).</li>
             <li><b>Évolution</b> — le temps par type dans le temps, en <b>Jour · Semaine · Mois</b>.
               <b>Empilé</b> pour lire le total, <b>Séparé</b> pour comparer les tendances. Clique une
               couleur de la légende pour masquer sa série.</li>
@@ -866,12 +988,33 @@
               récap « tâche → durée », prêt à coller.</li>
             <li><b>Répartition</b> — par type et par jour de semaine ; puis le <b>top tâches</b> de
               la période, avec les copies <b>Déc.</b> / <b>Jira</b>.</li>
+            <li><b>Hors tâche</b> — tes vides justifiés sur la période, motif par motif : les
+              épinglés d'abord, les exceptionnels repliés sous une ligne. En pied, ce que ça
+              pèse dans tes horaires.</li>
             <li><b>Timeline</b> — l'historique fin (échelle <b>Mois · Année</b> ; survol = détail,
               clic = ouvrir le jour).</li>
           </ul>
         </div>
 
-        <div class="guide-block" id="g-7">
+        <div class="guide-block" id="g-8">
+          <h3>Mémos — pour demain, ou pour une tâche</h3>
+          <p>
+            Le bouton <b>Mémos</b> en haut à droite (ou <kbd>M</kbd>) ouvre un panneau : une ligne
+            de texte, <kbd>Entrée</kbd>, et c'est noté. Choisis une tâche dans la liste pour lui
+            rattacher le mémo, ou laisse « sans tâche » pour un mémo général — le « relancer Paul »
+            de demain matin. Le panneau reste ouvert pendant que tu travailles ; <kbd>Échap</kbd>
+            ou sa croix le ferment.
+          </p>
+          <p>
+            Coche un mémo pour le marquer fait — il se barre, il ne s'efface pas ; la croix, si.
+            Une tâche qui porte des mémos ouverts le montre sur sa ligne (Journée, Tâches) :
+            clique l'indicateur pour ouvrir le panneau sur elle, ou retrouve ses mémos dans sa
+            fenêtre d'édition. Supprimer une tâche emporte ses mémos ; l'export JSON les
+            contient.
+          </p>
+        </div>
+
+        <div class="guide-block" id="g-9">
           <h3>Rappels &amp; repos des yeux</h3>
           <p>
             Deux rappels facultatifs, coupés par défaut, qui se règlent dans
@@ -916,7 +1059,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-8">
+        <div class="guide-block" id="g-10">
           <h3>Outils <kbd>calculatrice</kbd></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
@@ -925,7 +1068,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-9">
+        <div class="guide-block" id="g-11">
           <h3>Copier pour Jira</h3>
           <p>
             Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
@@ -934,7 +1077,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-10">
+        <div class="guide-block" id="g-12">
           <h3>Sauvegarde</h3>
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
@@ -944,12 +1087,12 @@
           </p>
           <p>
             Réglages › Sauvegarde &amp; données affiche aussi le <b>stockage utilisé</b> et permet de
-            <b>purger les vieux segments</b> ou de <b>vider tâches &amp; segments</b> en gardant tes
-            réglages.
+            <b>purger les vieux segments</b> ou de <b>vider tâches, segments &amp; mémos</b> en gardant
+            tes réglages.
           </p>
         </div>
 
-        <div class="guide-block" id="g-11">
+        <div class="guide-block" id="g-13">
           <h3>Installer l'application</h3>
           <p>
             Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,
@@ -1021,6 +1164,25 @@
     </section>
   </main>
 
+  <!-- Panneau des mémos : « pour demain », général ou sur une tâche. Fixe à
+       droite, sous l'en-tête, non modal — le reste de l'app reste cliquable.
+       Ouvert depuis l'en-tête ou M, fermé par sa croix, Échap ou un changement
+       d'écran. -->
+  <aside id="memoPanel" class="memo-panel" hidden aria-label="Mémos">
+    <div class="memo-head">
+      <span class="block-title">Mémos <span class="hint">pour demain, ou pour une tâche</span></span>
+      <button id="memoClose" class="modal-close memo-close" data-icon="x" aria-label="Fermer" title="Fermer (Échap)"></button>
+    </div>
+    <div class="memo-add">
+      <input type="text" id="memoText" class="memo-input" maxlength="200" placeholder="Noter… (Entrée)" autocomplete="off" spellcheck="false" aria-label="Nouveau mémo">
+      <div class="select-wrap">
+        <select id="memoTask" aria-label="Tâche du mémo"></select>
+        <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
+      </div>
+    </div>
+    <div class="memo-list" id="memoList"></div>
+  </aside>
+
   <!-- ============================ MODALES ============================ -->
   <div class="modal-backdrop" id="newTaskModal">
     <div class="modal">
@@ -1055,6 +1217,7 @@
       <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3>Reprendre une tâche</h3>
       <p class="modal-sub">Reprend la tâche choisie (arrête l'active, relance un segment).</p>
+      <input type="search" id="resumeSearch" class="at-search resume-search" placeholder="Filtrer… (↑ ↓ puis Entrée)" autocomplete="off" spellcheck="false" aria-label="Filtrer les tâches">
       <div class="resume-list" id="resumeList"></div>
     </div>
   </div>
@@ -1086,6 +1249,13 @@
           <span class="color-hex" id="etColorHex"></span>
         </div>
       </div>
+      <!-- Les mémos de la tâche : même liste que le panneau, sans la puce de
+           tâche (on sait où l'on est). Entrée ajoute. -->
+      <div class="field et-memos" style="margin-top:14px;">
+        <label>Mémos</label>
+        <div class="memo-list" id="etMemos"></div>
+        <input type="text" id="etMemoText" class="memo-input" maxlength="200" placeholder="Noter sur cette tâche… (Entrée)" autocomplete="off" spellcheck="false" aria-label="Nouveau mémo sur la tâche">
+      </div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="btn danger" id="etDelete">Supprimer</button>
         <div style="display:flex; gap:10px;">
@@ -1100,22 +1270,44 @@
     <div class="modal">
       <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3 id="segmentModalTitle">Segment manuel</h3>
-      <p class="modal-sub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
-      <div class="field" style="margin-bottom:12px;">
+      <p class="modal-sub" id="segmentModalSub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
+      <div class="field" id="smTaskField" style="margin-bottom:12px;">
         <label>Tâche</label>
         <div class="select-wrap">
           <select id="smTask" aria-label="Tâche"></select>
           <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
         </div>
       </div>
+      <!-- Vide justifié : le motif est un TEXTE (un exceptionnel se corrige),
+           les épinglés ne sont que des suggestions. -->
+      <div class="field" id="smReasonField" style="margin-bottom:12px;" hidden>
+        <label for="smReason">Motif <span class="field-optional">hors tâche</span></label>
+        <input type="text" id="smReason" maxlength="40" list="smReasonList" autocomplete="off" spellcheck="false" required>
+        <datalist id="smReasonList"></datalist>
+      </div>
       <div class="field-grid" style="margin-bottom:12px;">
         <div class="field"><label>Début</label><input type="datetime-local" id="smStart"></div>
         <div class="field"><label>Fin</label><input type="datetime-local" id="smEnd"></div>
       </div>
-      <label class="switch-row" style="margin-bottom:4px;">
+      <label class="switch-row" id="smRawRow" style="margin-bottom:4px;">
         <input type="checkbox" id="smRaw">
         Temps brut (sans rognage sur les horaires de travail)
       </label>
+      <!-- Outils d'édition (masqués en création) : couper le segment en deux à
+           une heure, ou le fusionner avec son voisin de même tâche. Un bouton
+           impossible est désactivé et DIT pourquoi (title), il n'est pas caché. -->
+      <div class="sm-tools" id="smTools" hidden>
+        <div class="sm-tool">
+          <span class="sm-tool-lab">Couper à</span>
+          <input type="time" id="smSplitAt" class="tinput" step="300" aria-label="Heure de coupe">
+          <button class="mini-btn" id="smSplit"><span data-icon="scissors" data-icon-size="14"></span> Couper</button>
+        </div>
+        <div class="sm-tool">
+          <span class="sm-tool-lab">Fusionner avec</span>
+          <button class="mini-btn" id="smMergePrev"><span data-icon="arrow-left" data-icon-size="14"></span> le précédent</button>
+          <button class="mini-btn" id="smMergeNext">le suivant <span data-icon="arrow-right" data-icon-size="14"></span></button>
+        </div>
+      </div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="btn danger" id="smDelete" hidden>Supprimer</button>
         <div style="display:flex; gap:10px; margin-left:auto;">

@@ -5,15 +5,20 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 14;
 export const DAY_MS = 86_400_000;
 
 /**
- * Seuil de fusion des micro-pauses : reprendre la même tâche dans cet intervalle
- * après une pause rouvre le segment précédent au lieu d'en créer un nouveau.
- * Évite de fragmenter la base et garde une timeline lisible. (2 minutes)
+ * Bornes des deux seuils du chrono (`settings.segments`, en minutes) :
+ *   - `mergeGapMin` : reprendre la même tâche dans ce délai après une pause
+ *     rouvre le segment précédent au lieu d'en créer un nouveau (micro-pause) ;
+ *   - `minMin` : un segment que le chrono arrête avant cette durée est supprimé,
+ *     pas conservé — un double-clic sur Play ou un « oups » avant Reprendre ne
+ *     laisse pas de confetti de douze secondes dans la timeline.
+ * 0 = désactivé. Au-delà de la borne haute on jetterait du travail réel.
  */
-export const SEGMENT_MERGE_GAP_MS = 120_000;
+export const SEGMENT_MERGE_GAP_MAX_MIN = 30;
+export const SEGMENT_MIN_MAX_MIN = 15;
 
 /**
  * Palettes de couleurs assignées automatiquement aux tâches, **par catégorie**.
@@ -110,7 +115,26 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // `breaks` : les rappels qu'on pose soi-même. `date` nulle = tous les jours
   // travaillés ; `date` renseignée = ce jour-là seulement (une réunion).
   reminders: { lunch: false, dayEnd: false, breaks: [] },
+  // Seuils du chrono (v12) : fusion des micro-pauses et segments courts ignorés.
+  // Ils ne concernent QUE le chrono (Play, Pause, Reprendre, Terminer) — jamais
+  // une saisie explicite (segment manuel, glisser, modale), qui dit ce qu'elle
+  // veut dire. Le défaut d'une minute suit le seuil de fusion : sous deux
+  // minutes ce n'est déjà pas une activité, sous une c'est un clic.
+  segments: { mergeGapMin: 2, minMin: 1 },
+  // Motifs « hors tâche » ÉPINGLÉS (v13) : les vides justifiés qu'on pose en un
+  // clic (pause café, réunion…). Ce ne sont que des raccourcis de saisie — un
+  // motif tapé à la volée (« Dentiste ») reste exceptionnel et n'entre pas ici,
+  // sinon la liste grossirait sans fin. Le segment, lui, porte toujours le
+  // libellé en clair : retirer un épinglé ne touche pas l'historique.
+  offReasons: ["Pause", "Réunion", "Discussion"],
 });
+
+/** Longueur maximale d'un mémo : une ligne à se laisser, pas un cahier. */
+export const MEMO_TEXT_MAX = 200;
+
+/** Bornes de la liste des motifs épinglés et de leur libellé. */
+export const OFF_REASON_MAX = 12;
+export const OFF_LABEL_MAX = 40;
 
 /** Bornes de la période du rappel « repos des yeux », en minutes. */
 export const EYE_BREAK_MIN = 1;

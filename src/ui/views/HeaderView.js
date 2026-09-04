@@ -8,6 +8,8 @@ export class HeaderView {
     this.wordmark = el("wordmark");
     this.pill = el("backupPill");
     this.pillText = el("backupText");
+    this.memoBtn = el("memoBtn");
+    this.memoCount = el("memoCount");
   }
 
   bind() {
@@ -21,6 +23,7 @@ export class HeaderView {
       this.app.render();
     });
     this.pill.addEventListener("click", () => this.app.exportJSON());
+    this.memoBtn.addEventListener("click", () => this.app.toggleMemos());
   }
 
   render() {
@@ -28,6 +31,13 @@ export class HeaderView {
     const name = settings.appName || "Stint";
     document.title = name;
     if (document.activeElement !== this.wordmark) this.wordmark.value = name;
+
+    // Mémos ouverts : un compteur en lavis (N3, « ça se clique »), jamais en
+    // minium — un mémo n'exige rien maintenant. Bouton marqué actif panneau ouvert.
+    const open = this.app.store.openMemos().length;
+    this.memoCount.hidden = open === 0;
+    this.memoCount.textContent = String(open);
+    this.memoBtn.classList.toggle("active", !!this.app.memoPanel?.isOpen);
 
     this.pill.classList.remove("warn", "crit");
 

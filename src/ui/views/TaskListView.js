@@ -2,6 +2,7 @@ import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { sameDay } from "../../utils/datetime.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import { icon } from "../icons.js";
+import { memoBadge } from "../components/MemoList.js";
 
 /**
  * Liste des tâches du jour : durée, copie, et actions selon le cycle de vie.
@@ -21,6 +22,13 @@ export class TaskListView {
   bind() {
     this.toggle.addEventListener("change", (e) =>
       this.app.store.updateSettings((s) => { s.roundedDay = e.target.checked; }));
+    // Survol croisé : la ligne survolée allume ses segments sur la timeline
+    // (même délégation que le tableau de l'onglet Segments).
+    this.list.addEventListener("mouseover", (e) => {
+      const row = e.target.closest?.(".task-row[data-task]");
+      this.app.highlightTask(row ? row.getAttribute("data-task") : null);
+    });
+    this.list.addEventListener("mouseleave", () => this.app.highlightTask(null));
   }
 
   render(viewDay) {
@@ -87,6 +95,7 @@ export class TaskListView {
     const fmt = this.app.formatter;
     const row = createEl("div", {
       className: "task-row" + (isActive ? " active" : "") + (task.done ? " done" : "") + (task.archived ? " archived" : ""),
+      attrs: { "data-task": task.id },
       html:
         `<button class="swatch" style="background:${task.color}" title="Éditer"></button>` +
         `<div class="task-main"><div class="task-name">${escapeHtml(task.displayName)}` +
@@ -121,6 +130,8 @@ export class TaskListView {
 
     row.appendChild(actions);
     row.querySelector(".swatch").addEventListener("click", () => this.app.openEditTask(task.id));
+    const badge = memoBadge(this.app, task.id);
+    if (badge) row.querySelector(".task-name").appendChild(badge);
     return row;
   }
 

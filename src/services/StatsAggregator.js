@@ -1,4 +1,5 @@
 import { DAY_MS, TASK_TYPES } from "../core/constants.js";
+import { offKey } from "../models/Settings.js";
 import {
   startOfDay, addDays, isoDow, isoWeek, mondayOf, fmtDateInput, pad2, cap,
 } from "../utils/datetime.js";
@@ -106,12 +107,23 @@ export class StatsAggregator {
     const cached = this.#dayCache.get(dayStart);
     if (cached) return cached;
     const entry = index.get(fmtDateInput(new Date(dayStart)));
-    const out = { ms: 0, byType: emptyByType(), byTask: new Map() };
+    // `offMs` / `offByReason` : les vides justifiés, à part — ni dans `ms` (ce
+    // n'est pas du travail : l'Évolution, le Rythme et les semaines l'ignorent)
+    // ni dans `byTask`. Ils ne servent qu'à la couverture et au bloc Hors tâche.
+    const out = { ms: 0, byType: emptyByType(), byTask: new Map(), offMs: 0, offByReason: new Map() };
     if (!entry) { this.#dayCache.set(dayStart, out); return out; }
     const dayEnd = dayStart + DAY_MS;
     for (const seg of entry.segs) {
       const ms = this.calc.segmentMs(seg, dayStart, dayEnd);
       if (ms <= 0) continue;
+      if (seg.isOff) {
+        out.offMs += ms;
+        const key = offKey(seg.reason);
+        const cur = out.offByReason.get(key) ?? { label: seg.reason, ms: 0 };
+        cur.ms += ms;
+        out.offByReason.set(key, cur);
+        continue;
+      }
       out.ms += ms;
       const type = this.store.taskById(seg.taskId)?.type ?? "autre";
       out.byType[type] = (out.byType[type] ?? 0) + ms;
@@ -169,6 +181,7 @@ export class StatsAggregator {
       days.push({
         key: fmtDateInput(date), date, start: t, end: t + DAY_MS,
         ms: stats.ms, byType: stats.byType, byTask: stats.byTask,
+        offMs: stats.offMs, offByReason: stats.offByReason,
         plannedMs, scheduledMs, isWorkDay: ranges.length > 0,
       });
     }
@@ -316,8 +329,24 @@ export class StatsAggregator {
     const prevTotal = this.#totalBetween(range.prevStart, range.prevEnd);
     const byType = emptyByType();
     for (const d of days) for (const t of TASK_TYPES) byType[t] += d.byType[t] ?? 0;
+    // Hors tâche sur la période : total, et une ligne par motif (clé `offKey`),
+    // triées par durée décroissante. La partition épinglés / exceptionnels se
+    // fait au rendu, d'après les réglages du moment : retirer un épinglé le
+    // fait basculer dans « exceptionnels » sans rien recalculer.
+    let offMs = 0;
+    const offMap = new Map();
+    for (const d of days) {
+      offMs += d.offMs;
+      for (const [key, { label, ms }] of d.offByReason) {
+        const cur = offMap.get(key) ?? { key, label, ms: 0 };
+        cur.ms += ms;
+        offMap.set(key, cur);
+      }
+    }
+    const offByReason = [...offMap.values()].sort((a, b) => b.ms - a.ms);
     return {
       total, byType, prevTotal,
+      offMs, offByReason,
       deltaMs: total - prevTotal,
       deltaPct: prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : null,
       activeDays: active.length,
@@ -326,7 +355,8 @@ export class StatsAggregator {
       bestDay: best ? { key: best.key, date: best.date, ms: best.ms } : null,
       streak: this.#streak(),
       scheduledMs,
-      coveragePct: scheduledMs > 0 ? (total / scheduledMs) * 100 : null,
+      // Un vide justifié n'est plus un manque : il compte dans la couverture.
+      coveragePct: scheduledMs > 0 ? ((total + offMs) / scheduledMs) * 100 : null,
       taskCount: new Set(days.flatMap((d) => [...d.byTask.keys()])).size,
     };
   }

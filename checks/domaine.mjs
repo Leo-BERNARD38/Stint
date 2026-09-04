@@ -4,12 +4,15 @@
  *
  *   node checks/domaine.mjs
  */
-import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay } from "../src/models/Settings.js";
+import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay, offKey, normalizeOffLabel } from "../src/models/Settings.js";
+import { Segment } from "../src/models/Segment.js";
+import { StatsAggregator } from "../src/services/StatsAggregator.js";
 import { Store } from "../src/models/Store.js";
+import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
-import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime } from "../src/utils/datetime.js";
+import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
 function ok(cond, label) {
@@ -227,7 +230,7 @@ section("migration v10 → v11 (Store, persistance simulée)");
   const store = new Store(fakePersistence());
   store.hydrate(JSON.parse(JSON.stringify(brut)));
   ok(store.settings.lunch === false, "v10 aux bornes collées → lunch:false");
-  eq(store.version, 11, "version réécrite au format courant");
+  eq(store.version, SCHEMA_VERSION, "version réécrite au format courant");
 
   const store2 = new Store(fakePersistence());
   store2.hydrate({ ...brut, settings: { ...brut.settings, lunchEnd: "13:30" } });
@@ -267,6 +270,312 @@ section("non-régression : TimeCalculator et Reminders");
   const rem2 = new Reminders({ store: { settings: s2 }, calc: new TimeCalculator({ ...store, settings: s2 }) });
   eq(rem2.occurrencesFor(jour).map((o) => o.kind), ["lunch", "dayEnd"], "avec pause : les deux rappels");
   eq(rem2.occurrencesFor(jour)[0].at, atTime(jour, "12:30").getTime(), "le déjeuner tombe au début du trou");
+}
+
+/* ----------------------------------------------------------------- §10 */
+section("seuils du chrono : micro-pauses fusionnées, segments courts jetés (v12)");
+{
+  const ago = (ms) => toLocalISO(new Date(Date.now() - ms));
+  const fresh = (segments = {}) => {
+    const store = new Store(fakePersistence());
+    store.hydrate({ version: 12, settings: { segments }, tasks: [], segments: [], meta: {} });
+    return store;
+  };
+
+  // Défauts et bornes.
+  const d = fresh();
+  eq(d.settings.segments, { mergeGapMin: 2, minMin: 1 }, "v11 → v12 : défauts fournis");
+  eq(fresh({ mergeGapMin: -5, minMin: 999 }).settings.segments, { mergeGapMin: 0, minMin: 15 },
+     "valeurs absurdes ramenées dans les bornes");
+  const back = new Store(fakePersistence());
+  back.hydrate(fresh({ mergeGapMin: 7, minMin: 3 }).toJSON());
+  eq(back.settings.segments, { mergeGapMin: 7, minMin: 3 }, "round-trip toJSON idempotent");
+
+  // Un segment de 30 s mis en pause est jeté.
+  const a = fresh();
+  const t = a.startNew({ name: "A", type: "dev" });
+  a.segments[0].start = ago(30_000);
+  a.pause();
+  eq(a.segments.length, 0, "pause sous la minute : le segment est jeté");
+  ok(!a.activeSegment(), "…et plus rien ne tourne");
+
+  // Seuil à 0 : tout est gardé.
+  const z = fresh({ minMin: 0 });
+  z.startNew({ name: "Z", type: "dev" });
+  z.segments[0].start = ago(5_000);
+  z.pause();
+  eq(z.segments.length, 1, "minMin = 0 : un segment de 5 s est conservé");
+  ok(!z.segments[0].isRunning, "…et il est bien fermé");
+
+  // Terminer une tâche sur un segment court : jeté, mais la tâche est terminée.
+  const c = fresh();
+  const tc = c.startNew({ name: "C", type: "dev" });
+  c.segments[0].start = ago(10_000);
+  c.closeTask(tc.id);
+  eq(c.segments.length, 0, "Terminer sur un segment court : jeté");
+  ok(c.taskById(tc.id).done === true, "…mais la tâche est terminée");
+
+  // Fusion : reprise à 60 s → même segment rouvert ; à 3 min → un second.
+  const m = fresh();
+  const tm = m.startNew({ name: "M", type: "dev" });
+  m.segments[0].start = ago(20 * 60_000);
+  m.pause();
+  const id0 = m.segments[0].id;
+  m.segments[0].end = ago(60_000);
+  m.resume(tm.id);
+  eq(m.segments.length, 1, "reprise à 60 s : aucun segment ajouté");
+  ok(m.segments[0].id === id0 && m.segments[0].isRunning, "…le segment est rouvert");
+  m.segments[0].start = ago(30 * 60_000);
+  m.pause();
+  m.segments[0].end = ago(3 * 60_000);
+  m.resume(tm.id);
+  eq(m.segments.length, 2, "reprise à 3 min : un second segment");
+
+  const n = fresh({ mergeGapMin: 0 });
+  const tn = n.startNew({ name: "N", type: "dev" });
+  n.segments[0].start = ago(20 * 60_000);
+  n.pause();
+  n.segments[0].end = ago(10_000);
+  n.resume(tn.id);
+  eq(n.segments.length, 2, "mergeGapMin = 0 : jamais de fusion, même à 10 s");
+
+  // Un segment jeté n'est plus « le dernier » : c'est celui d'avant qui compte.
+  const p = fresh();
+  const tp = p.startNew({ name: "P", type: "dev" });
+  p.segments[0].start = ago(20 * 60_000);
+  p.pause();
+  p.segments[0].end = ago(90_000);
+  p.resume(tp.id);                   // rouvre (90 s ≤ 2 min)
+  eq(p.segments.length, 1, "reprise à 90 s : rouvert");
+  const other = p.startNew({ name: "Q", type: "support" });   // ferme P (long), démarre Q
+  p.segments.at(-1).start = ago(20_000);
+  p.resume(tp.id);                   // Q (20 s) est jeté, P rouvert : son écart est nul
+  eq(p.segments.length, 1, "bascule corrigée dans la foulée : Q jeté, P rouvert");
+  ok(p.segments[0].taskId === tp.id && p.segments[0].isRunning, "…et c'est bien P qui tourne");
+  ok(p.taskById(other.id) != null, "la tâche Q, elle, existe toujours");
+}
+
+/* ----------------------------------------------------------------- §11 */
+section("fusionner / couper un segment");
+{
+  const iso = (h, m = 0) => toLocalISO(new Date(2026, 7, 10, h, m));
+  const fresh = () => {
+    const store = new Store(fakePersistence());
+    store.hydrate({ version: 12, settings: { segments: { minMin: 0, mergeGapMin: 0 } },
+      tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }, { id: "tB", name: "B", type: "dev", color: "#000" }],
+      segments: [], meta: {} });
+    return store;
+  };
+  const add = (store, taskId, s, e, raw = false) => {
+    store.addSegment({ taskId, start: new Date(2026, 7, 10, ...s), end: e ? new Date(2026, 7, 10, ...e) : null, raw });
+    return store.segments.at(-1).id;
+  };
+
+  // Fusion nominale : même tâche, adjacents (l'écart est absorbé), raw de A.
+  const m = fresh();
+  const a = add(m, "tA", [9, 0], [10, 0], true);
+  const b = add(m, "tA", [10, 15], [11, 0]);
+  eq(m.canMerge(a, b), null, "même tâche, rien entre : fusion possible");
+  eq(m.mergeSegments(b, a), "merged", "ordre des ids indifférent");
+  eq(m.segments.length, 1, "un seul segment après fusion");
+  eq([m.segments[0].start, m.segments[0].end, m.segments[0].raw], [iso(9), iso(11), true],
+     "[A.start, B.end], raw de A");
+
+  // Refus : tâches différentes, tiers intercalé, ids inconnus.
+  const r = fresh();
+  const ra = add(r, "tA", [9, 0], [10, 0]);
+  const rb = add(r, "tB", [10, 0], [11, 0]);
+  eq(r.canMerge(ra, rb), "task", "tâches différentes : refusé");
+  eq(r.mergeSegments(ra, rb), "task", "mergeSegments rend la même raison");
+  eq(r.segments.length, 2, "…et ne touche à rien");
+  const rc = add(r, "tA", [11, 0], [12, 0]);
+  eq(r.canMerge(ra, rc), "blocked", "un segment s'intercale : refusé");
+  eq(r.canMerge(ra, "nope"), "missing", "id inconnu : missing");
+  eq(r.canMerge(ra, ra), "missing", "un segment avec lui-même : missing");
+
+  // Fusion avec un segment en cours : le résultat court.
+  const run = fresh();
+  const ua = add(run, "tA", [9, 0], [10, 0]);
+  run.segments.push(new (run.segments[0].constructor)({ id: "live", taskId: "tA", start: iso(10, 5), end: null }));
+  eq(run.mergeSegments(ua, "live"), "merged", "fusion avec le segment en cours");
+  ok(run.segments.length === 1 && run.segments[0].isRunning && run.segments[0].id === ua,
+     "…A garde son id et tourne");
+  eq(run.canMerge("nope2", ua), "missing", "après fusion, B n'existe plus");
+
+  // Coupe : deux segments jointifs, même tâche, même raw, ids distincts.
+  const c = fresh();
+  const ca = add(c, "tA", [9, 0], [11, 0], true);
+  const newId = c.splitSegment(ca, new Date(2026, 7, 10, 10, 0).getTime());
+  ok(typeof newId === "string" && newId !== ca, "splitSegment rend l'id du nouveau");
+  eq(c.segments.map((s) => [s.start, s.end, s.taskId, s.raw]),
+     [[iso(9), iso(10), "tA", true], [iso(10), iso(11), "tA", true]], "deux moitiés jointives");
+  eq(c.splitSegment(ca, new Date(2026, 7, 10, 9, 0).getTime()), "outside", "coupe au début : outside");
+  eq(c.splitSegment(ca, new Date(2026, 7, 10, 12, 0).getTime()), "outside", "coupe après la fin : outside");
+  eq(c.splitSegment("nope", 0), "missing", "coupe d'un inconnu : missing");
+  // Coupe puis fusion = identité.
+  eq(c.mergeSegments(ca, newId), "merged", "recoller les deux moitiés");
+  eq([c.segments.length, c.segments[0].start, c.segments[0].end], [1, iso(9), iso(11)], "coupe ∘ fusion = identité");
+
+  // Coupe d'un segment en cours : la moitié droite tourne.
+  const l = fresh();
+  l.segments.push(new (m.segments[0].constructor)({ id: "live2", taskId: "tA", start: toLocalISO(new Date(Date.now() - 3_600_000)), end: null }));
+  const rid = l.splitSegment("live2", Date.now() - 1_800_000);
+  ok(typeof rid === "string", "coupe d'un segment en cours acceptée");
+  ok(!l.segments[0].isRunning && l.segments[1].isRunning && l.segments[1].id === rid,
+     "…la gauche est fermée, la droite tourne");
+  eq(l.activeSegment()?.id, rid, "activeSegment() est la moitié droite");
+
+  // Voisins : toutes tâches confondues, par début.
+  const v = fresh();
+  const v1 = add(v, "tA", [9, 0], [10, 0]);
+  const v2 = add(v, "tB", [10, 0], [11, 0]);
+  const v3 = add(v, "tA", [11, 0], [12, 0]);
+  eq([v.neighbours(v2).prev?.id, v.neighbours(v2).next?.id], [v1, v3], "neighbours : prev/next");
+  eq([v.neighbours(v1).prev, v.neighbours(v3).next], [null, null], "neighbours : bords");
+}
+
+/* ----------------------------------------------------------------- §12 */
+section("vides justifiés (hors tâche, v13)");
+{
+  // Réglages : épinglés, normalisation, raisons.
+  const s = new Settings();
+  eq(s.offReasons, ["Pause", "Réunion", "Discussion"], "trois motifs épinglés par défaut");
+  eq(offKey("  Pause  "), "pause", "offKey : trim + minuscules");
+  eq(normalizeOffLabel("  Dentiste   du   matin "), "Dentiste du matin", "normalizeOffLabel replie les espaces");
+  eq(s.addOffReason("   "), "invalid", "addOffReason : vide → invalid");
+  eq(s.addOffReason("pause"), "duplicate", "addOffReason : « pause » ≡ « Pause » → duplicate");
+  eq(s.addOffReason("Dentiste"), "Dentiste", "addOffReason : rend le libellé normalisé");
+  ok(s.isPinnedOff("DENTISTE"), "isPinnedOff insensible à la casse");
+  s.removeOffReason("dentiste");
+  ok(!s.isPinnedOff("Dentiste"), "removeOffReason par clé");
+  for (let i = 0; i < 20; i++) s.addOffReason("Motif " + i);
+  eq(s.offReasons.length, 12, "la liste est bornée à 12");
+  eq(s.addOffReason("Encore"), "full", "…et refuse au-delà : full");
+  eq(new Settings({ offReasons: [] }).offReasons, [], "une liste vidée reste vide (pas de retour aux défauts)");
+  eq(new Settings({ offReasons: ["a", "A", " a "] }).offReasons, ["a"], "les doublons de clé sont fusionnés à l'hydratation");
+  eq(new Settings(s.toJSON()).offReasons, s.offReasons, "round-trip toJSON");
+
+  // Modèle : une tâche OU un motif.
+  ok(Segment.fromJSON({ id: "x", taskId: "t1", start: "2026-08-10T09:00:00" }).isOff === false, "sans reason : une tâche");
+  const off = Segment.fromJSON({ id: "y", taskId: "t1", reason: " Pause ", start: "2026-08-10T09:00:00", end: "2026-08-10T09:30:00" });
+  ok(off.isOff && off.taskId === null && off.reason === "Pause", "avec reason : hors tâche, taskId nul, libellé trimé");
+  eq(Segment.fromJSON({ id: "z", taskId: "t1", reason: "", start: "2026-08-10T09:00:00" }).isOff, false, "reason vide = tâche");
+
+  // Store : addOffSegment, invariant, dernière tâche, fusion, coupe.
+  const store = new Store(fakePersistence());
+  store.hydrate({ version: 13, settings: { segments: { minMin: 0, mergeGapMin: 0 } },
+    tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  const at = (h, m = 0) => new Date(2026, 7, 10, h, m);
+  store.addSegment({ taskId: "tA", start: at(8, 30), end: at(12, 30) });
+  eq(store.addOffSegment({ reason: "  ", start: at(13, 30), end: at(14) }), "invalid", "addOffSegment : motif vide refusé");
+  eq(store.addOffSegment({ reason: "Dentiste", start: at(13, 30) }), "invalid", "addOffSegment : fin obligatoire");
+  const o1 = store.addOffSegment({ reason: "Dentiste", start: at(13, 30), end: at(14) });
+  ok(typeof o1 === "string", "addOffSegment rend l'id");
+  ok(!store.settings.isPinnedOff("Dentiste"), "sans pin : pas épinglé");
+  store.addOffSegment({ reason: "Veille techno", start: at(16), end: at(16, 30), pin: true });
+  ok(store.settings.isPinnedOff("veille techno"), "pin: true épingle dans le même commit");
+  store.addOffSegment({ reason: "PAUSE", start: at(16, 30), end: at(16, 45), pin: true });
+  eq(store.settings.offReasons.filter((r) => offKey(r) === "pause").length, 1, "pin d'un doublon : ignoré, pas dédoublé");
+  eq(store.lastUsedTask()?.id, "tA", "lastUsedTask ignore les hors tâche");
+  store.updateSegment(o1, { taskId: "tA" });
+  ok(store.segments.find((x) => x.id === o1).isOff, "updateSegment : taskId ignoré sur un hors tâche");
+  store.updateSegment(o1, { reason: "" });
+  eq(store.segments.find((x) => x.id === o1).reason, "Dentiste", "updateSegment : motif vide ignoré");
+  store.updateSegment(o1, { reason: " dentiste " });
+  eq(store.segments.find((x) => x.id === o1).reason, "dentiste", "updateSegment : motif normalisé");
+  store.updateSegment(store.segments[0].id, { reason: "Pause" });
+  ok(!store.segments[0].isOff, "updateSegment : reason ignoré sur une tâche");
+  eq(store.canMerge(store.segments[0].id, o1), "task", "fusion tâche + hors tâche : refusée");
+  const o2 = store.addOffSegment({ reason: "pause", start: at(16, 45), end: at(17) });
+  const oPause = store.segments.find((x) => x.reason === "PAUSE").id;
+  eq(store.mergeSegments(oPause, o2), "merged", "deux hors tâche « PAUSE »/« pause » : fusionnés");
+  const half = store.splitSegment(o1, at(13, 45).getTime());
+  eq(store.segments.find((x) => x.id === half).reason, "dentiste", "splitSegment recopie le motif");
+  eq(store.mergeSegments(o1, half), "merged", "…et se recolle");
+
+  // Calculs du jour : total / byTask sans le hors tâche, off à part, trous, couverture.
+  const calc = new TimeCalculator(store);
+  const day = at(0);
+  const t = calc.totalsForDay(day);
+  eq(t.total, 4 * 3_600_000, "total = 4 h de tâche (le hors tâche n'y est pas)");
+  eq([...t.byTask.keys()], ["tA"], "byTask ne contient que la tâche");
+  eq(t.off.total, 90 * 60_000, "off.total = 30 + 30 + 30 min");
+  eq([...t.off.byReason.values()].map((r) => [r.label, r.ms / 60000]), [["dentiste", 30], ["Veille techno", 30], ["PAUSE", 30]],
+     "off.byReason regroupe par clé, première graphie");
+  // « PAUSE »/« pause » 16:30–17:00 fusionné en un seul : dans byReason aussi.
+  eq(t.off.byReason.get("pause")?.ms, 30 * 60_000, "…et « pause » vaut 30 min en une entrée");
+  eq(calc.gapsForDay(day).map(([a, b]) => [new Date(a).getHours() + ":" + new Date(a).getMinutes(), new Date(b).getHours() + ":" + new Date(b).getMinutes()]),
+     [["14:0", "16:0"]], "un seul trou reste : 14:00 → 16:00 (les vides justifiés ne sont plus des trous)");
+  eq(calc.coverageForDay(day), { workedMs: 4 * 3_600_000, offMs: 90 * 60_000, plannedMs: 450 * 60_000 },
+     "coverageForDay : 4 h tracées, 1:30 hors tâche, 7:30 planifiées");
+  ok(!calc.totalsForDay(day, true).off.byReason.has("nope") && calc.totalsForDay(day, true).off, "totalsForDay(rounded) transmet off");
+
+  // Agrégats : kpi.offMs, couverture incluant le hors tâche, byTask sans lui.
+  const nowDay = new Date();
+  const s2 = new Store(fakePersistence());
+  s2.hydrate({ version: 13, settings: { segments: { minMin: 0 } },
+    tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  const y = new Date(nowDay); y.setDate(y.getDate() - 1);
+  const yd = (h, m = 0) => { const d = new Date(y); d.setHours(h, m, 0, 0); return d; };
+  s2.hydrate({ ...s2.toJSON(), settings: { ...s2.settings.toJSON(), workDays: [1, 2, 3, 4, 5, 6, 7] } });
+  s2.addSegment({ taskId: "tA", start: yd(8, 30), end: yd(12, 30) });
+  s2.addOffSegment({ reason: "Dentiste", start: yd(13, 30), end: yd(14) });
+  s2.addOffSegment({ reason: "dentiste", start: yd(14), end: yd(14, 30) });
+  const agg = new StatsAggregator(s2, new TimeCalculator(s2));
+  const k = agg.snapshot("4w").kpi;
+  eq(k.total, 4 * 3_600_000, "kpi.total sans le hors tâche");
+  eq(k.offMs, 60 * 60_000, "kpi.offMs = 1 h");
+  eq(k.offByReason.map((r) => [r.key, r.ms / 60000]), [["dentiste", 60]], "kpi.offByReason : une entrée par clé");
+  eq(k.taskCount, 1, "taskCount ignore le hors tâche");
+  ok(Math.abs(k.coveragePct - (5 * 3_600_000 / k.scheduledMs) * 100) < 1e-6, "coveragePct inclut le hors tâche");
+  ok(agg.snapshot("4w").byTask.every((r) => r.task?.id === "tA"), "byTask des Stats sans le hors tâche");
+
+  // Migration v12 → v13 : additive et idempotente.
+  const m = new Store(fakePersistence());
+  m.hydrate({ version: 12, settings: {}, tasks: [], segments: [{ id: "s1", taskId: "tX", start: "2026-08-10T09:00:00", end: "2026-08-10T10:00:00" }], meta: {} });
+  ok(!m.segments[0].isOff && m.segments[0].taskId === "tX", "v12 : un segment sans reason reste une tâche");
+  eq(m.settings.offReasons.length, 3, "v12 : motifs épinglés par défaut");
+  const m2 = new Store(fakePersistence());
+  m2.hydrate(m.toJSON());
+  eq(m2.toJSON().segments, m.toJSON().segments, "ré-hydratation idempotente");
+}
+
+/* ----------------------------------------------------------------- §13 */
+section("mémos (v14)");
+{
+  const store = new Store(fakePersistence());
+  store.hydrate({ version: 14, settings: {}, tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  eq(store.memos, [], "v13 → v14 : memos vaut []");
+  eq(store.addMemo({ text: "   " }), "invalid", "addMemo : texte vide → invalid");
+  const g = store.addMemo({ text: "Relancer Paul" });
+  ok(g && g.taskId === null, "mémo général : taskId nul");
+  const a = store.addMemo({ text: "Écrire le test", taskId: "tA" });
+  eq(a.taskId, "tA", "mémo rattaché à une tâche");
+  const orphan = store.addMemo({ text: "Vers nulle part", taskId: "tZ" });
+  eq(orphan.taskId, null, "tâche inconnue → mémo général");
+  eq(store.openMemos().map((m) => m.text), ["Vers nulle part", "Écrire le test", "Relancer Paul"], "ouverts : les plus récents en haut");
+  store.toggleMemo(orphan.id);
+  eq(store.allMemos().map((m) => m.text), ["Écrire le test", "Relancer Paul", "Vers nulle part"], "les faits passent en bas");
+  eq(store.openMemos().length, 2, "openMemos ignore les faits");
+  eq(store.openMemoCountFor("tA"), 1, "openMemoCountFor");
+  eq(store.memosFor("tA").map((m) => m.id), [a.id], "memosFor(tâche)");
+  eq(store.memosFor(null).length, 2, "memosFor(null) = les généraux");
+  store.updateMemo(a.id, { text: "  " });
+  eq(store.memos.find((m) => m.id === a.id).text, "Écrire le test", "updateMemo : texte vide ignoré");
+  store.updateMemo(a.id, { text: "x".repeat(500) });
+  eq(store.memos.find((m) => m.id === a.id).text.length, 200, "updateMemo : texte borné à 200");
+  const back = new Store(fakePersistence());
+  back.hydrate(store.toJSON());
+  eq(back.toJSON().memos, store.toJSON().memos, "round-trip JSON");
+  const imp = new Store(fakePersistence());
+  imp.hydrate({ version: 14, settings: {}, tasks: [], segments: [], memos: [{ id: "m1", text: "Seul", taskId: "tGone" }], meta: {} });
+  eq(imp.memos[0].taskId, null, "import : un taskId inconnu est normalisé à null");
+  store.deleteTask("tA");
+  eq(store.memos.map((m) => m.text).sort(), ["Relancer Paul", "Vers nulle part"], "deleteTask emporte ses mémos");
+  store.deleteMemo(g.id);
+  eq(store.memos.length, 1, "deleteMemo");
+  store.clearEntries();
+  eq(store.memos, [], "clearEntries vide les mémos");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

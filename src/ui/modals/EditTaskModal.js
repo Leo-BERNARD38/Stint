@@ -1,5 +1,6 @@
 import { Modal } from "./Modal.js";
 import { el } from "../../utils/dom.js";
+import { createMemoList } from "../components/MemoList.js";
 
 /** Édition d'une tâche : nom (qui porte la clé Jira), type (chips), couleur
  *  (color picker libre), lien externe (ex. URL Jira), archiver, supprimer. */
@@ -21,6 +22,22 @@ export class EditTaskModal extends Modal {
       if (b) this.#setType(b.dataset.type);
     });
     el("etColor").addEventListener("input", () => this.#reflectColor());
+    // Mémos de la tâche : la liste partagée, sans puce de tâche (on est dedans).
+    this.memoList = createMemoList({ app: this.app, root: el("etMemos"), showTask: false });
+    el("etMemoText").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (this.app.store.addMemo({ text: e.target.value, taskId: this.taskId }) === "invalid") return;
+      e.target.value = "";
+    });
+    // La modale n'est pas dans `App.views` : elle suit le store elle-même, tant
+    // qu'elle est ouverte (cocher, supprimer, ajouter re-rendent la liste).
+    this.app.store.on("change", () => { if (this.backdrop.classList.contains("open")) this.#renderMemos(); });
+  }
+
+  #renderMemos() {
+    if (!this.taskId || !this.app.store.taskById(this.taskId)) return;
+    this.memoList.render(this.app.store.memosFor(this.taskId), { empty: "Aucun mémo sur cette tâche." });
   }
 
   #setType(type) {
@@ -44,6 +61,8 @@ export class EditTaskModal extends Modal {
     el("etColor").value = t.color;
     this.#reflectColor();
     el("etArchive").textContent = t.archived ? "Désarchiver" : "Archiver";
+    el("etMemoText").value = "";
+    this.#renderMemos();
     super.open();
     setTimeout(() => el("etName").focus(), 50);
   }
@@ -67,7 +86,8 @@ export class EditTaskModal extends Modal {
     const t = this.app.store.taskById(this.taskId);
     if (!t) return;
     const count = this.app.store.segmentCountFor(this.taskId);
-    if (!confirm(`Supprimer « ${t.displayName} » et ses ${count} segment(s) ?`)) return;
+    const memos = this.app.store.memosFor(this.taskId).length;
+    if (!confirm(`Supprimer « ${t.displayName} », ses ${count} segment(s)${memos ? ` et ses ${memos} mémo(s)` : ""} ?`)) return;
     this.app.store.deleteTask(this.taskId);
     this.close();
   }

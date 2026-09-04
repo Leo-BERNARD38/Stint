@@ -1,8 +1,9 @@
 import { EventEmitter } from "../core/EventEmitter.js";
-import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS, SEGMENT_MERGE_GAP_MS } from "../core/constants.js";
-import { Settings } from "./Settings.js";
+import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS, MEMO_TEXT_MAX } from "../core/constants.js";
+import { Settings, normalizeOffLabel, offKey } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
+import { Memo } from "./Memo.js";
 import { startOfDay, toLocalISO } from "../utils/datetime.js";
 
 /**
@@ -22,6 +23,7 @@ export class Store extends EventEmitter {
     this.settings = new Settings();
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.meta = { lastExport: null };
     // Compteur de révision : incrémenté à chaque mutation committée (et à chaque
     // hydratation). Sert de clé de cache aux agrégats coûteux (StatsAggregator)
@@ -52,6 +54,12 @@ export class Store extends EventEmitter {
     this.settings = Settings.fromJSON(data.settings);
     this.tasks = (data.tasks ?? []).map(Task.fromJSON);
     this.segments = (data.segments ?? []).map(Segment.fromJSON);
+    // Un mémo rattaché à une tâche disparue redevient général plutôt que de
+    // pointer dans le vide (import d'un JSON partiel) — normalisation
+    // idempotente, à l'hydratation comme le repli de `jiraKey`.
+    const ids = new Set(this.tasks.map((t) => t.id));
+    this.memos = (data.memos ?? []).map(Memo.fromJSON).filter((m) => m.text);
+    for (const m of this.memos) if (m.taskId && !ids.has(m.taskId)) m.taskId = null;
     this.meta = { lastExport: null, ...(data.meta ?? {}) };
     this.rev += 1;
   }
@@ -80,6 +88,15 @@ export class Store extends EventEmitter {
    * « pas de pause » en collant `lunchStart` et `lunchEnd`, et c'est le
    * constructeur de `Settings` qui le relit — local au champ, donc idempotent,
    * et couvre aussi un JSON importé.
+   * v11 → v12 : ajout de `settings.segments` (seuil de fusion des micro-pauses,
+   * jusque-là une constante, et seuil des segments courts) — purement additif,
+   * valeurs par défaut fournies par `Settings`, aucune transformation ici.
+   * v12 → v13 : vides justifiés — `segment.reason` (libellé hors tâche, `taskId`
+   * alors nul) et `settings.offReasons` (motifs épinglés). Additif : un segment
+   * sans `reason` est une tâche comme avant, c'est le constructeur de `Segment`
+   * qui tient l'invariant « une tâche OU un motif ».
+   * v13 → v14 : ajout de `memos` (une ligne de texte, rattachée ou non à une
+   * tâche) — additif ; `hydrate` rend général tout mémo dont la tâche manque.
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -104,6 +121,7 @@ export class Store extends EventEmitter {
       settings: this.settings.toJSON(),
       tasks: this.tasks.map((t) => t.toJSON()),
       segments: this.segments.map((s) => s.toJSON()),
+      memos: this.memos.map((m) => m.toJSON()),
       meta: { ...this.meta },
     };
   }
@@ -184,9 +202,12 @@ export class Store extends EventEmitter {
 
   /**
    * Reprend le segment juste mis en pause s'il s'agit de la même tâche et que
-   * l'écart est inférieur au seuil (micro-pause) ; sinon démarre un nouveau
+   * l'écart est inférieur au seuil réglé (micro-pause) ; sinon démarre un nouveau
    * segment. Évite de fragmenter la base / la timeline pour des pauses brèves.
    * À n'appeler qu'après #stopActive() (aucun segment ne doit être en cours).
+   *
+   * Seuil à 0 = jamais de fusion : l'écart est strictement positif dès qu'une
+   * pause a eu lieu, la comparaison échoue d'elle-même.
    */
   #startOrResume(taskId, at = new Date()) {
     // Segment terminé le plus récemment, toutes tâches confondues : c'est la
@@ -196,16 +217,32 @@ export class Store extends EventEmitter {
       if (s.isRunning) continue;
       if (!last || s.endMs() > last.endMs()) last = s;
     }
-    if (last && last.taskId === taskId && at.getTime() - last.endMs() <= SEGMENT_MERGE_GAP_MS) {
+    if (last && last.taskId === taskId && at.getTime() - last.endMs() <= this.settings.mergeGapMs()) {
       last.end = null; // rouvre le segment : la micro-pause est absorbée
       return;
     }
     this.#startSegment(taskId, at);
   }
 
+  /**
+   * Arrête le segment en cours. S'il n'a pas atteint la durée minimale réglée
+   * (`settings.segments.minMin`), il est **supprimé** plutôt que fermé : un
+   * double-clic sur Play, ou une reprise sur la mauvaise tâche corrigée dans la
+   * foulée, ne laisse pas de segment de douze secondes.
+   *
+   * Seul le chrono passe ici (Play, Pause, Reprendre, Terminer, archivage) —
+   * une saisie explicite (modale, glisser) n'est jamais jetée. Corollaire pour
+   * `#startOrResume` : un segment jeté n'est plus « le dernier », c'est celui
+   * d'avant qui peut être rouvert si SON écart passe le seuil de fusion.
+   */
   #stopActive(at = new Date()) {
     const seg = this.activeSegment();
-    if (seg) seg.end = toLocalISO(at);
+    if (!seg) return;
+    if (at.getTime() - seg.startMs() < this.settings.minSegmentMs()) {
+      this.segments = this.segments.filter((s) => s !== seg);
+      return;
+    }
+    seg.end = toLocalISO(at);
   }
 
   /* ----------------- commandes (3 boutons) ----------------- */
@@ -287,14 +324,75 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
+  /** Supprime une tâche et, en cascade, ses segments ET ses mémos. */
   deleteTask(id) {
     this.segments = this.segments.filter((s) => s.taskId !== id);
+    this.memos = this.memos.filter((m) => m.taskId !== id);
     this.tasks = this.tasks.filter((t) => t.id !== id);
     this.#commit();
   }
 
   segmentCountFor(taskId) {
     return this.segments.filter((s) => s.taskId === taskId).length;
+  }
+
+  /* ----------------- mémos ----------------- */
+  /**
+   * Ouverts d'abord, puis faits ; les plus récents en haut dans chaque groupe.
+   * Deux mémos nés dans la même milliseconde se départagent par leur ordre
+   * d'insertion (le dernier écrit en haut), sinon le tri serait instable.
+   */
+  #sortMemos(list) {
+    const pos = new Map(this.memos.map((m, i) => [m.id, i]));
+    return list.sort((a, b) =>
+      (a.done - b.done) ||
+      (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0) ||
+      (pos.get(b.id) - pos.get(a.id)));
+  }
+
+  /** Tous les mémos, triés (cf. `#sortMemos`). */
+  allMemos() { return this.#sortMemos([...this.memos]); }
+
+  /** Les mémos non faits. */
+  openMemos() { return this.#sortMemos(this.memos.filter((m) => !m.done)); }
+
+  /** Les mémos d'une tâche (`null` = les généraux), triés. */
+  memosFor(taskId) { return this.#sortMemos(this.memos.filter((m) => m.taskId === (taskId ?? null))); }
+
+  /** Nombre de mémos ouverts d'une tâche — l'indicateur des lignes de tâche. */
+  openMemoCountFor(taskId) { return this.memos.filter((m) => m.taskId === taskId && !m.done).length; }
+
+  /** Ajoute un mémo. Renvoie le mémo, ou `"invalid"` (texte vide). Une tâche inconnue → mémo général. */
+  addMemo({ text, taskId = null }) {
+    const memo = new Memo({ id: this.#uid("m_"), text, taskId: this.taskById(taskId) ? taskId : null });
+    if (!memo.text) return "invalid";
+    this.memos.push(memo);
+    this.#commit();
+    return memo;
+  }
+
+  toggleMemo(id) {
+    const m = this.memos.find((x) => x.id === id);
+    if (!m) return;
+    m.done = !m.done;
+    this.#commit();
+  }
+
+  /** Corrige le texte et/ou le rattachement d'un mémo (texte vide ignoré). */
+  updateMemo(id, patch) {
+    const m = this.memos.find((x) => x.id === id);
+    if (!m) return;
+    if ("text" in patch) {
+      const t = String(patch.text ?? "").trim();
+      if (t) m.text = t.slice(0, MEMO_TEXT_MAX);
+    }
+    if ("taskId" in patch) m.taskId = this.taskById(patch.taskId) ? patch.taskId : null;
+    this.#commit();
+  }
+
+  deleteMemo(id) {
+    this.memos = this.memos.filter((m) => m.id !== id);
+    this.#commit();
   }
 
   /* ----------------- commandes segments ----------------- */
@@ -309,11 +407,40 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
-  /** Met à jour un segment ; `start`/`end` attendus en ISO. Garantit fin ≥ début. */
+  /**
+   * Pose un vide justifié (hors tâche) sur `[start, end]` : un segment sans
+   * tâche, porteur d'un libellé en clair. `pin` l'épingle aussi dans les
+   * réglages (silencieusement ignoré s'il y est déjà ou si la liste est
+   * pleine), dans le même commit. La fin est obligatoire : un vide qui
+   * « tourne » n'a pas de sens, et le chrono ne saurait pas quoi en faire.
+   * Renvoie l'id du segment, ou `"invalid"`.
+   */
+  addOffSegment({ reason, start, end, pin = false }) {
+    const label = normalizeOffLabel(reason);
+    if (!label || !start || !end) return "invalid";
+    if (pin) this.settings.addOffReason(label);
+    const seg = new Segment({
+      id: this.#uid("s_"), reason: label,
+      start: toLocalISO(start), end: toLocalISO(end),
+    });
+    this.segments.push(seg);
+    this.#commit();
+    return seg.id;
+  }
+
+  /**
+   * Met à jour un segment ; `start`/`end` attendus en ISO. Garantit fin ≥ début.
+   * Tient l'invariant « une tâche OU un motif » : `taskId` est ignoré sur un
+   * hors tâche, `reason` sur une tâche (et un motif vide est ignoré aussi).
+   */
   updateSegment(id, patch) {
     const seg = this.segments.find((s) => s.id === id);
     if (!seg) return;
-    if ("taskId" in patch) seg.taskId = patch.taskId;
+    if ("taskId" in patch && !seg.isOff) seg.taskId = patch.taskId;
+    if ("reason" in patch && seg.isOff) {
+      const label = normalizeOffLabel(patch.reason);
+      if (label) seg.reason = label;
+    }
     if ("raw" in patch) seg.raw = patch.raw;
     if ("start" in patch) seg.start = patch.start;
     if ("end" in patch) seg.end = patch.end;
@@ -328,6 +455,85 @@ export class Store extends EventEmitter {
   deleteSegment(id) {
     this.segments = this.segments.filter((s) => s.id !== id);
     this.#commit();
+  }
+
+  /** Les segments triés par début — l'ordre de la timeline. */
+  #sortedSegments() {
+    return [...this.segments].sort((a, b) => a.startMs() - b.startMs());
+  }
+
+  /**
+   * Voisins d'un segment sur la timeline, toutes tâches confondues :
+   * `{ prev, next }` (`null` si aucun). Sert à la modale pour proposer la
+   * fusion — c'est `canMerge` qui dit ensuite si elle est possible.
+   */
+  neighbours(id) {
+    const sorted = this.#sortedSegments();
+    const i = sorted.findIndex((s) => s.id === id);
+    if (i < 0) return { prev: null, next: null };
+    return { prev: sorted[i - 1] ?? null, next: sorted[i + 1] ?? null };
+  }
+
+  /**
+   * La fusion de deux segments est-elle possible ? `null` si oui, sinon une
+   * **raison** (comme `addBreak`) : `"missing"`, `"task"` (pas la même tâche —
+   * fusionner deux tâches réassignerait du temps en silence, c'est le rôle du
+   * select de la modale), `"blocked"` (un troisième segment s'intercale, ou le
+   * premier tourne encore). L'ordre des identifiants est indifférent, et l'écart
+   * entre les deux est absorbé : c'est le sens même de « fusionner », et
+   * l'équivalent du « Prolonger » du popover de remplissage.
+   */
+  canMerge(idA, idB) {
+    const a0 = this.segments.find((s) => s.id === idA);
+    const b0 = this.segments.find((s) => s.id === idB);
+    if (!a0 || !b0 || a0 === b0) return "missing";
+    // Même tâche — ou même motif pour deux vides justifiés (« Pause » ≡ « pause »).
+    const keyOf = (s) => (s.isOff ? "off:" + offKey(s.reason) : "task:" + s.taskId);
+    if (keyOf(a0) !== keyOf(b0)) return "task";
+    const [a, b] = a0.startMs() <= b0.startMs() ? [a0, b0] : [b0, a0];
+    if (a.isRunning) return "blocked";
+    const lo = a.startMs(), hi = b.endMs();
+    const between = this.segments.some((s) => s !== a && s !== b && s.startMs() < hi && s.endMs() > lo);
+    return between ? "blocked" : null;
+  }
+
+  /**
+   * Fusionne deux segments consécutifs de la même tâche : le premier garde son
+   * début et son `raw`, prend la fin du second (donc « en cours » si le second
+   * tourne), le second disparaît. Renvoie `"merged"` ou la raison de `canMerge`.
+   */
+  mergeSegments(idA, idB) {
+    const why = this.canMerge(idA, idB);
+    if (why) return why;
+    const a0 = this.segments.find((s) => s.id === idA);
+    const b0 = this.segments.find((s) => s.id === idB);
+    const [a, b] = a0.startMs() <= b0.startMs() ? [a0, b0] : [b0, a0];
+    a.end = b.end; // null si b court : le résultat court
+    this.segments = this.segments.filter((s) => s !== b);
+    this.#commit();
+    return "merged";
+  }
+
+  /**
+   * Coupe un segment en deux à l'instant `atMs` (strictement à l'intérieur) :
+   * l'original garde `[début, at]`, le nouveau prend `[at, fin]` avec la même
+   * tâche et le même `raw` — et c'est la moitié droite qui tourne si l'original
+   * tournait. Renvoie l'identifiant du nouveau, ou `"missing"` / `"outside"`.
+   */
+  splitSegment(id, atMs) {
+    const seg = this.segments.find((s) => s.id === id);
+    if (!seg) return "missing";
+    const at = Number(atMs);
+    const end = seg.isRunning ? Date.now() : seg.endMs();
+    if (!Number.isFinite(at) || at <= seg.startMs() || at >= end) return "outside";
+    const right = new Segment({
+      id: this.#uid("s_"), taskId: seg.taskId, reason: seg.reason, raw: seg.raw,
+      start: toLocalISO(new Date(at)), end: seg.end,
+    });
+    seg.end = toLocalISO(new Date(at));
+    this.segments.splice(this.segments.indexOf(seg) + 1, 0, right);
+    this.#commit();
+    return right.id;
   }
 
   /* ----------------- réglages & global ----------------- */
@@ -356,14 +562,16 @@ export class Store extends EventEmitter {
     this.settings = new Settings();
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.meta = { lastExport: null };
     this.#commit();
   }
 
-  /** Vide tâches et segments en conservant les réglages et le méta. */
+  /** Vide tâches, segments et mémos en conservant les réglages et le méta. */
   clearEntries() {
     this.tasks = [];
     this.segments = [];
+    this.memos = [];
     this.#commit();
   }
 

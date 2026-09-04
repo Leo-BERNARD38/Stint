@@ -16,13 +16,20 @@ export class StatsBreakdownView {
     this.types = el("statsTypes");
     this.weekdays = el("statsWeekdays");
     this.tasks = el("statsTopTasks");
+    this.off = el("statsOff");
     this.anchor = this.types;
+    this.offOpen = false; // « Exceptionnels » déplié ? (état d'UI, pas de données)
   }
 
   bind() {
     this.tasks.addEventListener("click", (e) => {
       const row = e.target.closest("[data-task]");
       if (row && !e.target.closest(".mini-btn")) this.app.openEditTask(row.dataset.task);
+    });
+    this.off.addEventListener("click", (e) => {
+      if (!e.target.closest('[data-act="toggle-off-other"]')) return;
+      this.offOpen = !this.offOpen;
+      this.#renderOff(this.app.stats.snapshot(this.app.statsPeriod));
     });
   }
 
@@ -31,6 +38,67 @@ export class StatsBreakdownView {
     this.#renderTypes(snap);
     this.#renderWeekdays(snap);
     this.#renderTasks(snap);
+    this.#renderOff(snap);
+  }
+
+  /* ----------------- hors tâche ----------------- */
+  /**
+   * Les vides justifiés de la période. Par ligne, la part du HORS TÂCHE (« un
+   * tiers de mes vides sont des réunions ») ; en pied, la part des horaires de
+   * la période, avec une décimale sous 10 % — sur trois mois, une heure de
+   * réunions vaut 0,3 %, et un « 0 % » arrondi mentirait. Les motifs épinglés
+   * d'abord, dans l'ordre des réglages ; les exceptionnels — tapés une fois —
+   * repliés sous une ligne unique, pour que le bloc ne grandisse pas avec
+   * l'historique. La partition se lit dans les réglages AU RENDU : retirer un
+   * épinglé le fait basculer dans les exceptionnels sans rien recalculer.
+   */
+  #renderOff({ kpi }) {
+    const { formatter, store } = this.app;
+    const clock = (ms) => formatter.clock(ms / 60000);
+    const pct = (ms) => (kpi.offMs > 0 ? Math.round((ms / kpi.offMs) * 100) : 0);
+    const ofSchedule = () => {
+      if (kpi.scheduledMs <= 0) return "";
+      const p = (kpi.offMs / kpi.scheduledMs) * 100;
+      return ` · ${p < 10 ? p.toFixed(1).replace(".", ",") : Math.round(p)} % des horaires de la période`;
+    };
+    this.off.innerHTML = "";
+    if (!kpi.offByReason.length) {
+      this.off.appendChild(createEl("div", { className: "empty", text: "Aucun vide justifié sur la période." }));
+      return;
+    }
+    const pinned = kpi.offByReason.filter((r) => store.settings.isPinnedOff(r.label));
+    const other = kpi.offByReason.filter((r) => !store.settings.isPinnedOff(r.label));
+    const max = Math.max(1, ...kpi.offByReason.map((r) => r.ms));
+    const row = ({ label, ms }) => createEl("div", {
+      className: "stat-type stat-off",
+      html:
+        `<span class="stat-off-lab">${escapeHtml(label)}</span>` +
+        `<div class="stat-bar-track"><div class="stat-bar off" style="width:${Math.max(2, Math.round((ms / max) * 100))}%"></div></div>` +
+        `<span class="stat-type-val">${clock(ms)}</span>` +
+        `<span class="stat-type-pct">${pct(ms)} %</span>`,
+    });
+    for (const r of pinned) this.off.appendChild(row(r));
+    if (other.length) {
+      const rest = other.reduce((a, r) => a + r.ms, 0);
+      this.off.appendChild(createEl("button", {
+        className: "stat-off-toggle" + (this.offOpen ? " open" : ""),
+        attrs: { "data-act": "toggle-off-other", type: "button" },
+        html:
+          `<span class="stat-off-lab">Exceptionnels (${other.length})</span>` +
+          `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span>` +
+          `<span class="stat-type-val">${clock(rest)}</span>` +
+          `<span class="stat-type-pct">${pct(rest)} %</span>`,
+      }));
+      if (this.offOpen) {
+        const box = createEl("div", { className: "stat-off-other" });
+        for (const r of other) box.appendChild(row(r));
+        this.off.appendChild(box);
+      }
+    }
+    this.off.appendChild(createEl("div", {
+      className: "stat-off-sum",
+      text: `${clock(kpi.offMs)} hors tâche${ofSchedule()}`,
+    }));
   }
 
   /* ----------------- par type ----------------- */

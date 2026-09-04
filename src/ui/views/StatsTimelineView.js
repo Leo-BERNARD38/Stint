@@ -120,10 +120,10 @@ export class StatsTimelineView {
       for (const seg of daySegs[d]) {
         const s = Math.max(seg.startMs(), winStart), e = Math.min(seg.endMs(), winEnd);
         if (e <= s) continue;
-        const task = store.taskById(seg.taskId);
-        const color = task ? task.color : "var(--text-faint)";
+        const task = seg.isOff ? null : store.taskById(seg.taskId);
+        const color = seg.isOff ? "" : task ? task.color : "var(--text-faint)";
         const data = {
-          name: task ? task.displayName : "?",
+          name: seg.isOff ? seg.reason : task ? task.displayName : "?",
           range: `${fmtClock(new Date(s))}–${fmtClock(new Date(e))}`,
           dur: formatter.clock(calc.segmentMs(seg, winStart, winEnd) / 60000),
           color, key,
@@ -200,9 +200,9 @@ export class StatsTimelineView {
   /** Morceau de segment (vue Mois) : `counted=false` ⇒ estompé (hors horaires). */
   #part(left, right, counted, data, edge) {
     return createEl("div", {
-      className: "tl-seg" + (counted ? "" : " uncounted") + (edge ? " " + edge : ""),
+      className: "tl-seg" + (data.color ? "" : " off") + (counted ? "" : " uncounted") + (edge ? " " + edge : ""),
       attrs: {
-        style: `left:${left}%;width:${Math.max(0.6, right - left)}%;background:${data.color}`,
+        style: `left:${left}%;width:${Math.max(0.6, right - left)}%` + (data.color ? `;background:${data.color}` : ""),
         "data-name": data.name, "data-range": data.range, "data-dur": data.dur,
         "data-color": data.color, "data-day": data.key,
       },
@@ -215,13 +215,13 @@ export class StatsTimelineView {
     const s = Math.max(seg.startMs(), winStart), e = Math.min(seg.endMs(), winEnd);
     if (e <= s) return null;
     const span = winEnd - winStart;
-    const task = store.taskById(seg.taskId);
-    const color = task ? task.color : "var(--text-faint)";
+    const task = seg.isOff ? null : store.taskById(seg.taskId);
+    const color = seg.isOff ? "" : task ? task.color : "var(--text-faint)";
     return createEl("div", {
-      className: "tl-seg",
+      className: "tl-seg" + (seg.isOff ? " off" : ""),
       attrs: {
-        style: `left:${(s - winStart) / span * 100}%;width:${Math.max(0.6, (e - s) / span * 100)}%;background:${color}`,
-        "data-name": task ? task.displayName : "?",
+        style: `left:${(s - winStart) / span * 100}%;width:${Math.max(0.6, (e - s) / span * 100)}%` + (color ? `;background:${color}` : ""),
+        "data-name": seg.isOff ? seg.reason : task ? task.displayName : "?",
         "data-range": rangeText(s, e),
         "data-dur": formatter.clock(calc.segmentMs(seg, winStart, winEnd) / 60000),
         "data-color": color,

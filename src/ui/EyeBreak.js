@@ -187,8 +187,10 @@ export class EyeBreak {
     const store = this.app.store;
     const active = store.activeSegment();
     if (!active) return Date.now();
+    // Un vide justifié (pause café, réunion) n'est pas du temps d'écran : il
+    // fait un trou dans la course comme une pause le ferait.
     const done = store.segments
-      .filter((seg) => !seg.isRunning)
+      .filter((seg) => !seg.isRunning && !seg.isOff)
       .sort((a, b) => a.startMs() - b.startMs());
     let start = active.startMs();
     for (let i = done.length - 1; i >= 0; i--) {

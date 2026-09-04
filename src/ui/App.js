@@ -27,6 +27,7 @@ import { StatsBreakdownView } from "./views/StatsBreakdownView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
+import { MemoPanelView } from "./views/MemoPanelView.js";
 
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
@@ -82,14 +83,17 @@ export class App {
     this.hero = new HeroView(this);
     this.dayTotal = new DayTotalView(this);
     this.tabs = new TabsView(this);
-    this.timelineView = new TimelineView(this);
+    // Journée : survoler un segment surligne la LIGNE DE TÂCHE en dessous (et
+    // réciproquement, cf. TaskListView) — le tableau des segments n'y est pas.
+    this.timelineView = new TimelineView(this, {
+      onSegHover: (id) => this.highlightTask(id ? (this.store.segments.find((s) => s.id === id)?.taskId ?? null) : null),
+    });
     // Deuxième instance du même composant pour l'onglet Segments : édition
-    // identique (glisser/remplir) + survol croisé et clic = édition (modale).
+    // identique (glisser/remplir) + survol croisé avec la ligne du tableau.
     this.segTimelineView = new TimelineView(this, {
       timelineId: "segTimeline",
       axisId: "segTlAxis",
       onSegHover: (id) => this.highlightSegment(id),
-      onSegClick: (id) => this.openSegmentModal(id),
     });
     this.views = [
       this.header,
@@ -113,6 +117,7 @@ export class App {
       new SettingsView(this),
       new StorageView(this),
       new ToolsView(this),
+      this.memoPanel = new MemoPanelView(this),
     ];
   }
 
@@ -163,10 +168,16 @@ export class App {
   openResume() { this.modals.resume.open(); }
   openEditTask(id) { this.modals.editTask.open(id); }
 
+  /* ----------------- mémos (panneau latéral, tous écrans) ----------------- */
+  openMemos(taskId = null) { this.memoPanel.open(taskId); this.header.render(); }
+  closeMemos() { this.memoPanel.close(); this.header.render(); }
+  toggleMemos() { this.memoPanel.isOpen ? this.closeMemos() : this.openMemos(); }
+
   /* ----------------- écrans (app / réglages / guide / outils) ----------------- */
   showScreen(name) {
     this.screen = name;
     this.closeFill(); // ferme un éventuel popover de trou resté ouvert
+    this.memoPanel?.close(); // le panneau ne suit pas d'un écran à l'autre
     el("appScreen").hidden = name !== "app";
     el("settingsScreen").hidden = name !== "settings";
     el("guideScreen").hidden = name !== "guide";
@@ -230,9 +241,19 @@ export class App {
     document.querySelector(`#segBody tr[data-seg-row="${esc}"]`)?.classList.add("hl");
   }
 
-  scrollToSegment(segId) {
-    const row = document.querySelector(`#segBody [data-seg-row="${segId}"]`);
-    if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+  /**
+   * Survol croisé de l'onglet Journée : une tâche ⇄ tous ses segments. Même
+   * mécanique que `highlightSegment`, à la maille de la tâche (la ligne du
+   * tableau n'existe pas ici, la ligne de tâche oui).
+   */
+  highlightTask(taskId) {
+    if (taskId === this._hlTask) return;
+    this._hlTask = taskId;
+    for (const e of qsa("#timeline .tl-seg.hl, #taskList .task-row.hl")) e.classList.remove("hl");
+    if (!taskId) return;
+    const esc = window.CSS && CSS.escape ? CSS.escape(taskId) : taskId;
+    for (const e of qsa(`#timeline .tl-seg[data-task="${esc}"]`)) e.classList.add("hl");
+    document.querySelector(`#taskList .task-row[data-task="${esc}"]`)?.classList.add("hl");
   }
 
   /* ----------------- timeline : redimensionnement & remplissage des trous ----------------- */
@@ -250,6 +271,10 @@ export class App {
   extendRightIntoGap(segId, start) {
     this.store.updateSegment(segId, { start: toLocalISO(start) });
     this.toast.show("Segment prolongé");
+  }
+  /** Justifie un trou par un vide hors tâche (motif en clair, épinglé si demandé). */
+  createOffInGap(label, start, end, pin = false) {
+    this.store.addOffSegment({ reason: label, start, end, pin });
   }
   createSegmentInGap(taskId, start, end) {
     this.store.addSegment({ taskId, start, end });
@@ -296,7 +321,7 @@ export class App {
     this.toast.show("Données effacées");
   }
   clearEntries() {
-    if (!confirm("Vider toutes les tâches et tous les segments ? Les réglages sont conservés.")) return;
+    if (!confirm("Vider toutes les tâches, tous les segments et tous les mémos ? Les réglages sont conservés.")) return;
     this.store.clearEntries();
     this.viewDay = startOfDay(new Date());
     this.toast.show("Tâches et segments vidés (réglages conservés)");
@@ -328,21 +353,37 @@ export class App {
     el("toolsBack").addEventListener("click", () => this.backToApp());
   }
 
+  /**
+   * Raccourcis, tous CONTEXTUELS : jamais dans un champ, jamais quand une
+   * modale est ouverte (Espace sur un bouton de modale déclenchait Play), jamais
+   * avec un modificateur (Alt+← est le retour du navigateur), jamais hors de
+   * l'écran principal. ← → ne valent que là où le sélecteur de jour est visible
+   * (Journée, Segments) : sur Tâches et Stats il n'y a pas de jour à changer.
+   */
   #bindKeyboard() {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         const open = qsa(".modal-backdrop.open");
         if (open.length) open.forEach((m) => m.classList.remove("open"));
+        else if (this.memoPanel.isOpen) this.closeMemos();
         else if (this.screen !== "app") this.backToApp();
         return;
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (qsa(".modal-backdrop.open").length) return;
+      // Les mémos vivent sur tous les écrans : M aussi.
+      if (e.key.toLowerCase() === "m") { e.preventDefault(); this.toggleMemos(); return; }
       if (this.screen !== "app") return; // raccourcis d'action désactivés hors de l'écran principal
+      const k = e.key.toLowerCase();
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }
-      else if (e.key === "n" || e.key === "N") { e.preventDefault(); this.openNewTask(); }
-      else if (e.key === "r" || e.key === "R") { e.preventDefault(); this.openResume(); }
-      else if (e.key === "t" || e.key === "T") { e.preventDefault(); this.finishActive(); }
+      else if (k === "n") { e.preventDefault(); this.openNewTask(); }
+      else if (k === "r") { e.preventDefault(); this.openResume(); }
+      else if (k === "t") { e.preventDefault(); this.finishActive(); }
+      else if (k === "s") { e.preventDefault(); this.openSegmentModal(); }
+      else if (e.key === "ArrowLeft" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(-1); }
+      else if (e.key === "ArrowRight" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(1); }
     });
   }
 

@@ -1,6 +1,8 @@
 import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
          EYE_REST_MIN, EYE_REST_MAX, REMINDER_LABEL_MAX, REMINDER_MAX,
-         DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX } from "../core/constants.js";
+         DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX,
+         SEGMENT_MERGE_GAP_MAX_MIN, SEGMENT_MIN_MAX_MIN,
+         OFF_REASON_MAX, OFF_LABEL_MAX } from "../core/constants.js";
 import { isoDow, fmtDateInput, parseDateInput, toMin,
          countDays, eachDateKey } from "../utils/datetime.js";
 
@@ -28,6 +30,20 @@ export function clampEyeRest(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.restSeconds;
   return Math.min(EYE_REST_MAX, Math.max(EYE_REST_MIN, n));
+}
+
+/** Seuil de fusion des micro-pauses, en minutes entières dans [0, 30]. */
+export function clampMergeGap(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.mergeGapMin;
+  return Math.min(SEGMENT_MERGE_GAP_MAX_MIN, Math.max(0, n));
+}
+
+/** Durée sous laquelle le chrono jette un segment, en minutes entières dans [0, 15]. */
+export function clampMinSegment(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.minMin;
+  return Math.min(SEGMENT_MIN_MAX_MIN, Math.max(0, n));
 }
 
 /** Volume du bip, ramené dans [0, 1]. */
@@ -157,6 +173,38 @@ function cloneBreaks(list) {
 }
 
 /**
+ * Libellé d'un motif hors tâche, normalisé : espaces repliés, borné, `""` s'il
+ * ne reste rien. C'est ce que porte le segment — en clair, pas un identifiant.
+ */
+export function normalizeOffLabel(label) {
+  return String(label ?? "").replace(/\s+/g, " ").trim().slice(0, OFF_LABEL_MAX).trim();
+}
+
+/**
+ * Clé de regroupement d'un motif : « Pause », « pause » et «  PAUSE  » sont le
+ * même vide. Une seule définition, lue par les totaux, les Stats et la
+ * détection de doublon des épinglés — sans quoi ils divergeraient.
+ */
+export function offKey(label) {
+  return normalizeOffLabel(label).toLowerCase();
+}
+
+/** Copie défensive de la liste des motifs épinglés : normalisés, dédoublonnés, bornés. */
+function cloneOffReasons(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [], seen = new Set();
+  for (const raw of list) {
+    const label = normalizeOffLabel(raw);
+    const key = label.toLowerCase();
+    if (!label || seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+    if (out.length >= OFF_REASON_MAX) break;
+  }
+  return out;
+}
+
+/**
  * Réglages de l'application.
  *
  * Horaires sur 3 niveaux (du plus général au plus spécifique) :
@@ -208,6 +256,48 @@ export class Settings {
       dayEnd: data.reminders?.dayEnd ?? d.reminders.dayEnd,
       breaks: cloneBreaks(data.reminders?.breaks),
     };
+    this.segments = {
+      mergeGapMin: clampMergeGap(data.segments?.mergeGapMin ?? d.segments.mergeGapMin),
+      minMin: clampMinSegment(data.segments?.minMin ?? d.segments.minMin),
+    };
+    // `??` et non `||` : une liste VIDÉE par l'utilisateur reste vide, seuls
+    // l'absence (stockage < v13) et le null retombent sur les défauts.
+    this.offReasons = cloneOffReasons(data.offReasons ?? d.offReasons);
+  }
+
+  /** Le motif est-il épinglé ? (comparaison par clé, cf. `offKey`) */
+  isPinnedOff(label) {
+    const key = offKey(label);
+    return key !== "" && this.offReasons.some((r) => offKey(r) === key);
+  }
+
+  /**
+   * Épingle un motif. Renvoie le libellé normalisé, ou une **raison** d'échec
+   * (`"invalid"`, `"duplicate"`, `"full"`), comme `addBreak`.
+   */
+  addOffReason(label) {
+    const clean = normalizeOffLabel(label);
+    if (!clean) return "invalid";
+    if (this.isPinnedOff(clean)) return "duplicate";
+    if (this.offReasons.length >= OFF_REASON_MAX) return "full";
+    this.offReasons.push(clean);
+    return clean;
+  }
+
+  /** Retire un motif épinglé. L'historique n'est pas touché : ses segments deviennent « exceptionnels ». */
+  removeOffReason(label) {
+    const key = offKey(label);
+    this.offReasons = this.offReasons.filter((r) => offKey(r) !== key);
+  }
+
+  /** Seuil de fusion des micro-pauses, en millisecondes (0 = jamais). */
+  mergeGapMs() {
+    return clampMergeGap(this.segments.mergeGapMin) * 60_000;
+  }
+
+  /** Durée sous laquelle le chrono jette un segment, en millisecondes (0 = tout garder). */
+  minSegmentMs() {
+    return clampMinSegment(this.segments.minMin) * 60_000;
   }
 
   /** Période du rappel « repos des yeux », en millisecondes. */
@@ -455,6 +545,8 @@ export class Settings {
         dayEnd: this.reminders.dayEnd,
         breaks: this.reminders.breaks.map((b) => ({ ...b })),
       },
+      segments: { ...this.segments },
+      offReasons: [...this.offReasons],
     };
   }
 }

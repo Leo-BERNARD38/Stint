@@ -46,6 +46,53 @@
 .icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .icon-btn.active { background: var(--accent-wash); color: var(--accent);
   box-shadow: inset 0 0 0 1.5px var(--accent); }
+/* Compteur de mémos ouverts sur le bouton d'en-tête : un chiffre en lavis
+   d'accent (N3, « ça se clique »), jamais en minium — un mémo n'exige rien
+   maintenant. Posé en coin, il ne déplace rien. */
+.memo-btn { position: relative; }
+.memo-count { position: absolute; top: -3px; right: -4px; min-width: 17px; height: 17px; padding: 0 5px;
+  border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-text);
+  font-family: var(--font-data); font-size: 10px; font-weight: 600; line-height: 17px; text-align: center; }
+
+/* ---------- Panneau des mémos ----------
+   Un panneau (--surface, deuxième niveau) fixé à droite sous l'en-tête, entre
+   l'en-tête (20) et les modales (100). Ses champs en --ctl, sa liste dans la
+   grammaire `.ov-item`. Pleine largeur sur mobile. */
+.memo-panel { position: fixed; top: 64px; right: 0; bottom: 0; width: 340px; max-width: 100vw; z-index: 30;
+  background: var(--surface); box-shadow: var(--shadow-pop); padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  display: flex; flex-direction: column; gap: var(--sp-3); overflow: hidden;
+  border-top-left-radius: var(--radius-lg); }
+.memo-head { display: flex; align-items: center; gap: var(--sp-2); }
+.memo-head .block-title { margin: 0; flex: 1; }
+.memo-close { position: static; }
+.memo-add { display: flex; flex-direction: column; gap: 6px; }
+.memo-input { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-sm); padding: 10px 11px; font-size: 14px; width: 100%; }
+.memo-input:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.memo-add .select-wrap select { width: 100%; }
+.memo-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; flex: 1; padding: 2px; }
+.memo-item { display: flex; align-items: flex-start; gap: var(--sp-2); padding: 9px 10px 9px 12px; background: var(--surface-2); border-radius: var(--radius-sm); }
+/* Un mémo fait se barre et passe en encre douce — jamais en opacité, qui
+   ferait tomber le texte sous 4,5:1 (mesuré : 2,9:1). */
+.memo-item.done .memo-text { text-decoration: line-through; color: var(--text-soft); }
+.memo-item.done .memo-task { color: var(--text-faint); }
+.memo-check { display: grid; place-items: center; padding-top: 2px; }
+.memo-check input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
+.memo-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.memo-text { font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.memo-task { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border: none; background: transparent; padding: 0;
+  font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); cursor: pointer; max-width: 100%; }
+.memo-task .swatch { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.memo-task:hover { color: var(--text); }
+.memo-item .ov-rm { margin-left: 0; margin-top: -2px; }
+.et-memos .memo-list { max-height: 180px; flex: none; margin-bottom: 6px; }
+/* Indicateur sur une ligne de tâche : dans la colonne élastique (rien ne
+   bouge), en lavis comme le compteur — c'est un lien vers le panneau. */
+.memo-badge { display: inline-flex; align-items: center; gap: 3px; border: none; background: var(--accent-wash); color: var(--accent);
+  border-radius: var(--radius-pill); padding: 2px 7px 2px 5px; font-family: var(--font-data); font-size: 10px; font-weight: 600; cursor: pointer; }
+.memo-badge:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+@media (max-width: 760px) {
+  .memo-panel { width: 100vw; top: 56px; border-top-left-radius: 0; }
+}
 
 /* ---------- Titres de bloc ---------- */
 .block-title {
@@ -377,6 +424,17 @@
   transition: box-shadow .22s var(--ease-out); }
 .tl-gap:hover { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
 .tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); white-space: nowrap; }
+/* Vide justifié (hors tâche) : la géométrie du trou (inset), sans hachures et
+   sans couleur de tâche. Le libellé en surtitre Plex Mono, comme le mot
+   « pause » de la bande déjeuner : c'est un état de la journée, pas une tâche. */
+.timeline .tl-seg.off { top: 7px; bottom: 7px; border-radius: var(--radius-xs); }
+.tl-seg.off { background: var(--off-fill); color: var(--text-soft); box-shadow: inset 0 0 0 1px var(--gap-ring); }
+.tl-seg.off b { font-family: var(--font-data); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-soft); }
+.tl-seg.off i { color: var(--text-soft); opacity: 1; }
+.timeline .tl-seg.off:hover, .timeline .tl-seg.off.hl { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); filter: none; }
+/* Sur un fond clair la poignée, calibrée pour une couleur de tâche, criait :
+   elle prend l'anneau du trou au repos, et ne fonce qu'au survol. */
+.tl-seg.off .tl-grip span { background: var(--gap-ring-hover); }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
@@ -471,6 +529,19 @@
 .fill-done-toggle .o-chev { flex-shrink: 0; transition: transform .2s var(--ease); }
 .fill-done-toggle.open .o-chev { transform: rotate(180deg); }
 .fill-done-list { display: flex; flex-direction: column; gap: 5px; }
+/* Hors tâche dans le popover : les épinglés en pilules, l'exceptionnel au champ. */
+.fill-opt .o-dot.off, .fill-task .o-dot.off, .o-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
+.fill-off-btn .o-ic .o-dot { width: 10px; height: 10px; border-radius: 3px; }
+.fill-off-btn .o-k-inline { font-size: 11px; color: var(--text-soft); font-weight: 600; }
+.fill-off-btn.open .o-chev { transform: rotate(180deg); }
+.fill-off { display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 0; }
+.fill-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.fill-reason { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-pill); padding: 7px 12px; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+.fill-reason:hover { background: var(--ctl-hover); }
+.fill-off-input { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 13.5px; width: 100%; }
+.fill-off-input:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.fill-off-pin { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-soft); cursor: pointer; user-select: none; }
+.fill-off-pin input { accent-color: var(--accent); }
 @media (max-width: 760px) {
   .fill-pop { position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; transform: none; width: 100%; max-width: 100%;
     border-radius: 20px 20px 0 0; padding-bottom: 26px; }
@@ -502,6 +573,12 @@
    c'est l'ABSENCE de hachures qui dit « rien ne manque ». Pas besoin de vert
    pour féliciter : le registre est plein, ça se voit. */
 .untracked:has(.untracked-zero) { background-image: none; }
+/* Hors tâche du jour : la carte « non tracé » SANS sa trame — le vide est
+   expliqué, ce n'est plus un manque. Une ligne par motif, encre sur creux. */
+.offblock { margin-top: var(--sp-3); background-color: var(--surface-2); border-radius: var(--radius); padding: var(--sp-4); }
+.untracked-row .ut-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
+.off-row .off-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body); font-size: 13px; color: var(--text); }
+.off-share { margin-top: var(--sp-3); font-family: var(--font-data); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
 
 /* ---------- Couverture du jour (rail Totaux) ----------
    L'autre face du « temps non tracé » : la part de la journée PLANIFIÉE qui est
@@ -516,10 +593,13 @@
   font-variant-numeric: tabular-nums; color: var(--accent); }
 .cov-k { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--text-faint); }
-.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden;
+.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden; display: flex;
   background: color-mix(in srgb, var(--text) 8%, transparent); }
 .cov-track i { display: block; height: 100%; border-radius: var(--radius-pill);
   background: var(--accent); transition: width .4s var(--ease-out); }
+/* Deux parts : le tracé (accent) et le justifié (encre) — la barre dit d'où
+   vient la couverture, pas seulement combien. */
+.cov-track i.off { background: var(--text-soft); margin-left: 2px; }
 .cov-lab { display: flex; justify-content: space-between; gap: var(--sp-3);
   font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
@@ -608,7 +688,9 @@
 .task-row .task-actions { grid-area: 1 / 3; justify-self: end; }
 .task-row .task-dur { grid-area: 1 / 4; justify-self: end; }
 .task-row + .task-row { border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
-.task-row:hover { background: var(--surface-2); }
+/* `.hl` = survol croisé depuis la timeline (même rendu que le survol direct :
+   la surface change, rien ne bouge). */
+.task-row:hover, .task-row.hl { background: var(--surface-2); }
 /* La ligne en cours : son fond recule d'un cran, et sa durée passe en minium —
    la même règle que le chrono du héros. Le minium ne marque pas « cette
    ligne », il marque LE NOMBRE QUI BOUGE. C'est vrai partout, donc ça se
@@ -736,6 +818,9 @@
 .seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; max-width: 100%; }
 .seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
 .seg-swatch:hover { transform: scale(1.18); }
+.seg-swatch.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); cursor: default; }
+.seg-swatch.off:hover { transform: none; }
+.seg-task-cell .raw-tag { margin-left: 6px; }
 .seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .seg-time { font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
 .seg-live { color: var(--stop-ink); font-weight: 600; }
@@ -965,6 +1050,8 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    de `.ov-name` vaut pour un jour de semaine (« lundi » → « Lundi »), pas pour
    « Pause café », qu'elle rendrait en « Pause Café ». */
 .ov-item.brk .ov-name { text-transform: none; }
+.ov-item.off-item { cursor: default; }
+.off-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: end; }
 /* Idem pour une période : `capitalize` frappe CHAQUE mot et rendrait
    « du lun. 10 au ven. 21 août » en « Du Lun. 10 Au Ven. 21 Août ». La capitale
    initiale est posée en JS. Et le libellé étant long, il cède avant le résumé. */
@@ -1010,12 +1097,26 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
+/* Outils de la modale Segment (couper / fusionner) : un creux sous les champs,
+   une ligne par outil ; le libellé en surtitre Plex Mono, comme les champs. */
+.sm-tools { margin-top: var(--sp-4); padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; }
+.sm-tool { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sm-tool-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 92px; }
+.sm-tool .tinput { width: 96px; }
+/* Désactivé : en encre pâle sur fond vide, jamais en opacité (2,3:1 mesuré).
+   Le title dit pourquoi. */
+.sm-tool .mini-btn[disabled] { color: var(--text-faint); background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring); cursor: not-allowed; }
+.sm-tool .mini-btn[disabled]:hover { background: transparent; color: var(--text-faint); }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
 .resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
 .resume-item:hover { background: var(--surface-hover); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
 .resume-item.is-running .du { color: var(--stop-ink); font-weight: 700; }
+/* Le curseur clavier de la liste : lavis + anneau, le marquage du choix UNIQUE
+   (même rendu que `.ov-item.editing`) — jamais une bordure, jamais le minium. */
+.resume-item.is-cursor { background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.resume-search { display: block; width: 100%; margin-bottom: var(--sp-3); }
 
 /* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -1343,6 +1444,18 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .stat-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Hors tâche (Stats) : même grammaire que « par type », un libellé à la place
+   du badge, la barre en ENCRE — une teinte de données ne vit que dans un
+   graphique légendé, et un vide n'est pas une série. */
+.stats-off { display: flex; flex-direction: column; gap: 10px; }
+.stat-off-lab { min-width: 120px; max-width: 40%; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-bar.off { background: var(--text-soft); }
+.stat-off-toggle { display: flex; align-items: center; gap: var(--sp-3); border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm); padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; }
+.stat-off-toggle:hover { background: var(--surface-hover); }
+.stat-off-toggle .o-chev { color: var(--text-faint); flex: 1; display: flex; transition: transform .2s var(--ease); }
+.stat-off-toggle.open .o-chev { transform: rotate(180deg); }
+.stat-off-other { display: flex; flex-direction: column; gap: 10px; padding-left: var(--sp-3); }
+.stat-off-sum { font-family: var(--font-data); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); margin-top: 4px; }
 
 /* ---------- Tête d'onglet : fenêtre d'analyse ---------- */
 .stats-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }

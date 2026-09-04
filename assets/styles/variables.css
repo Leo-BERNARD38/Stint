@@ -105,6 +105,12 @@
   --hatch-img: repeating-linear-gradient(-45deg, transparent 0 5px, var(--hatch) 5px 10px);
   --gap-ring: color-mix(in srgb, var(--text) 20%, transparent);
   --gap-ring-hover: color-mix(in srgb, var(--text) 42%, transparent);
+  /* Le vide JUSTIFIÉ (hors tâche : pause, réunion) : le trou, expliqué. Ni un
+     manque (pas de hachures) ni de l'acquis (pas de couleur de tâche) — une
+     surface neutre dérivée de l'encre, comme --ctl, sous le même anneau que le
+     trou. Une teinte ici ferait une quatrième série sur une page qui n'en a
+     que trois. */
+  --off-fill: color-mix(in srgb, var(--text) 14%, transparent);
 
   /* ---------------------- Couleurs (clair, sombre) ----------------------
      Le jour : un papier chaud légèrement grainé, pas du blanc pur.
