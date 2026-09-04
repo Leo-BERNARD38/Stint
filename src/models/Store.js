@@ -1,5 +1,5 @@
 import { EventEmitter } from "../core/EventEmitter.js";
-import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS, SEGMENT_MERGE_GAP_MS } from "../core/constants.js";
+import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS } from "../core/constants.js";
 import { Settings } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
@@ -80,6 +80,9 @@ export class Store extends EventEmitter {
    * « pas de pause » en collant `lunchStart` et `lunchEnd`, et c'est le
    * constructeur de `Settings` qui le relit — local au champ, donc idempotent,
    * et couvre aussi un JSON importé.
+   * v11 → v12 : ajout de `settings.segments` (seuil de fusion des micro-pauses,
+   * jusque-là une constante, et seuil des segments courts) — purement additif,
+   * valeurs par défaut fournies par `Settings`, aucune transformation ici.
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -184,9 +187,12 @@ export class Store extends EventEmitter {
 
   /**
    * Reprend le segment juste mis en pause s'il s'agit de la même tâche et que
-   * l'écart est inférieur au seuil (micro-pause) ; sinon démarre un nouveau
+   * l'écart est inférieur au seuil réglé (micro-pause) ; sinon démarre un nouveau
    * segment. Évite de fragmenter la base / la timeline pour des pauses brèves.
    * À n'appeler qu'après #stopActive() (aucun segment ne doit être en cours).
+   *
+   * Seuil à 0 = jamais de fusion : l'écart est strictement positif dès qu'une
+   * pause a eu lieu, la comparaison échoue d'elle-même.
    */
   #startOrResume(taskId, at = new Date()) {
     // Segment terminé le plus récemment, toutes tâches confondues : c'est la
@@ -196,16 +202,32 @@ export class Store extends EventEmitter {
       if (s.isRunning) continue;
       if (!last || s.endMs() > last.endMs()) last = s;
     }
-    if (last && last.taskId === taskId && at.getTime() - last.endMs() <= SEGMENT_MERGE_GAP_MS) {
+    if (last && last.taskId === taskId && at.getTime() - last.endMs() <= this.settings.mergeGapMs()) {
       last.end = null; // rouvre le segment : la micro-pause est absorbée
       return;
     }
     this.#startSegment(taskId, at);
   }
 
+  /**
+   * Arrête le segment en cours. S'il n'a pas atteint la durée minimale réglée
+   * (`settings.segments.minMin`), il est **supprimé** plutôt que fermé : un
+   * double-clic sur Play, ou une reprise sur la mauvaise tâche corrigée dans la
+   * foulée, ne laisse pas de segment de douze secondes.
+   *
+   * Seul le chrono passe ici (Play, Pause, Reprendre, Terminer, archivage) —
+   * une saisie explicite (modale, glisser) n'est jamais jetée. Corollaire pour
+   * `#startOrResume` : un segment jeté n'est plus « le dernier », c'est celui
+   * d'avant qui peut être rouvert si SON écart passe le seuil de fusion.
+   */
   #stopActive(at = new Date()) {
     const seg = this.activeSegment();
-    if (seg) seg.end = toLocalISO(at);
+    if (!seg) return;
+    if (at.getTime() - seg.startMs() < this.settings.minSegmentMs()) {
+      this.segments = this.segments.filter((s) => s !== seg);
+      return;
+    }
+    seg.end = toLocalISO(at);
   }
 
   /* ----------------- commandes (3 boutons) ----------------- */

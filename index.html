@@ -380,9 +380,10 @@
           <a href="#set-apparence"><span class="n">01</span> Apparence</a>
           <a href="#set-horaires"><span class="n">02</span> Horaires</a>
           <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
-          <a href="#set-yeux"><span class="n">04</span> Repos des yeux</a>
-          <a href="#set-pauses"><span class="n">05</span> Pauses &amp; rappels</a>
-          <a href="#set-donnees"><span class="n">06</span> Données</a>
+          <a href="#set-segments"><span class="n">04</span> Segments</a>
+          <a href="#set-yeux"><span class="n">05</span> Repos des yeux</a>
+          <a href="#set-pauses"><span class="n">06</span> Pauses &amp; rappels</a>
+          <a href="#set-donnees"><span class="n">07</span> Données</a>
         </nav>
 
         <div class="set-body">
@@ -550,7 +551,38 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 04 · Repos des yeux ---------------------------- -->
+          <!-- ---------------------------- 04 · Segments ---------------------------- -->
+          <section class="set-group" id="set-segments">
+            <h3>Segments</h3>
+            <p class="muted">Deux garde-fous du chrono, pour une timeline qui ne se fragmente pas.
+              Ils ne concernent que <strong>Play, Pause, Reprendre et Terminer</strong> — jamais un
+              segment saisi à la main ni un bord glissé sur la timeline.</p>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Fusion des micro-pauses</b>
+                <span>Reprendre la <strong>même tâche</strong> dans ce délai rouvre le segment
+                  précédent au lieu d'en créer un nouveau. 0 = jamais.</span>
+              </span>
+              <span class="set-ctl">
+                <input type="number" id="setMergeGap" class="tinput" min="0" max="30" step="1" aria-label="Délai de fusion des micro-pauses, en minutes">
+                <span class="prec-sep">min</span>
+              </span>
+            </div>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Segments courts ignorés</b>
+                <span>Un segment que le chrono arrête <strong>avant cette durée</strong> est
+                  supprimé, pas conservé : un double-clic sur Play ou une reprise sur la mauvaise
+                  tâche ne laissent pas de confetti de douze secondes. 0 = tout garder.</span>
+              </span>
+              <span class="set-ctl">
+                <input type="number" id="setMinSeg" class="tinput" min="0" max="15" step="1" aria-label="Durée minimale d'un segment du chrono, en minutes">
+                <span class="prec-sep">min</span>
+              </span>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 05 · Repos des yeux ---------------------------- -->
           <section class="set-group" id="set-yeux">
             <h3>Repos des yeux</h3>
             <label class="set-row">
@@ -610,7 +642,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 05 · Pauses &amp; rappels ---------------------------- -->
+          <!-- ---------------------------- 06 · Pauses &amp; rappels ---------------------------- -->
           <section class="set-group" id="set-pauses">
             <h3>Pauses &amp; rappels</h3>
             <p class="muted">
@@ -673,7 +705,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 05 · Données ---------------------------- -->
+          <!-- ---------------------------- 07 · Données ---------------------------- -->
           <section class="set-group" id="set-donnees">
             <h3>Sauvegarde &amp; données</h3>
             <p class="muted">

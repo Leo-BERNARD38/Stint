@@ -6,10 +6,11 @@
  */
 import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay } from "../src/models/Settings.js";
 import { Store } from "../src/models/Store.js";
+import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
-import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime } from "../src/utils/datetime.js";
+import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
 function ok(cond, label) {
@@ -227,7 +228,7 @@ section("migration v10 → v11 (Store, persistance simulée)");
   const store = new Store(fakePersistence());
   store.hydrate(JSON.parse(JSON.stringify(brut)));
   ok(store.settings.lunch === false, "v10 aux bornes collées → lunch:false");
-  eq(store.version, 11, "version réécrite au format courant");
+  eq(store.version, SCHEMA_VERSION, "version réécrite au format courant");
 
   const store2 = new Store(fakePersistence());
   store2.hydrate({ ...brut, settings: { ...brut.settings, lunchEnd: "13:30" } });
@@ -267,6 +268,89 @@ section("non-régression : TimeCalculator et Reminders");
   const rem2 = new Reminders({ store: { settings: s2 }, calc: new TimeCalculator({ ...store, settings: s2 }) });
   eq(rem2.occurrencesFor(jour).map((o) => o.kind), ["lunch", "dayEnd"], "avec pause : les deux rappels");
   eq(rem2.occurrencesFor(jour)[0].at, atTime(jour, "12:30").getTime(), "le déjeuner tombe au début du trou");
+}
+
+/* ----------------------------------------------------------------- §10 */
+section("seuils du chrono : micro-pauses fusionnées, segments courts jetés (v12)");
+{
+  const ago = (ms) => toLocalISO(new Date(Date.now() - ms));
+  const fresh = (segments = {}) => {
+    const store = new Store(fakePersistence());
+    store.hydrate({ version: 12, settings: { segments }, tasks: [], segments: [], meta: {} });
+    return store;
+  };
+
+  // Défauts et bornes.
+  const d = fresh();
+  eq(d.settings.segments, { mergeGapMin: 2, minMin: 1 }, "v11 → v12 : défauts fournis");
+  eq(fresh({ mergeGapMin: -5, minMin: 999 }).settings.segments, { mergeGapMin: 0, minMin: 15 },
+     "valeurs absurdes ramenées dans les bornes");
+  const back = new Store(fakePersistence());
+  back.hydrate(fresh({ mergeGapMin: 7, minMin: 3 }).toJSON());
+  eq(back.settings.segments, { mergeGapMin: 7, minMin: 3 }, "round-trip toJSON idempotent");
+
+  // Un segment de 30 s mis en pause est jeté.
+  const a = fresh();
+  const t = a.startNew({ name: "A", type: "dev" });
+  a.segments[0].start = ago(30_000);
+  a.pause();
+  eq(a.segments.length, 0, "pause sous la minute : le segment est jeté");
+  ok(!a.activeSegment(), "…et plus rien ne tourne");
+
+  // Seuil à 0 : tout est gardé.
+  const z = fresh({ minMin: 0 });
+  z.startNew({ name: "Z", type: "dev" });
+  z.segments[0].start = ago(5_000);
+  z.pause();
+  eq(z.segments.length, 1, "minMin = 0 : un segment de 5 s est conservé");
+  ok(!z.segments[0].isRunning, "…et il est bien fermé");
+
+  // Terminer une tâche sur un segment court : jeté, mais la tâche est terminée.
+  const c = fresh();
+  const tc = c.startNew({ name: "C", type: "dev" });
+  c.segments[0].start = ago(10_000);
+  c.closeTask(tc.id);
+  eq(c.segments.length, 0, "Terminer sur un segment court : jeté");
+  ok(c.taskById(tc.id).done === true, "…mais la tâche est terminée");
+
+  // Fusion : reprise à 60 s → même segment rouvert ; à 3 min → un second.
+  const m = fresh();
+  const tm = m.startNew({ name: "M", type: "dev" });
+  m.segments[0].start = ago(20 * 60_000);
+  m.pause();
+  const id0 = m.segments[0].id;
+  m.segments[0].end = ago(60_000);
+  m.resume(tm.id);
+  eq(m.segments.length, 1, "reprise à 60 s : aucun segment ajouté");
+  ok(m.segments[0].id === id0 && m.segments[0].isRunning, "…le segment est rouvert");
+  m.segments[0].start = ago(30 * 60_000);
+  m.pause();
+  m.segments[0].end = ago(3 * 60_000);
+  m.resume(tm.id);
+  eq(m.segments.length, 2, "reprise à 3 min : un second segment");
+
+  const n = fresh({ mergeGapMin: 0 });
+  const tn = n.startNew({ name: "N", type: "dev" });
+  n.segments[0].start = ago(20 * 60_000);
+  n.pause();
+  n.segments[0].end = ago(10_000);
+  n.resume(tn.id);
+  eq(n.segments.length, 2, "mergeGapMin = 0 : jamais de fusion, même à 10 s");
+
+  // Un segment jeté n'est plus « le dernier » : c'est celui d'avant qui compte.
+  const p = fresh();
+  const tp = p.startNew({ name: "P", type: "dev" });
+  p.segments[0].start = ago(20 * 60_000);
+  p.pause();
+  p.segments[0].end = ago(90_000);
+  p.resume(tp.id);                   // rouvre (90 s ≤ 2 min)
+  eq(p.segments.length, 1, "reprise à 90 s : rouvert");
+  const other = p.startNew({ name: "Q", type: "support" });   // ferme P (long), démarre Q
+  p.segments.at(-1).start = ago(20_000);
+  p.resume(tp.id);                   // Q (20 s) est jeté, P rouvert : son écart est nul
+  eq(p.segments.length, 1, "bascule corrigée dans la foulée : Q jeté, P rouvert");
+  ok(p.segments[0].taskId === tp.id && p.segments[0].isRunning, "…et c'est bien P qui tourne");
+  ok(p.taskById(other.id) != null, "la tâche Q, elle, existe toujours");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

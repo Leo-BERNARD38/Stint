@@ -1,6 +1,7 @@
 import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
          EYE_REST_MIN, EYE_REST_MAX, REMINDER_LABEL_MAX, REMINDER_MAX,
-         DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX } from "../core/constants.js";
+         DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX,
+         SEGMENT_MERGE_GAP_MAX_MIN, SEGMENT_MIN_MAX_MIN } from "../core/constants.js";
 import { isoDow, fmtDateInput, parseDateInput, toMin,
          countDays, eachDateKey } from "../utils/datetime.js";
 
@@ -28,6 +29,20 @@ export function clampEyeRest(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.eyeBreak.restSeconds;
   return Math.min(EYE_REST_MAX, Math.max(EYE_REST_MIN, n));
+}
+
+/** Seuil de fusion des micro-pauses, en minutes entières dans [0, 30]. */
+export function clampMergeGap(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.mergeGapMin;
+  return Math.min(SEGMENT_MERGE_GAP_MAX_MIN, Math.max(0, n));
+}
+
+/** Durée sous laquelle le chrono jette un segment, en minutes entières dans [0, 15]. */
+export function clampMinSegment(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.minMin;
+  return Math.min(SEGMENT_MIN_MAX_MIN, Math.max(0, n));
 }
 
 /** Volume du bip, ramené dans [0, 1]. */
@@ -208,6 +223,20 @@ export class Settings {
       dayEnd: data.reminders?.dayEnd ?? d.reminders.dayEnd,
       breaks: cloneBreaks(data.reminders?.breaks),
     };
+    this.segments = {
+      mergeGapMin: clampMergeGap(data.segments?.mergeGapMin ?? d.segments.mergeGapMin),
+      minMin: clampMinSegment(data.segments?.minMin ?? d.segments.minMin),
+    };
+  }
+
+  /** Seuil de fusion des micro-pauses, en millisecondes (0 = jamais). */
+  mergeGapMs() {
+    return clampMergeGap(this.segments.mergeGapMin) * 60_000;
+  }
+
+  /** Durée sous laquelle le chrono jette un segment, en millisecondes (0 = tout garder). */
+  minSegmentMs() {
+    return clampMinSegment(this.segments.minMin) * 60_000;
   }
 
   /** Période du rappel « repos des yeux », en millisecondes. */
@@ -455,6 +484,7 @@ export class Settings {
         dayEnd: this.reminders.dayEnd,
         breaks: this.reminders.breaks.map((b) => ({ ...b })),
       },
+      segments: { ...this.segments },
     };
   }
 }

@@ -2,7 +2,8 @@ import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { WEEKDAY_LABELS } from "../../core/constants.js";
 import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock,
          formatDateShort, formatDateRange, eachDateKey } from "../../utils/datetime.js";
-import { Settings, clampEyeMinutes, clampEyeRest, clampVolume, validateDay } from "../../models/Settings.js";
+import { Settings, clampEyeMinutes, clampEyeRest, clampVolume, validateDay,
+         clampMergeGap, clampMinSegment } from "../../models/Settings.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -74,6 +75,12 @@ export class SettingsView {
       store.updateSettings((s) => { s.rounding = e.target.value; }));
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
+
+    // --- seuils du chrono ---
+    el("setMergeGap").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.segments.mergeGapMin = clampMergeGap(e.target.value); }));
+    el("setMinSeg").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.segments.minMin = clampMinSegment(e.target.value); }));
 
     // --- rappel « repos des yeux » ---
     // La permission ne peut être demandée que sur un geste utilisateur : on la
@@ -366,6 +373,8 @@ export class SettingsView {
     setIf("setHpd", s.jira.hoursPerDay);
     setIf("setDpw", s.jira.daysPerWeek);
     setIf("setRounding", s.rounding);
+    setIf("setMergeGap", s.segments.mergeGapMin);
+    setIf("setMinSeg", s.segments.minMin);
 
     el("setBgDots").checked = s.bgDots;
     this.#renderEyeBreak();

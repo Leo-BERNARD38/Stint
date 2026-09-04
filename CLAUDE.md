@@ -121,11 +121,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v10)
+## 4. Modèle de données (schéma v12)
 
 ```jsonc
 {
-  "version": 11,
+  "version": 12,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -151,7 +151,12 @@ SettingsView, StorageView, ToolsView`.
     // déduisent des horaires résolus du jour (§14).
     "reminders": { "lunch": false, "dayEnd": false,
                    "breaks": [{ "id": "r_…", "label": "Pause café",
-                                "time": "10:00", "date": null }] }
+                                "time": "10:00", "date": null }] },
+    // seuils du CHRONO seulement (v12), en minutes, 0 = désactivé : fusion des
+    // micro-pauses (reprendre la même tâche dans ce délai rouvre le segment) et
+    // segments courts jetés à l'arrêt (`Store.#stopActive`). Une saisie
+    // explicite (modale, glisser) n'est jamais jetée.
+    "segments": { "mergeGapMin": 2, "minMin": 1 }
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
