@@ -1,6 +1,6 @@
 import { EventEmitter } from "../core/EventEmitter.js";
 import { SCHEMA_VERSION, PALETTES, PALETTE, DAY_MS } from "../core/constants.js";
-import { Settings } from "./Settings.js";
+import { Settings, normalizeOffLabel, offKey } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
 import { startOfDay, toLocalISO } from "../utils/datetime.js";
@@ -83,6 +83,10 @@ export class Store extends EventEmitter {
    * v11 → v12 : ajout de `settings.segments` (seuil de fusion des micro-pauses,
    * jusque-là une constante, et seuil des segments courts) — purement additif,
    * valeurs par défaut fournies par `Settings`, aucune transformation ici.
+   * v12 → v13 : vides justifiés — `segment.reason` (libellé hors tâche, `taskId`
+   * alors nul) et `settings.offReasons` (motifs épinglés). Additif : un segment
+   * sans `reason` est une tâche comme avant, c'est le constructeur de `Segment`
+   * qui tient l'invariant « une tâche OU un motif ».
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -331,11 +335,40 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
-  /** Met à jour un segment ; `start`/`end` attendus en ISO. Garantit fin ≥ début. */
+  /**
+   * Pose un vide justifié (hors tâche) sur `[start, end]` : un segment sans
+   * tâche, porteur d'un libellé en clair. `pin` l'épingle aussi dans les
+   * réglages (silencieusement ignoré s'il y est déjà ou si la liste est
+   * pleine), dans le même commit. La fin est obligatoire : un vide qui
+   * « tourne » n'a pas de sens, et le chrono ne saurait pas quoi en faire.
+   * Renvoie l'id du segment, ou `"invalid"`.
+   */
+  addOffSegment({ reason, start, end, pin = false }) {
+    const label = normalizeOffLabel(reason);
+    if (!label || !start || !end) return "invalid";
+    if (pin) this.settings.addOffReason(label);
+    const seg = new Segment({
+      id: this.#uid("s_"), reason: label,
+      start: toLocalISO(start), end: toLocalISO(end),
+    });
+    this.segments.push(seg);
+    this.#commit();
+    return seg.id;
+  }
+
+  /**
+   * Met à jour un segment ; `start`/`end` attendus en ISO. Garantit fin ≥ début.
+   * Tient l'invariant « une tâche OU un motif » : `taskId` est ignoré sur un
+   * hors tâche, `reason` sur une tâche (et un motif vide est ignoré aussi).
+   */
   updateSegment(id, patch) {
     const seg = this.segments.find((s) => s.id === id);
     if (!seg) return;
-    if ("taskId" in patch) seg.taskId = patch.taskId;
+    if ("taskId" in patch && !seg.isOff) seg.taskId = patch.taskId;
+    if ("reason" in patch && seg.isOff) {
+      const label = normalizeOffLabel(patch.reason);
+      if (label) seg.reason = label;
+    }
     if ("raw" in patch) seg.raw = patch.raw;
     if ("start" in patch) seg.start = patch.start;
     if ("end" in patch) seg.end = patch.end;
@@ -382,7 +415,9 @@ export class Store extends EventEmitter {
     const a0 = this.segments.find((s) => s.id === idA);
     const b0 = this.segments.find((s) => s.id === idB);
     if (!a0 || !b0 || a0 === b0) return "missing";
-    if (a0.taskId !== b0.taskId) return "task";
+    // Même tâche — ou même motif pour deux vides justifiés (« Pause » ≡ « pause »).
+    const keyOf = (s) => (s.isOff ? "off:" + offKey(s.reason) : "task:" + s.taskId);
+    if (keyOf(a0) !== keyOf(b0)) return "task";
     const [a, b] = a0.startMs() <= b0.startMs() ? [a0, b0] : [b0, a0];
     if (a.isRunning) return "blocked";
     const lo = a.startMs(), hi = b.endMs();
@@ -420,7 +455,7 @@ export class Store extends EventEmitter {
     const end = seg.isRunning ? Date.now() : seg.endMs();
     if (!Number.isFinite(at) || at <= seg.startMs() || at >= end) return "outside";
     const right = new Segment({
-      id: this.#uid("s_"), taskId: seg.taskId, raw: seg.raw,
+      id: this.#uid("s_"), taskId: seg.taskId, reason: seg.reason, raw: seg.raw,
       start: toLocalISO(new Date(at)), end: seg.end,
     });
     seg.end = toLocalISO(new Date(at));

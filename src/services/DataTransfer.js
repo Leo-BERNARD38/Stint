@@ -31,19 +31,23 @@ export class DataTransfer {
 
   /** Exporte un CSV des segments (durées calculées via `calc`/`formatter`). */
   static exportCSV(store, calc, formatter) {
+    // `kind` = task | off : un vide justifié (hors tâche) a le motif pour nom,
+    // « hors » pour type, ni tâche ni Jira — la colonne permet un filtre tableur
+    // sans ambiguïté.
     const header = [
       "segment_id", "task_id", "task_name", "type",
-      "start", "end", "raw", "worked_minutes", "decimal_hours", "jira",
+      "start", "end", "raw", "worked_minutes", "decimal_hours", "jira", "kind",
     ];
     const rows = [header];
     const sorted = [...store.segments].sort((a, b) => a.startMs() - b.startMs());
     for (const seg of sorted) {
-      const t = store.taskById(seg.taskId);
+      const t = seg.isOff ? null : store.taskById(seg.taskId);
       const minutes = calc.segmentMs(seg) / 60000;
       rows.push([
-        seg.id, seg.taskId, t?.name ?? "", t?.type ?? "",
+        seg.id, seg.taskId ?? "", seg.isOff ? seg.reason : (t?.name ?? ""), seg.isOff ? "hors" : (t?.type ?? ""),
         seg.start, seg.end ?? "", seg.raw ? "true" : "false",
-        Math.round(minutes), formatter.decimal(minutes), formatter.jira(minutes),
+        Math.round(minutes), formatter.decimal(minutes), seg.isOff ? "" : formatter.jira(minutes),
+        seg.isOff ? "off" : "task",
       ]);
     }
     const csv = rows.map((r) => r.map(DataTransfer.#cell).join(",")).join("\n");

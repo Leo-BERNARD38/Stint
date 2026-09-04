@@ -344,6 +344,17 @@
         <div class="top-tasks" id="statsTopTasks"></div>
       </div>
 
+      <!-- Les vides justifiés de la période : épinglés d'abord, puis les
+           exceptionnels repliés en une ligne — un an de motifs uniques ne doit
+           pas faire un bloc d'un mètre. -->
+      <div class="stat-block">
+        <div class="block-title">
+          Hors tâche
+          <span class="hint">les vides justifiés · part des horaires de la période</span>
+        </div>
+        <div class="stats-off" id="statsOff"></div>
+      </div>
+
       <div class="stat-block">
         <div class="block-title">
           Timeline
@@ -381,9 +392,10 @@
           <a href="#set-horaires"><span class="n">02</span> Horaires</a>
           <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
           <a href="#set-segments"><span class="n">04</span> Segments</a>
-          <a href="#set-yeux"><span class="n">05</span> Repos des yeux</a>
-          <a href="#set-pauses"><span class="n">06</span> Pauses &amp; rappels</a>
-          <a href="#set-donnees"><span class="n">07</span> Données</a>
+          <a href="#set-hors"><span class="n">05</span> Hors tâche</a>
+          <a href="#set-yeux"><span class="n">06</span> Repos des yeux</a>
+          <a href="#set-pauses"><span class="n">07</span> Pauses &amp; rappels</a>
+          <a href="#set-donnees"><span class="n">08</span> Données</a>
         </nav>
 
         <div class="set-body">
@@ -582,7 +594,38 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 05 · Repos des yeux ---------------------------- -->
+          <!-- ---------------------------- 05 · Hors tâche ---------------------------- -->
+          <section class="set-group" id="set-hors">
+            <h3>Hors tâche</h3>
+            <p class="muted">
+              Un <strong>vide justifié</strong> explique un trou de la journée (pause café,
+              réunion, papotage) sans être du travail : il compte dans la couverture, jamais dans
+              le total ni dans Jira, et n'apparaît dans aucune liste de tâches. On le pose depuis
+              le <strong>temps non tracé</strong> — un trou de la timeline, ou « Combler » dans Totaux.
+            </p>
+            <div class="set-row stack">
+              <span class="set-lab">
+                <b>Motifs épinglés</b>
+                <span>Proposés en un clic quand vous comblez un vide. Un motif tapé à la volée reste
+                  <strong>exceptionnel</strong> et n'entre pas ici — sauf si vous cochez
+                  « Garder dans la liste ». Retirer un motif ne touche pas l'historique.</span>
+              </span>
+            </div>
+            <div class="ov-list" id="offList"></div>
+            <div class="ov-editor">
+              <div class="off-add">
+                <div class="field">
+                  <label for="offLabel">Nouveau motif</label>
+                  <input type="text" id="offLabel" maxlength="40" placeholder="Réunion d'équipe" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="ov-actions">
+                  <button class="btn primary" id="offAdd">Épingler</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ---------------------------- 06 · Repos des yeux ---------------------------- -->
           <section class="set-group" id="set-yeux">
             <h3>Repos des yeux</h3>
             <label class="set-row">
@@ -642,7 +685,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 06 · Pauses &amp; rappels ---------------------------- -->
+          <!-- ---------------------------- 07 · Pauses &amp; rappels ---------------------------- -->
           <section class="set-group" id="set-pauses">
             <h3>Pauses &amp; rappels</h3>
             <p class="muted">
@@ -705,7 +748,7 @@
             </div>
           </section>
 
-          <!-- ---------------------------- 07 · Données ---------------------------- -->
+          <!-- ---------------------------- 08 · Données ---------------------------- -->
           <section class="set-group" id="set-donnees">
             <h3>Sauvegarde &amp; données</h3>
             <p class="muted">
@@ -1135,19 +1178,26 @@
     <div class="modal">
       <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3 id="segmentModalTitle">Segment manuel</h3>
-      <p class="modal-sub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
-      <div class="field" style="margin-bottom:12px;">
+      <p class="modal-sub" id="segmentModalSub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
+      <div class="field" id="smTaskField" style="margin-bottom:12px;">
         <label>Tâche</label>
         <div class="select-wrap">
           <select id="smTask" aria-label="Tâche"></select>
           <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
         </div>
       </div>
+      <!-- Vide justifié : le motif est un TEXTE (un exceptionnel se corrige),
+           les épinglés ne sont que des suggestions. -->
+      <div class="field" id="smReasonField" style="margin-bottom:12px;" hidden>
+        <label for="smReason">Motif <span class="field-optional">hors tâche</span></label>
+        <input type="text" id="smReason" maxlength="40" list="smReasonList" autocomplete="off" spellcheck="false" required>
+        <datalist id="smReasonList"></datalist>
+      </div>
       <div class="field-grid" style="margin-bottom:12px;">
         <div class="field"><label>Début</label><input type="datetime-local" id="smStart"></div>
         <div class="field"><label>Fin</label><input type="datetime-local" id="smEnd"></div>
       </div>
-      <label class="switch-row" style="margin-bottom:4px;">
+      <label class="switch-row" id="smRawRow" style="margin-bottom:4px;">
         <input type="checkbox" id="smRaw">
         Temps brut (sans rognage sur les horaires de travail)
       </label>

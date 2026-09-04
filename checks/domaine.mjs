@@ -4,7 +4,9 @@
  *
  *   node checks/domaine.mjs
  */
-import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay } from "../src/models/Settings.js";
+import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay, offKey, normalizeOffLabel } from "../src/models/Settings.js";
+import { Segment } from "../src/models/Segment.js";
+import { StatsAggregator } from "../src/services/StatsAggregator.js";
 import { Store } from "../src/models/Store.js";
 import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
@@ -430,6 +432,112 @@ section("fusionner / couper un segment");
   const v3 = add(v, "tA", [11, 0], [12, 0]);
   eq([v.neighbours(v2).prev?.id, v.neighbours(v2).next?.id], [v1, v3], "neighbours : prev/next");
   eq([v.neighbours(v1).prev, v.neighbours(v3).next], [null, null], "neighbours : bords");
+}
+
+/* ----------------------------------------------------------------- §12 */
+section("vides justifiés (hors tâche, v13)");
+{
+  // Réglages : épinglés, normalisation, raisons.
+  const s = new Settings();
+  eq(s.offReasons, ["Pause", "Réunion", "Discussion"], "trois motifs épinglés par défaut");
+  eq(offKey("  Pause  "), "pause", "offKey : trim + minuscules");
+  eq(normalizeOffLabel("  Dentiste   du   matin "), "Dentiste du matin", "normalizeOffLabel replie les espaces");
+  eq(s.addOffReason("   "), "invalid", "addOffReason : vide → invalid");
+  eq(s.addOffReason("pause"), "duplicate", "addOffReason : « pause » ≡ « Pause » → duplicate");
+  eq(s.addOffReason("Dentiste"), "Dentiste", "addOffReason : rend le libellé normalisé");
+  ok(s.isPinnedOff("DENTISTE"), "isPinnedOff insensible à la casse");
+  s.removeOffReason("dentiste");
+  ok(!s.isPinnedOff("Dentiste"), "removeOffReason par clé");
+  for (let i = 0; i < 20; i++) s.addOffReason("Motif " + i);
+  eq(s.offReasons.length, 12, "la liste est bornée à 12");
+  eq(s.addOffReason("Encore"), "full", "…et refuse au-delà : full");
+  eq(new Settings({ offReasons: [] }).offReasons, [], "une liste vidée reste vide (pas de retour aux défauts)");
+  eq(new Settings({ offReasons: ["a", "A", " a "] }).offReasons, ["a"], "les doublons de clé sont fusionnés à l'hydratation");
+  eq(new Settings(s.toJSON()).offReasons, s.offReasons, "round-trip toJSON");
+
+  // Modèle : une tâche OU un motif.
+  ok(Segment.fromJSON({ id: "x", taskId: "t1", start: "2026-08-10T09:00:00" }).isOff === false, "sans reason : une tâche");
+  const off = Segment.fromJSON({ id: "y", taskId: "t1", reason: " Pause ", start: "2026-08-10T09:00:00", end: "2026-08-10T09:30:00" });
+  ok(off.isOff && off.taskId === null && off.reason === "Pause", "avec reason : hors tâche, taskId nul, libellé trimé");
+  eq(Segment.fromJSON({ id: "z", taskId: "t1", reason: "", start: "2026-08-10T09:00:00" }).isOff, false, "reason vide = tâche");
+
+  // Store : addOffSegment, invariant, dernière tâche, fusion, coupe.
+  const store = new Store(fakePersistence());
+  store.hydrate({ version: 13, settings: { segments: { minMin: 0, mergeGapMin: 0 } },
+    tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  const at = (h, m = 0) => new Date(2026, 7, 10, h, m);
+  store.addSegment({ taskId: "tA", start: at(8, 30), end: at(12, 30) });
+  eq(store.addOffSegment({ reason: "  ", start: at(13, 30), end: at(14) }), "invalid", "addOffSegment : motif vide refusé");
+  eq(store.addOffSegment({ reason: "Dentiste", start: at(13, 30) }), "invalid", "addOffSegment : fin obligatoire");
+  const o1 = store.addOffSegment({ reason: "Dentiste", start: at(13, 30), end: at(14) });
+  ok(typeof o1 === "string", "addOffSegment rend l'id");
+  ok(!store.settings.isPinnedOff("Dentiste"), "sans pin : pas épinglé");
+  store.addOffSegment({ reason: "Veille techno", start: at(16), end: at(16, 30), pin: true });
+  ok(store.settings.isPinnedOff("veille techno"), "pin: true épingle dans le même commit");
+  store.addOffSegment({ reason: "PAUSE", start: at(16, 30), end: at(16, 45), pin: true });
+  eq(store.settings.offReasons.filter((r) => offKey(r) === "pause").length, 1, "pin d'un doublon : ignoré, pas dédoublé");
+  eq(store.lastUsedTask()?.id, "tA", "lastUsedTask ignore les hors tâche");
+  store.updateSegment(o1, { taskId: "tA" });
+  ok(store.segments.find((x) => x.id === o1).isOff, "updateSegment : taskId ignoré sur un hors tâche");
+  store.updateSegment(o1, { reason: "" });
+  eq(store.segments.find((x) => x.id === o1).reason, "Dentiste", "updateSegment : motif vide ignoré");
+  store.updateSegment(o1, { reason: " dentiste " });
+  eq(store.segments.find((x) => x.id === o1).reason, "dentiste", "updateSegment : motif normalisé");
+  store.updateSegment(store.segments[0].id, { reason: "Pause" });
+  ok(!store.segments[0].isOff, "updateSegment : reason ignoré sur une tâche");
+  eq(store.canMerge(store.segments[0].id, o1), "task", "fusion tâche + hors tâche : refusée");
+  const o2 = store.addOffSegment({ reason: "pause", start: at(16, 45), end: at(17) });
+  const oPause = store.segments.find((x) => x.reason === "PAUSE").id;
+  eq(store.mergeSegments(oPause, o2), "merged", "deux hors tâche « PAUSE »/« pause » : fusionnés");
+  const half = store.splitSegment(o1, at(13, 45).getTime());
+  eq(store.segments.find((x) => x.id === half).reason, "dentiste", "splitSegment recopie le motif");
+  eq(store.mergeSegments(o1, half), "merged", "…et se recolle");
+
+  // Calculs du jour : total / byTask sans le hors tâche, off à part, trous, couverture.
+  const calc = new TimeCalculator(store);
+  const day = at(0);
+  const t = calc.totalsForDay(day);
+  eq(t.total, 4 * 3_600_000, "total = 4 h de tâche (le hors tâche n'y est pas)");
+  eq([...t.byTask.keys()], ["tA"], "byTask ne contient que la tâche");
+  eq(t.off.total, 90 * 60_000, "off.total = 30 + 30 + 30 min");
+  eq([...t.off.byReason.values()].map((r) => [r.label, r.ms / 60000]), [["dentiste", 30], ["Veille techno", 30], ["PAUSE", 30]],
+     "off.byReason regroupe par clé, première graphie");
+  // « PAUSE »/« pause » 16:30–17:00 fusionné en un seul : dans byReason aussi.
+  eq(t.off.byReason.get("pause")?.ms, 30 * 60_000, "…et « pause » vaut 30 min en une entrée");
+  eq(calc.gapsForDay(day).map(([a, b]) => [new Date(a).getHours() + ":" + new Date(a).getMinutes(), new Date(b).getHours() + ":" + new Date(b).getMinutes()]),
+     [["14:0", "16:0"]], "un seul trou reste : 14:00 → 16:00 (les vides justifiés ne sont plus des trous)");
+  eq(calc.coverageForDay(day), { workedMs: 4 * 3_600_000, offMs: 90 * 60_000, plannedMs: 450 * 60_000 },
+     "coverageForDay : 4 h tracées, 1:30 hors tâche, 7:30 planifiées");
+  ok(!calc.totalsForDay(day, true).off.byReason.has("nope") && calc.totalsForDay(day, true).off, "totalsForDay(rounded) transmet off");
+
+  // Agrégats : kpi.offMs, couverture incluant le hors tâche, byTask sans lui.
+  const nowDay = new Date();
+  const s2 = new Store(fakePersistence());
+  s2.hydrate({ version: 13, settings: { segments: { minMin: 0 } },
+    tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+  const y = new Date(nowDay); y.setDate(y.getDate() - 1);
+  const yd = (h, m = 0) => { const d = new Date(y); d.setHours(h, m, 0, 0); return d; };
+  s2.hydrate({ ...s2.toJSON(), settings: { ...s2.settings.toJSON(), workDays: [1, 2, 3, 4, 5, 6, 7] } });
+  s2.addSegment({ taskId: "tA", start: yd(8, 30), end: yd(12, 30) });
+  s2.addOffSegment({ reason: "Dentiste", start: yd(13, 30), end: yd(14) });
+  s2.addOffSegment({ reason: "dentiste", start: yd(14), end: yd(14, 30) });
+  const agg = new StatsAggregator(s2, new TimeCalculator(s2));
+  const k = agg.snapshot("4w").kpi;
+  eq(k.total, 4 * 3_600_000, "kpi.total sans le hors tâche");
+  eq(k.offMs, 60 * 60_000, "kpi.offMs = 1 h");
+  eq(k.offByReason.map((r) => [r.key, r.ms / 60000]), [["dentiste", 60]], "kpi.offByReason : une entrée par clé");
+  eq(k.taskCount, 1, "taskCount ignore le hors tâche");
+  ok(Math.abs(k.coveragePct - (5 * 3_600_000 / k.scheduledMs) * 100) < 1e-6, "coveragePct inclut le hors tâche");
+  ok(agg.snapshot("4w").byTask.every((r) => r.task?.id === "tA"), "byTask des Stats sans le hors tâche");
+
+  // Migration v12 → v13 : additive et idempotente.
+  const m = new Store(fakePersistence());
+  m.hydrate({ version: 12, settings: {}, tasks: [], segments: [{ id: "s1", taskId: "tX", start: "2026-08-10T09:00:00", end: "2026-08-10T10:00:00" }], meta: {} });
+  ok(!m.segments[0].isOff && m.segments[0].taskId === "tX", "v12 : un segment sans reason reste une tâche");
+  eq(m.settings.offReasons.length, 3, "v12 : motifs épinglés par défaut");
+  const m2 = new Store(fakePersistence());
+  m2.hydrate(m.toJSON());
+  eq(m2.toJSON().segments, m.toJSON().segments, "ré-hydratation idempotente");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

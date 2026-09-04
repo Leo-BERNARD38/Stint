@@ -67,9 +67,9 @@ export class SegmentTableView {
     const start = new Date(seg.start);
     const end = seg.end ? new Date(seg.end) : null;
     const minutes = calc.segmentMs(seg) / 60000;
-    const task = store.taskById(seg.taskId);
+    const task = seg.isOff ? null : store.taskById(seg.taskId);
     const color = task ? task.color : "var(--text-faint)";
-    const name = task ? task.displayName : "?";
+    const name = seg.isOff ? seg.reason : task ? task.displayName : "?";
 
     // Préfixe la date quand un bord n'est pas le jour affiché (segment multi-jours).
     const dayStr = fmtDateInput(viewDay);
@@ -77,16 +77,23 @@ export class SegmentTableView {
     const startTxt = stamp(start);
     const endTxt = end ? stamp(end) : '<span class="seg-live">en cours</span>';
 
+    // Un vide justifié : pastille vide (aucune tâche à éditer), le motif suivi
+    // d'un tag, pas de copie — rien à reporter dans Jira.
+    const swatch = seg.isOff
+      ? `<span class="seg-swatch off" title="Hors tâche"></span>`
+      : `<span class="seg-swatch" style="background:${color}" data-edit-task="${seg.taskId}" title="Éditer la tâche"></span>`;
     tr.innerHTML =
-      `<td><div class="seg-task-cell"><span class="seg-swatch" style="background:${color}" data-edit-task="${seg.taskId}" title="Éditer la tâche"></span>` +
-        `<span class="seg-task-name">${escapeHtml(name)}</span></div></td>` +
+      `<td><div class="seg-task-cell">${swatch}` +
+        `<span class="seg-task-name">${escapeHtml(name)}</span>` +
+        (seg.isOff ? `<span class="raw-tag">hors tâche</span>` : "") + `</div></td>` +
       `<td class="seg-time">${startTxt}</td>` +
       `<td class="seg-time">${endTxt}</td>` +
       `<td>${seg.raw ? '<span class="raw-tag">brut</span>' : '<span class="seg-dash">—</span>'}</td>` +
       `<td class="seg-dur">${formatter.clock(minutes)}</td>` +
       `<td><div class="seg-actions">` +
-        `<button class="mini-btn" data-copy="${seg.id}" data-fmt="dec" title="Copier en décimal">${icon("copy", { size: 14 })} Déc.</button>` +
-        `<button class="mini-btn" data-copy="${seg.id}" data-fmt="jira" title="Copier en Jira">${icon("copy", { size: 14 })} Jira</button>` +
+        (seg.isOff ? "" :
+          `<button class="mini-btn" data-copy="${seg.id}" data-fmt="dec" title="Copier en décimal">${icon("copy", { size: 14 })} Déc.</button>` +
+          `<button class="mini-btn" data-copy="${seg.id}" data-fmt="jira" title="Copier en Jira">${icon("copy", { size: 14 })} Jira</button>`) +
       `</div></td>`;
     return tr;
   }

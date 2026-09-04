@@ -1,6 +1,7 @@
 import { DAY_MS } from "../core/constants.js";
 import { startOfDay, atTime, sameDay } from "../utils/datetime.js";
 import { intersect, unionIntervals, subtractIntervals } from "../utils/intervals.js";
+import { offKey } from "../models/Settings.js";
 
 /**
  * Calcule les durées ouvrées et les agrégats journaliers à partir des
@@ -103,24 +104,51 @@ export class TimeCalculator {
       const type = this.store.taskById(taskId)?.type ?? "autre";
       byType[type] = (byType[type] ?? 0) + roundedMs;
     }
-    return { total, byType, byTask, segments: raw.segments, rounded: true };
+    // Le hors tâche n'est jamais arrondi : rien à reporter dans Jira.
+    return { total, byType, byTask, segments: raw.segments, rounded: true, off: raw.off };
   }
 
+  /**
+   * Totaux bruts du jour. Les vides justifiés (`seg.isOff`) sortent de
+   * `total` / `byType` / `byTask` — ce n'est pas du travail — et alimentent
+   * `off = { total, byReason }`, regroupés par clé de motif (cf. `offKey`) en
+   * gardant la première graphie rencontrée comme libellé.
+   */
   #rawTotalsForDay(day) {
     const segs = this.store.segmentsForDay(day);
     const ds = startOfDay(day).getTime();
     const de = ds + DAY_MS;
     const byType = { dev: 0, support: 0, autre: 0 };
     const byTask = new Map();
+    const off = { total: 0, byReason: new Map() };
     let total = 0;
     for (const seg of segs) {
       const ms = this.segmentMs(seg, ds, de);
+      if (seg.isOff) {
+        off.total += ms;
+        const key = offKey(seg.reason);
+        const cur = off.byReason.get(key) ?? { label: seg.reason, ms: 0 };
+        cur.ms += ms;
+        off.byReason.set(key, cur);
+        continue;
+      }
       total += ms;
       byTask.set(seg.taskId, (byTask.get(seg.taskId) ?? 0) + ms);
       const type = this.store.taskById(seg.taskId)?.type ?? "autre";
       byType[type] = (byType[type] ?? 0) + ms;
     }
-    return { total, byType, byTask, segments: segs, rounded: false };
+    return { total, byType, byTask, segments: segs, rounded: false, off };
+  }
+
+  /**
+   * Couverture du jour, en une seule définition : ce qui est tracé (travail,
+   * arrondi ou non selon la vue), ce qui est justifié (hors tâche, jamais
+   * arrondi) et ce qui était planifié. Un vide justifié n'est plus un manque,
+   * il compte donc dans la couverture — mais pas dans le travaillé.
+   */
+  coverageForDay(day, rounded = false) {
+    const t = this.totalsForDay(day, rounded);
+    return { workedMs: t.total, offMs: t.off.total, plannedMs: this.plannedMsForDay(day) };
   }
 
   /** Fenêtre d'affichage de la timeline (plages ouvrées, élargies si débordement). */

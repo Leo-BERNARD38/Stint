@@ -47,12 +47,26 @@ export class SegmentModal extends Modal {
     this.segId = segId;
     const seg = segId ? store.segments.find((s) => s.id === segId) : null;
 
+    // Deux natures, deux formulaires : tâche + brut, ou motif seul. Un vide
+    // justifié ne se CRÉE pas ici (seulement depuis un trou) mais se corrige.
+    const off = !!seg?.isOff;
+    el("smTaskField").hidden = off;
+    el("smReasonField").hidden = !off;
+    el("smRawRow").hidden = off;
     if (seg) {
-      this.#fillTasks(seg.taskId);
+      if (off) {
+        el("smReason").value = seg.reason;
+        el("smReasonList").innerHTML = store.settings.offReasons.map((r) => `<option value="${escapeHtml(r)}">`).join("");
+        el("segmentModalSub").textContent = "Un vide justifié : il explique le trou, il ne compte ni dans le travaillé ni dans Jira.";
+        el("segmentModalTitle").textContent = "Modifier le vide justifié";
+      } else {
+        this.#fillTasks(seg.taskId);
+        el("segmentModalSub").textContent = "Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».";
+        el("segmentModalTitle").textContent = "Modifier le segment";
+      }
       el("smStart").value = fmtDateTimeLocal(new Date(seg.start));
       el("smEnd").value = seg.end ? fmtDateTimeLocal(new Date(seg.end)) : "";
       el("smRaw").checked = !!seg.raw;
-      el("segmentModalTitle").textContent = "Modifier le segment";
       el("smDelete").hidden = false;
       this.#renderTools(seg);
     } else {
@@ -65,6 +79,7 @@ export class SegmentModal extends Modal {
       el("smStart").value = fmtDateTimeLocal(base);
       el("smEnd").value = fmtDateTimeLocal(new Date(base.getTime() + 3_600_000));
       el("smRaw").checked = false;
+      el("segmentModalSub").textContent = "Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».";
       el("segmentModalTitle").textContent = "Segment manuel";
       el("smDelete").hidden = true;
       el("smTools").hidden = true;
@@ -108,11 +123,23 @@ export class SegmentModal extends Modal {
   }
 
   #save() {
-    const taskId = el("smTask").value;
+    const seg = this.segId ? this.app.store.segments.find((s) => s.id === this.segId) : null;
     const startV = el("smStart").value;
+    const endV = el("smEnd").value;
+    if (seg?.isOff) {
+      // Motif obligatoire, fin obligatoire : un vide qui « tourne » n'a pas de sens.
+      const reason = el("smReason").value.trim();
+      if (!reason) { el("smReason").focus(); return; }
+      if (!startV || !endV) { el(endV ? "smStart" : "smEnd").focus(); return; }
+      this.app.store.updateSegment(this.segId, {
+        reason, start: toLocalISO(parseDateTimeLocal(startV)), end: toLocalISO(parseDateTimeLocal(endV)),
+      });
+      this.close();
+      return;
+    }
+    const taskId = el("smTask").value;
     if (!taskId || !startV) return;
     const start = parseDateTimeLocal(startV);
-    const endV = el("smEnd").value;
     const end = endV ? parseDateTimeLocal(endV) : null;
     const raw = el("smRaw").checked;
 

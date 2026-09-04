@@ -76,6 +76,16 @@ export class SettingsView {
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
 
+    // --- motifs hors tâche épinglés ---
+    el("offAdd").addEventListener("click", () => this.#submitOff());
+    el("offLabel").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); this.#submitOff(); }
+    });
+    el("offList").addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-rm-off]");
+      if (rm) store.updateSettings((set) => set.removeOffReason(rm.dataset.rmOff));
+    });
+
     // --- seuils du chrono ---
     el("setMergeGap").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.segments.mergeGapMin = clampMergeGap(e.target.value); }));
@@ -379,6 +389,7 @@ export class SettingsView {
     el("setBgDots").checked = s.bgDots;
     this.#renderEyeBreak();
     this.#renderReminders();
+    this.#renderOffReasons();
 
     el("setJiraAuto").checked = s.jira.auto;
     el("jiraManual").style.display = s.jira.auto ? "none" : "";
@@ -462,6 +473,41 @@ export class SettingsView {
     this.app.notifier.ensurePermission();
     this.#resetBreakForm();
     this.app.toast.show(`« ${dry.label} » ${editing ? "modifié" : "ajouté"} à ${dry.time}`);
+  }
+
+  /**
+   * Épingle un motif hors tâche. Validation à blanc d'abord (`updateSettings`
+   * commit, persiste et re-rend tout l'écran : pas pour une saisie refusée),
+   * une raison par cause.
+   */
+  #submitOff() {
+    const label = el("offLabel").value;
+    const dry = new Settings(this.settings.toJSON()).addOffReason(label);
+    if (typeof dry === "string" && ["invalid", "duplicate", "full"].includes(dry)) {
+      this.app.toast.show({
+        invalid: "Il faut un intitulé",
+        duplicate: "Ce motif est déjà épinglé",
+        full: "Liste pleine : retirez un motif avant d'en épingler un autre",
+      }[dry]);
+      el("offLabel").focus();
+      return;
+    }
+    this.app.store.updateSettings((set) => set.addOffReason(label));
+    el("offLabel").value = "";
+    el("offLabel").focus();
+  }
+
+  /** La liste des motifs épinglés : un libellé, une croix. Pas d'édition : on retire, on re-épingle. */
+  #renderOffReasons() {
+    const list = el("offList");
+    const items = this.settings.offReasons;
+    list.innerHTML = items.length
+      ? items.map((r) =>
+          `<div class="ov-item brk off-item">` +
+            `<span class="ov-name">${escapeHtml(r)}</span>` +
+            `<button class="ov-rm" data-rm-off="${escapeHtml(r)}" title="Retirer" aria-label="Retirer">×</button>` +
+          `</div>`).join("")
+      : '<div class="ov-empty">Aucun motif épinglé — chaque vide se justifiera à la volée.</div>';
   }
 
   /** Charge un rappel dans le formulaire (clic sur sa ligne). */

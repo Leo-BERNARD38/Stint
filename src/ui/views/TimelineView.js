@@ -1,5 +1,5 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
-import { DAY_MS } from "../../core/constants.js";
+import { DAY_MS, OFF_REASON_MAX } from "../../core/constants.js";
 import { startOfDay, sameDay, fmtClock, pad2 } from "../../utils/datetime.js";
 import { attachTimelineTip } from "../components/TimelineTip.js";
 import { onColorClass } from "../../utils/color.js";
@@ -116,26 +116,29 @@ export class TimelineView {
 
     // 3) segments (un bloc par segment, avec poignées de redimensionnement)
     for (const seg of store.segmentsForDay(viewDay)) {
-      const task = store.taskById(seg.taskId);
+      const task = seg.isOff ? null : store.taskById(seg.taskId);
       const s = Math.max(seg.startMs(), ds);
       const e = Math.min(seg.endMs(), de);
       if (e <= s) continue;
       const color = task ? task.color : "var(--text-faint)";
       const width = Math.max(SEG_MIN_PCT, pct(e) - pct(s));
-      const name = task ? task.displayName : "?";
+      const name = seg.isOff ? seg.reason : task ? task.displayName : "?";
       const dur = formatter.clock(calc.segmentMs(seg, ds, de) / 60000);
       // Le texte est posé SUR la couleur de la tâche : on choisit clair ou
       // sombre d'après sa luminance (cf. utils/color.js), jamais en dur.
+      // Un vide justifié n'a pas de couleur : c'est le trou, expliqué — même
+      // géométrie que `.tl-gap`, sans les hachures (ce n'est plus un manque),
+      // et sans pastille dans l'infobulle (`data-color` vide, contrat TimelineTip).
       const block = createEl("div", {
-        className: "tl-seg " + (task ? onColorClass(color) : "on-dark"),
+        className: "tl-seg " + (seg.isOff ? "off" : task ? onColorClass(color) : "on-dark"),
         attrs: {
-          style: `left:${pct(s)}%;width:${width}%;background:${color}`,
+          style: `left:${pct(s)}%;width:${width}%` + (seg.isOff ? "" : `;background:${color}`),
           "data-id": seg.id,
-          "data-task": seg.taskId,
+          ...(seg.isOff ? {} : { "data-task": seg.taskId }),
           "data-name": name,
           "data-range": `${fmtClock(new Date(seg.startMs()))}–${seg.isRunning ? "en cours" : fmtClock(new Date(seg.endMs()))}`,
           "data-dur": dur,
-          "data-color": color,
+          "data-color": seg.isOff ? "" : color,
         },
         on: { click: (ev) => { if (!ev.target.closest(".tl-grip") && !this._dragged) this.onSegClick(seg.id); } },
       });
@@ -340,7 +343,11 @@ export class TimelineView {
     const segs = store.segmentsForDay(viewDay);
     const leftSeg = segs.find((s) => !s.isRunning && Math.abs(s.endMs() - gs) < 60_000);
     const rightSeg = segs.find((s) => Math.abs(s.startMs() - ge) < 60_000);
-    const nameColor = (seg) => { const t = store.taskById(seg.taskId); return { name: t ? t.displayName : "—", color: t ? t.color : "var(--text-faint)" }; };
+    const nameColor = (seg) => {
+      if (seg.isOff) return { name: seg.reason, color: null };
+      const t = store.taskById(seg.taskId);
+      return { name: t ? t.displayName : "—", color: t ? t.color : "var(--text-faint)" };
+    };
     this.fillPopover.open({
       topPx: this.timeline.offsetTop + this.timeline.offsetHeight + 12,
       leftPct: anchorPct,
@@ -349,9 +356,12 @@ export class TimelineView {
       left: leftSeg ? nameColor(leftSeg) : null,
       right: rightSeg ? nameColor(rightSeg) : null,
       tasks: store.tasks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.displayName, color: t.color, done: t.done })),
+      reasons: store.settings.offReasons,
+      canPin: store.settings.offReasons.length < OFF_REASON_MAX,
       onExtendLeft: () => this.app.extendLeftIntoGap(leftSeg.id, new Date(ge)),
       onExtendRight: () => this.app.extendRightIntoGap(rightSeg.id, new Date(gs)),
       onCreate: (taskId) => this.app.createSegmentInGap(taskId, new Date(gs), new Date(ge)),
+      onCreateOff: (label, pin) => this.app.createOffInGap(label, new Date(gs), new Date(ge), pin),
     });
   }
 

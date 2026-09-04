@@ -264,6 +264,10 @@ export class App {
     this.store.updateSegment(segId, { start: toLocalISO(start) });
     this.toast.show("Segment prolongé");
   }
+  /** Justifie un trou par un vide hors tâche (motif en clair, épinglé si demandé). */
+  createOffInGap(label, start, end, pin = false) {
+    this.store.addOffSegment({ reason: label, start, end, pin });
+  }
   createSegmentInGap(taskId, start, end) {
     this.store.addSegment({ taskId, start, end });
     this.toast.show("Segment créé");

@@ -121,11 +121,11 @@ SettingsView, StorageView, ToolsView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v12)
+## 4. Modèle de données (schéma v13)
 
 ```jsonc
 {
-  "version": 12,
+  "version": 13,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -156,12 +156,17 @@ SettingsView, StorageView, ToolsView`.
     // micro-pauses (reprendre la même tâche dans ce délai rouvre le segment) et
     // segments courts jetés à l'arrêt (`Store.#stopActive`). Une saisie
     // explicite (modale, glisser) n'est jamais jetée.
-    "segments": { "mergeGapMin": 2, "minMin": 1 }
+    "segments": { "mergeGapMin": 2, "minMin": 1 },
+    // motifs HORS TÂCHE épinglés (v13) : des raccourcis de saisie, rien d'autre
+    // (le segment porte son libellé en clair, cf. §15)
+    "offReasons": ["Pause", "Réunion", "Discussion"]
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
               "done":false, "archived":false }],
-  "segments": [{ "id":"s_…", "taskId":"t_…",
+  // Un segment a une TÂCHE ou un MOTIF (`reason`, v13 : vide justifié, hors
+  // tâche), jamais les deux — `taskId` est nul dès qu'un motif est posé.
+  "segments": [{ "id":"s_…", "taskId":"t_…|null", "reason":"Pause|null",
                  "start":"ISO local", "end":"ISO local|null", "raw":false }],
   "meta": { "lastExport": null }
 }
@@ -613,3 +618,47 @@ du réglage : les échéances déjà tirées vivent en mémoire, le temps d'une 
   `.guide-content`, avec la renumérotation des deux côtés. Le Guide **tutoie**
   (les réglages vouvoient) ; pour un raccourci, l'élément `<kbd>` est stylé,
   `class="kbd"` ne l'est pas.
+
+## 15. Hors tâche (vides justifiés)
+
+Un trou de la journée peut être **expliqué** sans être du travail : pause café,
+réunion, papotage. C'est un segment **sans tâche** porteur d'un **libellé**
+(`Segment.reason`, `isOff`), posé **uniquement depuis le temps non tracé** (un
+trou de la timeline ou « Combler » dans Totaux) — jamais depuis le chrono ni
+depuis la modale, qui ne fait que le corriger.
+
+- **Invariant : une tâche OU un motif.** Tenu par le constructeur de `Segment`
+  (un motif posé annule `taskId`) et par `Store.updateSegment` (qui ignore
+  `taskId` sur un hors tâche et `reason` sur une tâche). `addOffSegment` exige
+  une fin : un vide qui « tourne » n'a pas de sens, et `activeSegment()` ne doit
+  jamais en rendre un.
+- **Ce qui compte où.** Le hors tâche sort de `total` / `byType` / `byTask`
+  (`TimeCalculator.#rawTotalsForDay`) et de `ms` / `byTask` des Stats — ni
+  travail, ni Jira, ni « tâche » nulle part (`openTasks`, `lastUsedTask`,
+  Reprendre, Tâches du jour, semaines, top tâches ne changent pas : ils passent
+  par la tâche, qui est nulle). Il alimente `off = { total, byReason }` et
+  `kpi.offMs` / `kpi.offByReason`, **compte dans la couverture**
+  (`coverageForDay`, `kpi.coveragePct`) — le vide est expliqué — et **disparaît
+  des trous** (`gapsForDay` lit `covered`, qui prend tous les segments). Le
+  Rythme (heatmap) garde `day.ms` : il mesure l'intensité de travail. Le repos
+  des yeux (`#runStartMs`) le saute : une pause n'est pas du temps d'écran.
+- **Épinglés vs exceptionnels.** `settings.offReasons` n'est qu'une liste de
+  **raccourcis de saisie** (pilules du popover, `datalist` de la modale). Un
+  motif tapé à la volée reste exceptionnel et n'y entre que si l'on coche
+  « Garder dans la liste » (`pin`), sinon la liste grossirait sans fin. Le
+  segment porte **toujours le libellé en clair** : retirer un épinglé ne touche
+  pas l'historique, ses segments basculent dans « Exceptionnels » des Stats —
+  partition faite **au rendu** d'après `isPinnedOff`, jamais stockée.
+- **Une seule clé de regroupement** : `Settings.offKey(label)` (trim,
+  minuscules). Totaux, Stats, doublon d'épinglage et `canMerge` la lisent —
+  « Pause » et « pause » sont le même vide. Le libellé affiché est la première
+  graphie rencontrée.
+- **Rendu** : le vide justifié est *le trou, expliqué* — même géométrie que
+  `.tl-gap` (inset 7 px dans `.timeline`), **sans hachures** (ce n'est plus un
+  manque) et **sans couleur de tâche** (ce n'est pas de l'acquis) : `--off-fill`,
+  un jeton dérivé de l'encre comme `--ctl`, sous `--gap-ring`. Aucune pastille de
+  couleur (`.o-dot.off`, `.seg-swatch.off` = carré vide à anneau), `data-color`
+  vide pour l'infobulle, barres de part en `--text-soft`. La couverture a
+  **deux parts** (accent = tracé, encre = justifié). CSV : `type` = `hors`,
+  `jira` vide, colonne `kind` (`task|off`).
+- Testé dans `checks/domaine.mjs` §12.

@@ -60,12 +60,16 @@ export function createFillPopover({ parent }) {
     pop.style.left = center + "px";
   }
 
+  // Pastille d'un voisin ou d'une tâche : sans couleur (`null`) = un vide
+  // justifié, carré vide à anneau — jamais une teinte.
+  const dot = (color) => (color ? `<span class="o-dot" style="background:${color}"></span>` : `<span class="o-dot off"></span>`);
+
   function render(o) {
     const opt = (act, ic, kicker, dotColor, name) =>
       `<button class="fill-opt" data-act="${act}">` +
         `<span class="o-ic">${icon(ic, { size: 18 })}</span>` +
         `<span class="o-text"><span class="o-k">${kicker}</span>` +
-        `<span class="o-name"><span class="o-dot" style="background:${dotColor}"></span>` +
+        `<span class="o-name">${dot(dotColor)}` +
         `${escapeHtml(name)}</span></span></button>`;
     let html =
       `<div class="fill-head"><span class="fill-dot"></span>` +
@@ -99,17 +103,55 @@ export function createFillPopover({ parent }) {
       for (const t of done) html += taskBtn(t);
       html += `</div>`;
     }
-    html += `</div></div>`;
+    html += `</div>`;
+    // Hors tâche : le vide est justifié, pas travaillé. Les motifs ÉPINGLÉS en
+    // pilules (un clic), et un champ pour l'exceptionnel — qui ne rejoint la
+    // liste que si on le demande, sinon elle grossirait sans fin.
+    html +=
+      `<button class="fill-opt fill-off-btn" data-act="off">` +
+        `<span class="o-ic"><span class="o-dot off"></span></span>` +
+        `<span class="o-create">Justifier le vide <span class="o-k-inline">hors tâche</span></span>` +
+        `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span></button>` +
+      `<div class="fill-off" hidden>`;
+    if (o.reasons?.length) {
+      html += `<div class="fill-reasons">`;
+      for (const r of o.reasons) html += `<button class="fill-reason" data-off-label="${escapeHtml(r)}">${escapeHtml(r)}</button>`;
+      html += `</div>`;
+    }
+    html +=
+      `<input class="fill-off-input" type="text" maxlength="40" placeholder="Autre motif… (Entrée)" aria-label="Autre motif" autocomplete="off" spellcheck="false">` +
+      (o.canPin ? `<label class="fill-off-pin"><input type="checkbox" class="fill-off-pin-box"> Garder dans la liste</label>` : "") +
+      `</div></div>`;
     return html;
   }
 
+  /** Crée le vide justifié saisi dans le champ (Entrée), s'il n'est pas vide. */
+  function submitOff() {
+    const input = pop.querySelector(".fill-off-input");
+    const label = (input?.value ?? "").trim();
+    if (!label) { input?.focus(); return; }
+    const pin = !!pop.querySelector(".fill-off-pin-box")?.checked;
+    close();
+    cbs.onCreateOff?.(label, pin);
+  }
+  pop.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.classList.contains("fill-off-input")) { e.preventDefault(); submitOff(); }
+  });
+
   // Délégation des clics dans le popover.
   pop.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-act], [data-task]");
+    const btn = e.target.closest("[data-act], [data-task], [data-off-label]");
     if (!btn) return;
     if (btn.dataset.task != null) { close(); cbs.onCreate?.(btn.dataset.task); return; }
+    if (btn.dataset.offLabel != null) { close(); cbs.onCreateOff?.(btn.dataset.offLabel, false); return; }
     const act = btn.dataset.act;
     if (act === "close") { close(); }
+    else if (act === "off") {
+      const box = pop.querySelector(".fill-off");
+      const open2 = box.hasAttribute("hidden");
+      box.toggleAttribute("hidden", !open2);
+      pop.querySelector(".fill-off-btn").classList.toggle("open", open2);
+    }
     else if (act === "left") { close(); cbs.onExtendLeft?.(); }
     else if (act === "right") { close(); cbs.onExtendRight?.(); }
     else if (act === "create") {

@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -121,7 +121,17 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // veut dire. Le défaut d'une minute suit le seuil de fusion : sous deux
   // minutes ce n'est déjà pas une activité, sous une c'est un clic.
   segments: { mergeGapMin: 2, minMin: 1 },
+  // Motifs « hors tâche » ÉPINGLÉS (v13) : les vides justifiés qu'on pose en un
+  // clic (pause café, réunion…). Ce ne sont que des raccourcis de saisie — un
+  // motif tapé à la volée (« Dentiste ») reste exceptionnel et n'entre pas ici,
+  // sinon la liste grossirait sans fin. Le segment, lui, porte toujours le
+  // libellé en clair : retirer un épinglé ne touche pas l'historique.
+  offReasons: ["Pause", "Réunion", "Discussion"],
 });
+
+/** Bornes de la liste des motifs épinglés et de leur libellé. */
+export const OFF_REASON_MAX = 12;
+export const OFF_LABEL_MAX = 40;
 
 /** Bornes de la période du rappel « repos des yeux », en minutes. */
 export const EYE_BREAK_MIN = 1;

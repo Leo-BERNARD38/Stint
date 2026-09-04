@@ -377,6 +377,14 @@
   transition: box-shadow .22s var(--ease-out); }
 .tl-gap:hover { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); }
 .tl-gap-lab { font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); white-space: nowrap; }
+/* Vide justifié (hors tâche) : la géométrie du trou (inset), sans hachures et
+   sans couleur de tâche. Le libellé en surtitre Plex Mono, comme le mot
+   « pause » de la bande déjeuner : c'est un état de la journée, pas une tâche. */
+.timeline .tl-seg.off { top: 7px; bottom: 7px; border-radius: var(--radius-xs); }
+.tl-seg.off { background: var(--off-fill); color: var(--text-soft); box-shadow: inset 0 0 0 1px var(--gap-ring); }
+.tl-seg.off b { font-family: var(--font-data); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-soft); }
+.tl-seg.off i { color: var(--text-soft); opacity: 1; }
+.timeline .tl-seg.off:hover, .timeline .tl-seg.off.hl { box-shadow: inset 0 0 0 1.5px var(--gap-ring-hover); filter: none; }
 /* Pendant un glisser : on fige les transitions de position et on masque le survol. */
 .timeline.dragging .tl-seg, .timeline.dragging .tl-gap { transition: none !important; }
 .timeline.dragging ~ .tl-tip { opacity: 0 !important; }
@@ -471,6 +479,19 @@
 .fill-done-toggle .o-chev { flex-shrink: 0; transition: transform .2s var(--ease); }
 .fill-done-toggle.open .o-chev { transform: rotate(180deg); }
 .fill-done-list { display: flex; flex-direction: column; gap: 5px; }
+/* Hors tâche dans le popover : les épinglés en pilules, l'exceptionnel au champ. */
+.fill-opt .o-dot.off, .fill-task .o-dot.off, .o-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
+.fill-off-btn .o-ic .o-dot { width: 10px; height: 10px; border-radius: 3px; }
+.fill-off-btn .o-k-inline { font-size: 11px; color: var(--text-faint); font-weight: 600; }
+.fill-off-btn.open .o-chev { transform: rotate(180deg); }
+.fill-off { display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 0; }
+.fill-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.fill-reason { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-pill); padding: 7px 12px; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+.fill-reason:hover { background: var(--ctl-hover); }
+.fill-off-input { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 13.5px; width: 100%; }
+.fill-off-input:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
+.fill-off-pin { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-soft); cursor: pointer; user-select: none; }
+.fill-off-pin input { accent-color: var(--accent); }
 @media (max-width: 760px) {
   .fill-pop { position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; transform: none; width: 100%; max-width: 100%;
     border-radius: 20px 20px 0 0; padding-bottom: 26px; }
@@ -502,6 +523,12 @@
    c'est l'ABSENCE de hachures qui dit « rien ne manque ». Pas besoin de vert
    pour féliciter : le registre est plein, ça se voit. */
 .untracked:has(.untracked-zero) { background-image: none; }
+/* Hors tâche du jour : la carte « non tracé » SANS sa trame — le vide est
+   expliqué, ce n'est plus un manque. Une ligne par motif, encre sur creux. */
+.offblock { margin-top: var(--sp-3); background-color: var(--surface-2); border-radius: var(--radius); padding: var(--sp-4); }
+.untracked-row .ut-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
+.off-row .off-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body); font-size: 13px; color: var(--text); }
+.off-share { margin-top: var(--sp-3); font-family: var(--font-data); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
 
 /* ---------- Couverture du jour (rail Totaux) ----------
    L'autre face du « temps non tracé » : la part de la journée PLANIFIÉE qui est
@@ -516,10 +543,13 @@
   font-variant-numeric: tabular-nums; color: var(--accent); }
 .cov-k { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--text-faint); }
-.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden;
+.cov-track { height: 6px; border-radius: var(--radius-pill); overflow: hidden; display: flex;
   background: color-mix(in srgb, var(--text) 8%, transparent); }
 .cov-track i { display: block; height: 100%; border-radius: var(--radius-pill);
   background: var(--accent); transition: width .4s var(--ease-out); }
+/* Deux parts : le tracé (accent) et le justifié (encre) — la barre dit d'où
+   vient la couverture, pas seulement combien. */
+.cov-track i.off { background: var(--text-soft); margin-left: 2px; }
 .cov-lab { display: flex; justify-content: space-between; gap: var(--sp-3);
   font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; }
@@ -738,6 +768,9 @@
 .seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; max-width: 100%; }
 .seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
 .seg-swatch:hover { transform: scale(1.18); }
+.seg-swatch.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); cursor: default; }
+.seg-swatch.off:hover { transform: none; }
+.seg-task-cell .raw-tag { margin-left: 6px; }
 .seg-task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .seg-time { font-family: var(--font-data); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
 .seg-live { color: var(--stop-ink); font-weight: 600; }
@@ -967,6 +1000,8 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    de `.ov-name` vaut pour un jour de semaine (« lundi » → « Lundi »), pas pour
    « Pause café », qu'elle rendrait en « Pause Café ». */
 .ov-item.brk .ov-name { text-transform: none; }
+.ov-item.off-item { cursor: default; }
+.off-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-3); align-items: end; }
 /* Idem pour une période : `capitalize` frappe CHAQUE mot et rendrait
    « du lun. 10 au ven. 21 août » en « Du Lun. 10 Au Ven. 21 Août ». La capitale
    initiale est posée en JS. Et le libellé étant long, il cède avant le résumé. */
@@ -1356,6 +1391,18 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .stat-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Hors tâche (Stats) : même grammaire que « par type », un libellé à la place
+   du badge, la barre en ENCRE — une teinte de données ne vit que dans un
+   graphique légendé, et un vide n'est pas une série. */
+.stats-off { display: flex; flex-direction: column; gap: 10px; }
+.stat-off-lab { min-width: 120px; max-width: 40%; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-bar.off { background: var(--text-soft); }
+.stat-off-toggle { display: flex; align-items: center; gap: var(--sp-3); border: none; background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm); padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; }
+.stat-off-toggle:hover { background: var(--surface-hover); }
+.stat-off-toggle .o-chev { color: var(--text-faint); flex: 1; display: flex; transition: transform .2s var(--ease); }
+.stat-off-toggle.open .o-chev { transform: rotate(180deg); }
+.stat-off-other { display: flex; flex-direction: column; gap: 10px; padding-left: var(--sp-3); }
+.stat-off-sum { font-family: var(--font-data); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); margin-top: 4px; }
 
 /* ---------- Tête d'onglet : fenêtre d'analyse ---------- */
 .stats-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
