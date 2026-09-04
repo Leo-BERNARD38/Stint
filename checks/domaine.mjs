@@ -353,5 +353,84 @@ section("seuils du chrono : micro-pauses fusionnées, segments courts jetés (v1
   ok(p.taskById(other.id) != null, "la tâche Q, elle, existe toujours");
 }
 
+/* ----------------------------------------------------------------- §11 */
+section("fusionner / couper un segment");
+{
+  const iso = (h, m = 0) => toLocalISO(new Date(2026, 7, 10, h, m));
+  const fresh = () => {
+    const store = new Store(fakePersistence());
+    store.hydrate({ version: 12, settings: { segments: { minMin: 0, mergeGapMin: 0 } },
+      tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }, { id: "tB", name: "B", type: "dev", color: "#000" }],
+      segments: [], meta: {} });
+    return store;
+  };
+  const add = (store, taskId, s, e, raw = false) => {
+    store.addSegment({ taskId, start: new Date(2026, 7, 10, ...s), end: e ? new Date(2026, 7, 10, ...e) : null, raw });
+    return store.segments.at(-1).id;
+  };
+
+  // Fusion nominale : même tâche, adjacents (l'écart est absorbé), raw de A.
+  const m = fresh();
+  const a = add(m, "tA", [9, 0], [10, 0], true);
+  const b = add(m, "tA", [10, 15], [11, 0]);
+  eq(m.canMerge(a, b), null, "même tâche, rien entre : fusion possible");
+  eq(m.mergeSegments(b, a), "merged", "ordre des ids indifférent");
+  eq(m.segments.length, 1, "un seul segment après fusion");
+  eq([m.segments[0].start, m.segments[0].end, m.segments[0].raw], [iso(9), iso(11), true],
+     "[A.start, B.end], raw de A");
+
+  // Refus : tâches différentes, tiers intercalé, ids inconnus.
+  const r = fresh();
+  const ra = add(r, "tA", [9, 0], [10, 0]);
+  const rb = add(r, "tB", [10, 0], [11, 0]);
+  eq(r.canMerge(ra, rb), "task", "tâches différentes : refusé");
+  eq(r.mergeSegments(ra, rb), "task", "mergeSegments rend la même raison");
+  eq(r.segments.length, 2, "…et ne touche à rien");
+  const rc = add(r, "tA", [11, 0], [12, 0]);
+  eq(r.canMerge(ra, rc), "blocked", "un segment s'intercale : refusé");
+  eq(r.canMerge(ra, "nope"), "missing", "id inconnu : missing");
+  eq(r.canMerge(ra, ra), "missing", "un segment avec lui-même : missing");
+
+  // Fusion avec un segment en cours : le résultat court.
+  const run = fresh();
+  const ua = add(run, "tA", [9, 0], [10, 0]);
+  run.segments.push(new (run.segments[0].constructor)({ id: "live", taskId: "tA", start: iso(10, 5), end: null }));
+  eq(run.mergeSegments(ua, "live"), "merged", "fusion avec le segment en cours");
+  ok(run.segments.length === 1 && run.segments[0].isRunning && run.segments[0].id === ua,
+     "…A garde son id et tourne");
+  eq(run.canMerge("nope2", ua), "missing", "après fusion, B n'existe plus");
+
+  // Coupe : deux segments jointifs, même tâche, même raw, ids distincts.
+  const c = fresh();
+  const ca = add(c, "tA", [9, 0], [11, 0], true);
+  const newId = c.splitSegment(ca, new Date(2026, 7, 10, 10, 0).getTime());
+  ok(typeof newId === "string" && newId !== ca, "splitSegment rend l'id du nouveau");
+  eq(c.segments.map((s) => [s.start, s.end, s.taskId, s.raw]),
+     [[iso(9), iso(10), "tA", true], [iso(10), iso(11), "tA", true]], "deux moitiés jointives");
+  eq(c.splitSegment(ca, new Date(2026, 7, 10, 9, 0).getTime()), "outside", "coupe au début : outside");
+  eq(c.splitSegment(ca, new Date(2026, 7, 10, 12, 0).getTime()), "outside", "coupe après la fin : outside");
+  eq(c.splitSegment("nope", 0), "missing", "coupe d'un inconnu : missing");
+  // Coupe puis fusion = identité.
+  eq(c.mergeSegments(ca, newId), "merged", "recoller les deux moitiés");
+  eq([c.segments.length, c.segments[0].start, c.segments[0].end], [1, iso(9), iso(11)], "coupe ∘ fusion = identité");
+
+  // Coupe d'un segment en cours : la moitié droite tourne.
+  const l = fresh();
+  l.segments.push(new (m.segments[0].constructor)({ id: "live2", taskId: "tA", start: toLocalISO(new Date(Date.now() - 3_600_000)), end: null }));
+  const rid = l.splitSegment("live2", Date.now() - 1_800_000);
+  ok(typeof rid === "string", "coupe d'un segment en cours acceptée");
+  ok(!l.segments[0].isRunning && l.segments[1].isRunning && l.segments[1].id === rid,
+     "…la gauche est fermée, la droite tourne");
+  eq(l.activeSegment()?.id, rid, "activeSegment() est la moitié droite");
+
+  // Voisins : toutes tâches confondues, par début.
+  const v = fresh();
+  const v1 = add(v, "tA", [9, 0], [10, 0]);
+  const v2 = add(v, "tB", [10, 0], [11, 0]);
+  const v3 = add(v, "tA", [11, 0], [12, 0]);
+  eq([v.neighbours(v2).prev?.id, v.neighbours(v2).next?.id], [v1, v3], "neighbours : prev/next");
+  eq([v.neighbours(v1).prev, v.neighbours(v3).next], [null, null], "neighbours : bords");
+}
+
 console.log(`\n${total - failed}/${total} contrôles passés`);
 if (failed) process.exitCode = 1;

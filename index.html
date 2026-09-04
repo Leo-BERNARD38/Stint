@@ -1148,6 +1148,21 @@
         <input type="checkbox" id="smRaw">
         Temps brut (sans rognage sur les horaires de travail)
       </label>
+      <!-- Outils d'édition (masqués en création) : couper le segment en deux à
+           une heure, ou le fusionner avec son voisin de même tâche. Un bouton
+           impossible est désactivé et DIT pourquoi (title), il n'est pas caché. -->
+      <div class="sm-tools" id="smTools" hidden>
+        <div class="sm-tool">
+          <span class="sm-tool-lab">Couper à</span>
+          <input type="time" id="smSplitAt" class="tinput" step="300" aria-label="Heure de coupe">
+          <button class="mini-btn" id="smSplit"><span data-icon="scissors" data-icon-size="14"></span> Couper</button>
+        </div>
+        <div class="sm-tool">
+          <span class="sm-tool-lab">Fusionner avec</span>
+          <button class="mini-btn" id="smMergePrev"><span data-icon="arrow-left" data-icon-size="14"></span> le précédent</button>
+          <button class="mini-btn" id="smMergeNext">le suivant <span data-icon="arrow-right" data-icon-size="14"></span></button>
+        </div>
+      </div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="btn danger" id="smDelete" hidden>Supprimer</button>
         <div style="display:flex; gap:10px; margin-left:auto;">

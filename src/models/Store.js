@@ -352,6 +352,83 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
+  /** Les segments triés par début — l'ordre de la timeline. */
+  #sortedSegments() {
+    return [...this.segments].sort((a, b) => a.startMs() - b.startMs());
+  }
+
+  /**
+   * Voisins d'un segment sur la timeline, toutes tâches confondues :
+   * `{ prev, next }` (`null` si aucun). Sert à la modale pour proposer la
+   * fusion — c'est `canMerge` qui dit ensuite si elle est possible.
+   */
+  neighbours(id) {
+    const sorted = this.#sortedSegments();
+    const i = sorted.findIndex((s) => s.id === id);
+    if (i < 0) return { prev: null, next: null };
+    return { prev: sorted[i - 1] ?? null, next: sorted[i + 1] ?? null };
+  }
+
+  /**
+   * La fusion de deux segments est-elle possible ? `null` si oui, sinon une
+   * **raison** (comme `addBreak`) : `"missing"`, `"task"` (pas la même tâche —
+   * fusionner deux tâches réassignerait du temps en silence, c'est le rôle du
+   * select de la modale), `"blocked"` (un troisième segment s'intercale, ou le
+   * premier tourne encore). L'ordre des identifiants est indifférent, et l'écart
+   * entre les deux est absorbé : c'est le sens même de « fusionner », et
+   * l'équivalent du « Prolonger » du popover de remplissage.
+   */
+  canMerge(idA, idB) {
+    const a0 = this.segments.find((s) => s.id === idA);
+    const b0 = this.segments.find((s) => s.id === idB);
+    if (!a0 || !b0 || a0 === b0) return "missing";
+    if (a0.taskId !== b0.taskId) return "task";
+    const [a, b] = a0.startMs() <= b0.startMs() ? [a0, b0] : [b0, a0];
+    if (a.isRunning) return "blocked";
+    const lo = a.startMs(), hi = b.endMs();
+    const between = this.segments.some((s) => s !== a && s !== b && s.startMs() < hi && s.endMs() > lo);
+    return between ? "blocked" : null;
+  }
+
+  /**
+   * Fusionne deux segments consécutifs de la même tâche : le premier garde son
+   * début et son `raw`, prend la fin du second (donc « en cours » si le second
+   * tourne), le second disparaît. Renvoie `"merged"` ou la raison de `canMerge`.
+   */
+  mergeSegments(idA, idB) {
+    const why = this.canMerge(idA, idB);
+    if (why) return why;
+    const a0 = this.segments.find((s) => s.id === idA);
+    const b0 = this.segments.find((s) => s.id === idB);
+    const [a, b] = a0.startMs() <= b0.startMs() ? [a0, b0] : [b0, a0];
+    a.end = b.end; // null si b court : le résultat court
+    this.segments = this.segments.filter((s) => s !== b);
+    this.#commit();
+    return "merged";
+  }
+
+  /**
+   * Coupe un segment en deux à l'instant `atMs` (strictement à l'intérieur) :
+   * l'original garde `[début, at]`, le nouveau prend `[at, fin]` avec la même
+   * tâche et le même `raw` — et c'est la moitié droite qui tourne si l'original
+   * tournait. Renvoie l'identifiant du nouveau, ou `"missing"` / `"outside"`.
+   */
+  splitSegment(id, atMs) {
+    const seg = this.segments.find((s) => s.id === id);
+    if (!seg) return "missing";
+    const at = Number(atMs);
+    const end = seg.isRunning ? Date.now() : seg.endMs();
+    if (!Number.isFinite(at) || at <= seg.startMs() || at >= end) return "outside";
+    const right = new Segment({
+      id: this.#uid("s_"), taskId: seg.taskId, raw: seg.raw,
+      start: toLocalISO(new Date(at)), end: seg.end,
+    });
+    seg.end = toLocalISO(new Date(at));
+    this.segments.splice(this.segments.indexOf(seg) + 1, 0, right);
+    this.#commit();
+    return right.id;
+  }
+
   /* ----------------- réglages & global ----------------- */
   updateSettings(mutator) {
     mutator(this.settings);

@@ -1012,6 +1012,13 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal-close:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .modal .modal-sub { color: var(--text-faint); font-size: 13.5px; margin-bottom: var(--sp-4); }
 .modal-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-5); }
+/* Outils de la modale Segment (couper / fusionner) : un creux sous les champs,
+   une ligne par outil ; le libellé en surtitre Plex Mono, comme les champs. */
+.sm-tools { margin-top: var(--sp-4); padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; }
+.sm-tool { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sm-tool-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); min-width: 92px; }
+.sm-tool .tinput { width: 96px; }
+.sm-tool .mini-btn[disabled] { opacity: .5; cursor: not-allowed; }
 .resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
 .resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
 .resume-item:hover { background: var(--surface-hover); }
