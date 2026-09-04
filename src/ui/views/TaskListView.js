@@ -21,6 +21,13 @@ export class TaskListView {
   bind() {
     this.toggle.addEventListener("change", (e) =>
       this.app.store.updateSettings((s) => { s.roundedDay = e.target.checked; }));
+    // Survol croisé : la ligne survolée allume ses segments sur la timeline
+    // (même délégation que le tableau de l'onglet Segments).
+    this.list.addEventListener("mouseover", (e) => {
+      const row = e.target.closest?.(".task-row[data-task]");
+      this.app.highlightTask(row ? row.getAttribute("data-task") : null);
+    });
+    this.list.addEventListener("mouseleave", () => this.app.highlightTask(null));
   }
 
   render(viewDay) {
@@ -87,6 +94,7 @@ export class TaskListView {
     const fmt = this.app.formatter;
     const row = createEl("div", {
       className: "task-row" + (isActive ? " active" : "") + (task.done ? " done" : "") + (task.archived ? " archived" : ""),
+      attrs: { "data-task": task.id },
       html:
         `<button class="swatch" style="background:${task.color}" title="Éditer"></button>` +
         `<div class="task-main"><div class="task-name">${escapeHtml(task.displayName)}` +

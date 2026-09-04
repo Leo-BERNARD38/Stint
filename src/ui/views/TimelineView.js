@@ -29,8 +29,10 @@ const SEG_MIN_PCT = 0.15;
  * et le changement n'est committé qu'au relâchement (un seul rebuild propre).
  *
  * Composant réutilisable : monté une fois dans « Journée » et une fois dans
- * « Segments » (ids passés en options). `onSegHover`/`onSegClick` permettent le
- * survol croisé et l'édition (modale) côté Segments, sans dupliquer la logique.
+ * « Segments » (ids passés en options). `onSegHover` permet le survol croisé
+ * (ligne du tableau côté Segments, ligne de tâche côté Journée) ; le clic sur un
+ * segment ouvre **toujours** sa modale d'édition — il visait autrefois une ligne
+ * du tableau Segments, panneau masqué depuis l'onglet Journée, donc rien.
  */
 export class TimelineView {
   dragging = null;
@@ -41,7 +43,7 @@ export class TimelineView {
     this.anchor = this.timeline;
     this.axis = el(axisId);
     this.onSegHover = onSegHover;
-    this.onSegClick = onSegClick || ((segId) => this.app.scrollToSegment(segId));
+    this.onSegClick = onSegClick || ((segId) => this.app.openSegmentModal(segId));
     this.wrap = this.timeline.closest(".timeline-wrap");
     // Infobulle de survol (partagée, montée dans le wrap : survit aux re-rendus).
     // Les repères de rappel portent le même contrat `data-*` que les segments :
@@ -62,7 +64,7 @@ export class TimelineView {
   bind() {
     // Délégation : un pointerdown sur une poignée démarre le glisser.
     this.timeline.addEventListener("pointerdown", (e) => this.#onGripDown(e));
-    // Survol croisé (instance Segments) : signale le segment survolé (ou null).
+    // Survol croisé : signale le segment survolé (ou null) à l'appelant.
     if (this.onSegHover) {
       this._hoverId = null;
       this.timeline.addEventListener("mousemove", (e) => {
@@ -129,6 +131,7 @@ export class TimelineView {
         attrs: {
           style: `left:${pct(s)}%;width:${width}%;background:${color}`,
           "data-id": seg.id,
+          "data-task": seg.taskId,
           "data-name": name,
           "data-range": `${fmtClock(new Date(seg.startMs()))}–${seg.isRunning ? "en cours" : fmtClock(new Date(seg.endMs()))}`,
           "data-dur": dur,

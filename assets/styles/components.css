@@ -608,7 +608,9 @@
 .task-row .task-actions { grid-area: 1 / 3; justify-self: end; }
 .task-row .task-dur { grid-area: 1 / 4; justify-self: end; }
 .task-row + .task-row { border-top: 1px dotted var(--dot); border-top-left-radius: 0; border-top-right-radius: 0; }
-.task-row:hover { background: var(--surface-2); }
+/* `.hl` = survol croisé depuis la timeline (même rendu que le survol direct :
+   la surface change, rien ne bouge). */
+.task-row:hover, .task-row.hl { background: var(--surface-2); }
 /* La ligne en cours : son fond recule d'un cran, et sa durée passe en minium —
    la même règle que le chrono du héros. Le minium ne marque pas « cette
    ligne », il marque LE NOMBRE QUI BOUGE. C'est vrai partout, donc ça se

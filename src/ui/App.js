@@ -82,14 +82,17 @@ export class App {
     this.hero = new HeroView(this);
     this.dayTotal = new DayTotalView(this);
     this.tabs = new TabsView(this);
-    this.timelineView = new TimelineView(this);
+    // Journée : survoler un segment surligne la LIGNE DE TÂCHE en dessous (et
+    // réciproquement, cf. TaskListView) — le tableau des segments n'y est pas.
+    this.timelineView = new TimelineView(this, {
+      onSegHover: (id) => this.highlightTask(id ? (this.store.segments.find((s) => s.id === id)?.taskId ?? null) : null),
+    });
     // Deuxième instance du même composant pour l'onglet Segments : édition
-    // identique (glisser/remplir) + survol croisé et clic = édition (modale).
+    // identique (glisser/remplir) + survol croisé avec la ligne du tableau.
     this.segTimelineView = new TimelineView(this, {
       timelineId: "segTimeline",
       axisId: "segTlAxis",
       onSegHover: (id) => this.highlightSegment(id),
-      onSegClick: (id) => this.openSegmentModal(id),
     });
     this.views = [
       this.header,
@@ -230,9 +233,19 @@ export class App {
     document.querySelector(`#segBody tr[data-seg-row="${esc}"]`)?.classList.add("hl");
   }
 
-  scrollToSegment(segId) {
-    const row = document.querySelector(`#segBody [data-seg-row="${segId}"]`);
-    if (row) row.scrollIntoView({ behavior: "smooth", block: "center" });
+  /**
+   * Survol croisé de l'onglet Journée : une tâche ⇄ tous ses segments. Même
+   * mécanique que `highlightSegment`, à la maille de la tâche (la ligne du
+   * tableau n'existe pas ici, la ligne de tâche oui).
+   */
+  highlightTask(taskId) {
+    if (taskId === this._hlTask) return;
+    this._hlTask = taskId;
+    for (const e of qsa("#timeline .tl-seg.hl, #taskList .task-row.hl")) e.classList.remove("hl");
+    if (!taskId) return;
+    const esc = window.CSS && CSS.escape ? CSS.escape(taskId) : taskId;
+    for (const e of qsa(`#timeline .tl-seg[data-task="${esc}"]`)) e.classList.add("hl");
+    document.querySelector(`#taskList .task-row[data-task="${esc}"]`)?.classList.add("hl");
   }
 
   /* ----------------- timeline : redimensionnement & remplissage des trous ----------------- */
