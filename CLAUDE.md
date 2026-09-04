@@ -617,7 +617,7 @@ du réglage : les échéances déjà tirées vivent en mémoire, le temps d'une 
 - Les notifications passent par `services/Notifier.js`, partagé avec le repos des
   yeux : un seul endroit connaît la permission, les deux voies d'émission
   (service worker puis `new Notification`) et le repli sur le toast.
-- **Le Guide en parle** (`g-7`, « Rappels & repos des yeux »). Son sommaire est
+- **Le Guide en parle** (`g-9`, « Rappels & repos des yeux »). Son sommaire est
   purement déclaratif — des ancres `#g-N` vers des `.guide-block`, aucun JS :
   ajouter une section, c'est une entrée dans l'`aside` et un bloc dans
   `.guide-content`, avec la renumérotation des deux côtés. Le Guide **tutoie**

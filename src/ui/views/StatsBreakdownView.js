@@ -43,8 +43,10 @@ export class StatsBreakdownView {
 
   /* ----------------- hors tâche ----------------- */
   /**
-   * Les vides justifiés de la période, en part des HORAIRES (pas du travaillé :
-   * un vide se compare à la journée, pas aux tâches). Les motifs épinglés
+   * Les vides justifiés de la période. Par ligne, la part du HORS TÂCHE (« un
+   * tiers de mes vides sont des réunions ») ; en pied, la part des horaires de
+   * la période, avec une décimale sous 10 % — sur trois mois, une heure de
+   * réunions vaut 0,3 %, et un « 0 % » arrondi mentirait. Les motifs épinglés
    * d'abord, dans l'ordre des réglages ; les exceptionnels — tapés une fois —
    * repliés sous une ligne unique, pour que le bloc ne grandisse pas avec
    * l'historique. La partition se lit dans les réglages AU RENDU : retirer un
@@ -53,7 +55,12 @@ export class StatsBreakdownView {
   #renderOff({ kpi }) {
     const { formatter, store } = this.app;
     const clock = (ms) => formatter.clock(ms / 60000);
-    const pct = (ms) => (kpi.scheduledMs > 0 ? Math.round((ms / kpi.scheduledMs) * 100) : 0);
+    const pct = (ms) => (kpi.offMs > 0 ? Math.round((ms / kpi.offMs) * 100) : 0);
+    const ofSchedule = () => {
+      if (kpi.scheduledMs <= 0) return "";
+      const p = (kpi.offMs / kpi.scheduledMs) * 100;
+      return ` · ${p < 10 ? p.toFixed(1).replace(".", ",") : Math.round(p)} % des horaires de la période`;
+    };
     this.off.innerHTML = "";
     if (!kpi.offByReason.length) {
       this.off.appendChild(createEl("div", { className: "empty", text: "Aucun vide justifié sur la période." }));
@@ -90,7 +97,7 @@ export class StatsBreakdownView {
     }
     this.off.appendChild(createEl("div", {
       className: "stat-off-sum",
-      text: `${clock(kpi.offMs)} hors tâche · ${pct(kpi.offMs)} % des horaires de la période`,
+      text: `${clock(kpi.offMs)} hors tâche${ofSchedule()}`,
     }));
   }
 

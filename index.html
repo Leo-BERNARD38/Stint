@@ -79,7 +79,9 @@
         <button id="backupPill" class="backup-pill" title="Cliquer pour exporter une sauvegarde">
           <span class="dot"></span><span id="backupText">Jamais sauvegardé</span>
         </button>
-        <button id="memoBtn" class="icon-btn memo-btn" data-icon="sticky-note" aria-label="Mémos" title="Mémos (M)"><span class="memo-count" id="memoCount" hidden>0</span></button>
+        <!-- L'icône vit dans un span : `renderStaticIcons` remplace le contenu de
+             tout [data-icon], le compteur ne doit pas être dedans. -->
+        <button id="memoBtn" class="icon-btn memo-btn" aria-label="Mémos" title="Mémos (M)"><span data-icon="sticky-note"></span><span class="memo-count" id="memoCount" hidden>0</span></button>
         <button id="themeToggle" class="icon-btn" aria-label="Changer de thème" title="Thème"></button>
         <button id="toolsBtn" class="icon-btn" data-icon="calculator" aria-label="Outils" title="Outils"></button>
         <button id="helpBtn" class="icon-btn" data-icon="help" aria-label="Guide" title="Guide"></button>
@@ -351,7 +353,7 @@
       <div class="stat-block">
         <div class="block-title">
           Hors tâche
-          <span class="hint">les vides justifiés · part des horaires de la période</span>
+          <span class="hint">les vides justifiés · part du hors tâche</span>
         </div>
         <div class="stats-off" id="statsOff"></div>
       </div>
@@ -825,13 +827,15 @@
           <a href="#g-2"><span class="num">02</span> Pause ou Terminer&nbsp;?</a>
           <a href="#g-3"><span class="num">03</span> Temps ouvré &amp; brut</a>
           <a href="#g-4"><span class="num">04</span> Onglet Journée</a>
-          <a href="#g-5"><span class="num">05</span> Onglet Tâches</a>
-          <a href="#g-6"><span class="num">06</span> Onglet Stats</a>
-          <a href="#g-7"><span class="num">07</span> Rappels &amp; repos des yeux</a>
-          <a href="#g-8"><span class="num">08</span> Outils</a>
-          <a href="#g-9"><span class="num">09</span> Copier pour Jira</a>
-          <a href="#g-10"><span class="num">10</span> Sauvegarde</a>
-          <a href="#g-11"><span class="num">11</span> Installer l'app</a>
+          <a href="#g-5"><span class="num">05</span> Onglet Segments</a>
+          <a href="#g-6"><span class="num">06</span> Onglet Tâches</a>
+          <a href="#g-7"><span class="num">07</span> Onglet Stats</a>
+          <a href="#g-8"><span class="num">08</span> Mémos</a>
+          <a href="#g-9"><span class="num">09</span> Rappels &amp; repos des yeux</a>
+          <a href="#g-10"><span class="num">10</span> Outils</a>
+          <a href="#g-11"><span class="num">11</span> Copier pour Jira</a>
+          <a href="#g-12"><span class="num">12</span> Sauvegarde</a>
+          <a href="#g-13"><span class="num">13</span> Installer l'app</a>
         </aside>
 
         <div class="guide-content">
@@ -892,12 +896,28 @@
         </div>
 
         <div class="guide-block" id="g-4">
-          <h3>Onglet Journée — timeline & temps non tracé</h3>
+          <h3>Onglet Journée — timeline, trous &amp; vides justifiés</h3>
           <p>
-            La barre représente ta journée, chaque bloc une tâche. Les vides entre les blocs sont
-            du <b>temps non tracé</b> : le raccourci « Combler » t'aide à le rattraper. Le trait
-            vertical marque l'heure actuelle. L'onglet <b>Segments</b> permet d'éditer les heures,
-            la tâche ou le mode brut, et d'ajouter une saisie manuelle.
+            La barre représente ta journée, chaque bloc une tâche ; le trait vertical marque
+            l'heure actuelle. <b>Clique un bloc</b> pour l'éditer (tâche, heures, brut, couper,
+            fusionner — voir l'onglet Segments), <b>glisse son bord</b> pour l'ajuster (calé à
+            5 min ; un segment en cours n'a qu'un bord gauche). Survoler un bloc allume la ligne
+            de sa tâche en dessous, et réciproquement.
+          </p>
+          <p>
+            Les zones <b>hachurées</b> sont du <b>temps non tracé</b>. Clique-en une (ou
+            « Combler » dans Totaux) : tu peux <b>prolonger</b> le segment voisin, <b>créer un
+            segment</b> sur une tâche, ou <b>justifier le vide</b> — une pause café, une réunion,
+            un papotage. Un vide justifié n'est pas du travail : il ne compte ni dans le total,
+            ni dans Jira, ni dans les tâches. Mais il <b>explique</b> le trou : il sort du temps
+            non tracé et entre dans la <b>couverture</b> de la journée (la barre a alors deux
+            parts, le tracé et le justifié), et il a son propre bloc dans Totaux et dans Stats.
+          </p>
+          <p>
+            Les motifs <b>épinglés</b> (Réglages › Hors tâche) se posent en un clic. Un motif
+            exceptionnel se tape dans « Autre motif… » et ne rejoint la liste que si tu coches
+            « Garder dans la liste » — sinon elle grossirait sans fin. Sur la timeline, un vide
+            justifié garde la forme du trou, sans hachures ni couleur : c'est le trou, expliqué.
           </p>
           <p>
             À droite de <b>Tâches du jour</b>, l'interrupteur <b>Arrondi</b> bascule la journée sur
@@ -908,6 +928,30 @@
         </div>
 
         <div class="guide-block" id="g-5">
+          <h3>Onglet Segments — corriger finement</h3>
+          <p>
+            La même timeline, avec le <b>tableau</b> de tous les segments du jour en dessous
+            (survoler relie les deux). Le tableau est en lecture seule : <b>clique une ligne</b>
+            pour ouvrir sa modale — tâche, début, fin, case <b>brut</b>, suppression — et
+            <b>Segment manuel</b> (<kbd>S</kbd>) en ajoute un à la main, fin vide pour « en cours ».
+          </p>
+          <p>
+            Deux outils de plus dans la modale. <b>Couper à</b> une heure sépare le segment en
+            deux moitiés qui gardent tâche et brut : « en fait j'ai changé de tâche à 14 h 30 »,
+            c'est couper, puis changer la tâche de la moitié droite. <b>Fusionner avec</b> le
+            précédent ou le suivant ne fait qu'un segment des deux, en absorbant l'écart — il faut
+            la même tâche, et rien entre les deux ; sinon le bouton est grisé et dit pourquoi.
+          </p>
+          <p>
+            Et deux garde-fous du chrono, réglables (Réglages › Segments) : reprendre la
+            <b>même tâche</b> dans les 2 minutes rouvre le segment plutôt que d'en créer un ; un
+            segment arrêté avant <b>1 minute</b> est jeté, pas conservé — un double-clic sur Play
+            ou une reprise sur la mauvaise tâche ne laissent pas de confetti dans la timeline.
+            Rien de tout cela ne touche à un segment saisi à la main.
+          </p>
+        </div>
+
+        <div class="guide-block" id="g-6">
           <h3>Onglet Tâches — rechercher, filtrer, regrouper</h3>
           <p>
             Toutes tes tâches, avec <b>recherche</b> (nom ou clé Jira), <b>filtres</b> par type
@@ -921,7 +965,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-6">
+        <div class="guide-block" id="g-7">
           <h3>Onglet Stats — rétrospective</h3>
           <p>
             La page « qu'est-ce que j'ai fait ces derniers temps ». Tout y suit une
@@ -931,7 +975,7 @@
           <ul>
             <li><b>Cartes</b> — total (avec l'écart vs la période précédente), moyenne par jour
               actif, jours actifs, meilleur jour, série en cours, et <b>couverture</b> : la part de
-              tes horaires réellement tracée.</li>
+              tes horaires tracée <b>ou justifiée</b> (les vides expliqués comptent, cf. Journée).</li>
             <li><b>Évolution</b> — le temps par type dans le temps, en <b>Jour · Semaine · Mois</b>.
               <b>Empilé</b> pour lire le total, <b>Séparé</b> pour comparer les tendances. Clique une
               couleur de la légende pour masquer sa série.</li>
@@ -944,12 +988,33 @@
               récap « tâche → durée », prêt à coller.</li>
             <li><b>Répartition</b> — par type et par jour de semaine ; puis le <b>top tâches</b> de
               la période, avec les copies <b>Déc.</b> / <b>Jira</b>.</li>
+            <li><b>Hors tâche</b> — tes vides justifiés sur la période, motif par motif : les
+              épinglés d'abord, les exceptionnels repliés sous une ligne. En pied, ce que ça
+              pèse dans tes horaires.</li>
             <li><b>Timeline</b> — l'historique fin (échelle <b>Mois · Année</b> ; survol = détail,
               clic = ouvrir le jour).</li>
           </ul>
         </div>
 
-        <div class="guide-block" id="g-7">
+        <div class="guide-block" id="g-8">
+          <h3>Mémos — pour demain, ou pour une tâche</h3>
+          <p>
+            Le bouton <b>Mémos</b> en haut à droite (ou <kbd>M</kbd>) ouvre un panneau : une ligne
+            de texte, <kbd>Entrée</kbd>, et c'est noté. Choisis une tâche dans la liste pour lui
+            rattacher le mémo, ou laisse « sans tâche » pour un mémo général — le « relancer Paul »
+            de demain matin. Le panneau reste ouvert pendant que tu travailles ; <kbd>Échap</kbd>
+            ou sa croix le ferment.
+          </p>
+          <p>
+            Coche un mémo pour le marquer fait — il se barre, il ne s'efface pas ; la croix, si.
+            Une tâche qui porte des mémos ouverts le montre sur sa ligne (Journée, Tâches) :
+            clique l'indicateur pour ouvrir le panneau sur elle, ou retrouve ses mémos dans sa
+            fenêtre d'édition. Supprimer une tâche emporte ses mémos ; l'export JSON les
+            contient.
+          </p>
+        </div>
+
+        <div class="guide-block" id="g-9">
           <h3>Rappels &amp; repos des yeux</h3>
           <p>
             Deux rappels facultatifs, coupés par défaut, qui se règlent dans
@@ -994,7 +1059,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-8">
+        <div class="guide-block" id="g-10">
           <h3>Outils <kbd>calculatrice</kbd></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
@@ -1003,7 +1068,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-9">
+        <div class="guide-block" id="g-11">
           <h3>Copier pour Jira</h3>
           <p>
             Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
@@ -1012,7 +1077,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-10">
+        <div class="guide-block" id="g-12">
           <h3>Sauvegarde</h3>
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
@@ -1022,12 +1087,12 @@
           </p>
           <p>
             Réglages › Sauvegarde &amp; données affiche aussi le <b>stockage utilisé</b> et permet de
-            <b>purger les vieux segments</b> ou de <b>vider tâches &amp; segments</b> en gardant tes
-            réglages.
+            <b>purger les vieux segments</b> ou de <b>vider tâches, segments &amp; mémos</b> en gardant
+            tes réglages.
           </p>
         </div>
 
-        <div class="guide-block" id="g-11">
+        <div class="guide-block" id="g-13">
           <h3>Installer l'application</h3>
           <p>
             Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,
