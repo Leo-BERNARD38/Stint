@@ -341,6 +341,13 @@ export class App {
     el("toolsBack").addEventListener("click", () => this.backToApp());
   }
 
+  /**
+   * Raccourcis, tous CONTEXTUELS : jamais dans un champ, jamais quand une
+   * modale est ouverte (Espace sur un bouton de modale déclenchait Play), jamais
+   * avec un modificateur (Alt+← est le retour du navigateur), jamais hors de
+   * l'écran principal. ← → ne valent que là où le sélecteur de jour est visible
+   * (Journée, Segments) : sur Tâches et Stats il n'y a pas de jour à changer.
+   */
   #bindKeyboard() {
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
@@ -351,11 +358,17 @@ export class App {
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (qsa(".modal-backdrop.open").length) return;
       if (this.screen !== "app") return; // raccourcis d'action désactivés hors de l'écran principal
+      const k = e.key.toLowerCase();
       if (e.code === "Space") { e.preventDefault(); this.togglePlayStop(); }
-      else if (e.key === "n" || e.key === "N") { e.preventDefault(); this.openNewTask(); }
-      else if (e.key === "r" || e.key === "R") { e.preventDefault(); this.openResume(); }
-      else if (e.key === "t" || e.key === "T") { e.preventDefault(); this.finishActive(); }
+      else if (k === "n") { e.preventDefault(); this.openNewTask(); }
+      else if (k === "r") { e.preventDefault(); this.openResume(); }
+      else if (k === "t") { e.preventDefault(); this.finishActive(); }
+      else if (k === "s") { e.preventDefault(); this.openSegmentModal(); }
+      else if (e.key === "ArrowLeft" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(-1); }
+      else if (e.key === "ArrowRight" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(1); }
     });
   }
 

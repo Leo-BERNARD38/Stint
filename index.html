@@ -160,9 +160,9 @@
     <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
     <div class="day-head" id="dayHead">
       <div class="daynav">
-        <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent"></button>
+        <button id="dayPrev" data-icon="chevron-left" aria-label="Jour précédent" title="Jour précédent (←)"></button>
         <div class="date" id="dayLabel">—</div>
-        <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant"></button>
+        <button id="dayNext" data-icon="chevron-right" aria-label="Jour suivant" title="Jour suivant (→)"></button>
       </div>
       <button id="dayToday" class="btn-ghost">Aujourd'hui</button>
       <!-- Le contrat du jour : ce que les horaires prévoient. Sans lui, la
@@ -212,7 +212,7 @@
           Segments
           <span class="hint">cliquez une ligne pour l'éditer</span>
           <span class="grow"></span>
-          <button class="mini-btn" id="addSegment"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
+          <button class="mini-btn" id="addSegment" title="Segment manuel (S)"><span data-icon="plus" data-icon-size="15"></span> Segment manuel</button>
         </div>
         <div class="table-scroll">
         <table class="seg-table">
@@ -812,6 +812,8 @@
             </li>
           </ul>
           <p>La carte « Tâche active » en haut affiche le <b>temps total cumulé</b> de la tâche en cours (tous ses segments).</p>
+          <p>Et au clavier, hors d'un champ de saisie : <kbd>←</kbd> <kbd>→</kbd> changer de jour ·
+            <kbd>S</kbd> segment manuel · <kbd>Échap</kbd> fermer.</p>
         </div>
 
         <div class="guide-block" id="g-2">
