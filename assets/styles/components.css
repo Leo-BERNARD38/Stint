@@ -1025,6 +1025,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .resume-item .nm { flex: 1; font-weight: 600; }
 .resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
 .resume-item.is-running .du { color: var(--stop-ink); font-weight: 700; }
+/* Le curseur clavier de la liste : lavis + anneau, le marquage du choix UNIQUE
+   (même rendu que `.ov-item.editing`) — jamais une bordure, jamais le minium. */
+.resume-item.is-cursor { background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.resume-search { display: block; width: 100%; margin-bottom: var(--sp-3); }
 
 /* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
