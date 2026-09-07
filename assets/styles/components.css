@@ -1366,6 +1366,10 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
   border-radius: var(--radius-pill); padding: 9px 38px 9px 16px; cursor: pointer; }
 .select-wrap select:hover { background: var(--ctl-hover); }
 .select-wrap select:focus { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+/* Le popup natif (la liste déroulée) ne suit pas --ctl : sans ces deux lignes,
+   il s'ouvre en clair même en thème sombre, quel que soit `color-scheme` posé
+   sur la racine. */
+select option { background-color: var(--surface); color: var(--text); }
 .select-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   display: grid; place-items: center; color: var(--text-faint); pointer-events: none; }
 /* Dans un formulaire (.field), le select stylé prend toute la largeur. */
