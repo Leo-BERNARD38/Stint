@@ -6,13 +6,13 @@
  */
 import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay, offKey, normalizeOffLabel } from "../src/models/Settings.js";
 import { Segment } from "../src/models/Segment.js";
-import { StatsAggregator } from "../src/services/StatsAggregator.js";
+import { StatsAggregator, periodStart, stepPeriod } from "../src/services/StatsAggregator.js";
 import { Store } from "../src/models/Store.js";
 import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
-import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO } from "../src/utils/datetime.js";
+import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
 function ok(cond, label) {
@@ -522,13 +522,13 @@ section("vides justifiés (hors tâche, v13)");
   s2.addOffSegment({ reason: "Dentiste", start: yd(13, 30), end: yd(14) });
   s2.addOffSegment({ reason: "dentiste", start: yd(14), end: yd(14, 30) });
   const agg = new StatsAggregator(s2, new TimeCalculator(s2));
-  const k = agg.snapshot("4w").kpi;
+  const snapY = agg.snapshot("month", y.getTime()); // le mois contenant la veille
+  const k = snapY.kpi;
   eq(k.total, 4 * 3_600_000, "kpi.total sans le hors tâche");
   eq(k.offMs, 60 * 60_000, "kpi.offMs = 1 h");
   eq(k.offByReason.map((r) => [r.key, r.ms / 60000]), [["dentiste", 60]], "kpi.offByReason : une entrée par clé");
-  eq(k.taskCount, 1, "taskCount ignore le hors tâche");
   ok(Math.abs(k.coveragePct - (5 * 3_600_000 / k.scheduledMs) * 100) < 1e-6, "coveragePct inclut le hors tâche");
-  ok(agg.snapshot("4w").byTask.every((r) => r.task?.id === "tA"), "byTask des Stats sans le hors tâche");
+  ok(snapY.byTask.every((r) => r.task?.id === "tA"), "byTask des Stats sans le hors tâche");
 
   // Migration v12 → v13 : additive et idempotente.
   const m = new Store(fakePersistence());
@@ -576,6 +576,177 @@ section("mémos (v14)");
   eq(store.memos.length, 1, "deleteMemo");
   store.clearEntries();
   eq(store.memos, [], "clearEntries vide les mémos");
+}
+
+/* ----------------------------------------------------------------- §14 */
+section("Stats calendaires (période, historique, découpage)");
+{
+  const at = (y, m, d) => new Date(y, m, d);
+
+  // --- bornes de période : que du calendrier, jamais d'arithmétique en ms ---
+  eq(fmtDateInput(periodStart("week", at(2026, 8, 10))), "2026-09-07", "semaine : le lundi ISO");
+  eq(fmtDateInput(periodStart("week", at(2026, 8, 7))), "2026-09-07", "un lundi est son propre début de semaine");
+  eq(fmtDateInput(periodStart("week", at(2026, 8, 13))), "2026-09-07", "dimanche : toujours la même semaine");
+  eq(fmtDateInput(periodStart("month", at(2026, 8, 10))), "2026-09-01", "mois");
+  eq(fmtDateInput(periodStart("quarter", at(2026, 8, 10))), "2026-07-01", "trimestre : T3 commence en juillet");
+  eq(fmtDateInput(periodStart("quarter", at(2026, 0, 31))), "2026-01-01", "trimestre : T1");
+  eq(fmtDateInput(periodStart("year", at(2026, 11, 31))), "2026-01-01", "année");
+
+  // Un pas de mois ne déborde jamais : on part du 1er, pas d'un 31.
+  eq(fmtDateInput(stepPeriod("month", at(2026, 0, 1), 1)), "2026-02-01", "janvier + 1 mois = février");
+  eq(fmtDateInput(stepPeriod("month", at(2024, 1, 1), 1)), "2024-03-01", "février bissextile + 1 mois = mars");
+  eq(fmtDateInput(stepPeriod("month", at(2026, 0, 1), -1)), "2025-12-01", "janvier - 1 mois = décembre de l'an d'avant");
+  eq(fmtDateInput(stepPeriod("quarter", at(2026, 9, 1), 1)), "2027-01-01", "T4 + 1 = T1 de l'année suivante");
+  eq(fmtDateInput(stepPeriod("year", at(2026, 0, 1), -3)), "2023-01-01", "année - 3");
+
+  // Passage à l'heure d'été (Europe) : une semaine fait 7 jours, pas 7×24 h.
+  // Sous TZ=Europe/Paris, le 29 mars 2026 ne dure que 23 h : un `+= DAY_MS`
+  // ferait dériver la borne. Cf. CLAUDE.md §11.
+  eq(fmtDateInput(stepPeriod("week", at(2026, 2, 23), 1)), "2026-03-30", "semaine suivante à cheval sur le changement d'heure");
+  eq(fmtDateInput(stepPeriod("month", at(2026, 2, 1), 1)), "2026-04-01", "mars + 1 mois, malgré ses 30 jours et 23 h");
+  ok(stepPeriod("quarter", at(2026, 0, 1), 1).getHours() === 0, "un pas de période reste à minuit local");
+
+  // --- agrégats sur un mois entièrement écoulé ---
+  const store = new Store(fakePersistence());
+  store.hydrate({
+    version: 14,
+    settings: {
+      workDays: [1, 2, 3, 4, 5, 6, 7], arrival: "09:00", departure: "17:00", lunch: false,
+      segments: { minMin: 0, mergeGapMin: 0 },
+    },
+    tasks: [
+      { id: "tA", name: "MOD-1", type: "dev", color: "#000" },
+      { id: "tB", name: "MOD-2", type: "support", color: "#111" },
+    ],
+    segments: [], meta: {},
+  });
+  const H = 3_600_000;
+  const now = new Date();
+  // Un mois franchement passé : tous ses jours sont écoulés, donc
+  // `scheduledMs` y vaut la journée planifiée entière (8 h × nb de jours).
+  const anchor = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  const D = (day, h, mn = 0) => {
+    const d = new Date(anchor); d.setDate(day); d.setHours(h, mn, 0, 0); return d;
+  };
+  store.addSegment({ taskId: "tA", start: D(2, 9), end: D(2, 12) });          // 3 h
+  store.addOffSegment({ reason: "Réunion", start: D(2, 13), end: D(2, 14) }); // 1 h hors tâche
+  store.addSegment({ taskId: "tB", start: D(3, 10), end: D(3, 16) });          // 6 h
+  store.addSegment({ taskId: "tA", start: D(4, 8), end: D(4, 22), raw: true }); // brut, déborde
+
+  const agg = new StatsAggregator(store, new TimeCalculator(store));
+  const ref = anchor.getTime();
+  const snap = agg.snapshot("month", ref);
+  const daysInMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
+
+  eq(snap.days.length, daysInMonth, "une entrée par jour du mois");
+  eq(snap.range.prevLabel, agg.range("month", stepPeriod("month", anchor, -1).getTime()).label,
+     "la période précédente est de même nature (le mois d'avant)");
+  ok(snap.range.current === false, "un mois passé n'est pas la période courante");
+
+  // Additivité : c'est la propriété qui fonde l'agrégateur.
+  eq(snap.days.reduce((a, d) => a + d.ms, 0), snap.kpi.total, "Σ days.ms = kpi.total");
+  const subs = snap.subPeriods();
+  eq(subs.reduce((a, s) => a + s.ms, 0), snap.kpi.total, "Σ subPeriods.ms = kpi.total");
+  eq(subs.reduce((a, s) => a + s.offMs, 0), snap.kpi.offMs, "Σ subPeriods.offMs = kpi.offMs");
+  ok(subs.every((s) => s.unit === "week"), "un mois se découpe en semaines");
+  ok(subs.length >= 4 && subs.length <= 6, "4 à 6 semaines touchent un mois");
+  eq(snap.byTask.reduce((a, r) => a + r.ms, 0), snap.kpi.total, "Σ byTask = kpi.total (le hors tâche en est exclu)");
+
+  // Le temps NON TRACÉ : ce que ni une tâche ni un motif ne couvre.
+  eq(snap.kpi.total, (3 + 6 + 14) * H, "kpi.total : 3 h + 6 h + 14 h de brut");
+  eq(snap.kpi.offMs, 1 * H, "kpi.offMs : la réunion");
+  eq(snap.kpi.scheduledMs, daysInMonth * 8 * H, "scheduledMs : 8 h par jour, tous écoulés");
+  const d2 = snap.days.find((d) => d.date.getDate() === 2);
+  const d4 = snap.days.find((d) => d.date.getDate() === 4);
+  const d5 = snap.days.find((d) => d.date.getDate() === 5);
+  eq(d2.untrackedMs, 4 * H, "jour tracé à moitié : 8 h - 3 h - 1 h = 4 h non tracées");
+  eq(d5.untrackedMs, 8 * H, "jour vide : toute la journée est non tracée");
+  eq(d4.untrackedMs, 0, "un segment brut qui déborde des horaires ne rend pas le non-tracé négatif");
+  eq(snap.kpi.untrackedMs, snap.days.reduce((a, d) => a + d.untrackedMs, 0),
+     "kpi.untrackedMs se somme par jour, jamais sur les totaux");
+  eq(snap.kpi.untrackedMs, (daysInMonth - 3) * 8 * H + 4 * H + 2 * H,
+     "non tracé : les jours vides, plus les restes des jours 2 et 3");
+
+  // --- historique de contexte ---
+  const hist = snap.history(12);
+  eq(hist.length, 12, "history(12) rend 12 périodes");
+  ok(hist[11].current === true && hist.slice(0, 11).every((h) => !h.current),
+     "la période courante est la dernière, et la seule");
+  eq(hist[11].ms, snap.kpi.total, "la dernière tranche de l'historique = la période affichée");
+  ok(hist.every((h, i) => i === 0 || h.start === hist[i - 1].end), "les tranches sont contiguës");
+  eq(fmtDateInput(new Date(hist[0].start)), fmtDateInput(stepPeriod("month", anchor, -11)),
+     "la plus ancienne est 11 périodes en arrière");
+
+  // --- grain semaine : le découpage suit ---
+  const wsnap = agg.snapshot("week", D(2, 12).getTime());
+  eq(wsnap.days.length, 7, "une semaine fait 7 jours");
+  eq(wsnap.subPeriods().length, 7, "une semaine se découpe en jours");
+  ok(wsnap.subPeriods().every((s) => s.unit === "day"), "…en jours, pas en semaines");
+  eq(wsnap.subPeriods().reduce((a, s) => a + s.ms, 0), wsnap.kpi.total, "Σ jours = total de la semaine");
+
+  // --- grain trimestre et année : découpage en mois ---
+  const qsnap = agg.snapshot("quarter", ref);
+  eq(qsnap.subPeriods().length, 3, "un trimestre se découpe en 3 mois");
+  ok(qsnap.kpi.total >= snap.kpi.total, "le trimestre contient le mois");
+  eq(agg.snapshot("year", ref).subPeriods().length, 12, "une année se découpe en 12 mois");
+
+  // --- le manque se MESURE (géométrie), il ne se déduit pas ---
+  {
+    const g = new Store(fakePersistence());
+    g.hydrate({ version: 14, settings: {
+      workDays: [1, 2, 3, 4, 5, 6, 7], arrival: "09:00", departure: "17:00", lunch: false,
+      segments: { minMin: 0, mergeGapMin: 0 },
+    }, tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+    const gd = (day, h, mn = 0) => { const d = new Date(anchor); d.setDate(day); d.setHours(h, mn, 0, 0); return d; };
+    // Deux segments qui se CHEVAUCHENT : 4 h comptées, mais seulement 3 h couvertes.
+    g.addSegment({ taskId: "tA", start: gd(10, 9), end: gd(10, 11) });
+    g.addSegment({ taskId: "tA", start: gd(10, 10), end: gd(10, 12) });
+    const gcalc = new TimeCalculator(g);
+    const gagg = new StatsAggregator(g, gcalc);
+    const gday = gagg.snapshot("month", anchor.getTime()).days.find((d) => d.date.getDate() === 10);
+    eq(gday.ms, 4 * H, "chevauchement : le temps compté reste additif (4 h)");
+    eq(gday.untrackedMs, 5 * H, "…mais le non-tracé est géométrique : 8 h - 3 h couvertes = 5 h");
+    ok(gday.ms + gday.untrackedMs !== gday.scheduledMs,
+       "une soustraction `horaire - compté` aurait menti ici — c'est pourquoi on mesure");
+
+    // Pas de seuil de 5 min : ce que la timeline ignore, la couverture le compte.
+    const t = new Store(fakePersistence());
+    t.hydrate({ ...g.toJSON(), segments: [] });
+    t.addSegment({ taskId: "tA", start: gd(11, 9), end: gd(11, 12, 58) });
+    t.addSegment({ taskId: "tA", start: gd(11, 13), end: gd(11, 17) });
+    const tday = new StatsAggregator(t, new TimeCalculator(t))
+      .snapshot("month", anchor.getTime()).days.find((d) => d.date.getDate() === 11);
+    eq(tday.untrackedMs, 2 * 60_000, "un trou de 2 min compte dans le non-tracé…");
+    eq(new TimeCalculator(t).gapsForDay(gd(11, 12)).length, 0, "…alors que la timeline l'ignore (seuil 5 min)");
+  }
+
+  // --- bornes de jour : `addDays`, jamais `+ DAY_MS` ---
+  {
+    // Le 25 octobre 2026 dure 25 h en Europe : `dayStart + DAY_MS` y tombait à
+    // 23:00 du MÊME jour, et la dernière heure n'appartenait plus à aucun jour.
+    const dst = new Store(fakePersistence());
+    dst.hydrate({ version: 14, settings: {
+      workDays: [1, 2, 3, 4, 5, 6, 7], arrival: "09:00", departure: "17:00", lunch: false,
+      segments: { minMin: 0, mergeGapMin: 0 },
+    }, tasks: [{ id: "tA", name: "A", type: "dev", color: "#000" }], segments: [], meta: {} });
+    const late = (h, mn) => { const d = new Date(2026, 9, 25); d.setHours(h, mn, 0, 0); return d; };
+    dst.addSegment({ taskId: "tA", start: late(23, 0), end: late(23, 59), raw: true });
+    const dcalc = new TimeCalculator(dst);
+    const dsnap = new StatsAggregator(dst, dcalc).snapshot("month", new Date(2026, 9, 15).getTime());
+    eq(dsnap.days.length, 31, "octobre 2026 : 31 jours, malgré ses 25 h le 25");
+    eq(dsnap.days.reduce((a, d) => a + d.ms, 0), dcalc.segmentMs(dst.segments[0], -Infinity, Infinity),
+       "un segment de la 25ᵉ heure n'est ni perdu ni compté deux fois");
+  }
+
+  // --- mémoïsation : deux appels au même (grain, ref, rev) rendent le même objet ---
+  ok(agg.snapshot("month", ref) === agg.snapshot("month", ref), "snapshot mémoïsé");
+  ok(agg.snapshot("month", ref).subPeriods() === agg.snapshot("month", ref).subPeriods(),
+     "subPeriods mémoïsé sur le snapshot");
+  // …et un ref ailleurs dans la même période tombe sur le même cache.
+  ok(agg.snapshot("month", D(17, 11).getTime()) === agg.snapshot("month", ref),
+     "la clé de cache est le début de période, pas la date pointée");
+  store.addSegment({ taskId: "tA", start: D(6, 9), end: D(6, 10) });
+  ok(agg.snapshot("month", ref).kpi.total === (3 + 6 + 14 + 1) * H, "une mutation invalide le cache");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

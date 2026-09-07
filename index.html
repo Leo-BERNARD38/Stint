@@ -273,19 +273,28 @@
       <div class="all-tasks" id="allTasks"></div>
     </section>
 
-    <!-- ---------------------------- Onglet : Stats (rétrospective, tout-temps) ---------------------------- -->
+    <!-- ---------------------------- Onglet : Stats (rétrospective) ----------------------------
+         TROIS blocs, pas sept. La tête répond à « alors, cette période ? » ; les
+         deux suivants sont COMMUTÉS — un seul contenu à la fois — au lieu d'être
+         empilés. L'onglet précédent se lisait en déroulant un mètre de page, et
+         le même chiffre y était dit jusqu'à quatre fois.
+         La période est CALENDAIRE et nommée (S37, septembre 2026, T3 2026, 2026) :
+         une fenêtre glissante n'a pas de nom, donc pas de voisine — impossible d'y
+         dire « + 6 % par rapport à S36 ». -->
     <section class="tab-panel" data-panel="stats" hidden>
-      <div class="stats-head">
-        <div class="chip-group" id="stPeriod" role="group" aria-label="Période analysée"></div>
-        <span class="hint" id="stPeriodLabel">—</span>
-      </div>
-
-      <!-- Tête de période : le bandeau inversé (« alors, cette période ? ») et
-           ses cinq tuiles ne font qu'UN bloc. Séparés, ils se lisaient comme
-           deux rangées de même poids, et la question restait sans réponse. -->
       <div class="stats-top">
+        <div class="stats-nav">
+          <div class="chip-group" id="stGrain" role="group" aria-label="Grain de période"></div>
+          <span class="grow"></span>
+          <button id="stPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Période précédente"></button>
+          <button id="stNext" class="daynav-mini" data-icon="chevron-right" aria-label="Période suivante"></button>
+          <button id="stNow" class="btn-ghost" title="Revenir à la période en cours">Aujourd'hui</button>
+        </div>
         <div class="stats-lead" id="statsLead"></div>
-        <div class="stats-cards" id="statsCards"></div>
+        <!-- La couverture à TROIS parts : tracé, hors tâche, et le manque en
+             hachures. C'est le composant `.coverage` du jour, à l'échelle de la
+             période — le temps non tracé n'existait jusqu'ici que jour par jour. -->
+        <div class="coverage stats-cover" id="statsCover"></div>
       </div>
 
       <div class="perf" aria-hidden="true"></div>
@@ -293,88 +302,29 @@
       <div class="stat-block">
         <div class="block-title">
           Évolution
-          <span class="hint">temps par type dans le temps · survol = détail</span>
+          <span class="hint" id="stChartHint"></span>
           <span class="grow"></span>
-          <div class="chip-group" id="stGrain" role="group" aria-label="Granularité">
-            <button class="chip" data-grain="day">Jour</button>
-            <button class="chip active" data-grain="week">Semaine</button>
-            <button class="chip" data-grain="month">Mois</button>
-          </div>
-          <div class="chip-group" id="stMode" role="group" aria-label="Mode d'affichage">
-            <button class="chip active" data-mode="stacked">Empilé</button>
-            <button class="chip" data-mode="split">Séparé</button>
+          <div class="chip-group" id="stChartMode" role="group" aria-label="Mode d'affichage">
+            <button class="chip active" data-mode="volume">Volume</button>
+            <button class="chip" data-mode="flow">Continuité</button>
           </div>
         </div>
-        <div class="chart" id="statsTrend"></div>
-        <div class="chart-legend" id="statsTrendLegend"></div>
+        <div class="stats-chart" id="statsChart"></div>
       </div>
 
       <div class="stat-block">
         <div class="block-title">
-          Rythme
-          <span class="hint">une pastille par jour · survol = détail · clic = ouvrir le jour</span>
-        </div>
-        <div class="heatmap" id="statsHeatmap"></div>
-      </div>
-
-      <div class="stat-block">
-        <div class="block-title">
-          Semaine par semaine
-          <span class="hint">clic sur une semaine = détail tâche par tâche · « Jira » copie le récap</span>
-        </div>
-        <div class="weeks" id="statsWeeks"></div>
-      </div>
-
-      <div class="stat-block">
-        <div class="block-title">Répartition</div>
-        <div class="stats-split">
-          <div>
-            <div class="sub-title">Par type</div>
-            <div class="stats-types" id="statsTypes"></div>
-          </div>
-          <div>
-            <div class="sub-title">Par jour de semaine</div>
-            <div class="weekday-profile" id="statsWeekdays"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-block">
-        <div class="block-title">
-          Top tâches
-          <span class="hint">sur la période · Déc. / Jira copient la durée</span>
-        </div>
-        <div class="top-tasks" id="statsTopTasks"></div>
-      </div>
-
-      <!-- Les vides justifiés de la période : épinglés d'abord, puis les
-           exceptionnels repliés en une ligne — un an de motifs uniques ne doit
-           pas faire un bloc d'un mètre. -->
-      <div class="stat-block">
-        <div class="block-title">
-          Hors tâche
-          <span class="hint">les vides justifiés · part du hors tâche</span>
-        </div>
-        <div class="stats-off" id="statsOff"></div>
-      </div>
-
-      <div class="stat-block">
-        <div class="block-title">
-          Timeline
-          <span class="hint">les tâches dans le temps · survol = détail · clic = ouvrir le jour</span>
+          Détail
+          <span class="hint" id="stDetailHint"></span>
           <span class="grow"></span>
-          <div class="chip-group" id="stScale" role="group" aria-label="Échelle">
-            <button class="chip active" data-scale="month">Mois</button>
-            <button class="chip" data-scale="year">Année</button>
+          <div class="chip-group" id="stDetailTab" role="group" aria-label="Détail affiché">
+            <button class="chip active" data-detail="tasks">Par tâche</button>
+            <button class="chip" data-detail="types">Par type</button>
+            <button class="chip" data-detail="off">Hors tâche</button>
+            <button class="chip" data-detail="split">Découpage</button>
           </div>
         </div>
-        <div class="st-nav">
-          <button id="stPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Période précédente"></button>
-          <span class="st-nav-label" id="stLabel">—</span>
-          <button id="stNext" class="daynav-mini" data-icon="chevron-right" aria-label="Période suivante"></button>
-          <button id="stNow" class="btn-ghost">Aujourd'hui</button>
-        </div>
-        <div class="st-timeline" id="statsTimeline"></div>
+        <div class="stats-detail" id="statsDetail"></div>
       </div>
     </section>
     </div><!-- /#appScreen -->
@@ -968,31 +918,38 @@
         <div class="guide-block" id="g-7">
           <h3>Onglet Stats — rétrospective</h3>
           <p>
-            La page « qu'est-ce que j'ai fait ces derniers temps ». Tout y suit une
-            <b>fenêtre d'analyse</b> unique, choisie en haut : <b>4 semaines · 3 mois · 12 mois ·
-            Tout</b>.
+            La page du débrief. Tu choisis un <b>grain</b> — <b>Semaine · Mois · Trimestre ·
+            Année</b> — et tu navigues de période en période avec les flèches
+            (ou <kbd>←</kbd> <kbd>→</kbd>). Une période a un <b>nom</b> : S37, septembre 2026,
+            T3 2026. C'est ce qui permet de dire « + 6 % par rapport à S36 » — une fenêtre
+            glissante n'a pas de voisine. Tout l'onglet suit cette période, sans exception.
           </p>
           <ul>
-            <li><b>Cartes</b> — total (avec l'écart vs la période précédente), moyenne par jour
-              actif, jours actifs, meilleur jour, série en cours, et <b>couverture</b> : la part de
-              tes horaires tracée <b>ou justifiée</b> (les vides expliqués comptent, cf. Journée).</li>
-            <li><b>Évolution</b> — le temps par type dans le temps, en <b>Jour · Semaine · Mois</b>.
-              <b>Empilé</b> pour lire le total, <b>Séparé</b> pour comparer les tendances. Clique une
-              couleur de la légende pour masquer sa série.</li>
-            <li><b>Rythme</b> — une pastille par jour : plus elle est pleine, plus la journée
-              planifiée a été tracée. Les creux et les vacances sautent aux yeux. Clic = ouvrir le
-              jour.</li>
-            <li><b>Semaine par semaine</b> — total, mélange, jours actifs et écart avec la semaine
-              d'avant. <b>Clique une semaine</b> pour la déplier tâche par tâche (durée et part de
-              chacune) : c'est la vue du débrief du lundi matin. Le bouton <b>Jira</b> copie ce même
-              récap « tâche → durée », prêt à coller.</li>
-            <li><b>Répartition</b> — par type et par jour de semaine ; puis le <b>top tâches</b> de
-              la période, avec les copies <b>Déc.</b> / <b>Jira</b>.</li>
-            <li><b>Hors tâche</b> — tes vides justifiés sur la période, motif par motif : les
+            <li><b>La tête</b> — le total de la période, l'écart avec la précédente
+              <b>de même nature</b>, le mélange par type, puis la <b>couverture</b> en trois
+              parts : ce que tu as <b>tracé</b>, ce que tu as <b>justifié</b> (les vides
+              expliqués, cf. Journée) et ce qui reste <b>non tracé</b>, en hachures. Le
+              dénominateur est l'horaire <b>écoulé</b> : un mercredi, le jeudi n'est pas
+              encore du retard.</li>
+            <li><b>Évolution · Volume</b> — les <b>12 dernières périodes</b> du même grain,
+              empilées par type, celle que tu regardes mise en avant. Deux repères : le
+              plafond et ta moyenne. <b>Clique une colonne</b> pour aller à cette période.</li>
+            <li><b>Évolution · Continuité</b> — une ligne par jour, les tâches à leur heure :
+              c'est là que se voit la <b>continuité</b> d'un sujet d'un jour à l'autre. Clic =
+              ouvrir le jour. Disponible sur une semaine ou un mois (au-delà, ça ferait une
+              ligne par jour sur un mètre).</li>
+            <li><b>Détail · Par tâche</b> — toutes les tâches de la période, part et durée,
+              avec les copies <b>Déc.</b> / <b>Jira</b>. En tête, <b>Copier pour Jira</b> sort
+              le récap « tâche → durée » de la période entière, prêt à coller : c'est le geste
+              du lundi matin.</li>
+            <li><b>Détail · Par type</b> — dev, support, autre : la nature du travail.</li>
+            <li><b>Détail · Hors tâche</b> — tes vides justifiés, motif par motif : les
               épinglés d'abord, les exceptionnels repliés sous une ligne. En pied, ce que ça
-              pèse dans tes horaires.</li>
-            <li><b>Timeline</b> — l'historique fin (échelle <b>Mois · Année</b> ; survol = détail,
-              clic = ouvrir le jour).</li>
+              pèse dans tes horaires — et un lien pour régler la liste des épinglés.</li>
+            <li><b>Détail · Découpage</b> — la période coupée dans son unité naturelle : une
+              semaine en jours, un mois en semaines, un trimestre ou une année en mois.
+              <b>Clique une tranche</b> pour la déplier tâche par tâche ; son bouton
+              <b>Jira</b> copie ce récap-là.</li>
           </ul>
         </div>
 

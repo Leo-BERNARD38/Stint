@@ -507,19 +507,39 @@ brut/net **se dessine** : un ruban montre l'intervalle en hachures et, par-dessu
 portions comptées en encre (`TimeCalculator.workRangesBetween`).
 
 ### Stats
-**Une tête de période, pas deux rangées** : le bandeau inversé et ses cinq tuiles vivent
-dans une seule carte. Séparés, ils se lisaient comme deux blocs de poids égal, et la
-question « alors, cette période ? » restait sans réponse.
+**Trois blocs, deux commutés.** Une tête de période, un graphique, un détail. L'onglet
+en comptait sept, empilés : `byType` y était dit quatre fois (légende du bandeau, chips
+du graphique, graphique lui-même, bloc « Par type »), le total trois fois, et le récap
+hebdomadaire redisait trait pour trait ce que le graphique montrait déjà à son grain par
+défaut. Commuter n'est pas une économie de place : deux découpages du même total, l'un
+sous l'autre, se lisent comme deux mesures différentes.
 
-Le bandeau : total en Bitcount jusqu'à **78 px** à gauche ; à droite l'écart en pastille
-et la **composition de la période** (barre empilée + légende). Sans elle, l'aplat inversé
-était vide aux deux tiers, et la ventilation par type n'apparaissait qu'en bas de page.
-Sur fond inversé la barre se nuance en `currentColor` : les couleurs de type y seraient
-illisibles.
+**Une tête de période, pas deux rangées** : navigation, bandeau inversé et couverture
+vivent dans une seule carte. Le bandeau porte le nom de la période (« S37 ») et ses
+bornes (« 7 – 13 sept 2026 ») — l'un ne se lit pas sans l'autre — le total en Bitcount
+jusqu'à **78 px**, puis l'écart et la composition à droite. Sur fond inversé la barre se
+nuance en `currentColor` : les couleurs de type y seraient illisibles.
 
-Les cinq tuiles reculent d'un cran (`--surface-2` dans la carte). Seule « Couverture »
-porte une jauge — c'est la seule des cinq qui soit une **part** ; sur une durée ou un
-compteur, une barre ne voudrait rien dire.
+Sous le chiffre, **une seule note, et c'est une part** : la couverture. Les cinq tuiles
+d'avant avaient toutes le même poids, aucune ne répondait à « ai-je fait mes heures ? »,
+et « Série » ne suivait même pas la période affichée. Elle gagne une **troisième part**,
+le temps non tracé, en **hachures** — le manque se dessine, il ne se peint pas. Deux
+réglages en découlent : la piste passe à 12 px et la trame se resserre, parce que
+`--hatch-img` est calibrée pour de grandes surfaces (les trous de la timeline, 18 px) et
+ne rendait ici que 7 % d'amplitude, c'est-à-dire une piste vide.
+
+**Le graphique est en barres, pas en courbe.** Douze périodes nommées et discrètes ne
+forment pas un continuum, et une courbe lissée entre deux semaines invente des valeurs
+qui n'existent pas. Deux repères seulement — le plafond (l'échelle) et la moyenne (le
+niveau) —, pas de grille. La période affichée se marque à l'**anneau** sur lavis, comme
+tout choix unique ; elle est toujours la colonne de droite, d'où l'étiquette de moyenne
+calée à gauche.
+
+**Une ligne dépliée est un tiroir ouvert, pas une sélection** : elle recule en
+`--surface-2`, jamais en lavis d'accent — le lavis est réservé au choix unique, et il
+coûtait cher (`--text-faint` n'y passe qu'à 4,45:1, sous le seuil). Une tranche vide se
+dit en **encre**, jamais en `opacity`, et son bouton de copie n'est pas grisé : il
+n'existe pas — un contrôle désactivé n'a rien à copier et son texte tombe sous le seuil.
 
 ### Barres de part
 Une seule grammaire pour toute proportion, quel que soit l'écran : piste en encre à 8-10 %,
