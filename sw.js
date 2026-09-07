@@ -23,7 +23,7 @@
  *     page se recharge une fois sur "controllerchange" (voir main.js).
  * Bumper CACHE à chaque release ; ajouter à CORE tout nouveau fichier servi.
  */
-const CACHE = "stint-v112";
+const CACHE = "stint-v113";
 const NAV_TIMEOUT_MS = 2500;
 /* Racine de l'application (sw.js est à côté d'index.html) : « /Stint/ » sur
    GitHub Pages, « / » ailleurs. Sert à ne réclamer QUE les navigations de
@@ -94,11 +94,8 @@ const CORE = [
   "./src/ui/views/HeroView.js",
   "./src/ui/views/SegmentTableView.js",
   "./src/ui/views/SettingsView.js",
-  "./src/ui/views/StatsBreakdownView.js",
-  "./src/ui/views/StatsHeatmapView.js",
-  "./src/ui/views/StatsTimelineView.js",
-  "./src/ui/views/StatsTrendView.js",
-  "./src/ui/views/StatsWeeksView.js",
+  "./src/ui/views/StatsChartView.js",
+  "./src/ui/views/StatsDetailView.js",
   "./src/ui/views/StatsView.js",
   "./src/ui/views/StorageView.js",
   "./src/ui/views/TabsView.js",

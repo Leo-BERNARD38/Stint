@@ -403,7 +403,10 @@ Lancer ces contrôles (rapides, en Node) :
   **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
 - **Service worker** : tout fichier servi est dans `CORE`, et `CORE` ne référence
   aucun fichier disparu.
-- **Logique métier** : `node checks/domaine.mjs` — Node ESM, persistance **simulée**
+- **Logique métier** : `node checks/domaine.mjs`, **puis `TZ=Europe/Paris node checks/domaine.mjs`**
+  (le conteneur tourne en UTC, qui n'a pas de changement d'heure : sans ce second
+  passage, les contrôles de bornes de jour et de période ne prouvent rien) — Node ESM,
+  persistance **simulée**
   (objet `{loadSync, init, loadFull, save, clear}`) : migration, résolution
   d'horaires, périodes et regroupement, validation, `plannedMsForDay`,
   `workRangesBetween`, invariant des unités Jira, formats. Sortie non nulle si un
@@ -424,23 +427,80 @@ Lancer ces contrôles (rapides, en Node) :
 
 ## 10. Onglet Stats (rétrospective)
 
-Une **seule** agrégation sert les 6 blocs : `StatsAggregator.snapshot(période)` renvoie
-un objet **mémoïsé sur `store.rev`** (compteur incrémenté à chaque commit et à chaque
-hydratation). Sans lui, chaque bloc rebalaierait l'historique à chaque `App.render()`
-(mutation + tick 15 s). Si un segment tourne, la clé de cache inclut la minute courante.
+**Trois blocs, deux commutés.** Une tête de période, un graphique, un détail — au
+lieu des sept blocs empilés d'avant, où le même chiffre était dit jusqu'à quatre
+fois et où il fallait dérouler un mètre de page pour savoir si la semaine avait
+été bonne. Les deux blocs du bas ne montrent **qu'un contenu à la fois** : quatre
+découpages du même total, l'un sous l'autre, se lisent comme quatre mesures
+différentes.
+
+**La période est CALENDAIRE et nommée** — S37, septembre 2026, T3 2026, 2026 — pas
+une fenêtre glissante. Une fenêtre glissante n'a pas de nom, donc pas de voisine :
+« + 6 % par rapport à S36 » y était impossible, et « les 28 derniers jours » ne se
+débriefe pas. `App` porte le couple `statsGrain` + `statsRef` (état d'UI non
+persisté, comme `viewDay`) ; `App.statsSnapshot()` est le point d'entrée **unique**
+des trois vues. ← → décalent la période (le sélecteur de jour étant masqué sur cet
+onglet, les flèches y sont libres). **Il n'y a plus qu'une seule navigation
+temporelle dans l'onglet** : la timeline avait la sienne, et on pouvait afficher
+« 4 semaines » au-dessus d'un mois de l'an dernier.
+
+Une **seule** agrégation sert les trois blocs : `snapshot(grain, ref)` renvoie un
+objet **mémoïsé sur `store.rev`**, avec deux dérivés paresseux — `history(12)` (les
+12 dernières périodes de même grain, pour le graphique) et `subPeriods()` (le
+découpage interne). La tête n'a besoin ni de l'un ni de l'autre : on ne paie que ce
+qui est à l'écran.
 
 - Tout part de **`calc.segmentMs(seg, from, to)`** : lui seul connaît le brut/net et le
-  rognage horaire. On agrège **par jour**, puis on recompose semaines et mois — le temps
-  compté est additif sur des jours disjoints, donc la somme des tranches vaut toujours
-  le total (propriété couverte par les tests).
-- Les semaines du récap sont calculées **entières** (lundi → dimanche) même quand la
-  période les coupe, plus une semaine en amont qui sert de base à l'écart.
-- Le graphique est un **SVG en pixels réels** (mesure de `clientWidth` au rendu, comme
-  l'axe de `TimelineView`) + `ResizeObserver` — pas de `viewBox` étiré, qui déformerait
-  l'épaisseur des traits. Lissage **monotone** (`utils/curve.js`) : jamais de dépassement
-  sous zéro sur des séries en dents de scie.
-- Les marques survolables (colonnes du graphique, pastilles du rythme) réutilisent
+  rognage horaire. On agrège **par jour**, puis on recompose période, historique et
+  découpage — le temps compté est additif sur des jours disjoints, donc la somme des
+  tranches vaut toujours le total (propriété couverte par les tests).
+- **Les bornes de jour passent par `addDays`, jamais par `+ DAY_MS`.** Le 25 octobre
+  dure 25 h en Europe : `dayStart + DAY_MS` y tombait à 23:00 **du même jour**, et la
+  dernière heure de la journée n'appartenait à aucun jour — elle disparaissait des
+  totaux. Le 29 mars (23 h), la même borne mordait sur le lendemain. Idem pour les
+  bornes de période : `new Date(y, m, 1)` et `addDays`, jamais d'arithmétique en ms.
+  Couvert par un test qui échoue sous `TZ=Europe/Paris` si on rétablit le motif.
+- **Le découpage est BORNÉ à la période** (contrairement aux anciennes semaines, qui
+  étaient entières) : la somme des tranches vaut donc exactement le total affiché en
+  tête. C'est aussi pourquoi une tranche ne porte **pas d'écart** — une semaine coupée
+  par le début du mois donnerait un « −60 % » qui ne veut rien dire. L'écart vit en
+  tête, où il compare deux périodes entières. Le sous-titre d'une tranche dit son
+  étendue **réelle** (« 1 – 6 sept »), jamais celle de la semaine dont elle est le
+  morceau.
+- **`history()` ne redécoupe pas la période, il la met en contexte** : sur S37 les 12
+  dernières semaines, sur septembre les 12 derniers mois. C'est ce qui remplace
+  l'ancien sélecteur de granularité du graphique — le contexte suit la période au lieu
+  d'être choisi à part. Une colonne cliquée **navigue** vers sa période.
+- **Le temps NON TRACÉ (`untrackedMs`) se MESURE, il ne se déduit pas** : c'est la part
+  d'horaire écoulé qu'aucun segment ne recouvre (`subtractIntervals` sur l'union des
+  segments du jour, sans le seuil de 5 min de `gapsForDay`). Une soustraction
+  `horaire − compté` mentirait dès que deux segments se chevauchent ou qu'un segment
+  brut déborde — et surtout elle ne désignerait pas la même matière que le bouton
+  « Combler », qui part de la géométrie. Deux définitions du vide seraient pires que
+  pas de barre du tout.
+- **Le dénominateur de la couverture est l'horaire ÉCOULÉ** (`scheduledMs`, borné à
+  maintenant), jamais l'horaire planifié : un mercredi, le jeudi et le vendredi ne sont
+  pas encore du retard. La formule dégénère seule dans le bon sens — un jour passé rend
+  `scheduledMs === plannedMs`, un jour à venir rend 0.
+- **La barre de couverture se normalise sur la SOMME de ses trois parts**, pas sur
+  l'horaire : elle fait donc toujours exactement 100 % de sa piste. Les trois ne
+  s'ajoutent pas forcément à l'horaire écoulé (un segment saisi cet après-midi compte
+  déjà, alors que l'après-midi n'est pas écoulé), et normaliser sur l'horaire poussait
+  alors le manque **hors de la piste**, où il devenait invisible. Le pourcentage, lui,
+  reste calculé sur l'horaire et dit la vérité : 112 % s'affiche 112 %.
+- **La clé de cache porte la minute quand la période contient AUJOURD'HUI**, pas quand
+  un chrono tourne : `scheduledMs` et le non-tracé s'écoulent avec l'horloge même à
+  l'arrêt. Corollaire heureux : une période passée se met en cache sans composante
+  temporelle, donc feuilleter l'historique ne recalcule plus rien.
+- **La « Continuité » est indisponible au-delà de `CONTINUITY_MAX_DAYS` (45 jours)** :
+  une ligne par jour sur un trimestre ferait 92 lignes, c'est-à-dire exactement la page
+  à dérouler qu'on vient de supprimer. La chip se désactive et le bloc retombe sur
+  « Volume ».
+- Les marques survolables (colonnes du graphique, blocs de la continuité) réutilisent
   `attachTimelineTip` via son option `selector` et le contrat `data-name/range/dur/color`.
+- **Piège de nommage** : `.untracked` est déjà la carte « Temps non tracé » de l'onglet
+  Journée. La part de barre s'appelle donc `.cov-gap` — sous l'autre nom elle héritait
+  du padding et du fond de la carte, et se rendait à 32 px de haut dans une piste de 12.
 
 ## 11. Pièges déjà rencontrés (à connaître)
 

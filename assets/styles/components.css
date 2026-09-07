@@ -1401,14 +1401,27 @@ select option { background-color: var(--surface); color: var(--text); }
   letter-spacing: .15em; color: var(--text-faint); }
 .at-date-copy { margin-left: auto; }
 
-/* ============================ Onglet Stats ============================ */
+/* ============================ Onglet Stats ============================
+   TROIS blocs : une tête de période, un graphique, un détail. Les deux
+   derniers sont COMMUTÉS. L'onglet en comptait sept, empilés, et le même
+   chiffre y était dit jusqu'à quatre fois — la couleur ne hiérarchise plus
+   rien quand tout se vaut, et la page finissait par se lire en la déroulant. */
+
+/* ---------- Navigation : le grain à gauche, la période à droite ---------- */
+.stats-nav { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  margin-bottom: var(--sp-2); }
+.daynav-mini { border: none; background: var(--ctl); color: var(--text-soft); width: 32px; height: 32px;
+  border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.daynav-mini:hover { background: var(--ctl-hover); color: var(--text); }
+.daynav-mini:disabled { opacity: .38; pointer-events: none; }
+
 /* Bandeau de tête : la réponse à « alors, cette période ? ». Contraste inversé,
    chiffre géant. Avec le total du jour, c'est la SECONDE et dernière ancre
    inversée de l'app — au-delà, l'inversion cesse de hiérarchiser quoi que ce soit. */
 .stats-lead {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-4); align-items: center;
   background: var(--inverse-bg); color: var(--inverse-fg);
-  border-radius: var(--radius); padding: 16px 22px 17px; margin-bottom: var(--sp-3);
+  border-radius: var(--radius); padding: 16px 22px 17px;
 }
 @media (max-width: 700px) { .stats-lead { grid-template-columns: 1fr; } }
 /* Moitié droite : l'écart, puis la composition de la période. */
@@ -1426,39 +1439,119 @@ select option { background-color: var(--surface); color: var(--text); }
   font-variant-numeric: tabular-nums; text-align: right; letter-spacing: .03em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .stats-lead .l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.stats-lead .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .17em;
-  text-transform: uppercase; opacity: .72; }
+/* Le nom de la période, puis ses bornes : « S37 » ne se lit pas sans « 7 – 13
+   septembre », et « 7 – 13 septembre » ne se retient pas sans « S37 ». */
+.stats-lead .k { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap;
+  font-family: var(--font-data); font-size: 11.5px; letter-spacing: .17em;
+  text-transform: uppercase; opacity: .78; }
+.stats-lead .k em { font-style: normal; font-size: 10px; letter-spacing: .08em;
+  text-transform: none; opacity: .82; }
 .stats-lead .v { font-family: var(--font-display); font-size: clamp(44px, 8vw, 78px);
   line-height: 1.02; font-variant-numeric: tabular-nums; }
 .stats-lead .st-delta { display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-data); font-size: 12px; padding: 7px 14px; border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--inverse-fg) 13%, transparent); white-space: nowrap; }
+  background: color-mix(in srgb, var(--inverse-fg) 13%, transparent); white-space: nowrap;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
-/* Tête de période : bandeau + tuiles dans UNE carte. Posés côte à côte sur le
-   fond de page, le bandeau et sa rangée de cartes se lisaient comme deux blocs
-   indépendants de même poids ; réunis, la rangée devient la note de bas du
+/* Tête de période : navigation + bandeau + couverture dans UNE carte. Posés
+   côte à côte sur le fond de page, ils se lisaient comme des blocs
+   indépendants de même poids ; réunis, la couverture devient la note de bas du
    chiffre géant, ce qu'elle est. */
 .stats-top { background: var(--surface); border-radius: var(--radius);
   padding: var(--sp-3); box-shadow: var(--shadow-card); margin-bottom: var(--sp-4);
   display: flex; flex-direction: column; gap: var(--sp-3); }
-.stats-top .stats-lead { margin-bottom: 0; }
-.stats-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--sp-2);
-  margin-bottom: 0; }
-.stat-card { background: var(--surface-2); border-radius: var(--radius-sm); padding: 13px var(--sp-4) 12px;
-  transition: background-color .15s var(--ease); }
-/* Carte « Couverture » : le chiffre seul ne se compare à rien. Sa jauge le
-   pose sur l'échelle 0–100 %, avec la même grammaire de barre que partout. */
-.stat-card .stat-gauge { margin-top: 9px; height: 5px; border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
-.stat-card .stat-gauge i { display: block; height: 100%; border-radius: var(--radius-pill);
-  background: var(--accent); transition: width .4s var(--ease-out); }
-.stat-val { font-family: var(--font-display); font-size: 29px; line-height: 1.08; font-variant-numeric: tabular-nums; }
-.stat-lab { margin-top: 5px; font-family: var(--font-data); font-size: 9.5px; text-transform: uppercase; letter-spacing: .13em; color: var(--text-faint); }
+/* La couverture de la PÉRIODE : même composant que celle du jour (`.coverage`),
+   à une part près — le temps non tracé, qui n'existait jusqu'ici que jour par
+   jour. Le manque se DESSINE (hachures), il ne se peint pas. */
+.stats-cover { margin-top: 0; padding: 0 var(--sp-2) var(--sp-1); }
+/* Plus haute que celle du jour : c'est LA réponse à « ai-je fait mes heures ? ».
+   Et surtout, la trame de `--hatch-img` est réglée pour de grandes surfaces
+   (les trous de la timeline, 18 px) : sur une piste de 6 px elle ne rendait que
+   7 % d'amplitude, c'est-à-dire une piste vide. Ici le pas est resserré et
+   l'encre prise à `--gap-ring` — le même trait que l'anneau des trous, dont
+   cette part est l'exact équivalent à l'échelle de la période. */
+.stats-cover .cov-track { height: 12px; }
+.cov-track i.cov-gap { margin-left: 2px;
+  background-color: color-mix(in srgb, var(--text) 5%, transparent);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 4px, var(--gap-ring) 4px 8px);
+  box-shadow: inset 0 0 0 1px var(--gap-ring); }
+.cov-avg { font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
 
 /* Blocs Stats : cartes pleines sur le fond de page. */
 .stat-block { margin-bottom: var(--sp-4); }
 .stat-block:first-of-type { margin-top: var(--sp-4); }
 .stat-block .block-title { margin-bottom: var(--sp-4); }
+
+/* ---------- Évolution · Volume : 12 périodes de contexte ----------
+   Des barres, pas une courbe : douze valeurs discrètes et nommées ne forment
+   pas un continuum, et une courbe lissée entre deux semaines invente des
+   valeurs qui n'existent pas. Même grammaire de barre que partout ailleurs. */
+.vol { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; }
+.vol-plot { position: relative; height: 168px; }
+.vol-cols { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 6px; }
+.vol-col { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: pointer;
+  border-radius: var(--radius-xs); }
+.vol-col:hover { background: var(--ctl); }
+.vol-fill { width: 100%; min-height: 2px; display: flex; flex-direction: column-reverse;
+  overflow: hidden; border-radius: var(--radius-xs);
+  background: var(--surface-2); transition: height .4s var(--ease-out); }
+.vol-fill i { display: block; }
+.vol-fill i.dev { background: var(--dot-dev); }
+.vol-fill i.support { background: var(--dot-support); }
+.vol-fill i.autre { background: var(--dot-autre); }
+/* La période affichée est la seule à ne pas être du contexte : un anneau, pas
+   une teinte de plus — le choix UNIQUE se marque à l'anneau (§ couleur). */
+.vol-col.is-current { background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1.5px var(--accent); }
+.vol-labs { display: flex; gap: 6px; }
+.vol-lab { flex: 1; text-align: center; font-family: var(--font-data); font-size: 10px;
+  color: var(--text-faint); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vol-lab.is-current { color: var(--text); font-weight: 700; }
+/* Deux repères seulement : le plafond (l'échelle) et la moyenne (le niveau). */
+.vol-rule { position: absolute; left: 0; right: 0; height: 0;
+  border-top: 1px dashed var(--gap-ring); pointer-events: none; }
+.vol-rule.top { top: 0; }
+.vol-rule.avg { border-top-style: dotted; }
+/* La période affichée est toujours la colonne de droite : l'étiquette de la
+   moyenne passe à gauche, sinon elle se pose invariablement dedans. */
+.vol-rule.avg b { right: auto; left: 0; top: -13px; }
+/* Le filet passe DERRIÈRE les barres (c'est une graduation), son étiquette
+   devant — sinon la douzième colonne l'avale. */
+.vol-rule b { position: absolute; right: 0; top: -14px; z-index: 3; font-family: var(--font-data);
+  font-size: 9.5px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-faint); background: var(--surface); padding: 0 4px; border-radius: var(--radius-xs); }
+
+/* ---------- Évolution · Continuité : une ligne par jour ---------- */
+.flow { display: flex; flex-direction: column; gap: 3px; }
+.st-axis { position: relative; height: 14px; margin-left: 62px; }
+.st-tick { position: absolute; transform: translateX(-50%); font-family: var(--font-data);
+  font-size: 9.5px; color: var(--text-faint); }
+.st-row { display: flex; align-items: center; gap: var(--sp-2); }
+.st-row-label { width: 54px; flex: none; text-align: right; font-family: var(--font-data);
+  font-size: 10px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.st-row.weekend .st-row-label { color: var(--text-faint); }
+/* Le jour courant se marque à l'accent, pas au minium : le tampon ne désigne
+   que « maintenant », et c'est le filet `.tl-now` qui le porte déjà. */
+.st-row.today .st-row-label { color: var(--accent); font-weight: 700; }
+.st-track { position: relative; flex: 1; height: 18px; border-radius: var(--radius-xs);
+  background: var(--surface-2); overflow: hidden;
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px);
+  background-size: 10px 10px; background-position: center; }
+/* Un bloc de segment ne descend pas sous 3 px : en dessous il ne se voit plus,
+   et une piste vide mentirait sur une journée tracée. */
+.st-track .tl-seg { border-radius: 5px; min-width: 3px; }
+
+/* ---------- Détail : répartitions, hors tâche, découpage ---------- */
+/* La barre de récap collable, en tête du détail : le geste du lundi matin. */
+.detail-bar { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.detail-bar-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .15em; color: var(--text-faint); }
+.link-ghost { border: none; background: none; padding: 0; margin-top: var(--sp-3);
+  font-family: var(--font-body); font-size: 12.5px; color: var(--accent);
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; align-self: flex-start; }
+.link-ghost:hover { text-decoration-thickness: 2px; }
 
 /* Répartition par type : badge + barre proportionnelle + durée. */
 .stats-types { display: flex; flex-direction: column; gap: var(--sp-4); }
@@ -1467,9 +1560,11 @@ select option { background-color: var(--surface); color: var(--text); }
 .stat-bar-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden; }
 .stat-bar { height: 100%; border-radius: var(--radius-pill); transition: width .4s var(--ease-out); }
 .stat-type-val { min-width: 54px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
-/* Hors tâche (Stats) : même grammaire que « par type », un libellé à la place
-   du badge, la barre en ENCRE — une teinte de données ne vit que dans un
-   graphique légendé, et un vide n'est pas une série. */
+.stat-type-pct { min-width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+/* Hors tâche : même grammaire que « par type », un libellé à la place du badge,
+   la barre en ENCRE — une teinte de données ne vit que dans un graphique
+   légendé, et un vide n'est pas une série. */
 .stats-off { display: flex; flex-direction: column; gap: 10px; }
 .stat-off-lab { min-width: 120px; max-width: 40%; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stat-bar.off { background: var(--text-soft); }
@@ -1480,213 +1575,87 @@ select option { background-color: var(--surface); color: var(--text); }
 .stat-off-other { display: flex; flex-direction: column; gap: 10px; padding-left: var(--sp-3); }
 .stat-off-sum { font-family: var(--font-data); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); margin-top: 4px; }
 
-/* ---------- Tête d'onglet : fenêtre d'analyse ---------- */
-.stats-head { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-4); }
-.stats-head .hint { font-family: var(--font-data); font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-
-/* Écart avec la période précédente : information, pas jugement — donc pas de
-   code couleur vert/rouge, juste une flèche discrète. */
-.stat-delta { margin-top: 4px; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
-
-.sub-title { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; color: var(--text-faint);
-  margin-bottom: var(--sp-4); }
-.stats-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
-@media (max-width: 760px) { .stats-split { grid-template-columns: 1fr; gap: var(--sp-6); } }
-.stat-type-pct { min-width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
-  font-variant-numeric: tabular-nums; }
-
-/* ---------- Évolution : courbes par type ----------
-   Le SVG est dessiné en pixels réels par la vue (mesure de `clientWidth`) : ici
-   on ne pose que le cadre, la trame de points et les axes. */
-.chart { position: relative; --chart-gutter: 46px; }
-.chart-body { display: flex; gap: var(--sp-3); }
-.chart-y { position: relative; width: var(--chart-gutter); flex-shrink: 0; }
-.chart-y-lab { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap;
-  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.chart-plot { position: relative; flex: 1; min-width: 0; height: 200px; overflow: hidden;
-  background: var(--surface-2); border-radius: var(--radius-sm);
-  background-image: radial-gradient(circle, var(--dot-grid) 1.1px, transparent 1.3px);
-  background-size: 11px 11px; background-position: center; }
-.chart-svg { display: block; }
-.chart-hits { position: absolute; inset: 0; }
-/* Colonnes de survol : invisibles, elles ne servent qu'à l'infobulle et au
-   repère vertical. */
-.chart-hit { position: absolute; top: 0; bottom: 0; }
-.chart-hit::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
-  background: var(--accent); opacity: 0; transition: opacity .12s var(--ease); }
-.chart-hit:hover::before { opacity: .5; }
-.chart-x { position: relative; height: 15px; margin-top: var(--sp-2);
-  margin-left: calc(var(--chart-gutter) + var(--sp-3));
-  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.chart-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
-.chart-legend { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-4); }
-.chart-legend .chip-val { margin-left: 6px; opacity: .7; font-variant-numeric: tabular-nums; }
-/* Ici « actif » veut dire « série affichée », pas « option choisie » : ni lavis
-   ni anneau — l'opacité des séries masquées suffit à faire la différence. */
-.chart-legend .chip.active { background: var(--ctl); color: var(--text); box-shadow: none; font-weight: 600; }
-.chart-legend .chip.active:hover { background: var(--ctl-hover); }
-.chart-legend .chip:not(.active) { opacity: .58; }
-
-/* ---------- Rythme : une pastille par jour ----------
-   Colonnes = semaines, lignes = jours (lundi en haut). Les libellés de jour
-   partagent la même hauteur de rangée que les pastilles (étirement de grille),
-   donc l'alignement ne dépend d'aucune valeur en dur. */
-.heatmap { overflow-x: auto; padding-bottom: 2px; }
-.hm { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-2); }
-.hm-months, .hm-cells { justify-self: start; width: 100%;
-  max-width: calc(var(--hm-cols) * 22px); min-width: calc(var(--hm-cols) * 7px); }
-.hm-months { display: grid; grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); gap: 3px;
-  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); }
-.hm-months span { white-space: nowrap; }
-.hm-dows { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; align-items: center;
-  font-family: var(--font-data); font-size: 9px; color: var(--text-faint); }
-.hm-cells { display: grid; grid-auto-flow: column; gap: 3px;
-  grid-template-rows: repeat(7, 1fr); grid-template-columns: repeat(var(--hm-cols), minmax(0, 1fr)); }
-.hm-cell, .hm-hole, .hm-swatch { aspect-ratio: 1; border-radius: 50%; max-width: 18px; }
-.hm-cell[data-level="0"], .hm-swatch[data-level="0"] { background: var(--heat-0); }
-.hm-cell[data-level="1"], .hm-swatch[data-level="1"] { background: var(--heat-1); }
-.hm-cell[data-level="2"], .hm-swatch[data-level="2"] { background: var(--heat-2); }
-.hm-cell[data-level="3"], .hm-swatch[data-level="3"] { background: var(--heat-3); }
-.hm-cell[data-level="4"], .hm-swatch[data-level="4"] { background: var(--heat-4); }
-/* Jour non travaillé et vide : présent mais en retrait (ce n'est pas un trou). */
-.hm-cell.off[data-level="0"] { opacity: .45; }
-.hm-cell[data-day] { cursor: pointer; transition: box-shadow .12s var(--ease); }
-.hm-cell[data-day]:hover { box-shadow: 0 0 0 2px var(--dot); }
-.hm-legend { display: flex; align-items: center; gap: 4px; margin-top: var(--sp-4);
-  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); }
-.hm-legend .hm-swatch { width: 11px; }
-
-/* ---------- Semaine par semaine ---------- */
-.weeks { display: flex; flex-direction: column; }
-.wk-item { border-bottom: 1px dotted var(--dot); }
-.wk-item:last-of-type { border-bottom: none; }
-.wk { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
-  padding: var(--sp-3); margin: 0 calc(var(--sp-3) * -1); border-radius: var(--radius-sm);
-  cursor: pointer; transition: background-color .15s var(--ease); }
-.wk:hover { background: var(--surface-2); }
-.wk:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
-.wk-chev { display: grid; place-items: center; color: var(--text-faint); flex-shrink: 0;
-  transition: transform .3s var(--ease-spring); }
-.wk-item.open .wk-chev { transform: rotate(90deg); }
-.wk-id { width: 108px; flex-shrink: 0; }
-.wk-num { display: block; font-family: var(--font-display); font-size: 17px; line-height: 1.15; }
-.wk-sub { display: block; font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
-.wk-track { flex: 1 1 140px; min-width: 90px; height: 8px; background: var(--surface-2);
-  border-radius: var(--radius-pill); overflow: hidden; }
-.wk-fill { display: flex; height: 100%; border-radius: var(--radius-pill); overflow: hidden;
-  transition: width .4s var(--ease-out); }
-.wk-fill span { display: block; }
-.wk-total { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
-  font-variant-numeric: tabular-nums; }
-.wk-meta { width: 104px; text-align: right; font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint);
-  font-variant-numeric: tabular-nums; }
-.wk-delta { width: 66px; text-align: right; font-family: var(--font-data); font-size: 11px; color: var(--text-soft);
-  font-variant-numeric: tabular-nums; }
-.wk-copy { margin-left: auto; flex-shrink: 0; }
-.wk-more { margin-top: var(--sp-4); align-self: flex-start; }
-/* Les actions ne s'allument qu'au survol de la ligne : la colonne reste calme. */
-.wk:not(:hover):not(:focus-within) .wk-copy { background: transparent; color: var(--text-faint); }
-
-/* Détail « tâche → durée » de la semaine — la vue du débrief du lundi.
-   Le contenu reste dans le DOM, replié en hauteur 0, pour pouvoir s'animer. */
-.wk-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .34s var(--ease-out); }
-.wk-item.open .wk-body { grid-template-rows: 1fr; }
-.wk-tasks { display: flex; flex-direction: column; gap: 1px; overflow: hidden; min-height: 0;
-  padding: 2px 0 var(--sp-3) calc(15px + var(--sp-3)); opacity: 0; transition: opacity .26s var(--ease); }
-.wk-item.open .wk-tasks { opacity: 1; }
-.wk-task { display: flex; align-items: center; gap: var(--sp-3); padding: 6px var(--sp-3);
-  border-radius: 7px; font-size: 13.5px; transition: background-color .12s var(--ease); }
-.wk-task:hover { background: var(--surface-2); }
-.wk-task-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wk-task-name .type-badge, .wk-task-name .badge-done { flex-shrink: 0; }
-.wk-task-share { width: 40px; text-align: right; color: var(--text-faint); font-size: 12px;
-  font-variant-numeric: tabular-nums; }
-.wk-task-dur { width: 52px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-.wk-task-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.wk-task:not(:hover):not(:focus-within) .mini-btn { background: transparent; color: var(--text-faint); }
-@media (max-width: 760px) {
-  .wk-tasks { padding-left: 0; }
-  .wk-task { flex-wrap: wrap; }
-  .wk-task-name { flex: 1 1 60%; }
-  .wk-task-actions { margin-left: auto; }
-}
-
-/* ---------- Profil par jour de semaine ---------- */
-.weekday-profile { display: flex; align-items: stretch; gap: var(--sp-2); height: 146px; }
-.wd { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-.wd-val { height: 13px; font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.wd.peak .wd-val { color: var(--text); font-weight: 700; }
-.wd-track { position: relative; flex: 1; width: 100%; background: var(--surface-2);
-  border-radius: var(--radius-xs); overflow: hidden;
-  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px);
-  background-size: 10px 10px; background-position: center; }
-/* Le jour le plus chargé porte l'accent plein ; les autres restent en retrait,
-   sinon la semaine n'est qu'une rangée de pavés pleins. */
-.wd-bar { position: absolute; left: 0; right: 0; bottom: 0;
-  background: color-mix(in srgb, var(--accent) 46%, var(--surface-2));
-  border-radius: var(--radius-xs); transition: height .4s var(--ease-out); }
-.wd.peak .wd-bar { background: var(--accent); }
-.wd-lab { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); }
-
-/* ---------- Top tâches ---------- */
-.top-tasks { display: flex; flex-direction: column; }
-.tt { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) 0;
-  border-bottom: 1px dotted var(--dot); cursor: pointer; }
-.tt:last-child { border-bottom: none; }
+/* ---------- Détail · Par tâche ---------- */
+.top-tasks { display: flex; flex-direction: column; gap: var(--sp-3); }
+/* La durée est la DERNIÈRE piste d'une grille, collée au bord droit : c'est le
+   nom, élastique, qui absorbe les variations d'actions et de survol. */
+.tt { display: grid; grid-template-columns: auto minmax(0, 1fr) 44px 62px auto;
+  align-items: center; gap: var(--sp-3); padding: 7px 9px; border-radius: var(--radius-sm);
+  cursor: pointer; }
 .tt:hover { background: var(--surface-2); }
-.tt-main { flex: 1; min-width: 0; }
-.tt-name { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 7px;
-  font-size: 14px; min-width: 0; }
-/* L'ellipse doit porter sur le texte, pas sur le conteneur flex — sinon le nom
-   est coupé net au milieu d'une lettre en étroit. */
-.tt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tt-name .type-badge, .tt-name .badge-done { flex-shrink: 0; }
-.tt-share { width: 42px; text-align: right; font-size: 12px; color: var(--text-faint);
+.tt-main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* `.stat-bar-track` porte `flex: 1` pour s'étirer en LARGEUR dans une ligne
+   (`.stat-type`). Empilée en colonne, la même règle s'applique à la hauteur et
+   écrase la piste à zéro : ici, la largeur est acquise, c'est la hauteur qu'on
+   fixe. */
+.tt-main .stat-bar-track { flex: none; width: 100%; height: 6px; }
+.tt-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.tt-label { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-share { text-align: right; font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.tt-dur { text-align: right; font-family: var(--font-display); font-size: 17px;
   font-variant-numeric: tabular-nums; }
-.tt-dur { width: 64px; text-align: right; font-family: var(--font-display); font-size: 18px;
+.tt-actions { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity .15s var(--ease); }
+.tt:hover .tt-actions, .tt:focus-within .tt-actions { opacity: 1; }
+@media (hover: none) { .tt-actions { opacity: 1; } }
+.tt-rest { border: none; background: var(--surface-2); color: var(--text-soft);
+  border-radius: var(--radius-sm); padding: 9px 12px; font-family: var(--font-data);
+  font-size: 11px; cursor: pointer; text-align: left; }
+.tt-rest:hover { background: var(--surface-hover); color: var(--text); }
+
+/* ---------- Détail · Découpage (jours, semaines ou mois de la période) ---------- */
+.subs { display: flex; flex-direction: column; gap: 5px; }
+.sp { border-radius: var(--radius-sm); }
+.sp-head { display: grid; grid-template-columns: 18px 132px minmax(0, 1fr) 62px 108px auto;
+  align-items: center; gap: var(--sp-3); padding: 9px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; }
+.sp-head:hover { background: var(--surface-2); }
+/* Une ligne dépliée est un TIROIR OUVERT, pas une sélection : le lavis d'accent
+   est réservé au choix unique. Et il coûtait cher — `--text-faint` n'y passe
+   qu'à 4,45:1, sous le seuil. Le creux dit « ouvert » aussi bien, et gratuitement. */
+.sp.open .sp-head { background: var(--surface-2); }
+/* Une tranche vide se dit en ENCRE, jamais en opacity : la hiérarchie se joue
+   sur la taille et la casse, et une durée à 2,5:1 ne se lit plus du tout. */
+.sp.is-empty .sp-total, .sp.is-empty .sp-meta { color: var(--text-faint); }
+.sp-chev { display: flex; color: var(--text-faint); transition: transform .2s var(--ease); }
+.sp.open .sp-chev { transform: rotate(90deg); }
+.sp-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sp-id b { font-family: var(--font-data); font-size: 12px; letter-spacing: .06em; }
+.sp-id em { font-style: normal; font-family: var(--font-data); font-size: 9.5px;
+  color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-track { height: 9px; border-radius: var(--radius-pill); overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); }
+.sp-fill { display: flex; height: 100%; border-radius: var(--radius-pill); overflow: hidden;
+  transition: width .4s var(--ease-out); }
+.sp-fill i { display: block; }
+.sp-fill i.dev { background: var(--dot-dev); }
+.sp-fill i.support { background: var(--dot-support); }
+.sp-fill i.autre { background: var(--dot-autre); }
+.sp-total { text-align: right; font-family: var(--font-display); font-size: 17px;
   font-variant-numeric: tabular-nums; }
-.tt-actions { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.tt-rest { padding-top: var(--sp-4); font-size: 12.5px; color: var(--text-faint); }
-/* En étroit, la ligne flex écrasait le nom de tâche à zéro : on repasse en
-   grille sur deux rangées pour que le nom garde toute la largeur. */
+.sp-meta { font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
+  text-align: right; font-variant-numeric: tabular-nums; }
+.sp-tasks { display: flex; flex-direction: column; gap: 2px; padding: 2px 10px 10px 46px; }
+.sp-task { display: grid; grid-template-columns: auto minmax(0, 1fr) 44px 62px auto;
+  align-items: center; gap: var(--sp-3); padding: 5px 8px; border-radius: var(--radius-xs); }
+.sp-task:hover { background: var(--surface-2); }
+.sp-task-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0;
+  font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-task-share { text-align: right; font-size: 11.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.sp-task-dur { text-align: right; font-family: var(--font-data); font-size: 12.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums; }
+.sp-task-actions { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity .15s var(--ease); }
+.sp-task:hover .sp-task-actions, .sp-task:focus-within .sp-task-actions { opacity: 1; }
+@media (hover: none) { .sp-task-actions { opacity: 1; } }
+
 @media (max-width: 760px) {
-  .tt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
-    grid-template-areas: "sw name share dur" "sw act act act";
-    column-gap: var(--sp-3); row-gap: 8px; align-items: center; }
-  .tt > .swatch { grid-area: sw; align-self: start; margin-top: 3px; }
-  .tt-main { grid-area: name; }
-  .tt-share { grid-area: share; width: auto; }
-  .tt-dur { grid-area: dur; }
-  .tt-actions { grid-area: act; justify-content: flex-end; }
-  /* Le badge de type mange la place du nom en étroit ; la pastille de couleur et
-     le bloc « Répartition par type » juste au-dessus portent déjà l'info. */
-  .tt-name .type-badge { display: none; }
+  .sp-head { grid-template-columns: 18px minmax(0, 1fr) 62px auto; }
+  .sp-head .sp-track, .sp-head .sp-meta { display: none; }
+  .sp-tasks { padding-left: 18px; }
+  .tt { grid-template-columns: auto minmax(0, 1fr) 62px auto; }
+  .tt .tt-share { display: none; }
 }
 
-/* ---------- Timeline d'historique (Mois / Année) ---------- */
-.st-nav { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-4); }
-.daynav-mini { border: none; background: var(--surface-2); color: var(--text-soft); width: 32px; height: 32px;
-  border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
-.daynav-mini:hover { background: var(--surface-hover); color: var(--text); }
-.st-nav-label { min-width: 132px; text-align: center; font-family: var(--font-data); font-weight: 500; font-variant-numeric: tabular-nums; text-transform: capitalize; }
-.st-nav .btn-ghost { margin-left: var(--sp-2); }
-.st-timeline { position: relative; }
-.st-axis { position: relative; height: 14px; margin-bottom: 6px; margin-left: calc(96px + var(--sp-3));
-  font-family: var(--font-data); font-size: 9.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.st-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
-.st-row { display: flex; align-items: center; gap: var(--sp-3); padding: 1.5px 0; }
-.st-row-label { width: 96px; flex-shrink: 0; font-family: var(--font-data); font-size: 10.5px; color: var(--text-soft);
-  font-variant-numeric: tabular-nums; white-space: nowrap; text-transform: capitalize; }
-.st-row.weekend .st-row-label { color: var(--text-faint); }
-.st-row.today .st-row-label { color: var(--accent); font-weight: 700; }
-.st-track { position: relative; flex: 1; height: 17px; background: var(--surface-2); border-radius: 6px; overflow: hidden;
-  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.2px); background-size: 10px 10px; background-position: center; }
-.st-timeline.year .st-track { height: 24px; }
-.st-row.weekend .st-track { opacity: .72; }
-.st-track .tl-seg { border-radius: 5px; min-width: 3px; }
-
-/* Segment net découpé (compté / non compté) : c'est la même tâche, donc on
+/* Jointures d'un segment coupé par les horaires : le bloc reste un tout, on
    n'arrondit que les bords extérieurs — jointures internes carrées (placé
    après les règles de rayon des deux timelines pour l'emporter). */
 .tl-seg.seg-l { border-top-right-radius: 0; border-bottom-right-radius: 0; }

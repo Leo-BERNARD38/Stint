@@ -2,7 +2,7 @@ import { Store } from "../models/Store.js";
 import { Persistence } from "../services/Persistence.js";
 import { TimeCalculator } from "../services/TimeCalculator.js";
 import { Formatter } from "../services/Formatter.js";
-import { StatsAggregator } from "../services/StatsAggregator.js";
+import { StatsAggregator, periodStart, stepPeriod } from "../services/StatsAggregator.js";
 import { DataTransfer } from "../services/DataTransfer.js";
 import { Notifier } from "../services/Notifier.js";
 import { Timer } from "./Timer.js";
@@ -19,11 +19,8 @@ import { TaskListView } from "./views/TaskListView.js";
 import { SegmentTableView } from "./views/SegmentTableView.js";
 import { AllTasksView } from "./views/AllTasksView.js";
 import { StatsView } from "./views/StatsView.js";
-import { StatsTimelineView } from "./views/StatsTimelineView.js";
-import { StatsTrendView } from "./views/StatsTrendView.js";
-import { StatsHeatmapView } from "./views/StatsHeatmapView.js";
-import { StatsWeeksView } from "./views/StatsWeeksView.js";
-import { StatsBreakdownView } from "./views/StatsBreakdownView.js";
+import { StatsChartView } from "./views/StatsChartView.js";
+import { StatsDetailView } from "./views/StatsDetailView.js";
 import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
@@ -64,7 +61,11 @@ export class App {
     this.eyeBreak = new EyeBreak(this);     // rappel « repos des yeux » pendant le chrono
     this.viewDay = startOfDay(new Date());
     this.screen = "app"; // app | settings | guide | tools
-    this.statsPeriod = "3m"; // fenêtre de l'onglet Stats (état d'UI, comme viewDay)
+    // Onglet Stats : un GRAIN et une DATE POINTÉE, pas une fenêtre glissante.
+    // La semaine par défaut, parce que la question du lundi matin est « alors,
+    // la semaine ? ». État d'UI non persisté, comme `viewDay`.
+    this.statsGrain = "week";
+    this.statsRef = Date.now();
 
     this.toast = new Toast();
     // Le Notifier a besoin du toast (son dernier recours) : il vient donc après.
@@ -108,11 +109,8 @@ export class App {
       new TaskListView(this),
       new SegmentTableView(this),
       new StatsView(this),
-      new StatsTrendView(this),
-      new StatsHeatmapView(this),
-      new StatsWeeksView(this),
-      new StatsBreakdownView(this),
-      new StatsTimelineView(this),
+      new StatsChartView(this),
+      new StatsDetailView(this),
       new AllTasksView(this),
       new SettingsView(this),
       new StorageView(this),
@@ -209,11 +207,40 @@ export class App {
   shiftDay(n) { this.setViewDay(addDays(this.viewDay, n)); }
   goToday() { this.setViewDay(new Date()); }
 
-  /** Fenêtre d'analyse de l'onglet Stats (voir `StatsAggregator.STATS_PERIODS`). */
-  setStatsPeriod(key) {
-    if (this.statsPeriod === key) return;
-    this.statsPeriod = key;
+  /* ----------------- navigation Stats ----------------- */
+  /**
+   * Grain de l'onglet Stats. La **date pointée ne bouge pas** : passer de la
+   * semaine au mois montre le mois qui contient la semaine qu'on regardait, et
+   * non le mois en cours — sinon changer d'échelle ferait perdre sa place.
+   */
+  setStatsGrain(grain) {
+    if (this.statsGrain === grain) return;
+    this.statsGrain = grain;
     this.render();
+  }
+
+  /** Période précédente / suivante, au grain courant. */
+  shiftStatsPeriod(n) {
+    const start = periodStart(this.statsGrain, new Date(this.statsRef));
+    this.statsRef = stepPeriod(this.statsGrain, start, n).getTime();
+    this.render();
+  }
+
+  /** Retour à la période en cours. */
+  statsToday() {
+    this.statsRef = Date.now();
+    this.render();
+  }
+
+  /** Depuis une colonne du graphique : aller à cette période. */
+  goToStatsPeriod(refMs) {
+    this.statsRef = refMs;
+    this.render();
+  }
+
+  /** Le snapshot de la période affichée — un seul point d'entrée pour les 3 vues. */
+  statsSnapshot() {
+    return this.stats.snapshot(this.statsGrain, this.statsRef);
   }
 
   /** Depuis « Tâches » : ouvre un jour ("YYYY-MM-DD") dans l'onglet Segments. */
@@ -357,8 +384,9 @@ export class App {
    * Raccourcis, tous CONTEXTUELS : jamais dans un champ, jamais quand une
    * modale est ouverte (Espace sur un bouton de modale déclenchait Play), jamais
    * avec un modificateur (Alt+← est le retour du navigateur), jamais hors de
-   * l'écran principal. ← → ne valent que là où le sélecteur de jour est visible
-   * (Journée, Segments) : sur Tâches et Stats il n'y a pas de jour à changer.
+   * l'écran principal. ← → changent de jour là où le sélecteur de jour est
+   * visible (Journée, Segments), de PÉRIODE sur Stats, et ne font rien sur
+   * Tâches — qui n'a ni jour ni période.
    */
   #bindKeyboard() {
     document.addEventListener("keydown", (e) => {
@@ -384,6 +412,10 @@ export class App {
       else if (k === "s") { e.preventDefault(); this.openSegmentModal(); }
       else if (e.key === "ArrowLeft" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(-1); }
       else if (e.key === "ArrowRight" && !el("dayHead").hidden) { e.preventDefault(); this.shiftDay(1); }
+      // Sur Stats le sélecteur de jour est masqué : les flèches y sont libres,
+      // et c'est la période qu'elles décalent.
+      else if (e.key === "ArrowLeft" && this.tabs.active === "stats") { e.preventDefault(); this.shiftStatsPeriod(-1); }
+      else if (e.key === "ArrowRight" && this.tabs.active === "stats") { e.preventDefault(); this.shiftStatsPeriod(1); }
     });
   }
 
