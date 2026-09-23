@@ -72,8 +72,6 @@ export class SettingsView {
       store.updateSettings((s) => { s.jira.hoursPerDay = Math.max(0.5, parseFloat(e.target.value) || 8); }));
     el("setDpw").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.jira.daysPerWeek = Math.max(1, Math.min(7, parseInt(e.target.value) || 5)); }));
-    el("setRounding").addEventListener("change", (e) =>
-      store.updateSettings((s) => { s.rounding = e.target.value; }));
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
 
@@ -397,7 +395,6 @@ export class SettingsView {
     el("dateCancel").hidden = !editingDates;
     setIf("setHpd", s.jira.hoursPerDay);
     setIf("setDpw", s.jira.daysPerWeek);
-    setIf("setRounding", s.rounding);
     setIf("setMergeGap", s.segments.mergeGapMin);
     setIf("setMinSeg", s.segments.minMin);
     for (const sel of el("tsSteps").querySelectorAll("[data-ts-step]")) {

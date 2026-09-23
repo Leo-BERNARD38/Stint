@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
+import { DEFAULT_SETTINGS, EYE_BREAK_MIN, EYE_BREAK_MAX,
          EYE_REST_MIN, EYE_REST_MAX, REMINDER_LABEL_MAX, REMINDER_MAX,
          DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX,
          SEGMENT_MERGE_GAP_MAX_MIN, SEGMENT_MIN_MAX_MIN,
@@ -248,7 +248,6 @@ export class Settings {
       hoursPerDay: data.jira?.hoursPerDay ?? d.jira.hoursPerDay,
       daysPerWeek: data.jira?.daysPerWeek ?? d.jira.daysPerWeek,
     };
-    this.rounding = ROUNDING_STEPS[data.rounding] != null ? data.rounding : d.rounding;
     this.roundedDay = data.roundedDay ?? d.roundedDay;
     this.bgDots = data.bgDots ?? d.bgDots;
     this.eyeBreak = {
@@ -369,19 +368,17 @@ export class Settings {
     return this.reminders.breaks.find((b) => b.id === id) || null;
   }
 
-  /** Pas d'arrondi en minutes (0 = aucun arrondi configuré). */
-  roundingMinutes() {
-    return ROUNDING_STEPS[this.rounding] ?? 0;
-  }
-
   /**
-   * Arrondit une durée (minutes) au pas configuré. Arrondi **au plus proche**,
-   * mais une durée non nulle ne tombe jamais à 0 : on reporte au minimum un pas
-   * (5 min tracées ≠ rien de fait).
+   * Arrondit une durée (minutes) au bloc du TYPE de la tâche — le même bloc que
+   * l'onglet Saisie (`timesheetStep`), une seule source pour l'arrondi de l'app.
+   * Au plus **proche**, et une durée non nulle ne tombe jamais à 0 : on reporte
+   * au minimum un bloc (5 min tracées ≠ rien de fait). La Saisie, elle, arrondit
+   * vers le bas parce qu'elle a une réserve où ranger le reste ; la vue arrondie
+   * de Journée n'en a pas, elle y perdrait du temps.
    */
-  roundMinutes(minutes) {
-    const step = this.roundingMinutes();
-    if (!step || minutes <= 0) return minutes;
+  roundTaskMinutes(minutes, type) {
+    const step = this.timesheetStep(type);
+    if (minutes <= 0) return minutes;
     return Math.max(step, Math.round(minutes / step) * step);
   }
 
@@ -571,7 +568,6 @@ export class Settings {
       weekdayHours: cloneHours(this.weekdayHours),
       dateHours: cloneHours(this.dateHours),
       jira: { ...this.jira },
-      rounding: this.rounding,
       roundedDay: this.roundedDay,
       bgDots: this.bgDots,
       eyeBreak: { ...this.eyeBreak },

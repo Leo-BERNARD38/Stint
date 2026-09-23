@@ -7,7 +7,7 @@ import { memoBadge } from "../components/MemoList.js";
 /**
  * Liste des tâches du jour : durée, copie, et actions selon le cycle de vie.
  * Porte aussi l'interrupteur « Arrondi » : bascule l'affichage de la journée sur
- * les totaux arrondis au pas configuré dans les réglages (§ Arrondi).
+ * les totaux arrondis au bloc du type de chaque tâche (les blocs de la Saisie).
  */
 export class TaskListView {
   constructor(app) {
@@ -70,24 +70,19 @@ export class TaskListView {
   }
 
   /**
-   * Met l'interrupteur en phase avec les réglages et renvoie l'état effectif :
-   * sans pas d'arrondi configuré il n'y a rien à arrondir → interrupteur inerte
-   * (mais on garde le réglage mémorisé, il reprend dès qu'un pas est choisi).
+   * Met l'interrupteur en phase avec les réglages et renvoie l'état effectif.
+   * Il n'y a plus de pas unique : chaque tâche s'arrondit au bloc de son type,
+   * que l'infobulle rappelle (les blocs se règlent dans Réglages › Jira).
    */
   #syncToggle() {
     const s = this.app.store.settings;
-    const step = s.roundingMinutes();
-    const active = !!s.roundedDay && step > 0;
-    this.toggle.checked = !!s.roundedDay;
-    this.toggle.disabled = step === 0;
-    this.toggleRow.classList.toggle("off", step === 0);
+    const st = s.timesheet.steps;
+    const active = !!s.roundedDay;
+    this.toggle.checked = active;
     this.toggleRow.classList.toggle("on", active);
-    this.toggleRow.title = step === 0
-      ? "Choisissez un pas d'arrondi dans les réglages"
-      : "Afficher les tâches du jour arrondies au pas configuré";
-    this.toggleLabel.textContent = step === 0
-      ? "Arrondi"
-      : step >= 60 ? `Arrondi ${step / 60} h` : `Arrondi ${step} min`;
+    this.toggleRow.title = `Arrondir chaque tâche au bloc de son type, au plus proche : ` +
+      `dev ${st.dev} min · support ${st.support} min · autre ${st.autre} min`;
+    this.toggleLabel.textContent = "Arrondi";
     return active;
   }
 

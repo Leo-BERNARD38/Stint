@@ -921,6 +921,23 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(w.reserve, [{ taskId: "tA", min: 60 }], "c'est A qui attend en réserve");
   }
 
+  // --- UN arrondi : Journée et Saisie lisent les mêmes blocs par type ---
+  {
+    const st = mk({ rounding: "1h" }); // l'ancien pas unique (≤ v16) : ignoré
+    seg(st, "tA", 21, 8, 0, 70);   // dev 1 h 10 → 1 h (au plus proche, bloc 30)
+    seg(st, "tS", 21, 10, 0, 50);  // support 50 → 0:45 (bloc 15)
+    seg(st, "tR", 21, 11, 0, 5);   // autre 5 min → 0:15 (jamais 0 : un bloc au minimum)
+    const r = new TimeCalculator(st).totalsForDay(D(21, 12), true);
+    eq([r.byTask.get("tA"), r.byTask.get("tS"), r.byTask.get("tR")].map((ms) => ms / 60000), [60, 45, 15],
+       "Journée arrondie : au bloc du type, au plus proche, un bloc au minimum");
+    eq(r.total / 60000, 120, "le total est la somme des tâches arrondies");
+    ok(!("rounding" in st.settings.toJSON()), "v16 → v17 : l'ancien pas unique n'est plus réécrit");
+    st.updateSettings((s) => { s.timesheet.steps.dev = 60; });
+    eq(new TimeCalculator(st).totalsForDay(D(21, 12), true).byTask.get("tA") / 60000, 60,
+       "changer le bloc dev dans les réglages change aussi Journée");
+    eq(st.settings.roundTaskMinutes(95, "dev"), 120, "…au plus proche (1 h 35 → 2 h en blocs d'1 h)");
+  }
+
   // --- lignes : fonctions pures ---
   {
     const L = [{ taskId: "a", min: 60, done: true }, { taskId: "b", min: 30, done: false }];

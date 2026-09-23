@@ -6,7 +6,8 @@ import { pad2 } from "../utils/datetime.js";
  *
  * ⚠ Le formateur **n'arrondit pas** : l'arrondi est une décision de vue (il
  * s'applique au total d'une tâche sur la journée, pas à chaque durée affichée).
- * Il est appliqué en amont par `TimeCalculator.totalsForDay(day, true)` quand la
+ * Il est appliqué en amont par `TimeCalculator.totalsForDay(day, true)` (bloc du
+ * type de chaque tâche, `Settings.roundTaskMinutes`) quand la
  * vue arrondie de la journée est active.
  */
 export class Formatter {

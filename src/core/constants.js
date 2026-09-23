@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 17;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -94,8 +94,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // C'est l'affichage qui regroupe (`Settings.dateGroups`).
   dateHours: {},
   jira: { auto: true, hoursPerDay: 8, daysPerWeek: 5 },
-  rounding: "none",  // pas d'arrondi | 1m | 5m | 15m | 30m | 1h (cf. ROUNDING_STEPS)
-  roundedDay: false, // vue « arrondi » de la journée (interrupteur des Tâches du jour)
+  // Vue « arrondi » de la journée (interrupteur des Tâches du jour). Le PAS n'est
+  // pas ici : c'est le bloc du type de chaque tâche (`timesheet.steps`), le même
+  // que l'onglet Saisie — v17 retire l'ancien pas unique `rounding`.
+  roundedDay: false,
   bgDots: false,     // fond dot-matrix réactif au curseur (easter-egg, off par défaut)
   // Rappel « repos des yeux » (règle 20-20-20) : rappel toutes les `minutes`
   // **tant qu'un chrono tourne**, puis un repos de `restSeconds`. Off par défaut
@@ -127,9 +129,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // sinon la liste grossirait sans fin. Le segment, lui, porte toujours le
   // libellé en clair : retirer un épinglé ne touche pas l'historique.
   offReasons: ["Pause", "Réunion", "Discussion"],
-  // Saisie lissée (v15) : ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé.
-  // Chaque tâche se déclare par blocs de son type, arrondis vers le BAS : le
-  // reste part en réserve (§17). La cible du jour n'est PAS ici : c'est le
+  // Blocs par type (v15) : l'arrondi de l'app, partout. La Saisie déclare par
+  // blocs arrondis vers le BAS (le reste part en réserve, §17) ; la vue arrondie
+  // de Journée arrondit au plus PROCHE (elle n'a pas de réserve où ranger le reste). La cible du jour n'est PAS ici : c'est le
   // « 1d » des unités Jira (`Settings.jiraDayMinutes`), une seule source.
   timesheet: { steps: { dev: 30, support: 15, autre: 15 } },
 });
@@ -166,11 +168,3 @@ export const REMINDER_MAX = 24;
 export const DATE_RANGE_MAX_DAYS = 366;   // une année pleine reste exprimable
 export const DATE_HOURS_MAX = 1500;       // ~45 dates par an → une trentaine d'années
 
-/**
- * Pas d'arrondi disponibles, en **minutes** (0 = aucun). L'arrondi s'applique au
- * **total d'une tâche sur la journée**, pas à chaque segment : c'est la maille
- * qu'on reporte dans Jira.
- */
-export const ROUNDING_STEPS = Object.freeze({
-  none: 0, "1m": 1, "5m": 5, "15m": 15, "30m": 30, "1h": 60,
-});

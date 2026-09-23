@@ -115,6 +115,10 @@ export class Store extends EventEmitter {
    * saisie est désormais le « 1d » des unités Jira (`Settings.jiraDayMinutes`),
    * une seule source pour une même journée. Rien à transformer : `Settings`
    * ignore le champ, `toJSON` ne le réécrit plus.
+   * v16 → v17 : `settings.rounding` (pas d'arrondi UNIQUE de la vue arrondie de
+   * Journée) est retiré — Journée arrondit désormais au bloc du type de chaque
+   * tâche, les blocs de la Saisie (`timesheet.steps`). Même traitement : ignoré
+   * à la lecture, plus réécrit.
    */
   #migrate(raw) {
     if (!raw) return {};

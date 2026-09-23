@@ -124,11 +124,11 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v16)
+## 4. Modèle de données (schéma v17)
 
 ```jsonc
 {
-  "version": 16,
+  "version": 17,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -143,8 +143,9 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
     // les enjambe pour recoller la période à l'affichage.
     "dateHours": { "2026-06-12": [["08:30","12:30"],["13:30","16:30"]] },
     "jira": { "auto": true, "hoursPerDay": 8, "daysPerWeek": 5 },
-    "rounding": "none",                                // none|1m|5m|15m|30m|1h
-    "roundedDay": false,                               // vue arrondie de la journée (v7)
+    // vue arrondie de la journée (v7) ; son pas est le bloc du TYPE de chaque
+    // tâche (`timesheet.steps`) — v17 retire l'ancien pas unique `rounding`
+    "roundedDay": false,
     "bgDots": false,                                   // fond réactif au curseur (v5)
     // rappel 20-20-20 (v8) ; `restSeconds` = durée du repos (v9) ;
     // `sound`/`volume` = le bip de synthèse aux deux bords du repos (v10)
@@ -163,7 +164,8 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
     // motifs HORS TÂCHE épinglés (v13) : des raccourcis de saisie, rien d'autre
     // (le segment porte son libellé en clair, cf. §15)
     "offReasons": ["Pause", "Réunion", "Discussion"],
-    // saisie lissée (v15) : blocs de saisie par type, arrondis vers le bas (§17).
+    // blocs par type (v15) : L'ARRONDI de l'app — vers le bas dans la Saisie
+    // (§17), au plus proche dans la vue arrondie de Journée.
     // La cible du jour n'est PAS ici : c'est le « 1d » de `jira` (v16 retire
     // l'ancien `dayMin`, doublon de la même journée)
     "timesheet": { "steps": { "dev": 30, "support": 15, "autre": 15 } }
@@ -228,6 +230,12 @@ Notes :
   `1d` = durée ouvrée de la base, `1w` = nombre de `workDays` ; sinon valeurs saisies.
   **Le « 1d » a une source unique, `Settings.jiraDayMinutes()`** : la copie Jira
   (`Formatter`) et la cible du jour de l'onglet Saisie (§17) la lisent toutes deux.
+- **Un seul arrondi, par type** : `timesheet.steps` (dev 30, support et autre 15).
+  La vue arrondie de Journée (`totalsForDay(day, true)` → `Settings.roundTaskMinutes`)
+  arrondit **au plus proche**, un bloc au minimum ; la Saisie **vers le bas**, le
+  reste en réserve (§17). Le sens diffère parce que Journée n'a pas de réserve où
+  ranger le reste — le bloc, lui, est le même. L'ancien pas unique (`rounding`,
+  « Aucun » par défaut) faisait dire deux choses à deux onglets : retiré en v17.
 - **Affichage des durées en `H:mm`** (`Formatter.clock`). La **copie** reste en
   **décimal** (`1.5`) et **Jira** (`1h 30m`) — ne pas confondre.
 

@@ -84,24 +84,24 @@ export class TimeCalculator {
   /**
    * Agrégats d'une journée : total, par type, par tâche.
    *
-   * `rounded` ⇒ chaque **total de tâche** est arrondi au pas configuré (§ réglage
-   * « Arrondi »), puis le total du jour et la ventilation par type sont
+   * `rounded` ⇒ chaque **total de tâche** est arrondi au bloc de son type (les
+   * blocs de la Saisie, `Settings.roundTaskMinutes`), puis le total du jour et la ventilation par type sont
    * recalculés depuis ces valeurs arrondies : ce qu'on lit reste la somme de ce
    * qu'on reporte, ligne par ligne. On arrondit bien la tâche à la journée, et
    * non chaque segment (des segments arrondis séparément dérivent vite).
    */
   totalsForDay(day, rounded = false) {
     const raw = this.#rawTotalsForDay(day);
-    if (!rounded || !this.settings.roundingMinutes()) return raw;
+    if (!rounded) return raw;
 
     const byTask = new Map();
     const byType = { dev: 0, support: 0, autre: 0 };
     let total = 0;
     for (const [taskId, ms] of raw.byTask) {
-      const roundedMs = this.settings.roundMinutes(ms / 60000) * 60000;
+      const type = this.store.taskById(taskId)?.type ?? "autre";
+      const roundedMs = this.settings.roundTaskMinutes(ms / 60000, type) * 60000;
       byTask.set(taskId, roundedMs);
       total += roundedMs;
-      const type = this.store.taskById(taskId)?.type ?? "autre";
       byType[type] = (byType[type] ?? 0) + roundedMs;
     }
     // Le hors tâche n'est jamais arrondi : rien à reporter dans Jira.
