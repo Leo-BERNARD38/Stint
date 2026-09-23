@@ -811,7 +811,7 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(w.days.map((d) => d.declared), [420, 420, 420, 420, 360, 0, 0], "7 h par jour, le vendredi puise dans la réserve");
     eq(w.days.map((d) => d.gap).slice(0, 5), [0, 0, 0, 0, 60], "vendredi : 1 h reste à compléter à la main");
     eq(w.totals.target, 2100, "cible 35 h");
-    eq(w.totals.real, 2050, "réel 34 h 10");
+    eq(w.totals.real, 2040, "pointé 34 h 10, arrondi comme Journée : 34 h (vendredi 4 h 10 → 4 h)");
     eq(w.reserve, [], "10 min de miettes : pas un bloc, la réserve n'en dit rien");
     eq(w.days.slice(5).map((d) => d.visible), [false, false], "week-end vide masqué");
   }
@@ -829,11 +829,12 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(linesOf(w.days[1]), [["tS", 420]], "mardi : le travail du jour d'abord");
     // Mercredi, passé et vide, puise dans la réserve : le bloc entier de B et
     // un quart d'heure de S ; les miettes (A 10, S 5) ne font plus de bloc.
-    eq(linesOf(w.days[2]), [["tS", 15], ["tB", 30]], "mercredi vide : la réserve, par blocs entiers, dans son ordre");
+    // B attend depuis lundi, S depuis mardi : l'ancienneté décide.
+    eq(linesOf(w.days[2]), [["tB", 30], ["tS", 15]], "mercredi vide : la réserve, par blocs entiers, la plus ancienne d'abord");
     eq(w.reserve, [], "restent des miettes (A 10, S 5) : sous le bloc, invisibles");
     const w2 = plan(st, D(22, 18).getTime());
-    eq(w2.reserve, [{ taskId: "tS", min: 15 }, { taskId: "tB", min: 30 }],
-       "réserve au mardi soir : en blocs (S 20 → 0:15, A 10 → rien), par ancienneté");
+    eq(w2.reserve, [{ taskId: "tB", min: 30 }, { taskId: "tS", min: 15 }],
+       "réserve au mardi soir : des blocs entiers, par ancienneté (B lundi, S mardi)");
     ok(w.days.every((d) => d.lines.every((l) => l.min % (l.taskId === "tS" ? 15 : 30) === 0)),
        "toute ligne proposée est un multiple du bloc de son type");
   }
@@ -894,16 +895,21 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(st.timesheet, {}, "clearEntries vide la saisie");
   }
 
-  // --- réserve en blocs : les miettes s'additionnent jusqu'à en faire un ---
+  // --- la Saisie part du pointé ARRONDI de Journée : aucune miette cachée ---
   {
     const st = mk();
-    for (const d of [21, 22, 23]) seg(st, "tA", d, 8, 0, 430); // 7 h 10 de dev par jour
-    const ts = new Timesheet(st, new TimeCalculator(st));
+    seg(st, "tA", 21, 8, 0, 430);  // dev 7 h 10 → 7 h dans Journée
+    seg(st, "tA", 22, 8, 0, 440);  // dev 7 h 20 → 7 h 30 dans Journée
+    seg(st, "tR", 22, 16, 0, 28);  // autre 28 min → 0:30 (le GENERIC du mardi)
+    const calc = new TimeCalculator(st);
+    const ts = new Timesheet(st, calc);
     const at = (d) => ts.week(D(23, 12).getTime(), D(d, 18).getTime());
-    eq(at(21).reserve, [], "lundi soir : 10 min de dev, pas un bloc");
-    eq(at(22).reserve, [], "mardi soir : 20 min, toujours pas");
-    eq(at(23).reserve, [{ taskId: "tA", min: 30 }], "mercredi soir : 30 min, un bloc apparaît");
-    ok(at(23).reserve.every((r) => r.min % ts.stepFor(r.taskId) === 0), "toute réserve est un multiple du bloc");
+    eq(at(21).days[0].real, calc.totalsForDay(D(21, 12), true).total / 60000, "pointé du jour = total arrondi de Journée");
+    eq(at(21).reserve, [], "lundi : 7 h 10 → 7 h, rien en réserve");
+    eq(at(22).days[1].real, 450 + 30, "mardi : 7 h 30 + 0:30, comme Journée");
+    eq(at(22).reserve, [{ taskId: "tA", min: 30 }, { taskId: "tR", min: 30 }],
+       "mardi soir : 1 h en réserve, en blocs visibles — la tâche de 28 min n'a pas disparu");
+    ok(at(22).reserve.every((r) => r.min % ts.stepFor(r.taskId) === 0), "toute réserve est un multiple du bloc");
   }
 
   // --- privilégier une tâche : fixer la durée d'une case ---
@@ -926,16 +932,28 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     const st = mk({ rounding: "1h" }); // l'ancien pas unique (≤ v16) : ignoré
     seg(st, "tA", 21, 8, 0, 70);   // dev 1 h 10 → 1 h (au plus proche, bloc 30)
     seg(st, "tS", 21, 10, 0, 50);  // support 50 → 0:45 (bloc 15)
-    seg(st, "tR", 21, 11, 0, 5);   // autre 5 min → 0:15 (jamais 0 : un bloc au minimum)
+    seg(st, "tR", 21, 11, 0, 8);   // autre 8 min → 0:15 (au plus proche : 8 ≥ 7,5)
     const r = new TimeCalculator(st).totalsForDay(D(21, 12), true);
     eq([r.byTask.get("tA"), r.byTask.get("tS"), r.byTask.get("tR")].map((ms) => ms / 60000), [60, 45, 15],
-       "Journée arrondie : au bloc du type, au plus proche, un bloc au minimum");
+       "Journée arrondie : au bloc du type, au plus proche");
     eq(r.total / 60000, 120, "le total est la somme des tâches arrondies");
     ok(!("rounding" in st.settings.toJSON()), "v16 → v17 : l'ancien pas unique n'est plus réécrit");
     st.updateSettings((s) => { s.timesheet.steps.dev = 60; });
     eq(new TimeCalculator(st).totalsForDay(D(21, 12), true).byTask.get("tA") / 60000, 60,
        "changer le bloc dev dans les réglages change aussi Journée");
     eq(st.settings.roundTaskMinutes(95, "dev"), 120, "…au plus proche (1 h 35 → 2 h en blocs d'1 h)");
+    // Un arrondi LOGIQUE, sans exception : sous la moitié d'un bloc, c'est 0.
+    const s0 = new Settings();
+    eq([14, 15, 44, 45].map((m) => s0.roundTaskMinutes(m, "dev")), [0, 30, 30, 60], "dev : < 15 min → 0, dès 15 → 30");
+    eq([7, 8].map((m) => s0.roundTaskMinutes(m, "support")), [0, 15], "support : < 7,5 min → 0");
+    const s1 = mk();
+    seg(s1, "tA", 21, 8, 0, 420);
+    seg(s1, "tB", 21, 15, 0, 10); // 10 min de dev : 0 dans Journée…
+    const c1 = new TimeCalculator(s1);
+    eq(c1.totalsForDay(D(21, 12), true).byTask.get("tB"), 0, "…0 dans Journée");
+    const w1 = new Timesheet(s1, c1).week(D(21, 12).getTime(), D(21, 18).getTime());
+    ok(!w1.days[0].lines.some((l) => l.taskId === "tB") && !w1.reserve.some((r) => r.taskId === "tB"),
+       "…et 0 dans la Saisie : ni ligne, ni réserve — la même réponse des deux côtés");
   }
 
   // --- lignes : fonctions pures ---

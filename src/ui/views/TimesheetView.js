@@ -131,7 +131,7 @@ export class TimesheetView {
       '<div class="ts-lead-r">' +
         this.#bar(t.target, t.declared, t.done, t.gap, "ts-track", legend) +
         `<div class="cov-lab"><span>${escapeHtml(legend)}</span></div>` +
-        `<div class="cov-lab"><span>réel pointé ${c(t.real)}</span><span>réserve ${c(t.reserve)}</span></div>` +
+        `<div class="cov-lab"><span>pointé arrondi ${c(t.real)}</span><span>réserve ${c(t.reserve)}</span></div>` +
       "</div>";
   }
 
@@ -201,7 +201,7 @@ export class TimesheetView {
       (off ? "" :
         `<span class="ts-dt"><b>${c(d.declared)}</b>/ ${c(d.target)}</span>` +
         this.#bar(d.target, d.declared, d.done, d.future ? 0 : d.gap, "ts-track-day") +
-        `<span class="ts-dreal">${d.future ? " " : "réel " + c(d.real)}</span>`) +
+        `<span class="ts-dreal">${d.future ? " " : "pointé " + c(d.real)}</span>`) +
       "</th>";
   }
 

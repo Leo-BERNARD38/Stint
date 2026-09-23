@@ -369,17 +369,18 @@ export class Settings {
   }
 
   /**
-   * Arrondit une durée (minutes) au bloc du TYPE de la tâche — le même bloc que
-   * l'onglet Saisie (`timesheetStep`), une seule source pour l'arrondi de l'app.
-   * Au plus **proche**, et une durée non nulle ne tombe jamais à 0 : on reporte
-   * au minimum un bloc (5 min tracées ≠ rien de fait). La Saisie, elle, arrondit
-   * vers le bas parce qu'elle a une réserve où ranger le reste ; la vue arrondie
-   * de Journée n'en a pas, elle y perdrait du temps.
+   * L'ARRONDI de l'app, le seul : une durée (minutes) au bloc du TYPE de la
+   * tâche (`timesheetStep`), **au plus proche** — un arrondi « logique », sans
+   * exception. En dev (blocs de 30) : moins de 15 min → 0, dès 15 min → 0:30.
+   * Journée (vue arrondie) et Saisie lisent cette même fonction : la cohérence
+   * entre les deux onglets prime. Un « minimum un bloc » a existé, et la Saisie
+   * arrondissait vers le bas : deux sens pour un même bloc, et une tâche de
+   * 28 min valait 0:30 d'un côté et disparaissait de l'autre.
    */
   roundTaskMinutes(minutes, type) {
+    if (minutes <= 0) return 0;
     const step = this.timesheetStep(type);
-    if (minutes <= 0) return minutes;
-    return Math.max(step, Math.round(minutes / step) * step);
+    return Math.round(minutes / step) * step;
   }
 
   static fromJSON(o) {

@@ -238,7 +238,7 @@
 
     <!-- ---------------------------- Onglet : Saisie (ce qu'on déclare) ----------------------------
          Ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé : 7 h par jour travaillé,
-         par blocs du type de la tâche, arrondis vers le bas. Le reste attend en
+         par blocs du type de la tâche, arrondis comme dans Journée. Le reste attend en
          RÉSERVE, attaché à sa tâche, et comble les jours courts. On coche une
          ligne quand elle est saisie ; un jour touché est figé (§17). -->
     <section class="tab-panel" data-panel="saisie" hidden>
@@ -530,9 +530,10 @@
             <div class="set-row">
               <span class="set-lab">
                 <b>Blocs d'arrondi</b>
-                <span>Chaque tâche s'arrondit au bloc de son type. Dans <strong>Journée</strong>
-                  (interrupteur «&nbsp;Arrondi&nbsp;») : au plus proche, une tâche tracée vaut au moins un bloc.
-                  Dans <strong>Saisie</strong> : vers le bas, le reste part en réserve.</span>
+                <span>Chaque tâche s'arrondit au bloc de son type, <strong>au plus proche</strong>
+                  (dev : moins de 15&nbsp;min → 0, dès 15&nbsp;min → 30). Le même arrondi partout :
+                  <strong>Journée</strong> l'affiche (interrupteur «&nbsp;Arrondi&nbsp;»),
+                  <strong>Saisie</strong> répartit ces durées arrondies.</span>
               </span>
               <span class="set-ctl ts-steps" id="tsSteps"></span>
             </div>
@@ -896,8 +897,9 @@
             À droite de <b>Tâches du jour</b>, l'interrupteur <b>Arrondi</b> bascule la journée sur
             des durées arrondies au <b>bloc du type</b> de chaque tâche — les mêmes blocs que
             l'onglet Saisie (dev 30 min, support et autre 15, dans Réglages › Jira). L'arrondi porte
-            sur le <b>total de chaque tâche sur la journée</b>, au plus proche ; les totaux et les
-            copies Déc./Jira suivent, et une tâche tracée vaut au minimum un bloc.
+            sur le <b>total de chaque tâche sur la journée</b>, au plus proche (en dev, moins de
+            15 min tombe à 0) ; les totaux et les copies Déc./Jira suivent. C'est exactement ce
+            que l'onglet Saisie répartit.
           </p>
         </div>
 
@@ -936,10 +938,10 @@
           </p>
           <ul>
             <li><b>Des blocs par type</b> — dev par 30 min, support et autre par 15 (réglable).
-              L'arrondi se fait <b>vers le bas</b> : ce qui ne remplit pas un bloc n'est pas
-              perdu, il part en <b>réserve</b>.</li>
+              Chaque tâche du jour est arrondie <b>exactement comme dans Journée</b> (au plus
+              proche) : c'est ce pointé arrondi que la Saisie répartit.</li>
             <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche,
-              <b>en blocs</b> (les miettes s'additionnent jusqu'à en faire un).
+              <b>en blocs</b> entiers.
               Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
               bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
               repart de zéro chaque lundi.</li>

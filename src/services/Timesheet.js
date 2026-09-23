@@ -11,12 +11,17 @@ const EPS = 1e-6;
  *   1. chaque jour travaillé vise le « 1d » Jira (`jiraDayMinutes`, 7 h), quels
  *      que soient ses horaires — un vendredi de 4 h 10 se déclare 7 h ; un jour
  *      non travaillé vise 0 ;
- *   2. chaque tâche a une **cagnotte** = sa réserve des jours précédents + son
- *      réel du jour (hors tâche exclu : ce n'est pas du travail) ;
- *   3. on déclare par **blocs du type** (dev 30 min, support et autre 15),
- *      arrondis vers le BAS, dans l'ordre : les tâches du jour d'abord (par
- *      premier segment), puis la réserve (la plus ancienne d'abord), jusqu'à la
- *      cible ;
+ *   2. le pointé du jour est celui de la vue arrondie de JOURNÉE : chaque tâche
+ *      au bloc de son type, au plus proche (`totalsForDay(day, true)`, une tâche
+ *      dev de moins de 15 min y vaut 0). Ce que Journée affiche est exactement
+ *      ce que la Saisie répartit — un premier jet partait des minutes exactes et
+ *      arrondissait vers le bas : une tâche de 28 min (0:30 dans Journée)
+ *      disparaissait alors dans des miettes invisibles de la réserve ;
+ *   3. chaque tâche a une **cagnotte** = sa réserve des jours précédents + son
+ *      pointé arrondi du jour (hors tâche exclu : ce n'est pas du travail) ; on
+ *      en déclare des blocs entiers dans l'ordre : les tâches du jour d'abord
+ *      (par premier segment), puis la réserve (la plus ancienne d'abord),
+ *      jusqu'à la cible ;
  *   4. ce qui n'est pas déclaré reste en **réserve**, attaché à sa tâche —
  *      reporter, pour Jira, c'est logguer MOD-123 un autre jour ;
  *   5. ce qui manque à la cible reste un **vide** que l'utilisateur comble à la
@@ -59,11 +64,12 @@ export class Timesheet {
   }
 
   /**
-   * Réel du jour par tâche, en minutes (flottantes), dans l'ordre du premier
-   * segment de chaque tâche. Le hors tâche n'y est pas (`totalsForDay`).
+   * Pointé du jour par tâche, en minutes, ARRONDI comme dans Journée (bloc du
+   * type, au plus proche ; une tâche arrondie à 0 n'y figure pas), dans l'ordre du premier segment
+   * de chaque tâche. Le hors tâche n'y est pas (`totalsForDay`).
    */
   #realFor(date) {
-    const { byTask } = this.calc.totalsForDay(date);
+    const { byTask } = this.calc.totalsForDay(date, true);
     const first = new Map();
     for (const s of this.store.segmentsForDay(date)) {
       if (!byTask.has(s.taskId)) continue;
@@ -81,8 +87,8 @@ export class Timesheet {
    * avec pour chaque jour :
    *   { key, date, dow, target, real, lines[{taskId,min,done}], declared, done,
    *     gap, over, frozen, future, today, worked, leave, visible }
-   * et `reserve` = [{ taskId, min }], la réserve À CE JOUR, **en blocs entiers**
-   * du type de la tâche (arrondie vers le bas, comme la déclaration).
+   * et `reserve` = [{ taskId, min }], la réserve À CE JOUR, en blocs entiers du
+   * type de la tâche. `real` (jour et total) est le pointé ARRONDI de Journée.
    */
   week(ref, now = Date.now()) {
     const monday = mondayOf(new Date(ref));
@@ -137,10 +143,10 @@ export class Timesheet {
       totals.done += done;
     }
 
-    // La réserve se DIT en blocs, pas en minutes : « MOD-1 0:20 » ne se déclare
-    // pas, « MOD-1 0:30 » si. Le compte, lui, reste exact (`reserve`) : les
-    // miettes de chaque jour s'additionnent, et un bloc apparaît dès qu'elles en
-    // font un. Rien n'est perdu, rien n'est inventé.
+    // La réserve se dit en blocs. Le pointé arrivant arrondi et les retouches
+    // étant ramenées au bloc, elle n'en contient déjà que des entiers ; le
+    // plancher ne fait que garantir l'affichage (une tâche changée de type en
+    // cours de semaine, par exemple).
     const res = [...reserve]
       .map(([taskId, min]) => {
         const step = this.stepFor(taskId);

@@ -129,9 +129,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // sinon la liste grossirait sans fin. Le segment, lui, porte toujours le
   // libellé en clair : retirer un épinglé ne touche pas l'historique.
   offReasons: ["Pause", "Réunion", "Discussion"],
-  // Blocs par type (v15) : l'arrondi de l'app, partout. La Saisie déclare par
-  // blocs arrondis vers le BAS (le reste part en réserve, §17) ; la vue arrondie
-  // de Journée arrondit au plus PROCHE (elle n'a pas de réserve où ranger le reste). La cible du jour n'est PAS ici : c'est le
+  // Blocs par type (v15) : L'ARRONDI de l'app, le même partout — au plus proche
+  // (`Settings.roundTaskMinutes`). Journée l'affiche, la Saisie répartit ces
+  // durées arrondies (§17). La cible du jour n'est PAS ici : c'est le
   // « 1d » des unités Jira (`Settings.jiraDayMinutes`), une seule source.
   timesheet: { steps: { dev: 30, support: 15, autre: 15 } },
 });

@@ -164,8 +164,8 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
     // motifs HORS TÂCHE épinglés (v13) : des raccourcis de saisie, rien d'autre
     // (le segment porte son libellé en clair, cf. §15)
     "offReasons": ["Pause", "Réunion", "Discussion"],
-    // blocs par type (v15) : L'ARRONDI de l'app — vers le bas dans la Saisie
-    // (§17), au plus proche dans la vue arrondie de Journée.
+    // blocs par type (v15) : L'ARRONDI de l'app, le même partout — au plus
+    // proche ; Journée l'affiche, la Saisie répartit ces durées arrondies (§17).
     // La cible du jour n'est PAS ici : c'est le « 1d » de `jira` (v16 retire
     // l'ancien `dayMin`, doublon de la même journée)
     "timesheet": { "steps": { "dev": 30, "support": 15, "autre": 15 } }
@@ -230,12 +230,15 @@ Notes :
   `1d` = durée ouvrée de la base, `1w` = nombre de `workDays` ; sinon valeurs saisies.
   **Le « 1d » a une source unique, `Settings.jiraDayMinutes()`** : la copie Jira
   (`Formatter`) et la cible du jour de l'onglet Saisie (§17) la lisent toutes deux.
-- **Un seul arrondi, par type** : `timesheet.steps` (dev 30, support et autre 15).
-  La vue arrondie de Journée (`totalsForDay(day, true)` → `Settings.roundTaskMinutes`)
-  arrondit **au plus proche**, un bloc au minimum ; la Saisie **vers le bas**, le
-  reste en réserve (§17). Le sens diffère parce que Journée n'a pas de réserve où
-  ranger le reste — le bloc, lui, est le même. L'ancien pas unique (`rounding`,
-  « Aucun » par défaut) faisait dire deux choses à deux onglets : retiré en v17.
+- **Un seul arrondi, par type, le même partout** : `timesheet.steps` (dev 30,
+  support et autre 15), **au plus proche**, sans exception (`Settings.roundTaskMinutes` :
+  en dev, moins de 15 min → 0, dès 15 min → 30). La vue arrondie de Journée
+  (`totalsForDay(day, true)`) l'affiche ; la Saisie **répartit ces mêmes durées**
+  (§17). La cohérence entre les deux onglets est une exigence explicite : deux
+  sens pour un même bloc (Journée au plus proche avec un bloc minimum, Saisie
+  vers le bas) faisaient valoir 0:30 à une tâche de 28 min d'un côté et la
+  faisaient disparaître de l'autre. L'ancien pas unique (`rounding`) est retiré
+  en v17.
 - **Affichage des durées en `H:mm`** (`Formatter.clock`). La **copie** reste en
   **décimal** (`1.5`) et **Jira** (`1h 30m`) — ne pas confondre.
 
@@ -790,18 +793,17 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   (`blocksFor(date)` non vide) vise ce 1d, **quels que soient ses
   horaires** ; un jour non travaillé (congés via Horaires › Par date) vise 0 —
   c'est ainsi que les congés retirent 7 h, sans rien saisir de plus. Chaque tâche
-  a une cagnotte = réserve + réel du jour (hors tâche exclu, `totalsForDay`). On
-  déclare par **blocs du type** (`timesheetStep`), **arrondis vers le bas**,
-  jusqu'à la cible : **les tâches du jour d'abord** (par premier segment), **puis
+  a une cagnotte = réserve + **pointé ARRONDI du jour**, celui de Journée
+  (`totalsForDay(day, true)`, hors tâche exclu) ; on en déclare des blocs
+  entiers jusqu'à la cible : **les tâches du jour d'abord** (par premier segment), **puis
   la réserve** (la plus ancienne d'abord). L'ordre inverse décalait toute la
   semaine d'un cran : le travail d'un jour doit rester déclaré à sa date tant
   qu'il tient, seul le surplus glisse.
 - **La réserve n'est pas stockée, elle se déduit** : cagnotte − déclaré, par
   tâche, attachée à sa tâche (reporter, pour Jira, c'est logguer le même ticket
-  un autre jour). Elle repart de zéro chaque lundi. **Elle se DIT en blocs** du
-  type (arrondie vers le bas, comme la déclaration) : « 0:20 » ne se déclare pas.
-  Le compte interne reste exact — les miettes s'additionnent de jour en jour et
-  un bloc apparaît dès qu'elles en font un (test « réserve en blocs »).
+  un autre jour). Elle repart de zéro chaque lundi. **Elle n'est faite que de
+  blocs entiers** : le pointé arrive arrondi, les retouches sont ramenées au
+  bloc — aucune miette cachée (test « aucune miette cachée »).
   Elle peut être **négative** après un jour figé qui a déclaré plus que le réel
   d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
 - **L'usage réel : une saisie CHAQUE SOIR.** On coche le jour (✓ de l'en-tête) le
