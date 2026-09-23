@@ -242,23 +242,32 @@
          RÉSERVE, attaché à sa tâche, et comble les jours courts. On coche une
          ligne quand elle est saisie ; un jour touché est figé (§17). -->
     <section class="tab-panel" data-panel="saisie" hidden>
-      <div class="stats-top ts-top">
-        <div class="stats-nav">
-          <span class="ts-rule" id="tsRule"></span>
-          <span class="grow"></span>
-          <button id="tsPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Semaine précédente"></button>
-          <button id="tsNext" class="daynav-mini" data-icon="chevron-right" aria-label="Semaine suivante"></button>
-          <button id="tsNow" class="btn-ghost" title="Revenir à la semaine en cours">Cette semaine</button>
+      <!-- Le sélecteur de SEMAINE : la même grammaire que celui du jour (Journée,
+           Segments), à l'échelle de la semaine. Le contrat à droite, comme les
+           horaires du jour : ce qu'il faut déclarer, et en quels blocs. -->
+      <div class="day-head">
+        <div class="daynav">
+          <button id="tsPrev" data-icon="chevron-left" aria-label="Semaine précédente" title="Semaine précédente (←)"></button>
+          <div class="date" id="tsLabel">—</div>
+          <button id="tsNext" data-icon="chevron-right" aria-label="Semaine suivante" title="Semaine suivante (→)"></button>
         </div>
-        <div class="ts-lead" id="tsLead"></div>
+        <button id="tsNow" class="btn-ghost" title="Revenir à la semaine en cours">Aujourd'hui</button>
+        <span class="day-planned" id="tsRule"></span>
       </div>
+
+      <div class="dot-card ts-top" id="tsLead"></div>
 
       <!-- La feuille : une ligne par tâche, une colonne par jour — sur une ligne,
            tout ce qu'on loggue sur un ticket dans la semaine. La dernière colonne
-           est la RÉSERVE de la tâche : le pointé qui n'a pas encore de jour. -->
-      <div class="dot-card ts-sheet">
+           est la RÉSERVE de la tâche : le pointé qui n'a pas encore de jour.
+           `#tsPop` : le popover d'une case ou d'un manque, monté une fois — il
+           survit aux re-rendus de la feuille (cf. le popover de la timeline). -->
+      <div class="dot-card ts-sheet" id="tsSheet">
+        <div class="block-title">
+          Feuille de la semaine
+          <span class="hint">cochez une case une fois saisie dans Jira · cliquez une durée pour la modifier · cliquez un manque pour compléter</span>
+        </div>
         <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
-        <div id="tsAdd"></div>
         <p class="ts-foot" id="tsFoot"></p>
       </div>
     </section>
@@ -949,8 +958,9 @@
               poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne
               <b>Réserve</b> se clique aussi : il ouvre le premier jour à compléter.</li>
             <li><b>Clique une durée</b> pour choisir combien tu déclares de cette tâche ce
-              jour-là (par blocs ; 0 la retire) : si deux tâches débordent, c'est ainsi
-              que tu en privilégies une — l'autre attend en réserve.</li>
+              jour-là : − et + avancent d'un bloc, et <b>Retirer</b> la renvoie en réserve.
+              Si deux tâches débordent, c'est ainsi que tu en privilégies une — l'autre
+              attend en réserve.</li>
             <li><b>Coche</b> une case quand tu l'as saisie dans Jira (le bouton ✓ de l'en-tête
               coche tout le jour). Au survol d'une case : copier la durée au format Jira, ou la
               retirer — elle retourne en réserve.</li>

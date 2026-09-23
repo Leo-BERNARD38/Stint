@@ -255,6 +255,9 @@ export class App {
     return this.timesheet.week(this.timesheetRef);
   }
   shiftTimesheetWeek(n) {
+    // Pas au-delà de la semaine en cours : une semaine à venir ne propose rien
+    // et ne se complète pas (§17) — les flèches du clavier butent comme le bouton.
+    if (n > 0 && this.timesheetWeek().current) return;
     this.timesheetRef = addDays(new Date(this.timesheetRef), 7 * n).getTime();
     this.render();
   }

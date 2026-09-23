@@ -846,8 +846,21 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
 - **Barre de part** saisi (accent) · à saisir (lavis + anneau) · à compléter
   (hachures), sur la cible ; pas de contraste inversé en tête (deux ancres
   seulement, §7) ni de perforation (deux emplois seulement).
-- Le formulaire « compléter » vit sous la feuille, hors du tableau : il n'est pas
-  reconstruit tant que le focus y est (le chrono re-rend toutes les 15 s).
+- **La grammaire des autres onglets** : un sélecteur de **semaine** qui est celui du
+  jour (pilule inversée `.daynav`, « Aujourd'hui » qui recule sur la semaine en
+  cours, le contrat à droite comme les horaires du jour), une tête (chiffre puis
+  barre pleine largeur, comme la couverture des Stats), une feuille **titrée**
+  (`.block-title` + `.hint`) comme toute carte. Pas de semaine à venir : elle ne
+  propose rien et ne se complète pas (`tsNext` éteint, `shiftTimesheetWeek` bute).
+- **Compléter / modifier = un popover ancré** à ce qu'on a cliqué (manque, durée,
+  réserve), la carte `.fill-pop` de la timeline (feuille basse sur téléphone).
+  Un formulaire sous la feuille l'a précédé : on cliquait en haut, on répondait en
+  bas, souvent hors de l'écran. Monté une fois dans `#tsSheet`, il survit aux
+  re-rendus (le chrono re-rend toutes les 15 s). **Sa fermeture ne re-rend pas**
+  la feuille : fermé par un `pointerdown` extérieur, un tableau reconstruit sous
+  le pointeur avalerait le clic qui ouvre la case suivante. La durée s'y dit en
+  `H:mm` avec − / + d'un bloc (flèches ↑ ↓ aussi) ; une frappe libre passe par
+  `parseDuration` (`utils/datetime.js` : « 1:30 », « 1h30 », « 90 » = minutes).
 - ← → changent de **semaine** sur cet onglet ; le sélecteur de jour y est masqué.
 - Guide : `g-6`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
   changements d'heure).

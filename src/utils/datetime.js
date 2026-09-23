@@ -158,3 +158,19 @@ export function formatDateRange(fromKey, toKey) {
       : formatDateShort(fromKey);
   return `du ${left} au ${formatDateShort(toKey)}`;
 }
+
+/**
+ * Une durée tapée : « 1:30 », « 1h30 », « 1h », « 45m », « 1,5h » — ou un
+ * nombre nu, lu en MINUTES (« 90 »). `null` si rien ne se lit.
+ */
+export function parseDuration(text) {
+  const s = String(text).trim().toLowerCase().replace(",", ".").replace(/\s+/g, "");
+  if (!s) return null;
+  let m = s.match(/^(\d+):(\d{2})$/);
+  if (m) return +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
+  m = s.match(/^(\d+(?:\.\d+)?)h(?:(\d{1,2})(?:m|min)?)?$/);
+  if (m) return m[2] && +m[2] >= 60 ? null : Math.round(+m[1] * 60) + (m[2] ? +m[2] : 0);
+  m = s.match(/^(\d+)(?:m|min)?$/);
+  if (m) return +m[1];
+  return null;
+}

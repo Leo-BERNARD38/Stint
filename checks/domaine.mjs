@@ -14,7 +14,7 @@ import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
 import { Timesheet } from "../src/services/Timesheet.js";
 import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine, setLine } from "../src/models/TimesheetLines.js";
-import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput } from "../src/utils/datetime.js";
+import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput, parseDuration } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
 function ok(cond, label) {
@@ -1024,6 +1024,22 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(ts.week(new Date(2026, 2, 29, 12).getTime(), SUN).days.map((d) => d.key).at(-1), "2026-03-29",
        "semaine du 29 mars (23 h)");
   }
+}
+
+/* ------------------------------------------------------------------ §16 */
+section("durée tapée dans le popover de la Saisie (parseDuration)");
+{
+  eq(parseDuration("1:30"), 90, "H:mm");
+  eq(parseDuration("0:45"), 45, "0:mm");
+  eq(parseDuration("1h30"), 90, "1h30");
+  eq(parseDuration("2 h"), 120, "2 h (espaces)");
+  eq(parseDuration("1,5h"), 90, "1,5h (virgule décimale)");
+  eq(parseDuration("45m"), 45, "45m");
+  eq(parseDuration("90"), 90, "nombre nu = minutes");
+  eq(parseDuration("1:75"), null, "minutes ≥ 60 : illisible");
+  eq(parseDuration("1:5"), null, "H:m sans zéro : illisible (ambigu)");
+  eq(parseDuration(""), null, "vide");
+  eq(parseDuration("abc"), null, "texte");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

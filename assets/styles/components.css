@@ -1690,43 +1690,55 @@ body.booting #dayLabel {
 }
 
 /* ============================ Onglet Saisie ============================
-   Ce qu'on DÉCLARE, pas ce qu'on pointe (§17). Trois étages : la tête de
-   semaine, une carte par jour, la réserve. La tête reprend la carte des Stats
-   mais PAS son contraste inversé : il n'y a que deux ancres inversées dans
+   Ce qu'on DÉCLARE, pas ce qu'on pointe (§17). Trois étages, dans la grammaire
+   des autres onglets : le sélecteur de semaine (celui du jour, à l'échelle de
+   la semaine), une tête (le chiffre, puis la barre pleine largeur, comme la
+   couverture des Stats), puis la feuille, titrée comme toute carte. La tête
+   ne prend PAS le contraste inversé : il n'y a que deux ancres inversées dans
    l'app, et c'est ce qui leur garde leur sens. */
-.ts-rule { font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint);
-  letter-spacing: .03em; padding-left: var(--sp-2); }
-.ts-lead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: var(--sp-4);
-  align-items: center; padding: var(--sp-1) var(--sp-2) var(--sp-2); }
-@media (max-width: 700px) { .ts-lead { grid-template-columns: 1fr; } }
-.ts-lead-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ts-lead .k { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap;
-  font-family: var(--font-data); font-size: 11.5px; letter-spacing: .17em;
+.ts-top { padding: var(--sp-4) var(--sp-5) var(--sp-4); margin-bottom: var(--sp-4);
+  display: flex; flex-direction: column; gap: var(--sp-3); }
+.ts-lead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-4) var(--sp-6);
+  flex-wrap: wrap; }
+.ts-lead-l { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ts-lead .k { font-family: var(--font-data); font-size: 10px; letter-spacing: .15em;
   text-transform: uppercase; color: var(--text-soft); }
-.ts-lead .k em { font-style: normal; font-size: 10px; letter-spacing: .08em; text-transform: none; }
 .ts-lead .v { font-family: var(--font-display); font-size: clamp(40px, 7vw, 64px); line-height: 1.02;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ts-lead .v small { font-family: var(--font-data); font-size: 14px; color: var(--text-soft);
   margin-left: 10px; letter-spacing: .02em; }
-.ts-calc { font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint); letter-spacing: .03em; }
-.ts-lead-r { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+/* Les deux autres grandeurs, au format des totaux : capitales, puis chiffre. */
+.ts-kpis { display: flex; gap: var(--sp-5); margin: 0 0 6px; }
+.ts-kpis > div { display: flex; flex-direction: column; gap: 4px; }
+.ts-kpis dt { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--text-faint); }
+.ts-kpis dd { margin: 0; font-family: var(--font-display); font-size: 23px; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.ts-cover { margin-top: 0; padding: 0; }
 .ts-track { height: 12px; }
 /* Déclaré mais pas encore saisi : le lavis — de l'acquis qui attend son geste. */
 .cov-track i.ts-pending { background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent); margin-left: 2px; }
 .ts-track i:first-child, .ts-track-day i:first-child { margin-left: 0; }
+/* La semaine en cours : « Aujourd'hui » recule (comme `#dayToday`), et la
+   semaine suivante n'existe pas encore. */
+#tsNow.is-today { color: var(--text-soft); background: transparent; }
+.daynav button:disabled { opacity: .38; pointer-events: none; }
 
 /* ---------- La feuille : tâches × jours ----------
    Une ligne par tâche, une colonne par jour, la réserve en dernière colonne.
    Pas de filet structurel (design flat) : des pointillés entre lignes, comme
    partout, et l'espace pour isoler la ligne « À compléter ». */
-.ts-sheet { padding: var(--sp-3); }
+.ts-sheet { position: relative; }
+.ts-sheet .block-title { margin-bottom: var(--sp-4); }
 .ts-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px; }
 .ts-table th, .ts-table td { padding: 6px 8px; text-align: left; vertical-align: middle; font-weight: 400; }
-.ts-table thead th { vertical-align: top; padding-bottom: 10px; }
+.ts-table thead th { vertical-align: top; padding-bottom: 12px; }
 /* La colonne des tâches reste à l'écran quand la feuille défile (téléphone). */
 .ts-tk { width: 28%; min-width: 170px; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+/* Les deux en-têtes en capitales (Tâche, Réserve) sur la ligne des jours. */
 thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--text-faint); }
+thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 .ts-dcol { min-width: 104px; }
 .ts-dh { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 26px; }
 .ts-dn { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--text); white-space: nowrap; }
@@ -1737,9 +1749,12 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
 .ts-dact .ts-all.on { background: var(--accent-wash); color: var(--accent); }
 .ts-dsub { display: block; min-height: 14px; font-family: var(--font-data); font-size: 9.5px;
   letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+/* Aujourd'hui : le repère « maintenant » de la feuille, au tampon (N1). */
+.ts-dsub .ts-now { color: var(--stop-ink); }
 .ts-dt { display: block; margin-top: 2px; font-family: var(--font-data); font-size: 11px; color: var(--text-soft);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ts-dt b { font-family: var(--font-display); font-weight: 400; font-size: 20px; color: var(--text); margin-right: 3px; }
+.ts-dt-idle { margin-top: 6px; color: var(--text-faint); }
 .ts-track-day { margin: 6px 0 4px; }
 .ts-dreal { display: block; font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -1756,20 +1771,22 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
    droite : c'est la colonne qu'on recopie dans Jira, elle ne bouge pas. La
    coche colle à SA durée : à gauche de la case, elle se lisait comme celle de
    la durée du jour précédent. */
-.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 40px; align-items: center; gap: 5px; }
+.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 52px; align-items: center; gap: 4px; }
 .ts-c input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
 .ts-acts { display: inline-flex; justify-self: start; }
 .ts-acts .mini-btn { padding: 3px; background: transparent; color: var(--text-soft); }
 .ts-acts .mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
 /* Révélées au survol, mais à leur place : rien ne bouge. */
 @media (hover: hover) { .ts-cell:not(:hover):not(:focus-within) .ts-acts { visibility: hidden; } }
-/* La durée se clique pour être modifiée : un bouton qui garde l'allure du
-   chiffre — le soulignement pointillé au survol dit qu'on peut y toucher. */
-.ts-dur { border: none; background: none; padding: 2px 0; cursor: pointer;
+/* La durée se clique pour être modifiée : une pilule qui garde l'allure du
+   chiffre et ne se teinte qu'au survol — comme la réserve, sa voisine. Ouverte,
+   elle prend le lavis + anneau de la sélection. */
+.ts-dur { border: none; background: transparent; padding: 3px 6px; cursor: pointer; justify-self: end;
   font-family: var(--font-data); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
-  text-align: right; color: var(--text); border-radius: var(--radius-xs); }
-.ts-dur:hover { text-decoration: underline dotted; text-underline-offset: 4px; }
+  text-align: right; color: var(--text); border-radius: var(--radius-pill); }
+.ts-dur:hover { background: var(--ctl-hover); }
 .ts-cell.done .ts-dur { color: var(--text-soft); font-weight: 500; }
+.ts-cell.is-open .ts-dur, .ts-res.is-open { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 .ts-rcol, .ts-rcell { width: 84px; text-align: right; }
 .ts-res { border: none; padding: 4px 10px; border-radius: var(--radius-pill); cursor: pointer;
@@ -1788,24 +1805,29 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
 .ts-gap.is-open { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .ts-more { padding: 5px; background: transparent; color: var(--text-soft); }
 .ts-more.is-open { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
-
-.ts-add { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin-top: var(--sp-3);
-  padding: var(--sp-3); border-radius: var(--radius-sm); background: var(--surface-2); }
-.ts-add-t { flex-basis: 100%; font-family: var(--font-data); font-size: 10.5px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--text-soft); }
-.ts-add .select-wrap { flex: 1 1 240px; }
-.ts-add .select-wrap select { width: 100%; }
-.ts-add-row { display: inline-flex; align-items: center; gap: 6px; }
-.ts-add-row .tinput { width: 76px; }
-.ts-add-task { display: inline-flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0;
-  font-size: 14px; font-weight: 600; color: var(--text); }
-.ts-add-task .o-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 .ts-foot { margin: var(--sp-3) 0 0; padding: 0 var(--sp-2); font-family: var(--font-data); font-size: 10.5px;
   color: var(--text-faint); line-height: 1.6; }
 @media (max-width: 640px) {
   .ts-tk { min-width: 128px; }
   .ts-name { max-width: 150px; }
 }
+
+/* ---------- Popover d'une case / d'un manque ----------
+   La carte flottante de la timeline (`.fill-pop` : surface, rayon, ombre,
+   tête, feuille basse sur téléphone), ancrée à ce qu'on a cliqué. */
+.ts-pop { width: 320px; }
+@media (max-width: 760px) { .ts-pop { width: 100%; } } /* feuille basse, comme `.fill-pop` */
+.ts-pop-body { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ts-pop .select-wrap, .ts-pop .select-wrap select { width: 100%; }
+.ts-pop-task { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; }
+.ts-pop-task span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ts-pop-task .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.ts-step-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.ts-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.ts-stepper .mini-btn.icon-only { width: 34px; height: 34px; justify-content: center; }
+.ts-stepper .tinput { width: 78px; min-width: 0; text-align: center; font-size: 15px; font-weight: 600; }
+.ts-pop-acts { display: flex; justify-content: flex-end; gap: var(--sp-2); }
+.ts-pop-acts [data-act="remove"] { margin-right: auto; }
 
 /* Réglages : un sélecteur de bloc par type. */
 .ts-steps { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); justify-content: flex-end; }
