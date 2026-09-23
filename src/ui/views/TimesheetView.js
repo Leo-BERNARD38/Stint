@@ -76,6 +76,16 @@ export class TimesheetView {
           break;
         }
         case "task": this.app.openEditTask(b.dataset.task); break;
+        case "copy": {
+          // Le retour de `app.copy` (« ✓ Copié ») élargirait le bouton, donc la
+          // colonne, et toute la feuille bougerait sous le curseur. Ici le
+          // bouton garde son texte et passe à l'aplat un instant ; le toast dit
+          // ce qui a été copié.
+          this.app.copy(b.dataset.value);
+          b.classList.add("copied");
+          setTimeout(() => b.classList.remove("copied"), 1100);
+          break;
+        }
         case "recalc": this.app.recalcTimesheetDay(key); break;
         case "open": this.#openPop(b, key); break;
         case "edit": this.#openPop(b, key, b.dataset.task, "edit"); break;
@@ -263,11 +273,13 @@ export class TimesheetView {
       if (!l) return '<td class="ts-cell is-empty"></td>';
       const key = escapeHtml(d.key);
       const open = this.adding?.mode === "edit" && this.adding.key === d.key && this.adding.taskId === taskId;
-      // Une case, c'est une coche et une durée. Tout le reste — copier en
-      // décimal ou au format Jira, retirer — est dans le popover que la durée
-      // ouvre, en vrais boutons : deux icônes de 13 px révélées au survol, sur
-      // cinq colonnes, faisaient des cibles minuscules et un style à part.
+      // Une case : la copie Jira (révélée au survol), la coche, la durée. La
+      // saisie du soir se fait en DEUX clics — copier ici, puis ouvrir le lien
+      // au bout de la ligne. Le reste (décimal, durée, retirer) est dans le
+      // popover que la durée ouvre.
+      const jira = escapeHtml(formatter.jira(l.min));
       return `<td class="ts-cell${l.done ? " done" : ""}${open ? " is-open" : ""}"><span class="ts-c">` +
+        `<button class="mini-btn ts-copy" data-act="copy" data-value="${jira}" title="Copier « ${jira} »" aria-label="Copier ${jira} (${name}, ${DAY_LONG[d.dow - 1]})">${icon("copy", { size: 14 })} Jira</button>` +
         `<input type="checkbox" data-ts-check="${id}" data-day="${key}"${l.done ? " checked" : ""} aria-label="${name}, ${DAY_LONG[d.dow - 1]} : saisi dans Jira">` +
         `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="Copier, modifier ou retirer" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)} — copier, modifier">${formatter.clock(l.min)}</button>` +
         "</span></td>";

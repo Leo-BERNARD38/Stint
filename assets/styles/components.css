@@ -1734,12 +1734,13 @@ body.booting #dayLabel {
 .ts-table th, .ts-table td { padding: 6px 8px; text-align: left; vertical-align: middle; font-weight: 400; }
 .ts-table thead th { vertical-align: top; padding-bottom: 12px; }
 /* La colonne des tâches reste à l'écran quand la feuille défile (téléphone). */
-.ts-tk { width: 28%; min-width: 170px; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.ts-tk { width: 24%; min-width: 170px; position: sticky; left: 0; z-index: 1; background: var(--surface); }
 /* Les deux en-têtes en capitales (Tâche, Réserve) sur la ligne des jours. */
 thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--text-faint); }
 thead .ts-tk, thead .ts-rcol { line-height: 26px; }
-.ts-dcol { min-width: 104px; }
+/* Assez large pour la copie, la coche et la durée côte à côte. */
+.ts-dcol { min-width: 138px; }
 .ts-dh { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 26px; }
 .ts-dn { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--text); white-space: nowrap; }
 .ts-dcol.is-off .ts-dn { color: var(--text-soft); }
@@ -1768,19 +1769,21 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 .ts-nt { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ts-name .o-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 .ts-tacts { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
-/* Au repos, comme dans Journée : sans fond, et cachées sur un appareil à
-   survol. `visibility` et non `display` : elles gardent leur place, donc le nom
-   ne se raccourcit pas sous le curseur. */
-.ts-tacts .mini-btn { background: transparent; }
-.ts-tacts .mini-btn:hover { background: var(--ctl-hover); }
+/* Comme dans Journée : des `mini-btn` à fond teinté, cachés au repos sur un
+   appareil à survol. `visibility` et non `display` : ils gardent leur place,
+   donc le nom ne se raccourcit pas sous le curseur. */
 @media (hover: hover) {
   .ts-table tbody tr:not(:hover):not(:focus-within) .ts-tacts { visibility: hidden; }
 }
-/* Une case : la coche, puis la durée — dernière piste, collée à droite :
-   c'est la colonne qu'on recopie dans Jira, elle ne bouge pas. La coche colle
-   à SA durée : à gauche de la case, elle se lisait comme celle de la durée du
-   jour précédent. Copier et retirer vivent dans le popover de la case. */
-.ts-c { display: grid; grid-template-columns: 15px 52px; justify-content: end; align-items: center; gap: 4px; }
+/* Une case : la copie Jira, la coche, puis la durée — dernière piste, collée
+   à droite : c'est la colonne qu'on recopie dans Jira, elle ne bouge pas. La
+   coche colle à SA durée : à gauche de la case, elle se lisait comme celle de
+   la durée du jour précédent. La copie est le `mini-btn` de Journée, révélé
+   au survol de la case À SA PLACE (`visibility`) : rien ne bouge, et le
+   « ✓ Copié » qui la remplace un instant grandit vers la gauche. */
+.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 52px; align-items: center; gap: 4px; }
+.ts-copy { justify-self: end; padding: 5px 9px; gap: 4px; white-space: nowrap; }
+@media (hover: hover) { .ts-cell:not(:hover):not(:focus-within) .ts-copy { visibility: hidden; } }
 .ts-c input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
 /* La durée se clique pour être modifiée : une pilule qui garde l'allure du
    chiffre et ne se teinte qu'au survol — comme la réserve, sa voisine. Ouverte,

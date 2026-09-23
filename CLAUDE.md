@@ -841,11 +841,13 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   réserve en dernière colonne. Les cartes par jour ont été essayées : à cinq de
   front, le nom — qui porte la clé Jira, la donnée à recopier — tombait en
   « MOD-… ». La colonne des tâches est collante (téléphone : la feuille défile).
-  Une case, c'est **une coche et une durée**, rien d'autre (la coche colle à **sa**
-  durée, dernière piste). Copier (décimal / Jira), ouvrir le lien et retirer vivent
-  dans le **popover de la case**, en vrais boutons (`mini-btn`, ceux de Journée) :
-  deux icônes de 13 px révélées au survol sur cinq colonnes faisaient des cibles
-  minuscules et un style à part. Les actions de la **tâche** (lien, éditer) sont
+  **La saisie du soir se fait en deux clics** : « ⧉ Jira » dans la case (copie la
+  durée au format Jira), puis ↗ au bout de la ligne (le lien de la tâche). Une case
+  = ce bouton Jira (révélé au survol **à sa place**, `visibility`), la coche, la
+  durée (la coche colle à **sa** durée, dernière piste). Le décimal, la durée et
+  « Retirer » vivent dans le **popover de la case**. Tout est en `mini-btn` à fond
+  teinté, ceux de Journée : deux icônes nues de 13 px par case faisaient des
+  cibles minuscules et un style à part. Les actions de la **tâche** (lien, éditer) sont
   celles des lignes de Journée, au bout de la colonne des noms, révélées au survol
   en `visibility` (le nom ne se raccourcit pas sous le curseur) ; masquées sur
   téléphone, où la colonne collante doit laisser voir les jours.
