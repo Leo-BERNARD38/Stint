@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
          DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX,
          SEGMENT_MERGE_GAP_MAX_MIN, SEGMENT_MIN_MAX_MIN,
          OFF_REASON_MAX, OFF_LABEL_MAX,
-         TIMESHEET_STEPS, TIMESHEET_DAY_MIN, TIMESHEET_DAY_MAX } from "../core/constants.js";
+         TIMESHEET_STEPS } from "../core/constants.js";
 import { isoDow, fmtDateInput, parseDateInput, toMin,
          countDays, eachDateKey } from "../utils/datetime.js";
 
@@ -45,13 +45,6 @@ export function clampMinSegment(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.minMin;
   return Math.min(SEGMENT_MIN_MAX_MIN, Math.max(0, n));
-}
-
-/** Cible journalière de la saisie, en minutes entières dans [60, 720]. */
-export function clampTimesheetDay(value) {
-  const n = Math.round(Number(value));
-  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.timesheet.dayMin;
-  return Math.min(TIMESHEET_DAY_MAX, Math.max(TIMESHEET_DAY_MIN, n));
 }
 
 /** Bloc de saisie d'un type : une valeur de `TIMESHEET_STEPS`, sinon le défaut du type. */
@@ -279,7 +272,6 @@ export class Settings {
     this.offReasons = cloneOffReasons(data.offReasons ?? d.offReasons);
     const ts = data.timesheet ?? {};
     this.timesheet = {
-      dayMin: clampTimesheetDay(ts.dayMin ?? d.timesheet.dayMin),
       steps: {
         dev: normalizeTimesheetStep(ts.steps?.dev, "dev"),
         support: normalizeTimesheetStep(ts.steps?.support, "support"),
@@ -546,6 +538,21 @@ export class Settings {
     return groups;
   }
 
+  /**
+   * Le « 1d » Jira, en minutes : la durée ouvrée de la base en mode auto, la
+   * valeur saisie sinon. SOURCE UNIQUE — les unités Jira de la copie
+   * (`Formatter`) et la cible du jour de l'onglet Saisie la lisent toutes deux :
+   * deux réglages pour une même journée finiraient par diverger.
+   */
+  jiraDayMinutes() {
+    const j = this.jira;
+    if (j.auto) {
+      const m = this.scheduleMinutesPerDay();
+      return m > 0 ? m : (j.hoursPerDay || 8) * 60;
+    }
+    return j.hoursPerDay * 60;
+  }
+
   /** Durée ouvrée d'une journée type (base), en minutes — sert au Jira auto. */
   scheduleMinutesPerDay() {
     return this.baseBlocks().reduce((sum, [a, b]) => sum + (toMin(b) - toMin(a)), 0);
@@ -575,7 +582,7 @@ export class Settings {
       },
       segments: { ...this.segments },
       offReasons: [...this.offReasons],
-      timesheet: { dayMin: this.timesheet.dayMin, steps: { ...this.timesheet.steps } },
+      timesheet: { steps: { ...this.timesheet.steps } },
     };
   }
 }

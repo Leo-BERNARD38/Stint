@@ -761,7 +761,8 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     const st = new Store(fakePersistence());
     st.hydrate({ version: 14, settings: {
       workDays: [1, 2, 3, 4, 5], arrival: "07:00", departure: "20:00", lunch: false,
-      segments: { minMin: 0, mergeGapMin: 0 }, ...extra,
+      segments: { minMin: 0, mergeGapMin: 0 },
+      jira: { auto: false, hoursPerDay: 7, daysPerWeek: 5 }, ...extra,
     }, tasks: [
       { id: "tA", name: "MOD-1", type: "dev", color: "#000" },
       { id: "tB", name: "MOD-2", type: "dev", color: "#000" },
@@ -780,8 +781,22 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
 
   // --- réglages : défauts, bornes, migration v14 ---
   const st0 = mk();
-  eq(st0.settings.timesheet, { dayMin: 420, steps: { dev: 30, support: 15, autre: 15 } }, "v14 → défauts de la saisie");
-  eq(new Settings({ timesheet: { dayMin: 5 } }).timesheet.dayMin, 60, "cible bornée à 1 h");
+  eq(st0.settings.timesheet, { steps: { dev: 30, support: 15, autre: 15 } }, "v14 → défauts de la saisie");
+  eq(new Settings({ timesheet: { dayMin: 480, steps: {} } }).toJSON().timesheet, { steps: { dev: 30, support: 15, autre: 15 } },
+     "v15 → v16 : l'ancien dayMin n'est plus réécrit");
+
+  // --- une seule journée : la cible de la saisie EST le « 1d » Jira ---
+  {
+    const manual = new Settings({ jira: { auto: false, hoursPerDay: 7, daysPerWeek: 5 } });
+    eq(manual.jiraDayMinutes(), 420, "manuel : 1d = 7 h");
+    eq(new Formatter({ settings: manual }).effHoursPerDay(), 7, "le Formatter lit la même source");
+    eq(new Formatter({ settings: manual }).jira(420), "1d", "…donc 7 h déclarées se copient « 1d », comme dans Jira");
+    const auto = new Settings(); // auto : la base 08:30–17:00 moins 1 h de pause
+    eq(auto.jiraDayMinutes(), 450, "auto : 1d = la journée de base (7 h 30)");
+    const st = new Store(fakePersistence());
+    st.hydrate({ version: 15, settings: { timesheet: { dayMin: 480 } }, tasks: [], segments: [], meta: {} });
+    eq(new Timesheet(st, new TimeCalculator(st)).dayTarget(), 450, "cible de la saisie = 1d, l'ancien dayMin est ignoré");
+  }
   eq(new Settings({ timesheet: { steps: { dev: 7, support: 60 } } }).timesheet.steps,
      { dev: 30, support: 60, autre: 15 }, "bloc hors liste → défaut du type");
   eq(st0.version, SCHEMA_VERSION, "version réécrite au format courant");
@@ -931,14 +946,6 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     const tu = t2.week(D(21, 12).getTime(), D(22, 18).getTime());
     eq(linesOf(tu.days[1]), [["tA", 420]], "mardi de 8 h : 7 h, l'heure d'avance est reprise");
     eq(tu.reserve, [], "réserve à zéro");
-  }
-
-  // --- copie Jira d'un worklog : jamais en jours ---
-  {
-    const f = new Formatter({ settings: new Settings({ jira: { auto: false, hoursPerDay: 7, daysPerWeek: 5 } }) });
-    eq(f.jira(420), "1d", "jira() convertit 7 h en « 1d » avec une journée de 7 h…");
-    eq(f.jiraHours(420), "7h", "…jiraHours() non : Jira aurait lu 1d avec SA journée");
-    eq([f.jiraHours(90), f.jiraHours(45), f.jiraHours(0)], ["1h 30m", "45m", "0m"], "heures et minutes");
   }
 
   // --- changement d'heure : la semaine a toujours 7 jours distincts ---

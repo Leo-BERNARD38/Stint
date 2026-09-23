@@ -8,8 +8,9 @@ const EPS = 1e-6;
  * SAISIE LISSÉE (§17) : passer de ce qu'on a POINTÉ à ce qu'on DÉCLARE dans Jira.
  *
  * La règle, jour après jour, du lundi au dimanche :
- *   1. chaque jour travaillé vise `dayMin` (7 h), quels que soient ses horaires
- *      — un vendredi de 4 h 10 se déclare 7 h ; un jour non travaillé vise 0 ;
+ *   1. chaque jour travaillé vise le « 1d » Jira (`jiraDayMinutes`, 7 h), quels
+ *      que soient ses horaires — un vendredi de 4 h 10 se déclare 7 h ; un jour
+ *      non travaillé vise 0 ;
  *   2. chaque tâche a une **cagnotte** = sa réserve des jours précédents + son
  *      réel du jour (hors tâche exclu : ce n'est pas du travail) ;
  *   3. on déclare par **blocs du type** (dev 30 min, support et autre 15),
@@ -47,9 +48,14 @@ export class Timesheet {
     return this.settings.timesheetStep(TASK_TYPES.includes(type) ? type : "autre");
   }
 
-  /** Cible d'un jour, en minutes : `dayMin` s'il est travaillé, 0 sinon. */
+  /** Cible d'un jour travaillé, en minutes : le « 1d » Jira (réglages › Jira). */
+  dayTarget() {
+    return Math.round(this.settings.jiraDayMinutes());
+  }
+
+  /** Cible d'un jour, en minutes : le « 1d » Jira s'il est travaillé, 0 sinon. */
   targetFor(date) {
-    return this.settings.blocksFor(date).length > 0 ? this.settings.timesheet.dayMin : 0;
+    return this.settings.blocksFor(date).length > 0 ? this.dayTarget() : 0;
   }
 
   /**

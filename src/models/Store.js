@@ -111,6 +111,10 @@ export class Store extends EventEmitter {
    * v14 → v15 : saisie lissée — `settings.timesheet` (cible du jour, blocs par
    * type) et `timesheet` (jours figés). Additif ; `hydrate` écarte les lignes
    * dont la tâche manque.
+   * v15 → v16 : `settings.timesheet.dayMin` est retiré — la cible du jour de la
+   * saisie est désormais le « 1d » des unités Jira (`Settings.jiraDayMinutes`),
+   * une seule source pour une même journée. Rien à transformer : `Settings`
+   * ignore le champ, `toJSON` ne le réécrit plus.
    */
   #migrate(raw) {
     if (!raw) return {};

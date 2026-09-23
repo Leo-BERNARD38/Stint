@@ -514,7 +514,9 @@
               <span class="set-ctl"><input type="checkbox" id="setJiraAuto" class="sw"></span>
             </label>
             <div class="set-row" id="jiraManual">
-              <span class="set-lab"><b>Unités Jira</b><span>Heures par jour (1d) et jours par semaine (1w).</span></span>
+              <span class="set-lab"><b>Unités Jira</b><span>Heures par jour (1d) et jours par semaine (1w).
+                Le 1d est aussi ce qu'on déclare pour chaque jour travaillé dans l'onglet
+                <strong>Saisie</strong> — réglez-le comme dans votre Jira (7&nbsp;h pour 35&nbsp;h / semaine).</span></span>
               <span class="set-ctl">
                 <input type="number" id="setHpd" class="tinput" min="1" max="24" step="0.5" aria-label="Heures par jour">
                 <span class="prec-sep">h/j</span>
@@ -543,18 +545,8 @@
                 </span>
               </span>
             </div>
-            <!-- Saisie lissée (onglet Saisie) : ce qu'on déclare, pas ce qu'on pointe. -->
-            <div class="set-row">
-              <span class="set-lab">
-                <b>Cible de saisie par jour</b>
-                <span id="tsTargetInfo">Ce qu'on déclare pour <strong>chaque jour travaillé</strong>,
-                  quels que soient ses horaires. Un jour non travaillé (congés) vaut 0.</span>
-              </span>
-              <span class="set-ctl">
-                <input type="number" id="setTsDay" class="tinput" min="1" max="12" step="0.25" aria-label="Cible de saisie par jour, en heures">
-                <span class="prec-sep">h/j</span>
-              </span>
-            </div>
+            <!-- Saisie lissée (onglet Saisie) : la cible du jour est le « 1d » ci-dessus,
+                 pas un réglage de plus — une seule journée, une seule source. -->
             <div class="set-row">
               <span class="set-lab">
                 <b>Blocs de saisie</b>
@@ -955,7 +947,8 @@
           <h3>Onglet Saisie — ce que tu déclares dans Jira</h3>
           <p>
             Tu <b>pointes</b> ce que tu fais vraiment ; tu <b>déclares</b> une journée lissée :
-            <b>7 h par jour travaillé</b> (réglable), même un vendredi court. Un jour
+            <b>1d Jira par jour travaillé</b> (7 h pour 35 h / semaine : Réglages › Jira),
+            même un vendredi court. Un jour
             <b>non travaillé</b> dans tes horaires (congés) vaut 0 : la cible de la semaine
             descend de 7 h. Le hors tâche n'est jamais déclaré.
           </p>

@@ -102,9 +102,8 @@ export class TimesheetView {
 
   /* ------------------------------ tête ------------------------------ */
   #rule() {
-    const s = this.app.store.settings;
-    const st = s.timesheet.steps;
-    return `${this.app.formatter.clock(s.timesheet.dayMin)} par jour · blocs dev ${st.dev} min · support ${st.support} min · autre ${st.autre} min`;
+    const st = this.app.store.settings.timesheet.steps;
+    return `${this.app.formatter.clock(this.app.timesheet.dayTarget())} par jour (1d Jira) · blocs dev ${st.dev} min · support ${st.support} min · autre ${st.autre} min`;
   }
 
   #renderLead(week) {
@@ -121,7 +120,7 @@ export class TimesheetView {
         `<span class="k">${escapeHtml(week.label)}<em>${escapeHtml(week.sub)}</em></span>` +
         `<span class="v">${c(t.declared)}<small>/ ${c(t.target)}</small></span>` +
         // La cible ne vient PAS des horaires : jours travaillés × cible du jour.
-        `<span class="ts-calc">${week.workedDays} j × ${c(this.app.store.settings.timesheet.dayMin)}</span>` +
+        `<span class="ts-calc">${week.workedDays} j × ${c(this.app.timesheet.dayTarget())}</span>` +
       "</div>" +
       '<div class="ts-lead-r">' +
         this.#bar(t.target, t.declared, t.done, t.gap, "ts-track", legend) +
@@ -209,7 +208,7 @@ export class TimesheetView {
       const l = d.lines.find((x) => x.taskId === taskId);
       if (!l) return '<td class="ts-cell is-empty"></td>';
       const key = escapeHtml(d.key);
-      const jira = escapeHtml(formatter.jiraHours(l.min));
+      const jira = escapeHtml(formatter.jira(l.min));
       return `<td class="ts-cell${l.done ? " done" : ""}"><span class="ts-c">` +
         '<span class="ts-acts">' +
           `<button class="mini-btn icon-only ts-rm" data-act="rm" data-day="${key}" data-task="${id}" title="Retirer (retourne en réserve)" aria-label="Retirer">${icon("x", { size: 13 })}</button>` +

@@ -36,9 +36,7 @@ export class Formatter {
    * saisies. Évite de ressaisir une info déjà décrite par les horaires.
    */
   effHoursPerDay() {
-    const j = this.s.jira;
-    if (j.auto) { const m = this.s.scheduleMinutesPerDay(); return m > 0 ? m / 60 : (j.hoursPerDay || 8); }
-    return j.hoursPerDay;
+    return this.s.jiraDayMinutes() / 60;
   }
   effDaysPerWeek() {
     const j = this.s.jira;
@@ -62,19 +60,6 @@ export class Formatter {
     if (h) parts.push(h + "h");
     if (m) parts.push(m + "m");
     return parts.length ? parts.join(" ") : "0m";
-  }
-
-  /**
-   * Jira en heures et minutes seulement : "7h", "1h 30m", "45m". Pour un
-   * worklog d'une journée : `jira()` passerait en "1d" dès que la durée atteint
-   * NOTRE journée (horaires ou réglage), or Jira convertit "1d" avec SA
-   * journée à lui — 7 h déclarées pouvaient y devenir 8 h.
-   */
-  jiraHours(minutes) {
-    const total = Math.round(minutes);
-    if (total <= 0) return "0m";
-    const h = Math.floor(total / 60), m = total % 60;
-    return [h ? h + "h" : "", m ? m + "m" : ""].filter(Boolean).join(" ");
   }
 
   /** Horloge live h:mm:ss à partir d'une durée en ms. */

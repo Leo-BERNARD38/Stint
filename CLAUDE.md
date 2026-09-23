@@ -124,11 +124,11 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v15)
+## 4. Modèle de données (schéma v16)
 
 ```jsonc
 {
-  "version": 15,
+  "version": 16,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -163,9 +163,10 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
     // motifs HORS TÂCHE épinglés (v13) : des raccourcis de saisie, rien d'autre
     // (le segment porte son libellé en clair, cf. §15)
     "offReasons": ["Pause", "Réunion", "Discussion"],
-    // saisie lissée (v15) : cible déclarée par jour TRAVAILLÉ (minutes) et
-    // blocs de saisie par type, arrondis vers le bas (§17)
-    "timesheet": { "dayMin": 420, "steps": { "dev": 30, "support": 15, "autre": 15 } }
+    // saisie lissée (v15) : blocs de saisie par type, arrondis vers le bas (§17).
+    // La cible du jour n'est PAS ici : c'est le « 1d » de `jira` (v16 retire
+    // l'ancien `dayMin`, doublon de la même journée)
+    "timesheet": { "steps": { "dev": 30, "support": 15, "autre": 15 } }
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
@@ -225,6 +226,8 @@ Notes :
   avec les créneaux (gère le multi-jours). `seg.raw = true` ⇒ temps réel sans rognage.
 - **Unités Jira** : `Formatter.effHoursPerDay/effDaysPerWeek`. En mode `jira.auto`,
   `1d` = durée ouvrée de la base, `1w` = nombre de `workDays` ; sinon valeurs saisies.
+  **Le « 1d » a une source unique, `Settings.jiraDayMinutes()`** : la copie Jira
+  (`Formatter`) et la cible du jour de l'onglet Saisie (§17) la lisent toutes deux.
 - **Affichage des durées en `H:mm`** (`Formatter.clock`). La **copie** reste en
   **décimal** (`1.5`) et **Jira** (`1h 30m`) — ne pas confondre.
 
@@ -770,8 +773,13 @@ demande 7 h par jour travaillé (35 h la semaine), alors que les journées réel
 font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé),
 `views/TimesheetView` la **rend**, `SettingsView` la **règle** (section 03).
 
+- **La cible du jour EST le « 1d » Jira** (`Settings.jiraDayMinutes`, via
+  `Timesheet.dayTarget`), pas un réglage à part : un premier jet avait son propre
+  `timesheet.dayMin`, doublon de la même journée, retiré en v16. Pour 35 h /
+  semaine, l'utilisateur règle ses unités Jira en manuel à 7 h — en mode auto, le
+  1d vaut la journée de base (7 h 30 par défaut), et la cible avec.
 - **La règle, jour par jour (lundi → dimanche)** : chaque jour travaillé
-  (`blocksFor(date)` non vide) vise `timesheet.dayMin`, **quels que soient ses
+  (`blocksFor(date)` non vide) vise ce 1d, **quels que soient ses
   horaires** ; un jour non travaillé (congés via Horaires › Par date) vise 0 —
   c'est ainsi que les congés retirent 7 h, sans rien saisir de plus. Chaque tâche
   a une cagnotte = réserve + réel du jour (hors tâche exclu, `totalsForDay`). On
@@ -791,9 +799,10 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   — la reprend. La cible de la semaine est **jours travaillés × cible du jour**
   (« 5 j × 7:00 » sous le total) : les horaires ne disent que si un jour est
   travaillé, jamais combien il vaut. Couvert par un test « chaque soir » (§15).
-- **La copie d'une case est en heures et minutes** (`Formatter.jiraHours`),
-  jamais en jours : `jira()` écrirait « 1d » dès que la durée atteint NOTRE
-  journée, et Jira convertit « 1d » avec la SIENNE.
+- **La copie d'une case passe par `Formatter.jira`**, comme partout : 7 h s'y
+  copient « 1d », ce qui est juste puisque le 1d de l'app est réglé comme celui
+  du Jira. Un `jiraHours` (heures seules) a existé un temps pour se protéger d'un
+  1d divergent : il contournait le réglage au lieu de s'y fier — retiré.
 - **Aucune tâche bouche-trou** : ce qui manque à la cible reste un **vide**
   (hachures, « À compléter ») que l'utilisateur comble à la main avec ce qu'il
   veut. C'est une demande explicite.

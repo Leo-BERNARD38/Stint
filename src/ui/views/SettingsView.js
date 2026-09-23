@@ -3,7 +3,7 @@ import { WEEKDAY_LABELS, TASK_TYPES, TIMESHEET_STEPS } from "../../core/constant
 import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock,
          formatDateShort, formatDateRange, eachDateKey } from "../../utils/datetime.js";
 import { Settings, clampEyeMinutes, clampEyeRest, clampVolume, validateDay,
-         clampMergeGap, clampMinSegment, clampTimesheetDay, normalizeTimesheetStep } from "../../models/Settings.js";
+         clampMergeGap, clampMinSegment, normalizeTimesheetStep } from "../../models/Settings.js";
 import { icon } from "../icons.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
@@ -77,9 +77,7 @@ export class SettingsView {
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
 
-    // --- saisie lissée : cible du jour (saisie en heures, stockée en minutes) et blocs par type ---
-    el("setTsDay").addEventListener("change", (e) =>
-      store.updateSettings((s) => { s.timesheet.dayMin = clampTimesheetDay(parseFloat(e.target.value) * 60); }));
+    // --- saisie lissée : blocs par type (la cible du jour est le « 1d » Jira) ---
     const steps = el("tsSteps");
     steps.innerHTML = TASK_TYPES.map((t) =>
       `<label class="ts-step"><span class="type-badge type-${t}">${t}</span>` +
@@ -402,14 +400,9 @@ export class SettingsView {
     setIf("setRounding", s.rounding);
     setIf("setMergeGap", s.segments.mergeGapMin);
     setIf("setMinSeg", s.segments.minMin);
-    setIf("setTsDay", s.timesheet.dayMin / 60);
     for (const sel of el("tsSteps").querySelectorAll("[data-ts-step]")) {
       if (document.activeElement !== sel) sel.value = String(s.timesheetStep(sel.dataset.tsStep));
     }
-    const nDays = s.workDays.length;
-    el("tsTargetInfo").innerHTML = "Ce qu'on déclare pour <strong>chaque jour travaillé</strong>, quels " +
-      "que soient ses horaires, soit " + fmt.clock(s.timesheet.dayMin * nDays) +
-      ` sur une semaine de ${nDays} jour${nDays > 1 ? "s" : ""}. Un jour non travaillé (congés) vaut 0.`;
 
     el("setBgDots").checked = s.bgDots;
     this.#renderEyeBreak();
@@ -422,7 +415,8 @@ export class SettingsView {
     info.style.display = s.jira.auto ? "" : "none";
     if (s.jira.auto) {
       const h = parseFloat(fmt.effHoursPerDay().toFixed(2));
-      info.textContent = `1d = ${h} h · 1w = ${fmt.effDaysPerWeek()} jours (depuis vos horaires)`;
+      info.textContent = `1d = ${h} h · 1w = ${fmt.effDaysPerWeek()} jours (depuis vos horaires) · ` +
+        "le 1d est aussi la cible de chaque jour de l'onglet Saisie";
     }
 
     // jours travaillés (base)
