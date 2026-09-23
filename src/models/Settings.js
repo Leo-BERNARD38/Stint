@@ -2,7 +2,8 @@ import { DEFAULT_SETTINGS, ROUNDING_STEPS, EYE_BREAK_MIN, EYE_BREAK_MAX,
          EYE_REST_MIN, EYE_REST_MAX, REMINDER_LABEL_MAX, REMINDER_MAX,
          DATE_RANGE_MAX_DAYS, DATE_HOURS_MAX,
          SEGMENT_MERGE_GAP_MAX_MIN, SEGMENT_MIN_MAX_MIN,
-         OFF_REASON_MAX, OFF_LABEL_MAX } from "../core/constants.js";
+         OFF_REASON_MAX, OFF_LABEL_MAX,
+         TIMESHEET_STEPS, TIMESHEET_DAY_MIN, TIMESHEET_DAY_MAX } from "../core/constants.js";
 import { isoDow, fmtDateInput, parseDateInput, toMin,
          countDays, eachDateKey } from "../utils/datetime.js";
 
@@ -44,6 +45,19 @@ export function clampMinSegment(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return DEFAULT_SETTINGS.segments.minMin;
   return Math.min(SEGMENT_MIN_MAX_MIN, Math.max(0, n));
+}
+
+/** Cible journalière de la saisie, en minutes entières dans [60, 720]. */
+export function clampTimesheetDay(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_SETTINGS.timesheet.dayMin;
+  return Math.min(TIMESHEET_DAY_MAX, Math.max(TIMESHEET_DAY_MIN, n));
+}
+
+/** Bloc de saisie d'un type : une valeur de `TIMESHEET_STEPS`, sinon le défaut du type. */
+export function normalizeTimesheetStep(value, type) {
+  const n = Number(value);
+  return TIMESHEET_STEPS.includes(n) ? n : (DEFAULT_SETTINGS.timesheet.steps[type] ?? 15);
 }
 
 /** Volume du bip, ramené dans [0, 1]. */
@@ -263,6 +277,20 @@ export class Settings {
     // `??` et non `||` : une liste VIDÉE par l'utilisateur reste vide, seuls
     // l'absence (stockage < v13) et le null retombent sur les défauts.
     this.offReasons = cloneOffReasons(data.offReasons ?? d.offReasons);
+    const ts = data.timesheet ?? {};
+    this.timesheet = {
+      dayMin: clampTimesheetDay(ts.dayMin ?? d.timesheet.dayMin),
+      steps: {
+        dev: normalizeTimesheetStep(ts.steps?.dev, "dev"),
+        support: normalizeTimesheetStep(ts.steps?.support, "support"),
+        autre: normalizeTimesheetStep(ts.steps?.autre, "autre"),
+      },
+    };
+  }
+
+  /** Bloc de saisie (minutes) d'un type de tâche. */
+  timesheetStep(type) {
+    return normalizeTimesheetStep(this.timesheet.steps[type], type);
   }
 
   /** Le motif est-il épinglé ? (comparaison par clé, cf. `offKey`) */
@@ -547,6 +575,7 @@ export class Settings {
       },
       segments: { ...this.segments },
       offReasons: [...this.offReasons],
+      timesheet: { dayMin: this.timesheet.dayMin, steps: { ...this.timesheet.steps } },
     };
   }
 }

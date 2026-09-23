@@ -1,9 +1,10 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
-import { WEEKDAY_LABELS } from "../../core/constants.js";
+import { WEEKDAY_LABELS, TASK_TYPES, TIMESHEET_STEPS } from "../../core/constants.js";
 import { fmtDateInput, parseDateInput, isoDow, toMin, cap, pad2, fmtClock,
          formatDateShort, formatDateRange, eachDateKey } from "../../utils/datetime.js";
 import { Settings, clampEyeMinutes, clampEyeRest, clampVolume, validateDay,
-         clampMergeGap, clampMinSegment } from "../../models/Settings.js";
+         clampMergeGap, clampMinSegment, clampTimesheetDay, normalizeTimesheetStep } from "../../models/Settings.js";
+import { icon } from "../icons.js";
 import { createScheduleEditor, describeBlocks } from "../components/ScheduleEditor.js";
 
 const WEEKDAY_FULL = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -75,6 +76,22 @@ export class SettingsView {
       store.updateSettings((s) => { s.rounding = e.target.value; }));
     el("setBgDots").addEventListener("change", (e) =>
       store.updateSettings((s) => { s.bgDots = e.target.checked; }));
+
+    // --- saisie lissée : cible du jour (saisie en heures, stockée en minutes) et blocs par type ---
+    el("setTsDay").addEventListener("change", (e) =>
+      store.updateSettings((s) => { s.timesheet.dayMin = clampTimesheetDay(parseFloat(e.target.value) * 60); }));
+    const steps = el("tsSteps");
+    steps.innerHTML = TASK_TYPES.map((t) =>
+      `<label class="ts-step"><span class="type-badge type-${t}">${t}</span>` +
+      `<span class="select-wrap"><select data-ts-step="${t}" aria-label="Bloc de saisie ${t}">` +
+      TIMESHEET_STEPS.map((m) => `<option value="${m}">${m} min</option>`).join("") +
+      '</select><span class="select-chev">' + icon("chevron-down", { size: 16 }) + "</span></span></label>").join("");
+    steps.addEventListener("change", (e) => {
+      const sel = e.target.closest("[data-ts-step]");
+      if (!sel) return;
+      const type = sel.dataset.tsStep;
+      store.updateSettings((s) => { s.timesheet.steps[type] = normalizeTimesheetStep(sel.value, type); });
+    });
 
     // --- motifs hors tâche épinglés ---
     el("offAdd").addEventListener("click", () => this.#submitOff());
@@ -385,6 +402,14 @@ export class SettingsView {
     setIf("setRounding", s.rounding);
     setIf("setMergeGap", s.segments.mergeGapMin);
     setIf("setMinSeg", s.segments.minMin);
+    setIf("setTsDay", s.timesheet.dayMin / 60);
+    for (const sel of el("tsSteps").querySelectorAll("[data-ts-step]")) {
+      if (document.activeElement !== sel) sel.value = String(s.timesheetStep(sel.dataset.tsStep));
+    }
+    const nDays = s.workDays.length;
+    el("tsTargetInfo").innerHTML = "Ce qu'on déclare pour <strong>chaque jour travaillé</strong>, quels " +
+      "que soient ses horaires, soit " + fmt.clock(s.timesheet.dayMin * nDays) +
+      ` sur une semaine de ${nDays} jour${nDays > 1 ? "s" : ""}. Un jour non travaillé (congés) vaut 0.`;
 
     el("setBgDots").checked = s.bgDots;
     this.#renderEyeBreak();

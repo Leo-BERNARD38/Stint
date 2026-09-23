@@ -19,8 +19,9 @@ export class TabsView {
     this.app.closeFill?.(); // ferme un éventuel popover de trou en quittant l'onglet
     this.tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
     this.panels.forEach((p) => { p.hidden = p.dataset.panel !== name; });
-    // « Tâches » et « Stats » sont des vues tout-temps : pas de sélecteur de jour.
-    el("dayHead").hidden = name === "taches" || name === "stats";
+    // « Tâches » et « Stats » sont des vues tout-temps, « Saisie » a sa semaine :
+    // pas de sélecteur de jour.
+    el("dayHead").hidden = name === "taches" || name === "stats" || name === "saisie";
     this.app.render(); // rend les vues du panneau qui vient d'être révélé
   }
 

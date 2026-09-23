@@ -62,7 +62,7 @@ header {
   box-shadow: var(--shadow-card);
   margin: var(--sp-5) auto var(--sp-5);
 }
-.tabs.tabs-4 { grid-template-columns: repeat(4, 1fr); width: 480px; }
+.tabs.tabs-5 { grid-template-columns: repeat(5, 1fr); width: 590px; }
 /* Curseur : pilule pleine qui glisse vers l'onglet actif (signature Nothing). */
 .tabs::before {
   content: ""; position: absolute; top: 4px; left: 4px; z-index: 0;
@@ -70,10 +70,14 @@ header {
   border-radius: var(--radius-pill); background: var(--accent);
   transition: transform .34s var(--ease-spring);
 }
-.tabs.tabs-4::before { width: calc((100% - 8px) / 4); }
+.tabs.tabs-5::before { width: calc((100% - 8px) / 5); }
 .tabs:has([data-tab="segments"].active)::before { transform: translateX(100%); }
 .tabs:has([data-tab="taches"].active)::before { transform: translateX(200%); }
 .tabs:has([data-tab="stats"].active)::before { transform: translateX(300%); }
+.tabs:has([data-tab="saisie"].active)::before { transform: translateX(400%); }
+/* Cinq onglets sur un téléphone : 63 px chacun. « Segments » n'y tient qu'en
+   resserrant le corps et le rembourrage — le texte, pas la cible, cède. */
+@media (max-width: 520px) { .tabs.tabs-5 .tab { font-size: 12.5px; padding: 9px 2px; } }
 
 /* ---------- Perforation ----------
    La bande détachable du carnet de pointage : une rangée de trous qui sépare

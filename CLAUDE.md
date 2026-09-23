@@ -71,11 +71,13 @@ src/
     Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
     Task.js  Segment.js modèles (fromJSON/toJSON) ; Segment porte une tâche OU un motif (§15)
     Memo.js             mémo : texte, tâche optionnelle, fait (§16)
+    TimesheetLines.js   lignes d'un jour de saisie : normalisation + retouches pures (§17)
     Store.js            SOURCE DE VÉRITÉ : état + commandes + persistance + events
   services/
     Persistence.js      stockage 2 zones : IndexedDB (complet) + miroir localStorage 30 j (§6)
     TimeCalculator.js   temps ouvré (workRangesBetween/workedMs), planifié, agrégats, timeline, trous
     StatsAggregator.js  agrégats rétrospectifs de l'onglet Stats (§10)
+    Timesheet.js        saisie lissée : semaine déclarée, blocs par type, réserve (§17)
     Formatter.js        décimal / Jira / clock(H:mm) / hms ; unités Jira auto (§5)
     DataTransfer.js     export/import JSON, export CSV
     StorageInfo.js      estimation d'occupation (navigator.storage.estimate)
@@ -94,7 +96,7 @@ Vues (toutes ajoutées à `App.views`) :
 `HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView, TotalsView,
 TaskListView, SegmentTableView, StatsView, StatsTrendView, StatsHeatmapView,
 StatsWeeksView, StatsBreakdownView, StatsTimelineView, AllTasksView,
-SettingsView, StorageView, ToolsView, MemoPanelView`.
+TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
 - Constructeur `(app)` ; récupère ses éléments via `el("id")`.
@@ -112,7 +114,7 @@ SettingsView, StorageView, ToolsView, MemoPanelView`.
 
 ### App (contrôleur)
 - Détient l'UI-state : `viewDay` (jour affiché) et `screen` (`app|settings|guide|tools`).
-- Écrans : `#appScreen` (onglets Journée/Segments/Tâches/Stats) vs `#settingsScreen` /
+- Écrans : `#appScreen` (onglets Journée/Segments/Tâches/Stats/Saisie) vs `#settingsScreen` /
   `#guideScreen` / `#toolsScreen` (pages pleines, ouvertes via le header). `showScreen()`.
 - Onglets gérés par `TabsView` ; le sélecteur de jour (`#dayHead`) est masqué sur
   les onglets « Tâches » et « Stats » (vues tout-temps).
@@ -122,11 +124,11 @@ SettingsView, StorageView, ToolsView, MemoPanelView`.
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v14)
+## 4. Modèle de données (schéma v15)
 
 ```jsonc
 {
-  "version": 14,
+  "version": 15,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -160,7 +162,10 @@ SettingsView, StorageView, ToolsView, MemoPanelView`.
     "segments": { "mergeGapMin": 2, "minMin": 1 },
     // motifs HORS TÂCHE épinglés (v13) : des raccourcis de saisie, rien d'autre
     // (le segment porte son libellé en clair, cf. §15)
-    "offReasons": ["Pause", "Réunion", "Discussion"]
+    "offReasons": ["Pause", "Réunion", "Discussion"],
+    // saisie lissée (v15) : cible déclarée par jour TRAVAILLÉ (minutes) et
+    // blocs de saisie par type, arrondis vers le bas (§17)
+    "timesheet": { "dayMin": 420, "steps": { "dev": 30, "support": 15, "autre": 15 } }
   },
   "tasks": [{ "id":"t_…", "name":"…", "type":"dev|support|autre",
               "color":"#…", "link":"https://…|null",   // lien externe optionnel (v6)
@@ -173,6 +178,9 @@ SettingsView, StorageView, ToolsView, MemoPanelView`.
   // tâche ; `done` la barre sans l'effacer (§16)
   "memos": [{ "id":"m_…", "text":"…", "taskId":"t_…|null",
               "done":false, "createdAt":"ISO" }],
+  // saisie (v15) : SEULS les jours figés (cochés, retouchés) ; un jour absent
+  // est une proposition recalculée (§17). `done` = saisi dans Jira.
+  "timesheet": { "2026-09-21": [{ "taskId":"t_…", "min":180, "done":true }] },
   "meta": { "lastExport": null }
 }
 ```
@@ -677,7 +685,7 @@ du réglage : les échéances déjà tirées vivent en mémoire, le temps d'une 
 - Les notifications passent par `services/Notifier.js`, partagé avec le repos des
   yeux : un seul endroit connaît la permission, les deux voies d'émission
   (service worker puis `new Notification`) et le repli sur le toast.
-- **Le Guide en parle** (`g-9`, « Rappels & repos des yeux »). Son sommaire est
+- **Le Guide en parle** (`g-10`, « Rappels & repos des yeux »). Son sommaire est
   purement déclaratif — des ancres `#g-N` vers des `.guide-block`, aucun JS :
   ajouter une section, c'est une entrée dans l'`aside` et un bloc dans
   `.guide-content`, avec la renumérotation des deux côtés. Le Guide **tutoie**
@@ -754,3 +762,58 @@ haut — départagés par ordre d'insertion à la même milliseconde.
 - Le compteur et l'indicateur sont en **lavis d'accent** (N3, « ça se
   clique »), jamais en minium : un mémo n'exige rien maintenant.
 - Testé dans `checks/domaine.mjs` §13.
+
+## 17. Saisie lissée (onglet Saisie)
+
+Ce qu'on **déclare** dans Jira n'est pas ce qu'on a **pointé** : la direction
+demande 7 h par jour travaillé (35 h la semaine), alors que les journées réelles
+font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé),
+`views/TimesheetView` la **rend**, `SettingsView` la **règle** (section 03).
+
+- **La règle, jour par jour (lundi → dimanche)** : chaque jour travaillé
+  (`blocksFor(date)` non vide) vise `timesheet.dayMin`, **quels que soient ses
+  horaires** ; un jour non travaillé (congés via Horaires › Par date) vise 0 —
+  c'est ainsi que les congés retirent 7 h, sans rien saisir de plus. Chaque tâche
+  a une cagnotte = réserve + réel du jour (hors tâche exclu, `totalsForDay`). On
+  déclare par **blocs du type** (`timesheetStep`), **arrondis vers le bas**,
+  jusqu'à la cible : **les tâches du jour d'abord** (par premier segment), **puis
+  la réserve** (la plus ancienne d'abord). L'ordre inverse décalait toute la
+  semaine d'un cran : le travail d'un jour doit rester déclaré à sa date tant
+  qu'il tient, seul le surplus glisse.
+- **La réserve n'est pas stockée, elle se déduit** : cagnotte − déclaré, par
+  tâche, attachée à sa tâche (reporter, pour Jira, c'est logguer le même ticket
+  un autre jour). Elle repart de zéro chaque lundi. Sous un bloc de son type, une
+  réserve n'est jamais proposée seule : ce sont des miettes (contour sans aplat).
+  Elle peut être **négative** après un jour figé qui a déclaré plus que le réel
+  d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
+- **Aucune tâche bouche-trou** : ce qui manque à la cible reste un **vide**
+  (hachures, « À compléter ») que l'utilisateur comble à la main avec ce qu'il
+  veut. C'est une demande explicite.
+- **Un jour à venir ne propose rien** : il aspirerait une réserve que la journée
+  en cours n'a pas fini de remplir.
+- **Figé = stocké.** Seuls les jours touchés (coche, retrait, ajout) sont
+  persistés dans `store.timesheet` ; les autres se recalculent à chaque rendu.
+  C'est ce qui garantit que ce qu'on a coché « saisi » reste ce qui est dans Jira
+  même si l'on corrige un segment après coup. « Recalculer » libère un jour, avec
+  confirmation s'il a des lignes cochées. Une retouche part **des lignes
+  affichées** (la proposition si le jour n'était pas figé) et passe par une
+  fonction pure de `TimesheetLines` avant `Store.setTimesheetDay`.
+- **Une tâche = une ligne par jour** : `normalizeLines` fusionne les doublons (une
+  ligne fusionnée n'est saisie que si toutes ses parts l'étaient), écarte les
+  tâches inconnues ; `deleteTask` emporte ses lignes, `hydrate` écarte celles
+  dont la tâche manque, `clearEntries`/`reset` vident tout.
+- **Rendu : une feuille, pas des cartes.** Une ligne par tâche, une colonne par
+  jour (lundi → vendredi toujours, le week-end s'il porte quelque chose), la
+  réserve en dernière colonne. Les cartes par jour ont été essayées : à cinq de
+  front, le nom — qui porte la clé Jira, la donnée à recopier — tombait en
+  « MOD-… ». La colonne des tâches est collante (téléphone : la feuille défile).
+  Dans une case, la coche colle à **sa** durée (dernière piste), les actions
+  (copier au format Jira, retirer) sont révélées au survol **à leur place**.
+- **Barre de part** saisi (accent) · à saisir (lavis + anneau) · à compléter
+  (hachures), sur la cible ; pas de contraste inversé en tête (deux ancres
+  seulement, §7) ni de perforation (deux emplois seulement).
+- Le formulaire « compléter » vit sous la feuille, hors du tableau : il n'est pas
+  reconstruit tant que le focus y est (le chrono re-rend toutes les 15 s).
+- ← → changent de **semaine** sur cet onglet ; le sélecteur de jour y est masqué.
+- Guide : `g-8`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
+  changements d'heure).

@@ -5,7 +5,7 @@
 
 /** ⚠ Dupliquée en dur dans le script inline anti-flash d'index.html (pas d'import possible là-bas). */
 export const STORAGE_KEY = "stint.v1";
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 export const DAY_MS = 86_400_000;
 
 /**
@@ -127,7 +127,17 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // sinon la liste grossirait sans fin. Le segment, lui, porte toujours le
   // libellé en clair : retirer un épinglé ne touche pas l'historique.
   offReasons: ["Pause", "Réunion", "Discussion"],
+  // Saisie lissée (v15) : ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé.
+  // Chaque jour travaillé vaut `dayMin` (7 h) quels que soient ses horaires —
+  // un vendredi de 4 h 10 se déclare 7 h — et chaque tâche se déclare par
+  // blocs de son type, arrondis vers le BAS : le reste part en réserve (§17).
+  timesheet: { dayMin: 420, steps: { dev: 30, support: 15, autre: 15 } },
 });
+
+/** Blocs de saisie proposés (minutes) et bornes de la cible journalière. */
+export const TIMESHEET_STEPS = [5, 10, 15, 30, 60];
+export const TIMESHEET_DAY_MIN = 60;
+export const TIMESHEET_DAY_MAX = 720;
 
 /** Longueur maximale d'un mémo : une ligne à se laisser, pas un cahier. */
 export const MEMO_TEXT_MAX = 200;

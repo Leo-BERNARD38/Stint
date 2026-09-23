@@ -153,11 +153,12 @@
     <div class="perf" aria-hidden="true"></div>
 
     <!-- ============================ NAVIGATION PAR ONGLETS ============================ -->
-    <nav class="tabs tabs-4" role="tablist">
+    <nav class="tabs tabs-5" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
       <button class="tab" data-tab="segments" role="tab">Segments</button>
       <button class="tab" data-tab="taches" role="tab">Tâches</button>
       <button class="tab" data-tab="stats" role="tab">Stats</button>
+      <button class="tab" data-tab="saisie" role="tab">Saisie</button>
     </nav>
 
     <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
@@ -327,6 +328,33 @@
         <div class="stats-detail" id="statsDetail"></div>
       </div>
     </section>
+
+    <!-- ---------------------------- Onglet : Saisie (ce qu'on déclare) ----------------------------
+         Ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé : 7 h par jour travaillé,
+         par blocs du type de la tâche, arrondis vers le bas. Le reste attend en
+         RÉSERVE, attaché à sa tâche, et comble les jours courts. On coche une
+         ligne quand elle est saisie ; un jour touché est figé (§17). -->
+    <section class="tab-panel" data-panel="saisie" hidden>
+      <div class="stats-top ts-top">
+        <div class="stats-nav">
+          <span class="ts-rule" id="tsRule"></span>
+          <span class="grow"></span>
+          <button id="tsPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Semaine précédente"></button>
+          <button id="tsNext" class="daynav-mini" data-icon="chevron-right" aria-label="Semaine suivante"></button>
+          <button id="tsNow" class="btn-ghost" title="Revenir à la semaine en cours">Cette semaine</button>
+        </div>
+        <div class="ts-lead" id="tsLead"></div>
+      </div>
+
+      <!-- La feuille : une ligne par tâche, une colonne par jour — sur une ligne,
+           tout ce qu'on loggue sur un ticket dans la semaine. La dernière colonne
+           est la RÉSERVE de la tâche : le pointé qui n'a pas encore de jour. -->
+      <div class="dot-card ts-sheet">
+        <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
+        <div id="tsAdd"></div>
+        <p class="ts-foot" id="tsFoot"></p>
+      </div>
+    </section>
     </div><!-- /#appScreen -->
 
     <!-- ===================== ÉCRAN RÉGLAGES (page à part) =====================
@@ -343,7 +371,7 @@
         <nav class="set-nav" id="setNav" aria-label="Sections des réglages">
           <a href="#set-apparence"><span class="n">01</span> Apparence</a>
           <a href="#set-horaires"><span class="n">02</span> Horaires</a>
-          <a href="#set-jira"><span class="n">03</span> Jira &amp; arrondi</a>
+          <a href="#set-jira"><span class="n">03</span> Jira &amp; saisie</a>
           <a href="#set-segments"><span class="n">04</span> Segments</a>
           <a href="#set-hors"><span class="n">05</span> Hors tâche</a>
           <a href="#set-yeux"><span class="n">06</span> Repos des yeux</a>
@@ -476,7 +504,7 @@
 
           <!-- ---------------------------- 03 · Jira & arrondi ---------------------------- -->
           <section class="set-group" id="set-jira">
-            <h3>Conversion Jira &amp; arrondi</h3>
+            <h3>Conversion Jira, arrondi &amp; saisie</h3>
             <label class="set-row">
               <span class="set-lab">
                 <b>Calculer les unités Jira depuis mes horaires</b>
@@ -513,6 +541,26 @@
                   <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
                 </span>
               </span>
+            </div>
+            <!-- Saisie lissée (onglet Saisie) : ce qu'on déclare, pas ce qu'on pointe. -->
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Cible de saisie par jour</b>
+                <span id="tsTargetInfo">Ce qu'on déclare pour <strong>chaque jour travaillé</strong>,
+                  quels que soient ses horaires. Un jour non travaillé (congés) vaut 0.</span>
+              </span>
+              <span class="set-ctl">
+                <input type="number" id="setTsDay" class="tinput" min="1" max="12" step="0.25" aria-label="Cible de saisie par jour, en heures">
+                <span class="prec-sep">h/j</span>
+              </span>
+            </div>
+            <div class="set-row">
+              <span class="set-lab">
+                <b>Blocs de saisie</b>
+                <span>Chaque tâche se déclare par blocs de son type, arrondis <strong>vers le bas</strong> :
+                  le reste part en réserve, rien n'est perdu.</span>
+              </span>
+              <span class="set-ctl ts-steps" id="tsSteps"></span>
             </div>
           </section>
 
@@ -780,12 +828,13 @@
           <a href="#g-5"><span class="num">05</span> Onglet Segments</a>
           <a href="#g-6"><span class="num">06</span> Onglet Tâches</a>
           <a href="#g-7"><span class="num">07</span> Onglet Stats</a>
-          <a href="#g-8"><span class="num">08</span> Mémos</a>
-          <a href="#g-9"><span class="num">09</span> Rappels &amp; repos des yeux</a>
-          <a href="#g-10"><span class="num">10</span> Outils</a>
-          <a href="#g-11"><span class="num">11</span> Copier pour Jira</a>
-          <a href="#g-12"><span class="num">12</span> Sauvegarde</a>
-          <a href="#g-13"><span class="num">13</span> Installer l'app</a>
+          <a href="#g-8"><span class="num">08</span> Onglet Saisie</a>
+          <a href="#g-9"><span class="num">09</span> Mémos</a>
+          <a href="#g-10"><span class="num">10</span> Rappels &amp; repos des yeux</a>
+          <a href="#g-11"><span class="num">11</span> Outils</a>
+          <a href="#g-12"><span class="num">12</span> Copier pour Jira</a>
+          <a href="#g-13"><span class="num">13</span> Sauvegarde</a>
+          <a href="#g-14"><span class="num">14</span> Installer l'app</a>
         </aside>
 
         <div class="guide-content">
@@ -954,6 +1003,35 @@
         </div>
 
         <div class="guide-block" id="g-8">
+          <h3>Onglet Saisie — ce que tu déclares dans Jira</h3>
+          <p>
+            Tu <b>pointes</b> ce que tu fais vraiment ; tu <b>déclares</b> une journée lissée :
+            <b>7 h par jour travaillé</b> (réglable), même un vendredi court. Un jour
+            <b>non travaillé</b> dans tes horaires (congés) vaut 0 : la cible de la semaine
+            descend de 7 h. Le hors tâche n'est jamais déclaré.
+          </p>
+          <ul>
+            <li><b>Des blocs par type</b> — dev par 30 min, support et autre par 15 (réglable).
+              L'arrondi se fait <b>vers le bas</b> : ce qui ne remplit pas un bloc n'est pas
+              perdu, il part en <b>réserve</b>.</li>
+            <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche.
+              Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
+              bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
+              repart de zéro chaque lundi.</li>
+            <li><b>À compléter</b> — ce qui manque encore à un jour, en hachures. Clique-le pour
+              poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne
+              <b>Réserve</b> se clique aussi : il ouvre le premier jour à compléter.</li>
+            <li><b>Coche</b> une case quand tu l'as saisie dans Jira (le bouton ✓ de l'en-tête
+              coche tout le jour). Au survol d'une case : copier la durée au format Jira, ou la
+              retirer — elle retourne en réserve.</li>
+            <li><b>Un jour que tu touches est figé</b> : il ne se recalcule plus, pour que ce que
+              tu as coché reste ce qui est dans Jira. <b>Recalculer</b> (↺) le libère.</li>
+          </ul>
+          <p>La feuille se lit par ligne : sur un ticket, tout ce que tu loggues dans la semaine.
+            <kbd>←</kbd> <kbd>→</kbd> changent de semaine.</p>
+        </div>
+
+        <div class="guide-block" id="g-9">
           <h3>Mémos — pour demain, ou pour une tâche</h3>
           <p>
             Le bouton <b>Mémos</b> en haut à droite (ou <kbd>M</kbd>) ouvre un panneau : une ligne
@@ -971,7 +1049,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-9">
+        <div class="guide-block" id="g-10">
           <h3>Rappels &amp; repos des yeux</h3>
           <p>
             Deux rappels facultatifs, coupés par défaut, qui se règlent dans
@@ -1016,7 +1094,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-10">
+        <div class="guide-block" id="g-11">
           <h3>Outils <kbd>calculatrice</kbd></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
@@ -1025,7 +1103,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-11">
+        <div class="guide-block" id="g-12">
           <h3>Copier pour Jira</h3>
           <p>
             Partout, deux formats de copie : <b>Déc.</b> (décimal, ex. <code>1.5</code>) et <b>Jira</b>
@@ -1034,7 +1112,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-12">
+        <div class="guide-block" id="g-13">
           <h3>Sauvegarde</h3>
           <p>
             Les données vivent dans ce navigateur. Pense à <b>exporter le JSON</b> de temps en temps
@@ -1049,7 +1127,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-13">
+        <div class="guide-block" id="g-14">
           <h3>Installer l'application</h3>
           <p>
             Stint s'installe comme une appli sur PC et mobile (icône d'installation du navigateur,

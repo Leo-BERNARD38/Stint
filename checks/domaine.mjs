@@ -12,6 +12,8 @@ import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
+import { Timesheet } from "../src/services/Timesheet.js";
+import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine } from "../src/models/TimesheetLines.js";
 import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
@@ -747,6 +749,159 @@ section("Stats calendaires (période, historique, découpage)");
      "la clé de cache est le début de période, pas la date pointée");
   store.addSegment({ taskId: "tA", start: D(6, 9), end: D(6, 10) });
   ok(agg.snapshot("month", ref).kpi.total === (3 + 6 + 14 + 1) * H, "une mutation invalide le cache");
+}
+
+/* ----------------------------------------------------------------- §15 */
+section("saisie lissée : blocs par type, réserve, jours figés (v15)");
+{
+  // Semaine du lundi 21 au dimanche 27 septembre 2026. Horaires larges et
+  // continus : on teste la saisie, pas le rognage.
+  const D = (day, h, mn = 0) => new Date(2026, 8, day, h, mn, 0, 0);
+  const mk = (extra = {}) => {
+    const st = new Store(fakePersistence());
+    st.hydrate({ version: 14, settings: {
+      workDays: [1, 2, 3, 4, 5], arrival: "07:00", departure: "20:00", lunch: false,
+      segments: { minMin: 0, mergeGapMin: 0 }, ...extra,
+    }, tasks: [
+      { id: "tA", name: "MOD-1", type: "dev", color: "#000" },
+      { id: "tB", name: "MOD-2", type: "dev", color: "#000" },
+      { id: "tS", name: "SUP-1", type: "support", color: "#000" },
+      { id: "tR", name: "Réunion", type: "autre", color: "#000" },
+    ], segments: [], meta: {} });
+    return st;
+  };
+  const seg = (st, id, day, h, mn, dur) => {
+    const a = D(day, h, mn);
+    st.addSegment({ taskId: id, start: a, end: new Date(a.getTime() + dur * 60000) });
+  };
+  const SUN = D(27, 12).getTime();
+  const plan = (st, now = SUN) => new Timesheet(st, new TimeCalculator(st)).week(D(23, 12).getTime(), now);
+  const linesOf = (day) => day.lines.map((l) => [l.taskId, l.min]);
+
+  // --- réglages : défauts, bornes, migration v14 ---
+  const st0 = mk();
+  eq(st0.settings.timesheet, { dayMin: 420, steps: { dev: 30, support: 15, autre: 15 } }, "v14 → défauts de la saisie");
+  eq(new Settings({ timesheet: { dayMin: 5 } }).timesheet.dayMin, 60, "cible bornée à 1 h");
+  eq(new Settings({ timesheet: { steps: { dev: 7, support: 60 } } }).timesheet.steps,
+     { dev: 30, support: 60, autre: 15 }, "bloc hors liste → défaut du type");
+  eq(st0.version, SCHEMA_VERSION, "version réécrite au format courant");
+
+  // --- l'exemple de l'utilisateur : 4 × 7 h 30 puis un vendredi de 4 h 10 ---
+  {
+    const st = mk();
+    for (const d of [21, 22, 23, 24]) seg(st, "tA", d, 8, 0, 450);
+    seg(st, "tA", 25, 8, 0, 250);
+    const w = plan(st);
+    eq(w.label, "S39", "semaine ISO 39");
+    eq(w.days.map((d) => d.declared), [420, 420, 420, 420, 360, 0, 0], "7 h par jour, le vendredi puise dans la réserve");
+    eq(w.days.map((d) => d.gap).slice(0, 5), [0, 0, 0, 0, 60], "vendredi : 1 h reste à compléter à la main");
+    eq(w.totals.target, 2100, "cible 35 h");
+    eq(w.totals.real, 2050, "réel 34 h 10");
+    eq(w.reserve, [{ taskId: "tA", min: 10 }], "10 min de miettes en réserve (sous un bloc dev)");
+    eq(w.days.slice(5).map((d) => d.visible), [false, false], "week-end vide masqué");
+  }
+
+  // --- blocs par type, arrondis vers le bas, ordre du jour puis réserve ---
+  {
+    const st = mk();
+    seg(st, "tA", 21, 8, 0, 190);   // 3 h 10 dev
+    seg(st, "tS", 21, 11, 10, 140); // 2 h 20 support
+    seg(st, "tB", 21, 13, 30, 120); // 2 h dev
+    seg(st, "tS", 22, 8, 0, 435);   // mardi : 7 h 15 de support
+    const w = plan(st);
+    eq(linesOf(w.days[0]), [["tA", 180], ["tS", 135], ["tB", 90]], "lundi : blocs de 30 / 15, plafonnés à 7 h");
+    eq(w.days[0].gap, 15, "lundi : un quart d'heure à compléter");
+    eq(linesOf(w.days[1]), [["tS", 420]], "mardi : le travail du jour d'abord");
+    // Mercredi, passé et vide, puise dans la réserve : le bloc entier de B et
+    // un quart d'heure de S ; les miettes (A 10, S 5) ne font plus de bloc.
+    eq(linesOf(w.days[2]), [["tS", 15], ["tB", 30]], "mercredi vide : la réserve, par blocs entiers, dans son ordre");
+    eq(w.reserve, [{ taskId: "tA", min: 10 }, { taskId: "tS", min: 5 }], "restent des miettes sous le bloc");
+    const w2 = plan(st, D(22, 18).getTime());
+    eq(w2.reserve, [{ taskId: "tA", min: 10 }, { taskId: "tS", min: 20 }, { taskId: "tB", min: 30 }],
+       "réserve au mardi soir, par tâche et par ancienneté");
+    ok(w.days.every((d) => d.lines.every((l) => l.min % (l.taskId === "tS" ? 15 : 30) === 0)),
+       "toute ligne proposée est un multiple du bloc de son type");
+  }
+
+  // --- la réserve se déclare sur un jour qui manque ---
+  {
+    const st = mk();
+    seg(st, "tA", 21, 8, 0, 480);  // lundi 8 h
+    seg(st, "tS", 22, 8, 0, 360);  // mardi 6 h de support
+    const w = plan(st);
+    eq(linesOf(w.days[1]), [["tS", 360], ["tA", 60]], "mardi : 6 h du jour + 1 h de réserve dev");
+    eq(w.totals.reserve, 0, "réserve soldée");
+  }
+
+  // --- hors tâche exclu, congés, jours à venir ---
+  {
+    const st = mk({ dateHours: { "2026-09-23": [] } });
+    seg(st, "tA", 21, 8, 0, 420);
+    st.addOffSegment({ reason: "Pause", start: D(21, 15, 0), end: D(21, 16, 0) });
+    const w = plan(st, D(22, 12).getTime());
+    eq(w.days[0].real, 420, "le hors tâche ne compte pas dans le réel");
+    ok(w.days[2].leave && w.days[2].target === 0, "mercredi en congé : cible 0");
+    eq(w.totals.target, 4 * 420, "cible de la semaine : 28 h avec un jour de congé");
+    ok(w.days[3].future && w.days[3].lines.length === 0, "jeudi à venir : aucune proposition");
+    ok(w.days[1].today, "mardi est aujourd'hui");
+  }
+
+  // --- jours figés : lignes stockées, la réserve en tient compte ---
+  {
+    const st = mk();
+    seg(st, "tA", 21, 8, 0, 450);
+    seg(st, "tA", 22, 8, 0, 450);
+    eq(st.setTimesheetDay("2026-09-21", [{ taskId: "tA", min: 480, done: true }]), "2026-09-21", "figer un jour");
+    const w = plan(st);
+    ok(w.days[0].frozen && w.days[0].done === 480, "lundi figé, saisi");
+    eq(linesOf(w.days[1]), [["tA", 420]], "mardi : l'avance de lundi est reprise sur la cagnotte");
+    eq(w.totals.reserve, 0, "plus rien en réserve");
+    // Un jour figé VIDE reste figé : tout part en réserve.
+    st.setTimesheetDay("2026-09-22", []);
+    eq(plan(st).days[1].declared, 0, "jour figé vide");
+    eq(plan(st, D(22, 18).getTime()).reserve, [{ taskId: "tA", min: 420 }], "…et son réel attend en réserve");
+    eq(linesOf(plan(st).days[2]), [["tA", 420]], "…que le mercredi reprend");
+    st.clearTimesheetDay("2026-09-22");
+    ok(!plan(st).days[1].frozen, "libérer un jour le rend à la proposition");
+    eq(st.setTimesheetDay("21/09", []), "invalid", "clé mal formée refusée");
+
+    // Cascade et persistance.
+    st.setTimesheetDay("2026-09-22", [{ taskId: "tA", min: 60 }, { taskId: "tS", min: 30 }, { taskId: "zz", min: 30 }]);
+    eq(st.timesheetDay("2026-09-22").map((l) => l.taskId), ["tA", "tS"], "tâche inconnue écartée");
+    st.deleteTask("tS");
+    eq(st.timesheetDay("2026-09-22").map((l) => l.taskId), ["tA"], "supprimer une tâche emporte ses lignes");
+    const back = new Store(fakePersistence());
+    back.hydrate(JSON.parse(JSON.stringify(st.toJSON())));
+    eq(back.timesheet, st.timesheet, "aller-retour JSON");
+    back.hydrate({ ...st.toJSON(), tasks: [] });
+    eq(back.timesheet["2026-09-21"], [], "import sans la tâche : ligne écartée");
+    st.clearEntries();
+    eq(st.timesheet, {}, "clearEntries vide la saisie");
+  }
+
+  // --- lignes : fonctions pures ---
+  {
+    const L = [{ taskId: "a", min: 60, done: true }, { taskId: "b", min: 30, done: false }];
+    eq(normalizeLines([{ taskId: "a", min: 30, done: true }, { taskId: "a", min: 15, done: false }, { taskId: "b", min: 0 }]),
+       [{ taskId: "a", min: 45, done: false }], "doublons fusionnés (saisi seulement si toutes les parts l'étaient), durées nulles écartées");
+    eq(toggleLine(L, "b")[1].done, true, "cocher une ligne");
+    eq(setAllDone(L, false).map((l) => l.done), [false, false], "tout décocher");
+    eq(removeLine(L, "a").map((l) => l.taskId), ["b"], "retirer une ligne");
+    eq(addToLine(L, "a", 15)[0], { taskId: "a", min: 75, done: false }, "ajouter à une ligne saisie la repasse à saisir");
+    eq(addToLine(L, "c", 15).at(-1), { taskId: "c", min: 15, done: false }, "nouvelle ligne en fin");
+    eq(L[0].min, 60, "aucune fonction ne mute son entrée");
+  }
+
+  // --- changement d'heure : la semaine a toujours 7 jours distincts ---
+  {
+    const st = mk();
+    const ts = new Timesheet(st, new TimeCalculator(st));
+    eq(ts.week(new Date(2026, 9, 25, 12).getTime(), SUN).days.map((d) => d.key),
+       ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"],
+       "semaine du 25 octobre (25 h)");
+    eq(ts.week(new Date(2026, 2, 29, 12).getTime(), SUN).days.map((d) => d.key).at(-1), "2026-03-29",
+       "semaine du 29 mars (23 h)");
+  }
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

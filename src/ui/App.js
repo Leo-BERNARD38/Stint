@@ -4,6 +4,7 @@ import { TimeCalculator } from "../services/TimeCalculator.js";
 import { Formatter } from "../services/Formatter.js";
 import { StatsAggregator, periodStart, stepPeriod } from "../services/StatsAggregator.js";
 import { DataTransfer } from "../services/DataTransfer.js";
+import { Timesheet } from "../services/Timesheet.js";
 import { Notifier } from "../services/Notifier.js";
 import { Timer } from "./Timer.js";
 
@@ -25,6 +26,7 @@ import { SettingsView } from "./views/SettingsView.js";
 import { StorageView } from "./views/StorageView.js";
 import { ToolsView } from "./views/ToolsView.js";
 import { MemoPanelView } from "./views/MemoPanelView.js";
+import { TimesheetView } from "./views/TimesheetView.js";
 
 import { NewTaskModal } from "./modals/NewTaskModal.js";
 import { ResumeModal } from "./modals/ResumeModal.js";
@@ -55,6 +57,7 @@ export class App {
     this.calc = new TimeCalculator(this.store);
     this.formatter = new Formatter(this.store);
     this.stats = new StatsAggregator(this.store, this.calc);
+    this.timesheet = new Timesheet(this.store, this.calc); // onglet Saisie (§17)
     this.timer = new Timer();
     this.dayGlyphAnimator = new DayGlyphAnimator();
     this.bgDots = new BgDots(el("bgDots")); // fond réactif au curseur (easter-egg)
@@ -66,6 +69,8 @@ export class App {
     // la semaine ? ». État d'UI non persisté, comme `viewDay`.
     this.statsGrain = "week";
     this.statsRef = Date.now();
+    // Onglet Saisie : une date dans la semaine affichée (état d'UI non persisté).
+    this.timesheetRef = Date.now();
 
     this.toast = new Toast();
     // Le Notifier a besoin du toast (son dernier recours) : il vient donc après.
@@ -112,6 +117,7 @@ export class App {
       new StatsChartView(this),
       new StatsDetailView(this),
       new AllTasksView(this),
+      new TimesheetView(this),
       new SettingsView(this),
       new StorageView(this),
       new ToolsView(this),
@@ -241,6 +247,31 @@ export class App {
   /** Le snapshot de la période affichée — un seul point d'entrée pour les 3 vues. */
   statsSnapshot() {
     return this.stats.snapshot(this.statsGrain, this.statsRef);
+  }
+
+  /* ----------------- saisie (semaine déclarée) ----------------- */
+  /** La semaine affichée de l'onglet Saisie (cf. `Timesheet.week`). */
+  timesheetWeek() {
+    return this.timesheet.week(this.timesheetRef);
+  }
+  shiftTimesheetWeek(n) {
+    this.timesheetRef = addDays(new Date(this.timesheetRef), 7 * n).getTime();
+    this.render();
+  }
+  timesheetToday() {
+    this.timesheetRef = Date.now();
+    this.render();
+  }
+  /**
+   * Libère un jour figé : il redevient une proposition. Des lignes déjà
+   * cochées « saisi » seraient recalculées — donc peut-être plus ce qui est
+   * dans Jira : on le demande.
+   */
+  recalcTimesheetDay(key) {
+    const lines = this.store.timesheetDay(key) ?? [];
+    if (lines.some((l) => l.done) &&
+        !confirm("Des lignes de ce jour sont cochées « saisi ». Les recalculer peut les faire diverger de Jira. Continuer ?")) return;
+    this.store.clearTimesheetDay(key);
   }
 
   /** Depuis « Tâches » : ouvre un jour ("YYYY-MM-DD") dans l'onglet Segments. */
@@ -385,7 +416,7 @@ export class App {
    * modale est ouverte (Espace sur un bouton de modale déclenchait Play), jamais
    * avec un modificateur (Alt+← est le retour du navigateur), jamais hors de
    * l'écran principal. ← → changent de jour là où le sélecteur de jour est
-   * visible (Journée, Segments), de PÉRIODE sur Stats, et ne font rien sur
+   * visible (Journée, Segments), de PÉRIODE sur Stats, de semaine sur Saisie, et ne font rien sur
    * Tâches — qui n'a ni jour ni période.
    */
   #bindKeyboard() {
@@ -416,6 +447,9 @@ export class App {
       // et c'est la période qu'elles décalent.
       else if (e.key === "ArrowLeft" && this.tabs.active === "stats") { e.preventDefault(); this.shiftStatsPeriod(-1); }
       else if (e.key === "ArrowRight" && this.tabs.active === "stats") { e.preventDefault(); this.shiftStatsPeriod(1); }
+      // Saisie : la semaine.
+      else if (e.key === "ArrowLeft" && this.tabs.active === "saisie") { e.preventDefault(); this.shiftTimesheetWeek(-1); }
+      else if (e.key === "ArrowRight" && this.tabs.active === "saisie") { e.preventDefault(); this.shiftTimesheetWeek(1); }
     });
   }
 

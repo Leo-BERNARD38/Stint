@@ -4,7 +4,10 @@ import { Settings, normalizeOffLabel, offKey } from "./Settings.js";
 import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
 import { Memo } from "./Memo.js";
+import { normalizeLines } from "./TimesheetLines.js";
 import { startOfDay, toLocalISO } from "../utils/datetime.js";
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Source de vérité unique. Détient settings / tasks / segments / meta,
@@ -24,6 +27,9 @@ export class Store extends EventEmitter {
     this.tasks = [];
     this.segments = [];
     this.memos = [];
+    // Saisie (v15) : SEULS les jours figés sont stockés, `{ "YYYY-MM-DD": [lignes] }`.
+    // Un jour absent est une proposition, recalculée à chaque rendu (§17).
+    this.timesheet = {};
     this.meta = { lastExport: null };
     // Compteur de révision : incrémenté à chaque mutation committée (et à chaque
     // hydratation). Sert de clé de cache aux agrégats coûteux (StatsAggregator)
@@ -60,6 +66,11 @@ export class Store extends EventEmitter {
     const ids = new Set(this.tasks.map((t) => t.id));
     this.memos = (data.memos ?? []).map(Memo.fromJSON).filter((m) => m.text);
     for (const m of this.memos) if (m.taskId && !ids.has(m.taskId)) m.taskId = null;
+    // Saisie : même normalisation — une ligne dont la tâche manque tombe.
+    this.timesheet = {};
+    for (const [key, lines] of Object.entries(data.timesheet ?? {})) {
+      if (DATE_KEY.test(key) && Array.isArray(lines)) this.timesheet[key] = normalizeLines(lines, (id) => ids.has(id));
+    }
     this.meta = { lastExport: null, ...(data.meta ?? {}) };
     this.rev += 1;
   }
@@ -97,6 +108,9 @@ export class Store extends EventEmitter {
    * qui tient l'invariant « une tâche OU un motif ».
    * v13 → v14 : ajout de `memos` (une ligne de texte, rattachée ou non à une
    * tâche) — additif ; `hydrate` rend général tout mémo dont la tâche manque.
+   * v14 → v15 : saisie lissée — `settings.timesheet` (cible du jour, blocs par
+   * type) et `timesheet` (jours figés). Additif ; `hydrate` écarte les lignes
+   * dont la tâche manque.
    */
   #migrate(raw) {
     if (!raw) return {};
@@ -122,6 +136,8 @@ export class Store extends EventEmitter {
       tasks: this.tasks.map((t) => t.toJSON()),
       segments: this.segments.map((s) => s.toJSON()),
       memos: this.memos.map((m) => m.toJSON()),
+      timesheet: Object.fromEntries(Object.entries(this.timesheet)
+        .map(([k, lines]) => [k, lines.map((l) => ({ ...l }))])),
       meta: { ...this.meta },
     };
   }
@@ -324,10 +340,13 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
-  /** Supprime une tâche et, en cascade, ses segments ET ses mémos. */
+  /** Supprime une tâche et, en cascade, ses segments, ses mémos ET ses lignes de saisie. */
   deleteTask(id) {
     this.segments = this.segments.filter((s) => s.taskId !== id);
     this.memos = this.memos.filter((m) => m.taskId !== id);
+    for (const key of Object.keys(this.timesheet)) {
+      this.timesheet[key] = this.timesheet[key].filter((l) => l.taskId !== id);
+    }
     this.tasks = this.tasks.filter((t) => t.id !== id);
     this.#commit();
   }
@@ -392,6 +411,32 @@ export class Store extends EventEmitter {
 
   deleteMemo(id) {
     this.memos = this.memos.filter((m) => m.id !== id);
+    this.#commit();
+  }
+
+  /* ----------------- saisie (jours figés) ----------------- */
+  /** Les lignes figées d'un jour ("YYYY-MM-DD"), ou `null` s'il n'est pas figé. */
+  timesheetDay(key) {
+    return this.timesheet[key] ?? null;
+  }
+
+  /**
+   * Fige un jour avec ces lignes (normalisées : tâches connues, doublons
+   * fusionnés). Une liste vide fige un jour VIDE — ce n'est pas la même chose
+   * qu'un jour non figé, qui se recalcule. Renvoie `"invalid"` sur une clé mal
+   * formée.
+   */
+  setTimesheetDay(key, lines) {
+    if (!DATE_KEY.test(String(key))) return "invalid";
+    this.timesheet[key] = normalizeLines(lines, (id) => !!this.taskById(id));
+    this.#commit();
+    return key;
+  }
+
+  /** Libère un jour figé : il redevient une proposition. */
+  clearTimesheetDay(key) {
+    if (!(key in this.timesheet)) return;
+    delete this.timesheet[key];
     this.#commit();
   }
 
@@ -563,15 +608,17 @@ export class Store extends EventEmitter {
     this.tasks = [];
     this.segments = [];
     this.memos = [];
+    this.timesheet = {};
     this.meta = { lastExport: null };
     this.#commit();
   }
 
-  /** Vide tâches, segments et mémos en conservant les réglages et le méta. */
+  /** Vide tâches, segments, mémos et saisie en conservant les réglages et le méta. */
   clearEntries() {
     this.tasks = [];
     this.segments = [];
     this.memos = [];
+    this.timesheet = {};
     this.#commit();
   }
 
