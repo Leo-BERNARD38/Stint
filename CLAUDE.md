@@ -520,6 +520,22 @@ qui est à l'écran.
   « Volume ».
 - Les marques survolables (colonnes du graphique, blocs de la continuité) réutilisent
   `attachTimelineTip` via son option `selector` et le contrat `data-name/range/dur/color`.
+- **L'écart d'arrondi (Détail › Arrondi) est l'arrondi de Journée, jour par jour** :
+  `#dayStats` passe chaque tâche du jour par **`calc.roundedTaskMs`**, la porte
+  qu'emprunte aussi `totalsForDay(day, true)` — un test vérifie l'égalité jour par
+  jour. On n'arrondit jamais la période entière : l'écart mesuré est celui qui
+  s'accumule d'un soir à l'autre. `snapshot.rounding` donne le net, ce qu'il
+  **cache** (gagné au-dessus / perdu en dessous / lignes effacées — une ligne = une
+  tâche sur un jour) et le détail par type et par tâche ; la **dérive cumulée** se
+  somme au rendu sur `subPeriods()[].roundedMs`. Gagné en accent, perdu en hachures
+  (un manque), jamais de rouge ni de vert.
+- **La vue « Tout » (grain `all`)** n'est pas calendaire : du jour du premier
+  segment au lendemain du dernier (`#allBounds`, non mémoïsé — un chrono qui tourne
+  repousse la fin). `range.fixed` coupe ←/→/Aujourd'hui, `prevTotal` nul coupe
+  l'écart. Son unité (`allUnit` : semaine → mois → trimestre → année, la plus fine
+  qui tienne en ~20 colonnes) sert au graphique (**tout** l'historique, périodes
+  entières) et au découpage (borné). Une colonne cliquée passe au grain de la
+  colonne (`goToStatsPeriod(ref, grain)`).
 - **Piège de nommage** : `.untracked` est déjà la carte « Temps non tracé » de l'onglet
   Journée. La part de barre s'appelle donc `.cov-gap` — sous l'autre nom elle héritait
   du padding et du fond de la carte, et se rendait à 32 px de haut dans une piste de 12.

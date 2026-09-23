@@ -6,7 +6,7 @@
  */
 import { Settings, mergeBlocks, blocksFromDay, dayFromBlocks, validateDay, offKey, normalizeOffLabel } from "../src/models/Settings.js";
 import { Segment } from "../src/models/Segment.js";
-import { StatsAggregator, periodStart, stepPeriod } from "../src/services/StatsAggregator.js";
+import { StatsAggregator, periodStart, stepPeriod, allUnit } from "../src/services/StatsAggregator.js";
 import { Store } from "../src/models/Store.js";
 import { SCHEMA_VERSION } from "../src/core/constants.js";
 import { TimeCalculator } from "../src/services/TimeCalculator.js";
@@ -1040,6 +1040,114 @@ section("durée tapée dans le popover de la Saisie (parseDuration)");
   eq(parseDuration("1:5"), null, "H:m sans zéro : illisible (ambigu)");
   eq(parseDuration(""), null, "vide");
   eq(parseDuration("abc"), null, "texte");
+}
+
+/* ------------------------------------------------------------------ §17 */
+section("Stats : écart d'arrondi (le même que Journée) et vue « Tout »");
+{
+  const M = 60_000;
+  const store = new Store(fakePersistence());
+  store.hydrate({
+    version: 17,
+    settings: {
+      workDays: [1, 2, 3, 4, 5, 6, 7], arrival: "08:00", departure: "18:00", lunch: false,
+      segments: { minMin: 0, mergeGapMin: 0 },
+      timesheet: { steps: { dev: 30, support: 15, autre: 15 } },
+    },
+    tasks: [
+      { id: "tA", name: "MOD-1", type: "dev", color: "#000" },
+      { id: "tB", name: "MOD-2", type: "support", color: "#111" },
+    ],
+    segments: [], meta: {},
+  });
+  const now = new Date();
+  const anchor = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  const D = (day, h, mn = 0) => { const d = new Date(anchor); d.setDate(day); d.setHours(h, mn, 0, 0); return d; };
+  const add = (taskId, day, h, mn, min) => {
+    const start = D(day, h, mn);
+    store.addSegment({ taskId, start, end: new Date(start.getTime() + min * M) });
+  };
+  add("tA", 2, 9, 0, 20);  // dev 20 → 30  (+10)
+  add("tA", 3, 9, 0, 20);  // dev 20 → 30  (+10)
+  add("tA", 4, 9, 0, 20);  // dev 20 → 30  (+10)
+  add("tA", 5, 9, 0, 10);  // dev 10 → 0   (−10, effacée)
+  add("tB", 5, 10, 0, 50); // support 50 → 45 (−5)
+  add("tB", 6, 9, 0, 60);  // support 60 → 60 (juste)
+  add("tA", 7, 9, 0, 10);  // dev : deux fois 10 min le même jour…
+  add("tA", 7, 14, 0, 10); // …= 20 min pour la JOURNÉE → 30 (+10), pas 0 + 0
+  store.addOffSegment({ reason: "Pause", start: D(7, 10), end: D(7, 10, 7) }); // jamais arrondi
+
+  const calc = new TimeCalculator(store);
+  const agg = new StatsAggregator(store, calc);
+  const snap = agg.snapshot("month", anchor.getTime());
+  const r = snap.rounding;
+
+  eq(r.ms, 200 * M, "pointé : 200 min (le hors tâche exclu)");
+  eq(r.roundedMs, 225 * M, "arrondi : 225 min");
+  eq(r.diffMs, 25 * M, "écart net : +25 min");
+  eq([r.upN, r.upMs / M], [4, 40], "4 lignes arrondies au-dessus, +40 min");
+  eq([r.downN, r.downMs / M], [2, 15], "2 lignes en dessous, −15 min");
+  eq([r.zeroN, r.zeroMs / M], [1, 10], "1 ligne effacée (10 min de dev)");
+  eq(r.lines, 7, "7 lignes = 7 couples (tâche, jour)");
+  eq(r.upMs - r.downMs, r.diffMs, "gagné − perdu = net");
+  const a = r.tasks.find((t) => t.task?.id === "tA");
+  eq([a.lines, a.ms / M, a.roundedMs / M], [5, 90, 120], "par tâche : dev sur 5 jours, 90 → 120 min");
+  eq(r.tasks[0].task.id, "tA", "la tâche la plus déformée en tête");
+  eq(r.byType.find((t) => t.type === "support").diffMs, -5 * M, "par type : support −5 min");
+
+  // LE MÊME calcul que Journée, jour par jour — c'est toute la demande.
+  let same = true, sumJournee = 0;
+  for (const d of snap.days) {
+    const j = calc.totalsForDay(d.date, true).total;
+    sumJournee += j;
+    if (j !== d.roundedMs) same = false;
+  }
+  ok(same, "chaque jour : l'arrondi des Stats = totalsForDay(jour, true) de Journée");
+  eq(sumJournee, r.roundedMs, "Σ des journées arrondies de Journée = arrondi de la période");
+  eq(snap.subPeriods().reduce((acc, sp) => acc + sp.roundedMs - sp.ms, 0), r.diffMs,
+     "Σ des écarts des tranches = écart de la période (la dérive cumulée tombe juste)");
+
+  // Les blocs sont des réglages : les changer change l'écart (le cache suit `rev`).
+  store.updateSettings((s) => { s.timesheet.steps.dev = 15; });
+  const r15 = agg.snapshot("month", anchor.getTime()).rounding;
+  // dev au quart d'heure : 20 → 15 (×4 jours dont le 7), 10 → 15
+  eq(r15.roundedMs, (4 * 15 + 15 + 45 + 60) * M, "bloc dev 15 min : l'arrondi se recalcule");
+  store.updateSettings((s) => { s.timesheet.steps.dev = 30; });
+
+  // --- vue « Tout » : du premier segment au dernier ---
+  const all = agg.snapshot("all");
+  eq(fmtDateInput(new Date(all.range.start)), fmtDateInput(D(2, 0)), "Tout commence le jour du premier segment");
+  eq(fmtDateInput(new Date(all.range.end)), fmtDateInput(D(8, 0)), "…et finit au lendemain du dernier");
+  ok(all.range.fixed === true && all.range.prevLabel === null, "Tout n'a pas de voisine");
+  eq(all.kpi.prevTotal, 0, "pas de période précédente, donc pas d'écart de tête");
+  eq(all.kpi.total, 200 * M, "Tout = tout le pointé");
+  eq(all.rounding.diffMs, 25 * M, "Tout : même écart d'arrondi que le mois qui le contient");
+  eq(all.range.unit, "week", "6 jours d'historique se découpent en semaines");
+  eq(all.history().reduce((acc, b) => acc + b.ms, 0), all.kpi.total, "Σ colonnes de Tout = total");
+  ok(all.history().every((b) => b.grain === "week" && !b.current), "les colonnes mènent à leur semaine");
+  eq(all.subPeriods().reduce((acc, sp) => acc + sp.ms, 0), all.kpi.total, "Σ tranches de Tout = total");
+
+  // Un segment un an plus tôt : Tout s'étend, l'unité passe au mois.
+  store.addSegment({ taskId: "tB", start: new Date(anchor.getFullYear() - 1, anchor.getMonth(), 3, 9), end: new Date(anchor.getFullYear() - 1, anchor.getMonth(), 3, 10) });
+  const all2 = agg.snapshot("all");
+  eq(all2.range.unit, "month", "13 mois d'historique se découpent en mois");
+  eq(all2.kpi.total, 260 * M, "Tout suit le nouveau segment");
+  eq(all2.history().reduce((acc, b) => acc + b.ms, 0), all2.kpi.total, "Σ colonnes (mois) = total");
+  eq(all2.subPeriods().reduce((acc, sp) => acc + sp.ms, 0), all2.kpi.total, "Σ tranches (mois) = total");
+
+  // L'unité : la plus fine qui tienne en une vingtaine de colonnes.
+  const at = (y, m, d) => new Date(y, m, d);
+  eq(allUnit(at(2026, 0, 1), at(2026, 0, 20)), "week", "3 semaines → semaines");
+  eq(allUnit(at(2025, 0, 1), at(2026, 6, 1)), "month", "18 mois → mois");
+  eq(allUnit(at(2023, 0, 1), at(2026, 0, 1)), "quarter", "3 ans → trimestres");
+  eq(allUnit(at(2019, 0, 1), at(2026, 0, 1)), "year", "7 ans → années");
+
+  // Store vide : Tout = aujourd'hui, sans planter.
+  const empty = new Store(fakePersistence());
+  empty.hydrate({ version: 17, settings: {}, tasks: [], segments: [], meta: {} });
+  const e = new StatsAggregator(empty, new TimeCalculator(empty)).snapshot("all");
+  eq(e.days.length, 1, "Tout sur un store vide : un jour, aujourd'hui");
+  eq(e.rounding.lines, 0, "…et aucune ligne arrondie");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

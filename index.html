@@ -359,6 +359,7 @@
             <button class="chip" data-detail="types">Par type</button>
             <button class="chip" data-detail="off">Hors tâche</button>
             <button class="chip" data-detail="split">Découpage</button>
+            <button class="chip" data-detail="round">Arrondi</button>
           </div>
         </div>
         <div class="stats-detail" id="statsDetail"></div>
@@ -992,10 +993,13 @@
           <h3>Onglet Stats — rétrospective</h3>
           <p>
             La page du débrief. Tu choisis un <b>grain</b> — <b>Semaine · Mois · Trimestre ·
-            Année</b> — et tu navigues de période en période avec les flèches
+            Année</b>, ou <b>Tout</b> — et tu navigues de période en période avec les flèches
             (ou <kbd>←</kbd> <kbd>→</kbd>). Une période a un <b>nom</b> : S37, septembre 2026,
             T3 2026. C'est ce qui permet de dire « + 6 % par rapport à S36 » — une fenêtre
             glissante n'a pas de voisine. Tout l'onglet suit cette période, sans exception.
+            <b>Tout</b> couvre ton historique entier, du jour de ton premier segment à celui
+            du dernier : pas de voisine, donc pas de flèches ; ses colonnes (semaines, mois,
+            trimestres ou années selon la durée) te ramènent à la période cliquée.
           </p>
           <ul>
             <li><b>La tête</b> — le total de la période, l'écart avec la précédente
@@ -1023,6 +1027,14 @@
               semaine en jours, un mois en semaines, un trimestre ou une année en mois.
               <b>Clique une tranche</b> pour la déplier tâche par tâche ; son bouton
               <b>Jira</b> copie ce récap-là.</li>
+            <li><b>Détail · Arrondi</b> — ce que l'arrondi de Journée fait à ton temps.
+              Exactement le même calcul : chaque tâche, <b>chaque jour</b>, ramenée au bloc de
+              son type (réglé dans Réglages › Jira &amp; saisie), puis additionnée. Tu y lis le
+              pointé, l'arrondi et l'<b>écart</b> ; ce que cet écart cache (les lignes arrondies
+              au-dessus et en dessous se compensent, et certaines sont effacées sous le
+              demi-bloc) ; la <b>dérive cumulée</b> tranche après tranche — l'effet papillon :
+              quelques minutes par soir, et où ça mène — puis l'écart par type et par tâche.
+              Sur <b>Tout</b>, c'est la dérive depuis ton premier jour.</li>
           </ul>
         </div>
 

@@ -60,8 +60,10 @@ export class StatsView {
     }
     // « Aujourd'hui » ne sert à rien quand on y est déjà, et une période à venir
     // n'a rien à montrer : la flèche avant s'arrête sur la période en cours.
-    el("stNow").disabled = range.current;
-    el("stNext").disabled = range.current;
+    // « Tout » n'a ni voisine ni « en cours » : les trois se taisent.
+    el("stNow").disabled = range.current || !!range.fixed;
+    el("stNext").disabled = range.current || !!range.fixed;
+    el("stPrev").disabled = !!range.fixed;
 
     const delta = this.#delta(kpi, range);
     this.lead.innerHTML =

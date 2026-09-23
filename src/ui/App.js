@@ -227,6 +227,8 @@ export class App {
 
   /** Période précédente / suivante, au grain courant. */
   shiftStatsPeriod(n) {
+    // « Tout » n'a pas de voisine : ←/→ n'ont nulle part où aller.
+    if (this.statsGrain === "all") return;
     const start = periodStart(this.statsGrain, new Date(this.statsRef));
     this.statsRef = stepPeriod(this.statsGrain, start, n).getTime();
     this.render();
@@ -238,8 +240,12 @@ export class App {
     this.render();
   }
 
-  /** Depuis une colonne du graphique : aller à cette période. */
-  goToStatsPeriod(refMs) {
+  /**
+   * Depuis une colonne du graphique : aller à cette période. `grain` n'est
+   * passé que depuis « Tout », dont les colonnes sont des mois, trimestres…
+   */
+  goToStatsPeriod(refMs, grain = null) {
+    if (grain) this.statsGrain = grain;
     this.statsRef = refMs;
     this.render();
   }

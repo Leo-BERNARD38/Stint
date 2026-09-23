@@ -6,7 +6,7 @@ import {
 } from "../utils/datetime.js";
 
 /**
- * Les quatre grains de l'onglet Stats. Ce sont des **périodes calendaires
+ * Les grains de l'onglet Stats. Les quatre premiers sont des **périodes calendaires
  * nommées** — S37, septembre 2026, T3 2026, 2026 — et non des fenêtres
  * glissantes : on débriefe « la semaine », pas « les 28 derniers jours ».
  * Une fenêtre glissante n'a pas de nom, donc pas de voisine : impossible de
@@ -17,7 +17,14 @@ export const STATS_GRAINS = [
   { key: "month", label: "Mois" },
   { key: "quarter", label: "Trimestre" },
   { key: "year", label: "Année" },
+  // « Tout » n'est pas une période calendaire : c'est l'historique entier, du
+  // jour du premier segment à celui du dernier. Il n'a donc ni voisine ni
+  // navigation (`range.fixed`), et son découpage choisit seul son unité.
+  { key: "all", label: "Tout" },
 ];
+
+/** Unité du découpage d'un grain calendaire : la semaine en jours, le mois en semaines… */
+const subUnit = (grain) => (grain === "week" ? "day" : grain === "month" ? "week" : "month");
 
 /** Au-delà, la vue « Continuité » ferait une ligne par jour sur un mètre. */
 export const CONTINUITY_MAX_DAYS = 45;
@@ -32,6 +39,24 @@ const FMT_DM = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short"
 const FMT_DMY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
 const noDot = (s) => s.replace(/\./g, "");
+
+/**
+ * Unité de découpage de la vue « Tout » : la plus fine qui tienne en une
+ * vingtaine de colonnes. Trois semaines d'historique se lisent en semaines,
+ * deux ans en mois ; au-delà, trimestres puis années.
+ */
+export function allUnit(start, end) {
+  const lastDay = addDays(end, -1);
+  // `Math.round` : un intervalle qui enjambe un changement d'heure ne fait pas
+  // un nombre entier de journées de 24 h (cf. CLAUDE.md §11).
+  const days = Math.round((end.getTime() - start.getTime()) / DAY_MS);
+  if (days <= 16 * 7) return "week";
+  const months = (lastDay.getFullYear() - start.getFullYear()) * 12
+    + lastDay.getMonth() - start.getMonth() + 1;
+  if (months <= 24) return "month";
+  if (months <= 48) return "quarter";
+  return "year";
+}
 
 /**
  * Début de la période calendaire contenant `date`, à minuit **local**.
@@ -75,6 +100,7 @@ function tickLabel(grain, start) {
 
 /** Étendue en clair : « 8 – 14 sept. 2026 ». Bornes **incluses**. */
 function spanLabel(start, lastDay) {
+  if (start.getTime() === lastDay.getTime()) return noDot(FMT_DMY.format(start));
   const sameMonth = start.getFullYear() === lastDay.getFullYear()
     && start.getMonth() === lastDay.getMonth();
   const left = sameMonth ? String(start.getDate()) : noDot(FMT_DM.format(start));
@@ -115,6 +141,7 @@ export class StatsAggregator {
    * « sept jours d'avant » n'apprend rien qu'on ne sache déjà.
    */
   range(grain, refMs = Date.now()) {
+    if (grain === "all") return this.#allRange();
     const start = periodStart(grain, new Date(refMs));
     const end = stepPeriod(grain, start, 1);
     const prevStart = stepPeriod(grain, start, -1);
@@ -131,6 +158,50 @@ export class StatsAggregator {
       sub: spanLabel(start, lastDay),
       /** Vrai si la période contient aujourd'hui (elle est donc incomplète). */
       current: Date.now() >= start.getTime() && Date.now() < end.getTime(),
+    };
+  }
+
+  /**
+   * Bornes de la vue « Tout » : du jour du premier segment (tâche ou hors
+   * tâche) au lendemain du jour du dernier. Pas mémoïsé sur `rev` : un chrono
+   * qui tourne repousse la fin sans muter le store. Un balayage linéaire des
+   * segments, sans commune mesure avec l'agrégation qui suit.
+   */
+  #allBounds() {
+    let min = Infinity, max = -Infinity;
+    for (const seg of this.store.segments) {
+      min = Math.min(min, seg.startMs());
+      max = Math.max(max, seg.endMs());
+    }
+    if (!Number.isFinite(min)) {
+      const today = startOfDay(new Date());
+      return { start: today, end: addDays(today, 1) };
+    }
+    // Un segment qui finit pile à minuit appartient à la veille.
+    return {
+      start: startOfDay(new Date(min)),
+      end: addDays(startOfDay(new Date(Math.max(min, max - 1))), 1),
+    };
+  }
+
+  #allRange() {
+    const { start, end } = this.#allBounds();
+    const now = Date.now();
+    return {
+      grain: "all",
+      start: start.getTime(),
+      end: end.getTime(),
+      startDate: start,
+      // Pas de période précédente : l'écart de tête tombe de lui-même
+      // (`prevTotal` nul), et ←/→ n'ont nulle part où aller.
+      prevStart: start.getTime(),
+      prevEnd: start.getTime(),
+      label: "Tout",
+      prevLabel: null,
+      sub: spanLabel(start, addDays(end, -1)),
+      current: now >= start.getTime() && now < end.getTime(),
+      fixed: true,
+      unit: allUnit(start, end),
     };
   }
 
@@ -179,6 +250,7 @@ export class StatsAggregator {
     const out = {
       ms: 0, byType: emptyByType(), byTask: new Map(),
       offMs: 0, offByReason: new Map(), covered: [],
+      roundedMs: 0, roundedByType: emptyByType(), roundedByTask: new Map(),
     };
     if (!entry) { this.#dayCache.set(dayStart, out); return out; }
     // `addDays`, jamais `+ DAY_MS` : le 25 octobre dure 25 h en Europe, et
@@ -208,6 +280,18 @@ export class StatsAggregator {
       out.byTask.set(seg.taskId, (out.byTask.get(seg.taskId) ?? 0) + ms);
     }
     out.covered = unionIntervals(spans);
+    // L'arrondi de Journée, jour par jour : chaque tâche du jour est ramenée au
+    // bloc de son type (`calc.roundedTaskMs`, la porte qu'emprunte aussi
+    // `totalsForDay(day, true)`). On arrondit la tâche à la JOURNÉE — c'est ce
+    // qu'on reporte — et jamais la période entière : l'écart qu'on mesure est
+    // celui qui s'accumule d'un soir à l'autre.
+    for (const [taskId, ms] of out.byTask) {
+      const r = this.calc.roundedTaskMs(taskId, ms);
+      out.roundedByTask.set(taskId, r);
+      out.roundedMs += r;
+      const type = this.store.taskById(taskId)?.type ?? "autre";
+      out.roundedByType[type] = (out.roundedByType[type] ?? 0) + r;
+    }
     // Un segment en cours grandit sans muter le store : ce jour-là n'est pas
     // mémoïsable (le cache du snapshot, lui, tourne à la minute).
     if (!entry.segs.some((seg) => seg.isRunning)) this.#dayCache.set(dayStart, out);
@@ -250,6 +334,8 @@ export class StatsAggregator {
         key: fmtDateInput(date), date, start: t,
         end: addDays(date, 1).getTime(),
         ms: stats.ms, byType: stats.byType, byTask: stats.byTask,
+        roundedMs: stats.roundedMs, roundedByType: stats.roundedByType,
+        roundedByTask: stats.roundedByTask,
         offMs: stats.offMs, offByReason: stats.offByReason, covered: stats.covered,
         ranges, plannedMs, scheduledMs, untrackedMs, isWorkDay: ranges.length > 0,
       });
@@ -261,9 +347,32 @@ export class StatsAggregator {
   #fold(days) {
     const byType = emptyByType();
     const byTask = new Map();
-    let ms = 0, offMs = 0, untrackedMs = 0, scheduledMs = 0, activeDays = 0, workDays = 0;
+    const roundedByType = emptyByType();
+    // L'arrondi, ligne à ligne — une ligne = une tâche sur un jour, ce qu'on
+    // reporte un soir. `up` / `down` : ce que les lignes arrondies au-dessus
+    // ont ajouté, ce que celles arrondies en dessous ont retiré (dont `zero` :
+    // les lignes effacées, sous le demi-bloc). Le net seul cacherait tout :
+    // +10 h et −9 h 30 font le même +0:30 que deux lignes presque justes.
+    const round = {
+      lines: 0, up: 0, upN: 0, down: 0, downN: 0, zeroMs: 0, zeroN: 0,
+      byTask: new Map(),
+    };
+    let ms = 0, roundedMs = 0, offMs = 0, untrackedMs = 0, scheduledMs = 0, activeDays = 0, workDays = 0;
     for (const d of days) {
       ms += d.ms;
+      roundedMs += d.roundedMs;
+      for (const t of TASK_TYPES) roundedByType[t] += d.roundedByType[t] ?? 0;
+      for (const [taskId, raw] of d.byTask) {
+        const r = d.roundedByTask.get(taskId) ?? 0;
+        const diff = r - raw;
+        round.lines += 1;
+        if (diff > 0) { round.up += diff; round.upN += 1; }
+        else if (diff < 0) { round.down -= diff; round.downN += 1; }
+        if (r === 0) { round.zeroMs += raw; round.zeroN += 1; }
+        const acc = round.byTask.get(taskId) ?? { ms: 0, roundedMs: 0, lines: 0 };
+        acc.ms += raw; acc.roundedMs += r; acc.lines += 1;
+        round.byTask.set(taskId, acc);
+      }
       offMs += d.offMs;
       untrackedMs += d.untrackedMs;
       scheduledMs += d.scheduledMs;
@@ -274,6 +383,7 @@ export class StatsAggregator {
     }
     return {
       ms, byType, byTask, offMs, untrackedMs, scheduledMs, activeDays, workDays,
+      roundedMs, roundedByType, round,
       avgPerActiveDay: activeDays ? ms / activeDays : 0,
     };
   }
@@ -297,8 +407,15 @@ export class StatsAggregator {
    * l'historique — on ne paie que ce qui est à l'écran.
    */
   snapshot(grain, refMs = Date.now()) {
-    const start = periodStart(grain, new Date(refMs)).getTime();
-    const end = stepPeriod(grain, new Date(start), 1).getTime();
+    let start, end;
+    if (grain === "all") {
+      const b = this.#allBounds();
+      start = b.start.getTime();
+      end = b.end.getTime();
+    } else {
+      start = periodStart(grain, new Date(refMs)).getTime();
+      end = stepPeriod(grain, new Date(start), 1).getTime();
+    }
     const now = Date.now();
     // La composante « minute » suit la PÉRIODE COURANTE, pas un chrono qui
     // tourne : `scheduledMs` et le temps non tracé s'écoulent avec l'horloge
@@ -307,7 +424,8 @@ export class StatsAggregator {
     // passée se met en cache sans composante temporelle, et feuilleter
     // l'historique ne recalcule plus rien.
     const live = now >= start && now < end;
-    const cacheKey = `${grain}|${start}|${this.store.rev}|${live ? Math.floor(now / 60000) : ""}`;
+    // `end` dans la clé : la vue « Tout » garde son début quand sa fin avance.
+    const cacheKey = `${grain}|${start}|${end}|${this.store.rev}|${live ? Math.floor(now / 60000) : ""}`;
     if (this.#cache && this.#cache.key === cacheKey) return this.#cache.data;
     const data = this.#build(grain, start);
     this.#cache = { key: cacheKey, data };
@@ -324,11 +442,16 @@ export class StatsAggregator {
       days,
       byTask: this.#tasksOf(fold.byTask, fold.ms),
       kpi: this.#kpi(days, fold, range),
+      rounding: this.#rounding(fold),
+      // Sur « Tout », le contexte n'est pas « les 12 d'avant » (il n'y a rien
+      // avant) : c'est l'historique entier, à l'unité du découpage.
       history: (count = 12) => {
         snapshot._hist ??= {};
-        return (snapshot._hist[count] ??= this.#history(grain, range.start, count));
+        return (snapshot._hist[count] ??= grain === "all"
+          ? this.#spanHistory(range)
+          : this.#history(grain, range.start, count));
       },
-      subPeriods: () => (snapshot._subs ??= this.#subPeriods(grain, days)),
+      subPeriods: () => (snapshot._subs ??= this.#subPeriods(grain === "all" ? range.unit : subUnit(grain), days)),
     };
     return snapshot;
   }
@@ -349,21 +472,48 @@ export class StatsAggregator {
       const start = stepPeriod(grain, new Date(startMs), -i);
       const end = stepPeriod(grain, start, 1);
       const fold = this.#fold(this.#daysBetween(start.getTime(), end.getTime()));
-      out.push({
-        key: fmtDateInput(start),
-        refMs: start.getTime(),
-        start: start.getTime(),
-        end: end.getTime(),
-        label: tickLabel(grain, start),
-        sub: periodLabel(grain, start),
-        span: spanLabel(start, addDays(end, -1)),
-        ms: fold.ms,
-        byType: fold.byType,
-        activeDays: fold.activeDays,
-        current: i === 0,
-      });
+      out.push(this.#bucket(grain, start, end, fold, i === 0));
     }
     return out;
+  }
+
+  /**
+   * L'historique entier de la vue « Tout », en périodes ENTIÈRES de son unité
+   * (la première peut commencer avant le premier segment : il n'y a rien à y
+   * compter, le total reste celui de la vue). Aucune n'est « courante » : elles
+   * forment toutes la période affichée.
+   */
+  #spanHistory(range) {
+    const unit = range.unit;
+    const out = [];
+    let start = periodStart(unit, new Date(range.start));
+    let guard = 0;
+    while (start.getTime() < range.end && guard < 400) {
+      const end = stepPeriod(unit, start, 1);
+      const fold = this.#fold(this.#daysBetween(start.getTime(), end.getTime()));
+      out.push(this.#bucket(unit, start, end, fold, false));
+      start = end;
+      guard += 1;
+    }
+    return out;
+  }
+
+  /** Une colonne du graphique. `grain` : où mène un clic sur elle. */
+  #bucket(grain, start, end, fold, current) {
+    return {
+      key: fmtDateInput(start),
+      grain,
+      refMs: start.getTime(),
+      start: start.getTime(),
+      end: end.getTime(),
+      label: tickLabel(grain, start),
+      sub: periodLabel(grain, start),
+      span: spanLabel(start, addDays(end, -1)),
+      ms: fold.ms,
+      byType: fold.byType,
+      activeDays: fold.activeDays,
+      current,
+    };
   }
 
   /* ----------------- découpage interne ----------------- */
@@ -377,14 +527,11 @@ export class StatsAggregator {
    * jours disjoints). C'est aussi pourquoi elles ne portent pas d'écart — une
    * semaine coupée par le début du mois donnerait un « -60 % » mensonger.
    */
-  #subPeriods(grain, days) {
-    const unit = grain === "week" ? "day" : grain === "month" ? "week" : "month";
+  #subPeriods(unit, days) {
     const out = [];
     let current = null;
     for (const day of days) {
-      const id = unit === "day" ? day.key
-        : unit === "week" ? fmtDateInput(mondayOf(day.date))
-          : `${day.date.getFullYear()}-${day.date.getMonth()}`;
+      const id = unit === "day" ? day.key : fmtDateInput(periodStart(unit, day.date));
       if (!current || current.id !== id) {
         current = { id, unit, start: day.start, end: day.end, days: [], fullDays: this.#fullDays(unit, day.date) };
         Object.assign(current, this.#subLabels(unit, day.date));
@@ -407,6 +554,7 @@ export class StatsAggregator {
           : spanLabel(new Date(slot.start), slot.days[slot.days.length - 1].date),
         partial: slot.days.length < slot.fullDays,
         ms: fold.ms, byType: fold.byType, offMs: fold.offMs,
+        roundedMs: fold.roundedMs,
         activeDays: fold.activeDays, avgPerActiveDay: fold.avgPerActiveDay,
         tasks: this.#tasksOf(fold.byTask, fold.ms),
       };
@@ -416,8 +564,8 @@ export class StatsAggregator {
   /** Jours qu'aurait la tranche entière : sert à repérer celles que la période coupe. */
   #fullDays(unit, date) {
     if (unit === "day") return 1;
-    if (unit === "week") return 7;
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const start = periodStart(unit, date);
+    return Math.round((stepPeriod(unit, start, 1).getTime() - start.getTime()) / DAY_MS);
   }
 
   #subLabels(unit, date) {
@@ -432,10 +580,15 @@ export class StatsAggregator {
       const monday = mondayOf(date);
       return { label: "S" + isoWeek(monday), sub: spanLabel(monday, addDays(monday, 6)) };
     }
-    return {
-      label: cap(noDot(FMT_MONTH_SHORT.format(date))),
-      sub: cap(FMT_MONTH_LONG.format(date)),
-    };
+    if (unit === "month") {
+      return {
+        label: cap(noDot(FMT_MONTH_SHORT.format(date))),
+        sub: cap(FMT_MONTH_LONG.format(date)),
+      };
+    }
+    // Trimestre, année : seulement dans la vue « Tout », où les années se
+    // suivent — l'année est donc dans le libellé.
+    return { label: periodLabel(unit, periodStart(unit, date)), sub: "" };
   }
 
   /* ----------------- répartitions ----------------- */
@@ -445,6 +598,37 @@ export class StatsAggregator {
       .map(([id, ms]) => ({ task: this.store.taskById(id), ms, share: total > 0 ? ms / total : 0 }))
       .filter((r) => r.ms > 0)
       .sort((a, b) => b.ms - a.ms);
+  }
+
+  /* ----------------- écart d'arrondi ----------------- */
+
+  /**
+   * Ce que l'arrondi de Journée a fait au temps de la période : réel, arrondi,
+   * net, et ce que le net cache (gagné au-dessus, perdu en dessous, lignes
+   * effacées). Par type — un bloc par type — et par tâche, les plus déformées
+   * d'abord.
+   */
+  #rounding(fold) {
+    const r = fold.round;
+    const tasks = [...r.byTask.entries()]
+      .map(([id, v]) => ({ task: this.store.taskById(id), ...v, diffMs: v.roundedMs - v.ms }))
+      .sort((a, b) => Math.abs(b.diffMs) - Math.abs(a.diffMs) || b.ms - a.ms);
+    const diffMs = fold.roundedMs - fold.ms;
+    return {
+      ms: fold.ms,
+      roundedMs: fold.roundedMs,
+      diffMs,
+      diffPct: fold.ms > 0 ? (diffMs / fold.ms) * 100 : null,
+      lines: r.lines,
+      upMs: r.up, upN: r.upN,
+      downMs: r.down, downN: r.downN,
+      zeroMs: r.zeroMs, zeroN: r.zeroN,
+      byType: TASK_TYPES.map((type) => ({
+        type, ms: fold.byType[type], roundedMs: fold.roundedByType[type],
+        diffMs: fold.roundedByType[type] - fold.byType[type],
+      })),
+      tasks,
+    };
   }
 
   /* ----------------- indicateurs ----------------- */

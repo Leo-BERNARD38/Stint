@@ -1655,6 +1655,80 @@ select option { background-color: var(--surface); color: var(--text); }
   .tt .tt-share { display: none; }
 }
 
+/* ---------- Détail · Arrondi (l'écart que fait l'arrondi de Journée) ---------- */
+.rd { display: flex; flex-direction: column; gap: var(--sp-3); }
+/* Le net en trois chiffres, sans carte : on est déjà dans un panneau. */
+.rd-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--radius-sm); background: var(--surface-2); }
+.rd-sum > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rd-k { font-family: var(--font-data); font-size: 9.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--text-faint); }
+.rd-v { font-family: var(--font-display); font-size: 24px; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.rd-s { font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+.rd-sec { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+  margin-top: var(--sp-3); }
+.rd-sec-hint { font-size: 12px; color: var(--text-faint); }
+/* La barre DIVERGE d'un axe central : deux pistes dos à dos, l'une se remplit
+   vers la gauche (retiré), l'autre vers la droite (ajouté). Même grammaire que
+   toute barre de part : piste à 8 % d'encre, remplissage plein, coins pilule. */
+.rd-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: 10px; min-width: 0; }
+.rd-half { display: flex; height: 100%; overflow: hidden;
+  background: color-mix(in srgb, var(--text) 8%, transparent); }
+.rd-half.l { justify-content: flex-end; border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.rd-half.r { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.rd-half i { display: block; height: 100%; transition: width .4s var(--ease-out); }
+/* Ajouté = du temps en plus, qui se mesure : l'accent. Retiré = un manque, qui
+   se DESSINE : la trame de `.cov-gap`, réglée pour les pistes fines. */
+.rd-half i.up { background: var(--accent); border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.rd-half i.dn { border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+  background-color: color-mix(in srgb, var(--text) 5%, transparent);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 4px, var(--gap-ring) 4px 8px);
+  box-shadow: inset 0 0 0 1px var(--gap-ring); }
+.rd-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  align-items: center; gap: var(--sp-3); }
+.rd-side { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-data);
+  font-size: 10px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.rd-side b { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--text); }
+.rd-side.l { text-align: right; align-items: flex-end; }
+/* Dérive cumulée : la durée (le cumul) est la dernière piste, collée à droite. */
+.rd-drift { display: flex; flex-direction: column; gap: 2px; }
+.rd-drow { display: grid; grid-template-columns: 132px minmax(0, 1fr) 62px 70px;
+  align-items: center; gap: var(--sp-3); padding: 6px 10px; border-radius: var(--radius-sm); }
+.rd-drow:hover { background: var(--surface-2); }
+.rd-slot { text-align: right; font-family: var(--font-data); font-size: 11px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums; }
+.rd-cumul { text-align: right; font-family: var(--font-display); font-size: 17px;
+  font-variant-numeric: tabular-nums; }
+.rd-drow.is-empty .rd-cumul { color: var(--text-soft); }
+/* Par type / par tâche : nom élastique, « pointé → arrondi », puis l'écart. */
+.rd-rows { display: flex; flex-direction: column; gap: 2px; }
+.rd-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 70px; align-items: center;
+  gap: var(--sp-3); padding: 7px 10px; border-radius: var(--radius-sm); }
+.rd-row.is-task { cursor: pointer; }
+.rd-row.is-task:hover { background: var(--surface-2); }
+.rd-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.rd-label { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-step { font-family: var(--font-data); font-size: 10px; color: var(--text-faint); white-space: nowrap; }
+.rd-from { font-family: var(--font-data); font-size: 11.5px; color: var(--text-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rd-diff { text-align: right; font-family: var(--font-display); font-size: 17px;
+  font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .rd-sum { padding: var(--sp-3); }
+  .rd-v { font-size: 18px; }
+  .rd-split { grid-template-columns: 1fr 1fr; }
+  .rd-split .rd-bar { grid-column: 1 / -1; grid-row: 1; }
+  .rd-side.l { text-align: left; align-items: flex-start; }
+  .rd-side.r { text-align: right; align-items: flex-end; }
+  .rd-drow { grid-template-columns: 64px minmax(0, 1fr) 62px; }
+  .rd-drow .sp-id em, .rd-drow .rd-slot { display: none; }
+  .rd-row { grid-template-columns: minmax(0, 1fr) 70px; }
+  .rd-row .rd-from { display: none; }
+}
+
 /* Jointures d'un segment coupé par les horaires : le bloc reste un tout, on
    n'arrondit que les bords extérieurs — jointures internes carrées (placé
    après les règles de rayon des deux timelines pour l'emporter). */

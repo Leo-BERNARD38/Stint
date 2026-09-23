@@ -6,6 +6,7 @@ import { workedParts } from "../../utils/intervals.js";
 import { attachTimelineTip } from "../components/TimelineTip.js";
 
 const HISTORY = 12; // périodes de contexte
+const UNIT_PLURAL = { week: "semaines", month: "mois", quarter: "trimestres", year: "années" };
 
 /**
  * Bloc « Évolution » : le même sujet vu de loin ou de près, **jamais les deux
@@ -49,7 +50,7 @@ export class StatsChartView {
       // Une colonne du graphique EST un raccourci de navigation : c'est la
       // période qu'elle représente, et on n'a pas à la retrouver aux flèches.
       const col = e.target.closest(".vol-col[data-ref]");
-      if (col) { this.app.goToStatsPeriod(Number(col.dataset.ref)); return; }
+      if (col) { this.app.goToStatsPeriod(Number(col.dataset.ref), col.dataset.grain || null); return; }
       const seg = e.target.closest(".tl-seg[data-day]");
       if (seg) this.app.goToDaySegments(seg.dataset.day);
     });
@@ -85,7 +86,11 @@ export class StatsChartView {
     const filled = buckets.filter((b) => b.ms > 0);
     const avg = filled.length ? filled.reduce((a, b) => a + b.ms, 0) / filled.length : 0;
 
-    this.hint.textContent = `${HISTORY} dernières périodes · clic = y aller`;
+    // Sur « Tout », les colonnes sont l'historique entier, à l'unité du découpage.
+    const all = snap.range.grain === "all";
+    this.hint.textContent = all
+      ? `${buckets.length} ${UNIT_PLURAL[snap.range.unit]} · clic = y aller`
+      : `${HISTORY} dernières périodes · clic = y aller`;
 
     if (max <= 0) {
       this.el.appendChild(createEl("div", { className: "empty", text: "Aucun temps tracé sur cette période ni sur les précédentes." }));
@@ -120,6 +125,8 @@ export class StatsChartView {
         className: "vol-col" + (b.current ? " is-current" : "") + (b.ms > 0 ? "" : " is-empty"),
         attrs: {
           "data-ref": String(b.refMs),
+          // Depuis « Tout », un clic change aussi de grain (vers celui de la colonne).
+          ...(all ? { "data-grain": b.grain } : {}),
           "data-name": b.sub,
           "data-range": legend,
           "data-dur": b.ms > 0 ? clock(b.ms) : "",

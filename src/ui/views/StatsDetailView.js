@@ -19,6 +19,10 @@ const TASKS_SHOWN = 12; // au-delà, replié derrière « + N autres »
  * « Découpage » est la généralisation de l'ancien récap hebdomadaire : l'unité
  * suit le grain (semaine → jours, mois → semaines, trimestre et année → mois)
  * au lieu d'être figée sur la semaine.
+ *
+ * « Arrondi » mesure ce que l'arrondi de Journée fait au temps : chaque tâche,
+ * chaque jour, ramenée au bloc de son type — le même calcul, par la même porte
+ * (`calc.roundedTaskMs`) — puis additionnée sur la période.
  */
 export class StatsDetailView {
   constructor(app) {
@@ -30,6 +34,7 @@ export class StatsDetailView {
     this.tab = "tasks";
     this.offOpen = false;   // « Exceptionnels » déplié ?
     this.showAllTasks = false;
+    this.showAllRound = false; // « Arrondi » : toutes les tâches, pas seulement les plus déformées
     this.expanded = new Set(); // sous-périodes dépliées (survit aux rendus)
   }
 
@@ -48,6 +53,14 @@ export class StatsDetailView {
       if (more) { this.showAllTasks = !this.showAllTasks; this.render(); return; }
       const settings = e.target.closest('[data-act="off-settings"]');
       if (settings) { this.app.showScreen("settings"); return; }
+      const moreRound = e.target.closest('[data-act="more-round"]');
+      if (moreRound) { this.showAllRound = !this.showAllRound; this.render(); return; }
+      const steps = e.target.closest('[data-act="round-settings"]');
+      if (steps) {
+        this.app.showScreen("settings");
+        el("set-jira").scrollIntoView({ block: "start" });
+        return;
+      }
       const head = e.target.closest(".sp-head[data-sp]");
       if (head) {
         const k = head.dataset.sp;
@@ -69,6 +82,7 @@ export class StatsDetailView {
     if (this.tab === "types") this.#renderTypes(snap);
     else if (this.tab === "off") this.#renderOff(snap);
     else if (this.tab === "split") this.#renderSplit(snap);
+    else if (this.tab === "round") this.#renderRound(snap);
     else this.#renderTasks(snap);
   }
 
@@ -246,6 +260,180 @@ export class StatsDetailView {
     });
   }
 
+  /* ----------------- arrondi ----------------- */
+
+  /**
+   * L'effet papillon de l'arrondi : quelques minutes par ligne, chaque soir, et
+   * ce que ça fait à la fin. Quatre lectures, de la plus agrégée à la plus fine :
+   *
+   *   1. le net — pointé, arrondi, écart ;
+   *   2. ce que le net CACHE — les lignes arrondies au-dessus et en dessous se
+   *      compensent : un écart de +0:30 peut être +10 h et −9 h 30. La barre
+   *      diverge d'un axe central, le gain en accent (du temps ajouté se
+   *      mesure), la perte en hachures (le manque se dessine) ;
+   *   3. la dérive CUMULÉE, tranche après tranche : c'est là que se voit
+   *      l'effet papillon — une dérive qui s'additionne au lieu de se compenser ;
+   *   4. par type (un bloc par type) et par tâche, les plus déformées d'abord.
+   *
+   * Aucun rouge ni vert : un arrondi n'est ni une faute ni un gain, c'est un
+   * écart à connaître.
+   */
+  #renderRound(snap) {
+    const r = snap.rounding;
+    const { settings } = this.app.store;
+    this.hint.textContent = "l'arrondi de Journée, tâche par tâche et jour par jour";
+    const box = createEl("div", { className: "rd" });
+    if (!r.lines) {
+      box.appendChild(createEl("div", { className: "empty", text: `Aucune tâche tracée sur ${snap.range.label}.` }));
+      box.appendChild(this.#roundSettingsLink());
+      this.el.appendChild(box);
+      return;
+    }
+    const signed = (ms) => this.#signed(ms);
+    const pct = r.diffPct == null ? ""
+      : `${r.diffPct > 0 ? "+" : r.diffPct < 0 ? "−" : ""}${this.#pct(Math.abs(r.diffPct))} %`;
+
+    // 1. Le net.
+    box.appendChild(createEl("div", {
+      className: "rd-sum",
+      html:
+        `<div><span class="rd-k">Pointé</span><span class="rd-v">${this.#clock(r.ms)}</span></div>` +
+        `<div><span class="rd-k">Arrondi</span><span class="rd-v">${this.#clock(r.roundedMs)}</span></div>` +
+        `<div><span class="rd-k">Écart</span><span class="rd-v">${signed(r.diffMs)}</span>` +
+          (pct ? `<span class="rd-s">${pct} du pointé</span>` : "") + "</div>",
+    }));
+
+    // 2. Ce que le net cache.
+    const scale = Math.max(r.upMs, r.downMs, 1);
+    const lines = (n) => `${n} ligne${n > 1 ? "s" : ""}`;
+    const exact = r.lines - r.upN - r.downN;
+    box.appendChild(this.#sec("Ce que l'écart cache", "une ligne = une tâche sur un jour"));
+    box.appendChild(createEl("div", {
+      className: "rd-split",
+      html:
+        `<span class="rd-side l"><b>${signed(-r.downMs)}</b>${lines(r.downN)} en dessous</span>` +
+        `<span class="rd-bar" role="img" aria-label="${signed(-r.downMs)} retirées, ${signed(r.upMs)} ajoutées">` +
+          `<span class="rd-half l"><i class="dn" style="width:${(r.downMs / scale) * 100}%"></i></span>` +
+          `<span class="rd-half r"><i class="up" style="width:${(r.upMs / scale) * 100}%"></i></span>` +
+        "</span>" +
+        `<span class="rd-side r"><b>${signed(r.upMs)}</b>${lines(r.upN)} au-dessus</span>`,
+    }));
+    const notes = [`${lines(r.lines)} arrondie${r.lines > 1 ? "s" : ""}`];
+    if (exact > 0) notes.push(`${exact} déjà juste${exact > 1 ? "s" : ""}`);
+    if (r.zeroN) notes.push(`${r.zeroN} effacée${r.zeroN > 1 ? "s" : ""} sous le demi-bloc (${this.#clock(r.zeroMs)} pointées)`);
+    notes.push(`±${this.#clock((r.upMs + r.downMs) / r.lines)} par ligne en moyenne`);
+    box.appendChild(createEl("div", { className: "stat-off-sum", text: notes.join(" · ") }));
+
+    // 3. La dérive cumulée — l'effet papillon.
+    const subs = snap.subPeriods();
+    if (subs.length > 1) {
+      box.appendChild(this.#sec("Dérive cumulée", "l'écart s'additionne, tranche après tranche"));
+      box.appendChild(this.#drift(subs));
+    }
+
+    // 4. Par type, puis par tâche.
+    box.appendChild(this.#sec("Par type", "un bloc par type, au plus proche"));
+    const types = createEl("div", { className: "rd-rows" });
+    for (const t of r.byType) {
+      if (!t.ms && !t.roundedMs) continue;
+      types.appendChild(createEl("div", {
+        className: "rd-row",
+        html:
+          `<span class="rd-name"><span class="type-badge type-${t.type}">${t.type}</span>` +
+            `<span class="rd-step">bloc ${settings.timesheetStep(t.type)} min</span></span>` +
+          `<span class="rd-from">${this.#clock(t.ms)} → ${this.#clock(t.roundedMs)}</span>` +
+          `<span class="rd-diff">${signed(t.diffMs)}</span>`,
+      }));
+    }
+    box.appendChild(types);
+
+    box.appendChild(this.#sec("Par tâche", "les plus déformées d'abord · clic = éditer"));
+    const tasks = createEl("div", { className: "rd-rows" });
+    const shown = this.showAllRound ? r.tasks : r.tasks.slice(0, TASKS_SHOWN);
+    for (const t of shown) {
+      tasks.appendChild(createEl("div", {
+        className: "rd-row is-task",
+        attrs: t.task ? { "data-task": t.task.id, title: "Éditer la tâche" } : {},
+        html:
+          `<span class="rd-name"><span class="seg-swatch" style="background:${t.task?.color ?? "var(--text-faint)"}"></span>` +
+            `<span class="rd-label">${escapeHtml(t.task?.displayName ?? "(tâche supprimée)")}</span>` +
+            `<span class="rd-step">${t.lines} j</span></span>` +
+          `<span class="rd-from">${this.#clock(t.ms)} → ${this.#clock(t.roundedMs)}</span>` +
+          `<span class="rd-diff">${signed(t.diffMs)}</span>`,
+      }));
+    }
+    if (r.tasks.length > TASKS_SHOWN) {
+      tasks.appendChild(createEl("button", {
+        className: "tt-rest",
+        attrs: { "data-act": "more-round", type: "button" },
+        text: this.showAllRound ? "Réduire" : `+ ${r.tasks.length - TASKS_SHOWN} autres tâches`,
+      }));
+    }
+    box.appendChild(tasks);
+    box.appendChild(this.#roundSettingsLink());
+    this.el.appendChild(box);
+  }
+
+  /**
+   * Une ligne par tranche du découpage : l'écart de la tranche, puis le CUMUL
+   * depuis le début de la période, dessiné en barre divergente. La barre suit
+   * le cumul, pas la tranche : c'est lui qui dit si la dérive se compense ou
+   * s'emballe.
+   */
+  #drift(subs) {
+    const list = createEl("div", { className: "rd-drift" });
+    let cumul = 0;
+    const rows = subs.map((sp) => {
+      const diff = sp.roundedMs - sp.ms;
+      cumul += diff;
+      return { sp, diff, cumul };
+    });
+    const scale = Math.max(1, ...rows.map((x) => Math.abs(x.cumul)));
+    for (const { sp, diff, cumul: c } of rows) {
+      const w = (Math.abs(c) / scale) * 100;
+      list.appendChild(createEl("div", {
+        className: "rd-drow" + (sp.ms > 0 ? "" : " is-empty"),
+        html:
+          `<span class="sp-id"><b>${escapeHtml(sp.label)}</b><em>${escapeHtml(sp.sub)}</em></span>` +
+          '<span class="rd-bar">' +
+            `<span class="rd-half l">${c < 0 ? `<i class="dn" style="width:${w}%"></i>` : ""}</span>` +
+            `<span class="rd-half r">${c > 0 ? `<i class="up" style="width:${w}%"></i>` : ""}</span>` +
+          "</span>" +
+          `<span class="rd-slot">${sp.ms > 0 ? this.#signed(diff) : "—"}</span>` +
+          `<span class="rd-cumul">${this.#signed(c)}</span>`,
+      }));
+    }
+    return list;
+  }
+
+  /** Durée signée : « +1:30 », « −0:45 », « 0:00 ». Le moins est typographique. */
+  #signed(ms) {
+    const min = Math.round(ms / 60000);
+    const sign = min > 0 ? "+" : min < 0 ? "−" : "";
+    return sign + this.app.formatter.clock(Math.abs(min));
+  }
+
+  /** Une décimale sous 10 % : sur une année, 0,4 % n'est pas « 0 % ». */
+  #pct(p) {
+    return p < 10 ? p.toFixed(1).replace(".", ",") : String(Math.round(p));
+  }
+
+  #sec(title, hint) {
+    return createEl("div", {
+      className: "rd-sec",
+      html: `<span class="detail-bar-lab">${escapeHtml(title)}</span><span class="rd-sec-hint">${escapeHtml(hint)}</span>`,
+    });
+  }
+
+  /** Les blocs se règlent ailleurs : autant le dire là où on en mesure l'effet. */
+  #roundSettingsLink() {
+    return createEl("button", {
+      className: "link-ghost",
+      attrs: { "data-act": "round-settings", type: "button" },
+      text: "Régler les blocs d'arrondi…",
+    });
+  }
+
   /* ----------------- découpage ----------------- */
 
   /**
@@ -258,7 +446,9 @@ export class StatsDetailView {
    */
   #renderSplit(snap) {
     const subs = snap.subPeriods();
-    const unitLabel = { day: "un jour", week: "une semaine", month: "un mois" }[subs[0]?.unit] ?? "une tranche";
+    const unitLabel = {
+      day: "un jour", week: "une semaine", month: "un mois", quarter: "un trimestre", year: "une année",
+    }[subs[0]?.unit] ?? "une tranche";
     this.hint.textContent = `${unitLabel} par ligne · clic = détail tâche par tâche`;
     const list = createEl("div", { className: "subs" });
     const max = Math.max(1, ...subs.map((s) => s.ms));

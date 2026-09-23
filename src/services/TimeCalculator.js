@@ -99,13 +99,24 @@ export class TimeCalculator {
     let total = 0;
     for (const [taskId, ms] of raw.byTask) {
       const type = this.store.taskById(taskId)?.type ?? "autre";
-      const roundedMs = this.settings.roundTaskMinutes(ms / 60000, type) * 60000;
+      const roundedMs = this.roundedTaskMs(taskId, ms);
       byTask.set(taskId, roundedMs);
       total += roundedMs;
       byType[type] = (byType[type] ?? 0) + roundedMs;
     }
     // Le hors tâche n'est jamais arrondi : rien à reporter dans Jira.
     return { total, byType, byTask, segments: raw.segments, rounded: true, off: raw.off };
+  }
+
+  /**
+   * L'arrondi d'UNE tâche sur UNE journée (ms → ms), au bloc de son type. C'est
+   * la seule porte : la vue arrondie de Journée et l'écart d'arrondi des Stats
+   * la passent toutes deux, si bien que les Stats mesurent exactement ce que
+   * Journée affiche — pas une imitation qui dériverait au premier réglage.
+   */
+  roundedTaskMs(taskId, ms) {
+    const type = this.store.taskById(taskId)?.type ?? "autre";
+    return this.settings.roundTaskMinutes(ms / 60000, type) * 60000;
   }
 
   /**
