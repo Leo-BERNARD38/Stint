@@ -45,7 +45,9 @@ export class TimesheetView {
       const box = e.target.closest("[data-ts-check]");
       if (!box) return;
       // Le rendu reconstruit la feuille : on rend le focus à la même case.
-      this.refocus = `[data-ts-check="${box.dataset.tsCheck}"][data-day="${box.dataset.day}"]`;
+      // (Échappé : un identifiant importé peut contenir n'importe quoi, et un
+      // sélecteur invalide ferait lever `querySelector` au milieu du rendu.)
+      this.refocus = `[data-ts-check="${CSS.escape(box.dataset.tsCheck)}"][data-day="${CSS.escape(box.dataset.day)}"]`;
       this.#edit(box.dataset.day, (l) => toggleLine(l, box.dataset.tsCheck));
     });
     this.table.addEventListener("click", (e) => {
@@ -118,6 +120,8 @@ export class TimesheetView {
       '<div class="ts-lead-l">' +
         `<span class="k">${escapeHtml(week.label)}<em>${escapeHtml(week.sub)}</em></span>` +
         `<span class="v">${c(t.declared)}<small>/ ${c(t.target)}</small></span>` +
+        // La cible ne vient PAS des horaires : jours travaillés × cible du jour.
+        `<span class="ts-calc">${week.workedDays} j × ${c(this.app.store.settings.timesheet.dayMin)}</span>` +
       "</div>" +
       '<div class="ts-lead-r">' +
         this.#bar(t.target, t.declared, t.done, t.gap, "ts-track", legend) +
@@ -205,7 +209,7 @@ export class TimesheetView {
       const l = d.lines.find((x) => x.taskId === taskId);
       if (!l) return '<td class="ts-cell is-empty"></td>';
       const key = escapeHtml(d.key);
-      const jira = escapeHtml(formatter.jira(l.min));
+      const jira = escapeHtml(formatter.jiraHours(l.min));
       return `<td class="ts-cell${l.done ? " done" : ""}"><span class="ts-c">` +
         '<span class="ts-acts">' +
           `<button class="mini-btn icon-only ts-rm" data-act="rm" data-day="${key}" data-task="${id}" title="Retirer (retourne en réserve)" aria-label="Retirer">${icon("x", { size: 13 })}</button>` +
@@ -288,9 +292,10 @@ export class TimesheetView {
 
   /**
    * Durée proposée : ce qui manque au jour, sans dépasser ce que la tâche a en
-   * réserve (arrondi au bloc de son type quand elle en a au moins un). Une
-   * tâche hors réserve — la réunion qu'on pose pour boucler la journée — prend
-   * simplement le manque.
+   * réserve, par blocs de son type. Des miettes (moins d'un bloc) proposent UN
+   * bloc : on déclare un peu d'avance, que la réserve reprendra — plutôt que
+   * 10 min de support qui ne sont pas un bloc. Une tâche hors réserve — la
+   * réunion qu'on pose pour boucler la journée — prend simplement le manque.
    */
   #suggest() {
     const input = this.add.querySelector("[data-ts-min]");
@@ -300,10 +305,7 @@ export class TimesheetView {
     const step = this.app.timesheet.stepFor(id);
     const inRes = this.week.reserve.find((r) => r.taskId === id)?.min ?? 0;
     let min = day.gap > 0 ? day.gap : step;
-    if (inRes > 0) {
-      const blocks = Math.floor(inRes / step) * step;
-      min = Math.min(min, blocks > 0 ? blocks : inRes);
-    }
+    if (inRes > 0) min = Math.min(min, Math.max(step, Math.floor(inRes / step) * step));
     input.value = Math.max(5, Math.round(min / 5) * 5);
   }
 

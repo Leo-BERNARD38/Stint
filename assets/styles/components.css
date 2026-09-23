@@ -1708,6 +1708,7 @@ body.booting #dayLabel {
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ts-lead .v small { font-family: var(--font-data); font-size: 14px; color: var(--text-soft);
   margin-left: 10px; letter-spacing: .02em; }
+.ts-calc { font-family: var(--font-data); font-size: 10.5px; color: var(--text-faint); letter-spacing: .03em; }
 .ts-lead-r { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .ts-track { height: 12px; }
 /* Déclaré mais pas encore saisi : le lavis — de l'acquis qui attend son geste. */
@@ -1773,7 +1774,7 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
 .ts-res:hover { background: var(--ctl-hover); }
 /* Moins d'un bloc : jamais proposé seul — des miettes, un contour sans aplat. */
 .ts-res.crumbs { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring); color: var(--text-soft); }
-.ts-empty { text-align: center !important; color: var(--text-faint); padding: var(--sp-5) !important; font-size: 13.5px; }
+.ts-table td.ts-empty { text-align: center; color: var(--text-faint); padding: var(--sp-5); font-size: 13.5px; }
 
 /* Ce qui manque à la cible : le manque se dessine, en hachures, et se clique. */
 .ts-table tfoot tr > * { padding-top: 14px; }

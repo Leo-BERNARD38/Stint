@@ -114,7 +114,7 @@ TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
 
 ### App (contrôleur)
 - Détient l'UI-state : `viewDay` (jour affiché) et `screen` (`app|settings|guide|tools`).
-- Écrans : `#appScreen` (onglets Journée/Segments/Tâches/Stats/Saisie) vs `#settingsScreen` /
+- Écrans : `#appScreen` (onglets Journée/Segments/Saisie/Tâches/Stats) vs `#settingsScreen` /
   `#guideScreen` / `#toolsScreen` (pages pleines, ouvertes via le header). `showScreen()`.
 - Onglets gérés par `TabsView` ; le sélecteur de jour (`#dayHead`) est masqué sur
   les onglets « Tâches » et « Stats » (vues tout-temps).
@@ -786,6 +786,14 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   réserve n'est jamais proposée seule : ce sont des miettes (contour sans aplat).
   Elle peut être **négative** après un jour figé qui a déclaré plus que le réel
   d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
+- **L'usage réel : une saisie CHAQUE SOIR.** On coche le jour (✓ de l'en-tête) le
+  soir même, ce qui le fige ; son surplus part en réserve et le vendredi — court
+  — la reprend. La cible de la semaine est **jours travaillés × cible du jour**
+  (« 5 j × 7:00 » sous le total) : les horaires ne disent que si un jour est
+  travaillé, jamais combien il vaut. Couvert par un test « chaque soir » (§15).
+- **La copie d'une case est en heures et minutes** (`Formatter.jiraHours`),
+  jamais en jours : `jira()` écrirait « 1d » dès que la durée atteint NOTRE
+  journée, et Jira convertit « 1d » avec la SIENNE.
 - **Aucune tâche bouche-trou** : ce qui manque à la cible reste un **vide**
   (hachures, « À compléter ») que l'utilisateur comble à la main avec ce qu'il
   veut. C'est une demande explicite.
@@ -815,5 +823,5 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
 - Le formulaire « compléter » vit sous la feuille, hors du tableau : il n'est pas
   reconstruit tant que le focus y est (le chrono re-rend toutes les 15 s).
 - ← → changent de **semaine** sur cet onglet ; le sélecteur de jour y est masqué.
-- Guide : `g-8`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
+- Guide : `g-6`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
   changements d'heure).

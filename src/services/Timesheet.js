@@ -71,7 +71,7 @@ export class Timesheet {
 
   /**
    * La semaine (lundi → dimanche) qui contient `ref`. Renvoie :
-   *   { monday, key, label, sub, current, days[], reserve[], totals }
+   *   { monday, key, label, sub, current, workedDays, days[], reserve[], totals }
    * avec pour chaque jour :
    *   { key, date, dow, target, real, lines[{taskId,min,done}], declared, done,
    *     gap, over, frozen, future, today, worked, leave, visible }
@@ -144,6 +144,7 @@ export class Timesheet {
       sub: (sameMonth ? fr(monday, { day: "numeric" }) : fr(monday, { day: "numeric", month: "short" })) +
         " – " + fr(sunday, { day: "numeric", month: "short", year: "numeric" }),
       current: today >= monday.getTime() && today < addDays(monday, 7).getTime(),
+      workedDays: days.filter((d) => d.worked).length,
       days,
       reserve: res,
       totals,

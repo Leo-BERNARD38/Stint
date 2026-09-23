@@ -156,9 +156,9 @@
     <nav class="tabs tabs-5" role="tablist">
       <button class="tab active" data-tab="journee" role="tab">Journée</button>
       <button class="tab" data-tab="segments" role="tab">Segments</button>
+      <button class="tab" data-tab="saisie" role="tab">Saisie</button>
       <button class="tab" data-tab="taches" role="tab">Tâches</button>
       <button class="tab" data-tab="stats" role="tab">Stats</button>
-      <button class="tab" data-tab="saisie" role="tab">Saisie</button>
     </nav>
 
     <!-- Sélecteur de jour : commun à Journée et Segments (masqué sur Tâches) -->
@@ -233,6 +233,33 @@
           <tbody id="segBody"></tbody>
         </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------- Onglet : Saisie (ce qu'on déclare) ----------------------------
+         Ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé : 7 h par jour travaillé,
+         par blocs du type de la tâche, arrondis vers le bas. Le reste attend en
+         RÉSERVE, attaché à sa tâche, et comble les jours courts. On coche une
+         ligne quand elle est saisie ; un jour touché est figé (§17). -->
+    <section class="tab-panel" data-panel="saisie" hidden>
+      <div class="stats-top ts-top">
+        <div class="stats-nav">
+          <span class="ts-rule" id="tsRule"></span>
+          <span class="grow"></span>
+          <button id="tsPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Semaine précédente"></button>
+          <button id="tsNext" class="daynav-mini" data-icon="chevron-right" aria-label="Semaine suivante"></button>
+          <button id="tsNow" class="btn-ghost" title="Revenir à la semaine en cours">Cette semaine</button>
+        </div>
+        <div class="ts-lead" id="tsLead"></div>
+      </div>
+
+      <!-- La feuille : une ligne par tâche, une colonne par jour — sur une ligne,
+           tout ce qu'on loggue sur un ticket dans la semaine. La dernière colonne
+           est la RÉSERVE de la tâche : le pointé qui n'a pas encore de jour. -->
+      <div class="dot-card ts-sheet">
+        <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
+        <div id="tsAdd"></div>
+        <p class="ts-foot" id="tsFoot"></p>
       </div>
     </section>
 
@@ -329,32 +356,6 @@
       </div>
     </section>
 
-    <!-- ---------------------------- Onglet : Saisie (ce qu'on déclare) ----------------------------
-         Ce qu'on DÉCLARE dans Jira, pas ce qu'on a pointé : 7 h par jour travaillé,
-         par blocs du type de la tâche, arrondis vers le bas. Le reste attend en
-         RÉSERVE, attaché à sa tâche, et comble les jours courts. On coche une
-         ligne quand elle est saisie ; un jour touché est figé (§17). -->
-    <section class="tab-panel" data-panel="saisie" hidden>
-      <div class="stats-top ts-top">
-        <div class="stats-nav">
-          <span class="ts-rule" id="tsRule"></span>
-          <span class="grow"></span>
-          <button id="tsPrev" class="daynav-mini" data-icon="chevron-left" aria-label="Semaine précédente"></button>
-          <button id="tsNext" class="daynav-mini" data-icon="chevron-right" aria-label="Semaine suivante"></button>
-          <button id="tsNow" class="btn-ghost" title="Revenir à la semaine en cours">Cette semaine</button>
-        </div>
-        <div class="ts-lead" id="tsLead"></div>
-      </div>
-
-      <!-- La feuille : une ligne par tâche, une colonne par jour — sur une ligne,
-           tout ce qu'on loggue sur un ticket dans la semaine. La dernière colonne
-           est la RÉSERVE de la tâche : le pointé qui n'a pas encore de jour. -->
-      <div class="dot-card ts-sheet">
-        <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
-        <div id="tsAdd"></div>
-        <p class="ts-foot" id="tsFoot"></p>
-      </div>
-    </section>
     </div><!-- /#appScreen -->
 
     <!-- ===================== ÉCRAN RÉGLAGES (page à part) =====================
@@ -826,9 +827,9 @@
           <a href="#g-3"><span class="num">03</span> Temps ouvré &amp; brut</a>
           <a href="#g-4"><span class="num">04</span> Onglet Journée</a>
           <a href="#g-5"><span class="num">05</span> Onglet Segments</a>
-          <a href="#g-6"><span class="num">06</span> Onglet Tâches</a>
-          <a href="#g-7"><span class="num">07</span> Onglet Stats</a>
-          <a href="#g-8"><span class="num">08</span> Onglet Saisie</a>
+          <a href="#g-6"><span class="num">06</span> Onglet Saisie</a>
+          <a href="#g-7"><span class="num">07</span> Onglet Tâches</a>
+          <a href="#g-8"><span class="num">08</span> Onglet Stats</a>
           <a href="#g-9"><span class="num">09</span> Mémos</a>
           <a href="#g-10"><span class="num">10</span> Rappels &amp; repos des yeux</a>
           <a href="#g-11"><span class="num">11</span> Outils</a>
@@ -951,6 +952,37 @@
         </div>
 
         <div class="guide-block" id="g-6">
+          <h3>Onglet Saisie — ce que tu déclares dans Jira</h3>
+          <p>
+            Tu <b>pointes</b> ce que tu fais vraiment ; tu <b>déclares</b> une journée lissée :
+            <b>7 h par jour travaillé</b> (réglable), même un vendredi court. Un jour
+            <b>non travaillé</b> dans tes horaires (congés) vaut 0 : la cible de la semaine
+            descend de 7 h. Le hors tâche n'est jamais déclaré.
+          </p>
+          <ul>
+            <li><b>Des blocs par type</b> — dev par 30 min, support et autre par 15 (réglable).
+              L'arrondi se fait <b>vers le bas</b> : ce qui ne remplit pas un bloc n'est pas
+              perdu, il part en <b>réserve</b>.</li>
+            <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche.
+              Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
+              bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
+              repart de zéro chaque lundi.</li>
+            <li><b>À compléter</b> — ce qui manque encore à un jour, en hachures. Clique-le pour
+              poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne
+              <b>Réserve</b> se clique aussi : il ouvre le premier jour à compléter.</li>
+            <li><b>Coche</b> une case quand tu l'as saisie dans Jira (le bouton ✓ de l'en-tête
+              coche tout le jour). Au survol d'une case : copier la durée au format Jira, ou la
+              retirer — elle retourne en réserve.</li>
+            <li><b>Un jour que tu touches est figé</b> : il ne se recalcule plus, pour que ce que
+              tu as coché reste ce qui est dans Jira. <b>Recalculer</b> (↺) le libère.</li>
+          </ul>
+          <p>Le bon rythme : <b>chaque soir</b>, tu recopies le jour dans Jira et tu le coches.
+            Le surplus attend en réserve et le vendredi le reprend : à la fin, jours travaillés
+            × 7 h. La feuille se lit par ligne : sur un ticket, tout ce que tu loggues dans la
+            semaine. <kbd>←</kbd> <kbd>→</kbd> changent de semaine.</p>
+        </div>
+
+        <div class="guide-block" id="g-7">
           <h3>Onglet Tâches — rechercher, filtrer, regrouper</h3>
           <p>
             Toutes tes tâches, avec <b>recherche</b> (nom ou clé Jira), <b>filtres</b> par type
@@ -964,7 +996,7 @@
           </p>
         </div>
 
-        <div class="guide-block" id="g-7">
+        <div class="guide-block" id="g-8">
           <h3>Onglet Stats — rétrospective</h3>
           <p>
             La page du débrief. Tu choisis un <b>grain</b> — <b>Semaine · Mois · Trimestre ·
@@ -1000,35 +1032,6 @@
               <b>Clique une tranche</b> pour la déplier tâche par tâche ; son bouton
               <b>Jira</b> copie ce récap-là.</li>
           </ul>
-        </div>
-
-        <div class="guide-block" id="g-8">
-          <h3>Onglet Saisie — ce que tu déclares dans Jira</h3>
-          <p>
-            Tu <b>pointes</b> ce que tu fais vraiment ; tu <b>déclares</b> une journée lissée :
-            <b>7 h par jour travaillé</b> (réglable), même un vendredi court. Un jour
-            <b>non travaillé</b> dans tes horaires (congés) vaut 0 : la cible de la semaine
-            descend de 7 h. Le hors tâche n'est jamais déclaré.
-          </p>
-          <ul>
-            <li><b>Des blocs par type</b> — dev par 30 min, support et autre par 15 (réglable).
-              L'arrondi se fait <b>vers le bas</b> : ce qui ne remplit pas un bloc n'est pas
-              perdu, il part en <b>réserve</b>.</li>
-            <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche.
-              Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
-              bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
-              repart de zéro chaque lundi.</li>
-            <li><b>À compléter</b> — ce qui manque encore à un jour, en hachures. Clique-le pour
-              poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne
-              <b>Réserve</b> se clique aussi : il ouvre le premier jour à compléter.</li>
-            <li><b>Coche</b> une case quand tu l'as saisie dans Jira (le bouton ✓ de l'en-tête
-              coche tout le jour). Au survol d'une case : copier la durée au format Jira, ou la
-              retirer — elle retourne en réserve.</li>
-            <li><b>Un jour que tu touches est figé</b> : il ne se recalcule plus, pour que ce que
-              tu as coché reste ce qui est dans Jira. <b>Recalculer</b> (↺) le libère.</li>
-          </ul>
-          <p>La feuille se lit par ligne : sur un ticket, tout ce que tu loggues dans la semaine.
-            <kbd>←</kbd> <kbd>→</kbd> changent de semaine.</p>
         </div>
 
         <div class="guide-block" id="g-9">

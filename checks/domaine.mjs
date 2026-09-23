@@ -892,6 +892,55 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(L[0].min, 60, "aucune fonction ne mute son entrée");
   }
 
+  // --- le vrai usage : une saisie CHAQUE SOIR, le vendredi boucle la semaine ---
+  {
+    const st = mk();
+    const ts = new Timesheet(st, new TimeCalculator(st));
+    // Lun → jeu : 7 h 30 réparties sur trois tâches ; ven : 4 h 10.
+    for (const d of [21, 22, 23, 24]) { seg(st, "tA", d, 8, 0, 190); seg(st, "tS", d, 11, 10, 80); seg(st, "tB", d, 13, 0, 180); }
+    seg(st, "tA", 25, 8, 0, 250);
+    const evening = (d) => {
+      const day = ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
+      st.setTimesheetDay(day.key, setAllDone(day.lines, true)); // « tout cocher » le soir même
+      return ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
+    };
+    const mon = evening(21);
+    eq([mon.declared, mon.gap], [405, 15], "lundi soir : 6 h 45 en blocs, 15 min à compléter (miettes en réserve)");
+    st.setTimesheetDay(mon.key, addToLine(mon.lines, "tR", 15)); // la réunion, à la main
+    for (const d of [22, 23, 24]) {
+      const day = evening(d);
+      if (day.gap) st.setTimesheetDay(day.key, addToLine(day.lines, "tR", day.gap));
+    }
+    const fri = ts.week(D(23, 12).getTime(), D(25, 18).getTime()).days[4];
+    ok(fri.declared <= 420 && fri.lines.some((l) => l.taskId === "tA"), "vendredi soir : son travail d'abord");
+    ok(fri.lines.some((l) => l.taskId !== "tA"), "…puis la réserve de la semaine");
+    st.setTimesheetDay(fri.key, addToLine(fri.lines, "tR", fri.gap));
+    const w = ts.week(D(23, 12).getTime(), D(27, 12).getTime());
+    eq(w.days.slice(0, 5).map((d) => d.declared), [420, 420, 420, 420, 420], "chaque soir 7 h, vendredi compris");
+    eq([w.workedDays, w.totals.declared, w.totals.target], [5, 2100, 2100], "5 jours × 7 h = 35 h déclarées");
+
+    // Un lundi COURT : on déclare 7 h quand même, en avance sur une tâche ; le
+    // mardi la reprend sur son réel.
+    const s2 = mk();
+    const t2 = new Timesheet(s2, new TimeCalculator(s2));
+    seg(s2, "tA", 21, 8, 0, 360);
+    seg(s2, "tA", 22, 8, 0, 480);
+    const m = t2.week(D(21, 12).getTime(), D(21, 18).getTime()).days[0];
+    eq(m.gap, 60, "lundi de 6 h : 1 h à compléter");
+    s2.setTimesheetDay(m.key, addToLine(m.lines, "tA", 60));
+    const tu = t2.week(D(21, 12).getTime(), D(22, 18).getTime());
+    eq(linesOf(tu.days[1]), [["tA", 420]], "mardi de 8 h : 7 h, l'heure d'avance est reprise");
+    eq(tu.reserve, [], "réserve à zéro");
+  }
+
+  // --- copie Jira d'un worklog : jamais en jours ---
+  {
+    const f = new Formatter({ settings: new Settings({ jira: { auto: false, hoursPerDay: 7, daysPerWeek: 5 } }) });
+    eq(f.jira(420), "1d", "jira() convertit 7 h en « 1d » avec une journée de 7 h…");
+    eq(f.jiraHours(420), "7h", "…jiraHours() non : Jira aurait lu 1d avec SA journée");
+    eq([f.jiraHours(90), f.jiraHours(45), f.jiraHours(0)], ["1h 30m", "45m", "0m"], "heures et minutes");
+  }
+
   // --- changement d'heure : la semaine a toujours 7 jours distincts ---
   {
     const st = mk();

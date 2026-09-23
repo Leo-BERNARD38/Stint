@@ -72,9 +72,9 @@ header {
 }
 .tabs.tabs-5::before { width: calc((100% - 8px) / 5); }
 .tabs:has([data-tab="segments"].active)::before { transform: translateX(100%); }
-.tabs:has([data-tab="taches"].active)::before { transform: translateX(200%); }
-.tabs:has([data-tab="stats"].active)::before { transform: translateX(300%); }
-.tabs:has([data-tab="saisie"].active)::before { transform: translateX(400%); }
+.tabs:has([data-tab="saisie"].active)::before { transform: translateX(200%); }
+.tabs:has([data-tab="taches"].active)::before { transform: translateX(300%); }
+.tabs:has([data-tab="stats"].active)::before { transform: translateX(400%); }
 /* Cinq onglets sur un téléphone : 63 px chacun. « Segments » n'y tient qu'en
    resserrant le corps et le rembourrage — le texte, pas la cible, cède. */
 @media (max-width: 520px) { .tabs.tabs-5 .tab { font-size: 12.5px; padding: 9px 2px; } }
