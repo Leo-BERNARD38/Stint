@@ -1744,7 +1744,7 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 .ts-dn { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--text); white-space: nowrap; }
 .ts-dcol.is-off .ts-dn { color: var(--text-soft); }
 .ts-dact { display: inline-flex; gap: 2px; }
-.ts-dact .mini-btn { padding: 4px; background: transparent; color: var(--text-soft); }
+.ts-dact .mini-btn { background: transparent; color: var(--text-soft); }
 .ts-dact .mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
 .ts-dact .ts-all.on { background: var(--accent-wash); color: var(--accent); }
 .ts-dsub { display: block; min-height: 14px; font-family: var(--font-data); font-size: 9.5px;
@@ -1761,23 +1761,27 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 
 .ts-table tbody tr + tr > * { border-top: 1px dotted var(--dot); }
 .ts-table tbody tr:hover > * { background: var(--surface-2); }
-.ts-name { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 320px;
+/* Le nom, puis les actions de la tâche collées au bord droit de sa colonne. */
+.ts-tkw { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.ts-name { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
   font-size: 13.5px; font-weight: 600; color: var(--text); }
 .ts-nt { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ts-name .o-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
-.ts-link { display: inline-flex; flex-shrink: 0; color: var(--text-soft); }
-.ts-link:hover { color: var(--accent); }
-/* Une case : les actions, la coche, puis la durée — dernière piste, collée à
-   droite : c'est la colonne qu'on recopie dans Jira, elle ne bouge pas. La
-   coche colle à SA durée : à gauche de la case, elle se lisait comme celle de
-   la durée du jour précédent. */
-.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 52px; align-items: center; gap: 4px; }
+.ts-tacts { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+/* Au repos, comme dans Journée : sans fond, et cachées sur un appareil à
+   survol. `visibility` et non `display` : elles gardent leur place, donc le nom
+   ne se raccourcit pas sous le curseur. */
+.ts-tacts .mini-btn { background: transparent; }
+.ts-tacts .mini-btn:hover { background: var(--ctl-hover); }
+@media (hover: hover) {
+  .ts-table tbody tr:not(:hover):not(:focus-within) .ts-tacts { visibility: hidden; }
+}
+/* Une case : la coche, puis la durée — dernière piste, collée à droite :
+   c'est la colonne qu'on recopie dans Jira, elle ne bouge pas. La coche colle
+   à SA durée : à gauche de la case, elle se lisait comme celle de la durée du
+   jour précédent. Copier et retirer vivent dans le popover de la case. */
+.ts-c { display: grid; grid-template-columns: 15px 52px; justify-content: end; align-items: center; gap: 4px; }
 .ts-c input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
-.ts-acts { display: inline-flex; justify-self: start; }
-.ts-acts .mini-btn { padding: 3px; background: transparent; color: var(--text-soft); }
-.ts-acts .mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
-/* Révélées au survol, mais à leur place : rien ne bouge. */
-@media (hover: hover) { .ts-cell:not(:hover):not(:focus-within) .ts-acts { visibility: hidden; } }
 /* La durée se clique pour être modifiée : une pilule qui garde l'allure du
    chiffre et ne se teinte qu'au survol — comme la réserve, sa voisine. Ouverte,
    elle prend le lavis + anneau de la sélection. */
@@ -1810,6 +1814,10 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 @media (max-width: 640px) {
   .ts-tk { min-width: 128px; }
   .ts-name { max-width: 150px; }
+  /* La colonne collante doit laisser voir les jours : sur téléphone, les
+     actions de la tâche quittent la ligne — le lien reste dans le popover de
+     la case, l'édition dans l'onglet Tâches. */
+  .ts-tacts { display: none; }
 }
 
 /* ---------- Popover d'une case / d'un manque ----------
@@ -1819,7 +1827,14 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 @media (max-width: 760px) { .ts-pop { width: 100%; } } /* feuille basse, comme `.fill-pop` */
 .ts-pop-body { display: flex; flex-direction: column; gap: var(--sp-3); }
 .ts-pop .select-wrap, .ts-pop .select-wrap select { width: 100%; }
-.ts-pop-task { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; }
+.ts-pop-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.ts-pop-task { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; font-size: 14px; font-weight: 600; }
+/* La copie de la case : les deux boutons de Journée, la valeur copiée lisible. */
+.ts-pop-copy { display: flex; flex-wrap: wrap; gap: 6px; }
+.ts-pop-copy .mini-btn { padding: 8px 12px; font-size: 13px; }
+.ts-pop-copy .mini-btn b { font-family: var(--font-data); font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums; }
+.ts-pop-copy .mini-btn.copied b { color: inherit; }
 .ts-pop-task span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ts-pop-task .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .ts-step-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }

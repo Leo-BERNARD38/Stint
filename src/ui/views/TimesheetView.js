@@ -1,7 +1,7 @@
 import { el, escapeHtml, createEl } from "../../utils/dom.js";
 import { icon } from "../icons.js";
 import { parseDuration } from "../../utils/datetime.js";
-import { toggleLine, setAllDone, removeLine, addToLine, setLine } from "../../models/TimesheetLines.js";
+import { toggleLine, setAllDone, addToLine, setLine } from "../../models/TimesheetLines.js";
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAY_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -75,8 +75,7 @@ export class TimesheetView {
           this.#edit(key, (l) => setAllDone(l, !all));
           break;
         }
-        case "rm": this.#edit(key, (l) => removeLine(l, b.dataset.task)); break;
-        case "copy": this.app.copy(b.dataset.value, b); break;
+        case "task": this.app.openEditTask(b.dataset.task); break;
         case "recalc": this.app.recalcTimesheetDay(key); break;
         case "open": this.#openPop(b, key); break;
         case "edit": this.#openPop(b, key, b.dataset.task, "edit"); break;
@@ -93,6 +92,7 @@ export class TimesheetView {
       if (!b) return;
       switch (b.dataset.act) {
         case "close": this.#closePop(true); break;
+        case "copy": this.app.copy(b.dataset.value, b); break;
         case "dec": this.#bump(-1); break;
         case "inc": this.#bump(1); break;
         case "remove": this.#submit(0); break;
@@ -232,8 +232,8 @@ export class TimesheetView {
     const cls = "ts-dcol" + (d.today ? " is-today" : "") + (off ? " is-off" : "") + (d.frozen ? " is-frozen" : "");
     const actions = off || (d.future && !d.lines.length) ? "" :
       '<span class="ts-dact">' +
-        (d.frozen ? `<button class="mini-btn icon-only" data-act="recalc" data-day="${key}" title="Recalculer ce jour (il est figé)" aria-label="Recalculer le ${long}">${icon("rotate-ccw", { size: 13 })}</button>` : "") +
-        (d.lines.length ? `<button class="mini-btn icon-only ts-all${all ? " on" : ""}" data-act="all" data-day="${key}" aria-pressed="${all}" title="${all ? "Tout décocher" : "Tout cocher : le jour est saisi"}" aria-label="${all ? "Tout décocher" : "Tout cocher"} le ${long}">${icon("check", { size: 13 })}</button>` : "") +
+        (d.frozen ? `<button class="mini-btn icon-only" data-act="recalc" data-day="${key}" title="Recalculer ce jour (il est figé)" aria-label="Recalculer le ${long}">${icon("rotate-ccw", { size: 15 })}</button>` : "") +
+        (d.lines.length ? `<button class="mini-btn icon-only ts-all${all ? " on" : ""}" data-act="all" data-day="${key}" aria-pressed="${all}" title="${all ? "Tout décocher" : "Tout cocher : le jour est saisi"}" aria-label="${all ? "Tout décocher" : "Tout cocher"} le ${long}">${icon("check", { size: 15 })}</button>` : "") +
       "</span>";
     // « Aujourd'hui » est le repère « maintenant » de la feuille : le tampon,
     // comme le filet de la timeline (§7, N1).
@@ -262,15 +262,14 @@ export class TimesheetView {
       const l = d.lines.find((x) => x.taskId === taskId);
       if (!l) return '<td class="ts-cell is-empty"></td>';
       const key = escapeHtml(d.key);
-      const jira = escapeHtml(formatter.jira(l.min));
       const open = this.adding?.mode === "edit" && this.adding.key === d.key && this.adding.taskId === taskId;
+      // Une case, c'est une coche et une durée. Tout le reste — copier en
+      // décimal ou au format Jira, retirer — est dans le popover que la durée
+      // ouvre, en vrais boutons : deux icônes de 13 px révélées au survol, sur
+      // cinq colonnes, faisaient des cibles minuscules et un style à part.
       return `<td class="ts-cell${l.done ? " done" : ""}${open ? " is-open" : ""}"><span class="ts-c">` +
-        '<span class="ts-acts">' +
-          `<button class="mini-btn icon-only ts-rm" data-act="rm" data-day="${key}" data-task="${id}" title="Retirer (retourne en réserve)" aria-label="Retirer">${icon("x", { size: 13 })}</button>` +
-          `<button class="mini-btn icon-only" data-act="copy" data-value="${jira}" title="Copier « ${jira} »" aria-label="Copier ${jira}">${icon("copy", { size: 13 })}</button>` +
-        "</span>" +
         `<input type="checkbox" data-ts-check="${id}" data-day="${key}"${l.done ? " checked" : ""} aria-label="${name}, ${DAY_LONG[d.dow - 1]} : saisi dans Jira">` +
-        `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="Modifier la durée déclarée" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)}, modifier">${formatter.clock(l.min)}</button>` +
+        `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="Copier, modifier ou retirer" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)} — copier, modifier">${formatter.clock(l.min)}</button>` +
         "</span></td>";
     }).join("");
     // La réserve de la tâche, en blocs entiers de son type (cf. `Timesheet.week`).
@@ -278,10 +277,21 @@ export class TimesheetView {
     const resCell = reserveMin > 0
       ? `<button class="ts-res${resOpen}" data-act="res" data-task="${id}" title="Poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
       : "";
-    return `<tr><th class="ts-tk" scope="row"><span class="ts-name" title="${name}">` +
-        `<i class="o-dot" style="background:${escapeHtml(t.color)}"></i><span class="ts-nt">${name}</span>` +
-        (t.link ? `<a class="ts-link" href="${escapeHtml(t.link)}" target="_blank" rel="noopener noreferrer" title="Ouvrir le lien" aria-label="Ouvrir le lien">${icon("external-link", { size: 13 })}</a>` : "") +
+    // Les actions de la TÂCHE (lien, édition) : celles des lignes de Journée,
+    // mêmes boutons, révélées au survol de la ligne — à leur place, rien ne bouge.
+    return `<tr><th class="ts-tk" scope="row"><span class="ts-tkw">` +
+        `<span class="ts-name" title="${name}"><i class="o-dot" style="background:${escapeHtml(t.color)}"></i><span class="ts-nt">${name}</span></span>` +
+        '<span class="ts-tacts">' +
+          (t.link ? this.#linkBtn(t.link) : "") +
+          `<button class="mini-btn icon-only" data-act="task" data-task="${id}" title="Éditer la tâche" aria-label="Éditer ${name}">${icon("pencil", { size: 15 })}</button>` +
+        "</span>" +
       "</span></th>" + cells + `<td class="ts-rcell">${resCell}</td></tr>`;
+  }
+
+  /** Ouvrir le lien de la tâche (Jira) : le bouton de Journée. */
+  #linkBtn(link) {
+    return `<a class="mini-btn icon-only link-btn" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" ` +
+      `title="Ouvrir le lien" aria-label="Ouvrir le lien">${icon("external-link", { size: 15 })}</a>`;
   }
 
   #gapCell(d) {
@@ -293,7 +303,7 @@ export class TimesheetView {
       return `<button class="ts-gap${open}" data-act="open" data-day="${key}" title="Compléter le ${long}">` +
         `${this.app.formatter.clock(d.gap)}</button>`;
     }
-    return `<button class="mini-btn icon-only ts-more${open}" data-act="open" data-day="${key}" title="Ajouter une ligne au ${long}" aria-label="Ajouter une ligne au ${long}">${icon("plus", { size: 13 })}</button>`;
+    return `<button class="mini-btn icon-only ts-more${open}" data-act="open" data-day="${key}" title="Ajouter une ligne au ${long}" aria-label="Ajouter une ligne au ${long}">${icon("plus", { size: 15 })}</button>`;
   }
 
   /* ------------------ popover : compléter / modifier ------------------ */
@@ -373,9 +383,20 @@ export class TimesheetView {
     let picker;
     if (editing) {
       // Modifier une case : la tâche est donnée, seule la durée change.
+      // La case ouverte : sa tâche (et son lien, pour aller logguer), puis la
+      // copie de la durée DÉCLARÉE, en décimal ou au format Jira — les deux
+      // boutons de Journée, avec la valeur qu'ils copient sous les yeux.
       const t = store.taskById(this.adding.taskId);
-      picker = `<span class="ts-pop-task"><i class="o-dot" style="background:${escapeHtml(t?.color ?? "")}"></i>` +
-        `<span>${escapeHtml(t?.displayName ?? "")}</span></span>`;
+      const cur = d.lines.find((l) => l.taskId === this.adding.taskId)?.min ?? 0;
+      const copy = (label, value) =>
+        `<button class="mini-btn" data-act="copy" data-value="${escapeHtml(value)}" title="Copier « ${escapeHtml(value)} »">` +
+          `${icon("copy", { size: 14 })} ${label} <b>${escapeHtml(value)}</b></button>`;
+      picker = '<div class="ts-pop-head">' +
+          `<span class="ts-pop-task"><i class="o-dot" style="background:${escapeHtml(t?.color ?? "")}"></i>` +
+          `<span>${escapeHtml(t?.displayName ?? "")}</span></span>` +
+          (t?.link ? this.#linkBtn(t.link) : "") +
+        "</div>" +
+        '<div class="ts-pop-copy">' + copy("Déc.", formatter.decimal(cur)) + copy("Jira", formatter.jira(cur)) + "</div>";
     } else {
       const res = new Map(this.week.reserve.map((r) => [r.taskId, r.min]));
       const opt = (t, extra = "") =>
@@ -391,7 +412,7 @@ export class TimesheetView {
     this.pop.setAttribute("aria-label", `${editing ? "Modifier" : "Compléter"} le ${day}`);
     this.pop.innerHTML =
       '<div class="fill-head"><span class="fill-dot"></span>' +
-        `<span class="fill-kicker">${editing ? "Modifier la case" : "Compléter le jour"}</span>` +
+        `<span class="fill-kicker">${editing ? "La case" : "Compléter le jour"}</span>` +
         `<button class="fill-x" data-act="close" aria-label="Fermer">${icon("x", { size: 14 })}</button></div>` +
       `<div class="fill-range">${escapeHtml(day.charAt(0).toUpperCase() + day.slice(1))}` +
         (d.gap > 0 ? ` <span class="fill-dur">· il manque ${formatter.clock(d.gap)}</span>` : "") + "</div>" +
