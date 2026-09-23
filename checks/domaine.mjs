@@ -13,7 +13,7 @@ import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
 import { Timesheet } from "../src/services/Timesheet.js";
-import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine } from "../src/models/TimesheetLines.js";
+import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine, setLine } from "../src/models/TimesheetLines.js";
 import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
@@ -812,7 +812,7 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(w.days.map((d) => d.gap).slice(0, 5), [0, 0, 0, 0, 60], "vendredi : 1 h reste à compléter à la main");
     eq(w.totals.target, 2100, "cible 35 h");
     eq(w.totals.real, 2050, "réel 34 h 10");
-    eq(w.reserve, [{ taskId: "tA", min: 10 }], "10 min de miettes en réserve (sous un bloc dev)");
+    eq(w.reserve, [], "10 min de miettes : pas un bloc, la réserve n'en dit rien");
     eq(w.days.slice(5).map((d) => d.visible), [false, false], "week-end vide masqué");
   }
 
@@ -830,10 +830,10 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     // Mercredi, passé et vide, puise dans la réserve : le bloc entier de B et
     // un quart d'heure de S ; les miettes (A 10, S 5) ne font plus de bloc.
     eq(linesOf(w.days[2]), [["tS", 15], ["tB", 30]], "mercredi vide : la réserve, par blocs entiers, dans son ordre");
-    eq(w.reserve, [{ taskId: "tA", min: 10 }, { taskId: "tS", min: 5 }], "restent des miettes sous le bloc");
+    eq(w.reserve, [], "restent des miettes (A 10, S 5) : sous le bloc, invisibles");
     const w2 = plan(st, D(22, 18).getTime());
-    eq(w2.reserve, [{ taskId: "tA", min: 10 }, { taskId: "tS", min: 20 }, { taskId: "tB", min: 30 }],
-       "réserve au mardi soir, par tâche et par ancienneté");
+    eq(w2.reserve, [{ taskId: "tS", min: 15 }, { taskId: "tB", min: 30 }],
+       "réserve au mardi soir : en blocs (S 20 → 0:15, A 10 → rien), par ancienneté");
     ok(w.days.every((d) => d.lines.every((l) => l.min % (l.taskId === "tS" ? 15 : 30) === 0)),
        "toute ligne proposée est un multiple du bloc de son type");
   }
@@ -894,6 +894,33 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(st.timesheet, {}, "clearEntries vide la saisie");
   }
 
+  // --- réserve en blocs : les miettes s'additionnent jusqu'à en faire un ---
+  {
+    const st = mk();
+    for (const d of [21, 22, 23]) seg(st, "tA", d, 8, 0, 430); // 7 h 10 de dev par jour
+    const ts = new Timesheet(st, new TimeCalculator(st));
+    const at = (d) => ts.week(D(23, 12).getTime(), D(d, 18).getTime());
+    eq(at(21).reserve, [], "lundi soir : 10 min de dev, pas un bloc");
+    eq(at(22).reserve, [], "mardi soir : 20 min, toujours pas");
+    eq(at(23).reserve, [{ taskId: "tA", min: 30 }], "mercredi soir : 30 min, un bloc apparaît");
+    ok(at(23).reserve.every((r) => r.min % ts.stepFor(r.taskId) === 0), "toute réserve est un multiple du bloc");
+  }
+
+  // --- privilégier une tâche : fixer la durée d'une case ---
+  {
+    const st = mk();
+    seg(st, "tA", 21, 8, 0, 300); // 5 h de A
+    seg(st, "tB", 21, 13, 0, 180); // 3 h de B : 1 h déborde
+    const ts = new Timesheet(st, new TimeCalculator(st));
+    const mon = ts.week(D(21, 12).getTime(), D(21, 18).getTime()).days[0];
+    eq(linesOf(mon), [["tA", 300], ["tB", 120]], "proposition : A d'abord, B plafonné");
+    // On préfère déclarer toute la B aujourd'hui : A cède une heure.
+    st.setTimesheetDay(mon.key, setLine(setLine(mon.lines, "tA", 240), "tB", 180));
+    const w = ts.week(D(21, 12).getTime(), D(21, 18).getTime());
+    eq(linesOf(w.days[0]), [["tA", 240], ["tB", 180]], "le choix est tenu (jour figé)");
+    eq(w.reserve, [{ taskId: "tA", min: 60 }], "c'est A qui attend en réserve");
+  }
+
   // --- lignes : fonctions pures ---
   {
     const L = [{ taskId: "a", min: 60, done: true }, { taskId: "b", min: 30, done: false }];
@@ -904,6 +931,10 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     eq(removeLine(L, "a").map((l) => l.taskId), ["b"], "retirer une ligne");
     eq(addToLine(L, "a", 15)[0], { taskId: "a", min: 75, done: false }, "ajouter à une ligne saisie la repasse à saisir");
     eq(addToLine(L, "c", 15).at(-1), { taskId: "c", min: 15, done: false }, "nouvelle ligne en fin");
+    eq(setLine(L, "a", 30)[0], { taskId: "a", min: 30, done: false }, "changer une durée cochée la repasse à saisir");
+    eq(setLine(L, "a", 60)[0].done, true, "…la même durée ne décoche pas");
+    eq(setLine(L, "b", 0).map((l) => l.taskId), ["a"], "0 retire la ligne");
+    eq(setLine(L, "c", 15).at(-1), { taskId: "c", min: 15, done: false }, "fixer une tâche absente crée sa ligne");
     eq(L[0].min, 60, "aucune fonction ne mute son entrée");
   }
 

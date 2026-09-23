@@ -790,8 +790,10 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   qu'il tient, seul le surplus glisse.
 - **La réserve n'est pas stockée, elle se déduit** : cagnotte − déclaré, par
   tâche, attachée à sa tâche (reporter, pour Jira, c'est logguer le même ticket
-  un autre jour). Elle repart de zéro chaque lundi. Sous un bloc de son type, une
-  réserve n'est jamais proposée seule : ce sont des miettes (contour sans aplat).
+  un autre jour). Elle repart de zéro chaque lundi. **Elle se DIT en blocs** du
+  type (arrondie vers le bas, comme la déclaration) : « 0:20 » ne se déclare pas.
+  Le compte interne reste exact — les miettes s'additionnent de jour en jour et
+  un bloc apparaît dès qu'elles en font un (test « réserve en blocs »).
   Elle peut être **négative** après un jour figé qui a déclaré plus que le réel
   d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
 - **L'usage réel : une saisie CHAQUE SOIR.** On coche le jour (✓ de l'en-tête) le
@@ -803,6 +805,11 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   copient « 1d », ce qui est juste puisque le 1d de l'app est réglé comme celui
   du Jira. Un `jiraHours` (heures seules) a existé un temps pour se protéger d'un
   1d divergent : il contournait le réglage au lieu de s'y fier — retiré.
+- **Une case se modifie** (clic sur sa durée) : « combien de cette tâche je
+  déclare ce jour-là », par blocs, 0 retire la ligne (`setLine`). C'est ainsi
+  qu'entre deux tâches qui débordent on en privilégie une ; l'autre attend en
+  réserve. Une durée changée repasse la case « à saisir ». Le même formulaire
+  sert à compléter un jour ; toute durée saisie est ramenée au bloc de sa tâche.
 - **Aucune tâche bouche-trou** : ce qui manque à la cible reste un **vide**
   (hachures, « À compléter ») que l'utilisateur comble à la main avec ce qu'il
   veut. C'est une demande explicite.

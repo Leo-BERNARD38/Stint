@@ -1,6 +1,6 @@
 import { el, escapeHtml } from "../../utils/dom.js";
 import { icon } from "../icons.js";
-import { toggleLine, setAllDone, removeLine, addToLine } from "../../models/TimesheetLines.js";
+import { toggleLine, setAllDone, removeLine, addToLine, setLine } from "../../models/TimesheetLines.js";
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAY_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -21,7 +21,12 @@ const DAY_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "
  * transforme par une fonction pure de `TimesheetLines` et les confie au Store —
  * c'est ce qui fige le jour.
  *
- * Le formulaire « compléter » vit sous la feuille. Il n'est pas reconstruit tant
+ * Le formulaire sous la feuille a deux emplois : COMPLÉTER un jour (choisir une
+ * tâche et une durée) et MODIFIER une case (clic sur sa durée : combien de cette
+ * tâche on déclare ce jour-là — c'est ainsi qu'entre deux tâches qui débordent,
+ * on en privilégie une). Durées par blocs du type, toujours.
+ *
+ * Ce formulaire vit sous la feuille. Il n'est pas reconstruit tant
  * que le focus y est (même garde que la table Segments) : le chrono re-rend
  * toutes les 15 s, on ne vole pas la saisie en cours.
  */
@@ -33,7 +38,7 @@ export class TimesheetView {
     this.add = el("tsAdd");
     this.foot = el("tsFoot");
     this.anchor = this.table;
-    this.adding = null; // { key, taskId } : le formulaire ouvert, s'il y en a un
+    this.adding = null; // { key, taskId, mode: "add"|"edit" } : le formulaire ouvert, s'il y en a un
   }
 
   bind() {
@@ -65,6 +70,7 @@ export class TimesheetView {
         case "copy": this.app.copy(b.dataset.value, b); break;
         case "recalc": this.app.recalcTimesheetDay(key); break;
         case "open": this.#openAdd(key); break;
+        case "edit": this.#openAdd(key, b.dataset.task, "edit"); break;
         case "res": this.#placeReserve(b.dataset.task); break;
       }
     });
@@ -215,14 +221,12 @@ export class TimesheetView {
           `<button class="mini-btn icon-only" data-act="copy" data-value="${jira}" title="Copier « ${jira} »" aria-label="Copier ${jira}">${icon("copy", { size: 13 })}</button>` +
         "</span>" +
         `<input type="checkbox" data-ts-check="${id}" data-day="${key}"${l.done ? " checked" : ""} aria-label="${name}, ${DAY_LONG[d.dow - 1]} : saisi dans Jira">` +
-        `<span class="ts-dur">${formatter.clock(l.min)}</span>` +
+        `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="Modifier la durée déclarée" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)}, modifier">${formatter.clock(l.min)}</button>` +
         "</span></td>";
     }).join("");
-    // La réserve de la tâche. Sous un bloc de son type elle ne sera jamais
-    // proposée seule : ce sont des miettes, dites par un contour sans aplat.
-    const crumbs = reserveMin < this.app.timesheet.stepFor(taskId);
+    // La réserve de la tâche, en blocs entiers de son type (cf. `Timesheet.week`).
     const resCell = reserveMin > 0
-      ? `<button class="ts-res${crumbs ? " crumbs" : ""}" data-act="res" data-task="${id}" title="${crumbs ? "Moins d’un bloc : à poser à la main" : "Poser sur un jour à compléter"}">${formatter.clock(reserveMin)}</button>`
+      ? `<button class="ts-res" data-act="res" data-task="${id}" title="Poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
       : "";
     return `<tr><th class="ts-tk" scope="row"><span class="ts-name" title="${name}">` +
         `<i class="o-dot" style="background:${escapeHtml(t.color)}"></i><span class="ts-nt">${name}</span>` +
@@ -247,40 +251,52 @@ export class TimesheetView {
     const d = this.adding && this.#day(this.adding.key);
     if (!d) { this.add.innerHTML = ""; return; }
     const { store, formatter } = this.app;
-    const res = new Map(this.week.reserve.map((r) => [r.taskId, r.min]));
-    const opt = (t, extra = "") =>
-      `<option value="${escapeHtml(t.id)}"${t.id === this.adding.taskId ? " selected" : ""}>${escapeHtml(t.displayName)}${extra}</option>`;
-    const inRes = this.week.reserve.map((r) => store.taskById(r.taskId)).filter(Boolean);
-    const others = store.tasks.filter((t) => !res.has(t.id) && !t.archived);
-    const title = `Compléter le ${DAY_LONG[d.dow - 1]} ${d.date.getDate()}` +
-      (d.gap > 0 ? ` · il manque ${formatter.clock(d.gap)}` : "");
-    this.add.innerHTML = '<div class="ts-add">' +
-      `<span class="ts-add-t">${escapeHtml(title)}</span>` +
-      '<span class="select-wrap"><select data-ts-task aria-label="Tâche">' +
+    const editing = this.adding.mode === "edit";
+    const day = `${DAY_LONG[d.dow - 1]} ${d.date.getDate()}`;
+    const step = this.app.timesheet.stepFor(this.adding.taskId);
+    let title, picker;
+    if (editing) {
+      // Modifier une case : la tâche est donnée, seule la durée change.
+      const t = store.taskById(this.adding.taskId);
+      title = `Modifier · ${day}` + (d.gap > 0 ? ` · il manque ${formatter.clock(d.gap)}` : "");
+      picker = `<span class="ts-add-task"><i class="o-dot" style="background:${escapeHtml(t?.color ?? "")}"></i>${escapeHtml(t?.displayName ?? "")}</span>`;
+    } else {
+      const res = new Map(this.week.reserve.map((r) => [r.taskId, r.min]));
+      const opt = (t, extra = "") =>
+        `<option value="${escapeHtml(t.id)}"${t.id === this.adding.taskId ? " selected" : ""}>${escapeHtml(t.displayName)}${extra}</option>`;
+      const inRes = this.week.reserve.map((r) => store.taskById(r.taskId)).filter(Boolean);
+      const others = store.tasks.filter((t) => !res.has(t.id) && !t.archived);
+      title = `Compléter le ${day}` + (d.gap > 0 ? ` · il manque ${formatter.clock(d.gap)}` : "");
+      picker = '<span class="select-wrap"><select data-ts-task aria-label="Tâche">' +
         (inRes.length ? '<optgroup label="En réserve">' +
           inRes.map((t) => opt(t, ` · ${formatter.clock(res.get(t.id))}`)).join("") + "</optgroup>" : "") +
         (others.length ? '<optgroup label="Autres tâches">' + others.map((t) => opt(t)).join("") + "</optgroup>" : "") +
-      `</select><span class="select-chev">${icon("chevron-down", { size: 16 })}</span></span>` +
+        `</select><span class="select-chev">${icon("chevron-down", { size: 16 })}</span></span>`;
+    }
+    this.add.innerHTML = '<div class="ts-add">' +
+      `<span class="ts-add-t">${escapeHtml(title)}</span>` +
+      picker +
       '<span class="ts-add-row">' +
-        '<input type="number" class="tinput" data-ts-min min="5" max="720" step="5" aria-label="Durée en minutes">' +
-        '<span class="prec-sep">min</span>' +
+        `<input type="number" class="tinput" data-ts-min min="${editing ? 0 : step}" max="720" step="${step}" aria-label="Durée en minutes">` +
+        `<span class="prec-sep">min · blocs de ${step}</span>` +
       "</span>" +
       '<span class="ts-add-row">' +
         '<button class="btn" data-act="cancel">Annuler</button>' +
-        '<button class="btn primary" data-act="add">Ajouter</button>' +
+        `<button class="btn primary" data-act="add">${editing ? "Enregistrer" : "Ajouter"}</button>` +
       "</span>" +
       "</div>";
     this.#suggest();
   }
 
-  #openAdd(key, taskId = null) {
+  #openAdd(key, taskId = null, mode = "add") {
     const { store } = this.app;
     const first = this.week.reserve[0]?.taskId ?? store.openTasks()[0]?.id ?? store.tasks[0]?.id;
     if (!taskId && !first) { this.app.toast.show("Aucune tâche à déclarer"); return; }
-    this.adding = { key, taskId: taskId ?? first };
+    this.adding = { key, taskId: taskId ?? first, mode };
     this.add.innerHTML = ""; // on quitte un éventuel formulaire ouvert : il doit être reconstruit
     this.render();
-    this.add.querySelector("select")?.focus();
+    this.add.querySelector(mode === "edit" ? "[data-ts-min]" : "select")?.focus();
+    if (mode === "edit") this.add.querySelector("[data-ts-min]")?.select();
   }
 
   #closeAdd() {
@@ -290,11 +306,10 @@ export class TimesheetView {
   }
 
   /**
-   * Durée proposée : ce qui manque au jour, sans dépasser ce que la tâche a en
-   * réserve, par blocs de son type. Des miettes (moins d'un bloc) proposent UN
-   * bloc : on déclare un peu d'avance, que la réserve reprendra — plutôt que
-   * 10 min de support qui ne sont pas un bloc. Une tâche hors réserve — la
-   * réunion qu'on pose pour boucler la journée — prend simplement le manque.
+   * Durée proposée. En modification : la durée actuelle de la case. Pour
+   * compléter : ce qui manque au jour, sans dépasser la réserve de la tâche,
+   * en blocs de son type ; une tâche hors réserve — la réunion qu'on pose pour
+   * boucler la journée — prend le manque, arrondi au bloc.
    */
   #suggest() {
     const input = this.add.querySelector("[data-ts-min]");
@@ -302,24 +317,42 @@ export class TimesheetView {
     if (!input || !day) return;
     const id = this.adding.taskId;
     const step = this.app.timesheet.stepFor(id);
+    input.step = step;
+    if (this.adding.mode === "edit") {
+      input.value = day.lines.find((l) => l.taskId === id)?.min ?? 0;
+      return;
+    }
+    input.min = step;
     const inRes = this.week.reserve.find((r) => r.taskId === id)?.min ?? 0;
     let min = day.gap > 0 ? day.gap : step;
-    if (inRes > 0) min = Math.min(min, Math.max(step, Math.floor(inRes / step) * step));
-    input.value = Math.max(5, Math.round(min / 5) * 5);
+    if (inRes > 0) min = Math.min(min, inRes);
+    input.value = this.#snap(min, step);
+    this.add.querySelector(".prec-sep").textContent = `min · blocs de ${step}`;
+  }
+
+  /** Une durée ramenée au bloc de sa tâche (au plus proche, un bloc au minimum). */
+  #snap(min, step) {
+    return Math.max(step, Math.round(min / step) * step);
   }
 
   #submit() {
     if (!this.adding) return;
-    const taskId = this.add.querySelector("[data-ts-task]")?.value;
-    const min = Math.round(Number(this.add.querySelector("[data-ts-min]")?.value));
-    if (!taskId || !Number.isFinite(min) || min <= 0) {
+    const editing = this.adding.mode === "edit";
+    const taskId = editing ? this.adding.taskId : this.add.querySelector("[data-ts-task]")?.value;
+    const raw = Math.round(Number(this.add.querySelector("[data-ts-min]")?.value));
+    if (!taskId || !Number.isFinite(raw) || raw < 0 || (!editing && raw === 0)) {
       this.app.toast.show("Choisissez une tâche et une durée");
       return;
     }
+    // Par blocs, toujours : une saisie hors bloc est ramenée au plus proche
+    // (en modification, 0 reste 0 — il retire la ligne).
+    const step = this.app.timesheet.stepFor(taskId);
+    const min = editing && raw === 0 ? 0 : this.#snap(raw, step);
+    if (min !== raw) this.app.toast.show(`Ramené à ${this.app.formatter.clock(min)} (blocs de ${step} min)`);
     const key = this.adding.key;
     this.adding = null;
     this.add.innerHTML = ""; // rend le focus : la garde ne retient plus le rendu
-    this.#edit(key, (l) => addToLine(l, taskId, min));
+    this.#edit(key, (l) => (editing ? setLine(l, taskId, min) : addToLine(l, taskId, min)));
   }
 
   /** Une réserve cliquée : sur le premier jour à compléter (ou aujourd'hui). */
@@ -336,7 +369,7 @@ export class TimesheetView {
     const t = week.totals;
     const ended = !week.current && week.days.every((d) => !d.future);
     let text;
-    if (!t.reserve) text = "Réserve vide : tout le pointé est déclaré.";
+    if (!t.reserve) text = "Réserve vide : aucun bloc en attente.";
     else if (ended) text = `${c(t.reserve)} pointées mais jamais déclarées cette semaine — la réserve repart de zéro chaque lundi.`;
     else text = `Réserve : ${c(t.reserve)} pointées qui n’ont pas encore de jour. Cliquez un temps de la colonne Réserve pour le poser, ou un manque hachuré pour compléter un jour.`;
     this.foot.textContent = text;

@@ -1763,8 +1763,12 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
 .ts-acts .mini-btn:hover { background: var(--ctl-hover); color: var(--text); }
 /* Révélées au survol, mais à leur place : rien ne bouge. */
 @media (hover: hover) { .ts-cell:not(:hover):not(:focus-within) .ts-acts { visibility: hidden; } }
-.ts-dur { font-family: var(--font-data); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
-  text-align: right; color: var(--text); }
+/* La durée se clique pour être modifiée : un bouton qui garde l'allure du
+   chiffre — le soulignement pointillé au survol dit qu'on peut y toucher. */
+.ts-dur { border: none; background: none; padding: 2px 0; cursor: pointer;
+  font-family: var(--font-data); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
+  text-align: right; color: var(--text); border-radius: var(--radius-xs); }
+.ts-dur:hover { text-decoration: underline dotted; text-underline-offset: 4px; }
 .ts-cell.done .ts-dur { color: var(--text-soft); font-weight: 500; }
 
 .ts-rcol, .ts-rcell { width: 84px; text-align: right; }
@@ -1772,8 +1776,6 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
   background: var(--ctl); color: var(--text); font-family: var(--font-data); font-size: 12.5px; font-weight: 500;
   font-variant-numeric: tabular-nums; }
 .ts-res:hover { background: var(--ctl-hover); }
-/* Moins d'un bloc : jamais proposé seul — des miettes, un contour sans aplat. */
-.ts-res.crumbs { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring); color: var(--text-soft); }
 .ts-table td.ts-empty { text-align: center; color: var(--text-faint); padding: var(--sp-5); font-size: 13.5px; }
 
 /* Ce qui manque à la cible : le manque se dessine, en hachures, et se clique. */
@@ -1795,6 +1797,9 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
 .ts-add .select-wrap select { width: 100%; }
 .ts-add-row { display: inline-flex; align-items: center; gap: 6px; }
 .ts-add-row .tinput { width: 76px; }
+.ts-add-task { display: inline-flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0;
+  font-size: 14px; font-weight: 600; color: var(--text); }
+.ts-add-task .o-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 .ts-foot { margin: var(--sp-3) 0 0; padding: 0 var(--sp-2); font-family: var(--font-data); font-size: 10.5px;
   color: var(--text-faint); line-height: 1.6; }
 @media (max-width: 640px) {

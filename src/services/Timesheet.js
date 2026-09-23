@@ -81,7 +81,8 @@ export class Timesheet {
    * avec pour chaque jour :
    *   { key, date, dow, target, real, lines[{taskId,min,done}], declared, done,
    *     gap, over, frozen, future, today, worked, leave, visible }
-   * et `reserve` = [{ taskId, min }] (positif, ≥ 1 min), la réserve À CE JOUR.
+   * et `reserve` = [{ taskId, min }], la réserve À CE JOUR, **en blocs entiers**
+   * du type de la tâche (arrondie vers le bas, comme la déclaration).
    */
   week(ref, now = Date.now()) {
     const monday = mondayOf(new Date(ref));
@@ -136,7 +137,16 @@ export class Timesheet {
       totals.done += done;
     }
 
-    const res = [...reserve].filter(([, m]) => m >= 1).map(([taskId, min]) => ({ taskId, min: Math.floor(min + EPS) }));
+    // La réserve se DIT en blocs, pas en minutes : « MOD-1 0:20 » ne se déclare
+    // pas, « MOD-1 0:30 » si. Le compte, lui, reste exact (`reserve`) : les
+    // miettes de chaque jour s'additionnent, et un bloc apparaît dès qu'elles en
+    // font un. Rien n'est perdu, rien n'est inventé.
+    const res = [...reserve]
+      .map(([taskId, min]) => {
+        const step = this.stepFor(taskId);
+        return { taskId, min: Math.floor((min + EPS) / step) * step };
+      })
+      .filter((r) => r.min > 0);
     totals.reserve = res.reduce((a, r) => a + r.min, 0);
     totals.gap = Math.max(0, totals.target - totals.declared);
 

@@ -956,13 +956,17 @@
             <li><b>Des blocs par type</b> — dev par 30 min, support et autre par 15 (réglable).
               L'arrondi se fait <b>vers le bas</b> : ce qui ne remplit pas un bloc n'est pas
               perdu, il part en <b>réserve</b>.</li>
-            <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche.
+            <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche,
+              <b>en blocs</b> (les miettes s'additionnent jusqu'à en faire un).
               Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
               bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
               repart de zéro chaque lundi.</li>
             <li><b>À compléter</b> — ce qui manque encore à un jour, en hachures. Clique-le pour
               poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne
               <b>Réserve</b> se clique aussi : il ouvre le premier jour à compléter.</li>
+            <li><b>Clique une durée</b> pour choisir combien tu déclares de cette tâche ce
+              jour-là (par blocs ; 0 la retire) : si deux tâches débordent, c'est ainsi
+              que tu en privilégies une — l'autre attend en réserve.</li>
             <li><b>Coche</b> une case quand tu l'as saisie dans Jira (le bouton ✓ de l'en-tête
               coche tout le jour). Au survol d'une case : copier la durée au format Jira, ou la
               retirer — elle retourne en réserve.</li>

@@ -45,6 +45,25 @@ export function removeLine(lines, taskId) {
 }
 
 /**
+ * Fixe la durée déclarée d'une tâche ce jour-là — « combien j'en loggue ». 0 (ou
+ * moins) retire la ligne. Une durée CHANGÉE repasse la ligne à « à saisir » : le
+ * worklog Jira n'est plus celui qu'on avait coché. Sans ligne, en crée une.
+ */
+export function setLine(lines, taskId, min) {
+  const m = Math.round(Number(min));
+  if (!taskId || !Number.isFinite(m)) return lines.map((l) => ({ ...l }));
+  if (m <= 0) return removeLine(lines, taskId);
+  let found = false;
+  const out = lines.map((l) => {
+    if (l.taskId !== taskId) return { ...l };
+    found = true;
+    return { ...l, min: m, done: l.min === m ? l.done : false };
+  });
+  if (!found) out.push({ taskId, min: m, done: false });
+  return out;
+}
+
+/**
  * Ajoute `min` minutes à une tâche : à sa ligne si elle existe (qui redevient
  * alors « à saisir » — le worklog Jira a changé), sinon une ligne neuve en fin.
  */
