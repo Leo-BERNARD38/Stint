@@ -2,6 +2,7 @@ import { el, escapeHtml, createEl } from "../../utils/dom.js";
 import { icon } from "../icons.js";
 import { parseDuration } from "../../utils/datetime.js";
 import { toggleLine, setAllDone, addToLine, setLine } from "../../models/TimesheetLines.js";
+import { taskPickerHtml, bindTaskPicker, pickedTask, pickerTask } from "../components/TaskPicker.js";
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAY_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -93,9 +94,8 @@ export class TimesheetView {
       }
     });
 
-    this.pop.addEventListener("change", (e) => {
-      const sel = e.target.closest("[data-ts-task]");
-      if (sel) { this.adding.taskId = sel.value; this.#suggest(); }
+    bindTaskPicker(this.pop, {
+      onSelect: (id) => { if (this.adding) { this.adding.taskId = id; this.#suggest(); } },
     });
     this.pop.addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
@@ -410,16 +410,20 @@ export class TimesheetView {
         "</div>" +
         '<div class="ts-pop-copy">' + copy("Déc.", formatter.decimal(cur)) + copy("Jira", formatter.jira(cur)) + "</div>";
     } else {
+      // Le sélecteur commun (cf. `TaskPicker`, celui de la timeline) : la
+      // réserve d'abord — c'est elle qu'on vient poser —, puis les tâches en
+      // cours, les terminées repliées ; une recherche porte sur toutes.
       const res = new Map(this.week.reserve.map((r) => [r.taskId, r.min]));
-      const opt = (t, extra = "") =>
-        `<option value="${escapeHtml(t.id)}"${t.id === this.adding.taskId ? " selected" : ""}>${escapeHtml(t.displayName)}${extra}</option>`;
       const inRes = this.week.reserve.map((r) => store.taskById(r.taskId)).filter(Boolean);
-      const others = store.tasks.filter((t) => !res.has(t.id) && !t.archived);
-      picker = '<span class="select-wrap"><select data-ts-task aria-label="Tâche">' +
-        (inRes.length ? '<optgroup label="En réserve">' +
-          inRes.map((t) => opt(t, ` · ${formatter.clock(res.get(t.id))}`)).join("") + "</optgroup>" : "") +
-        (others.length ? '<optgroup label="Autres tâches">' + others.map((t) => opt(t)).join("") + "</optgroup>" : "") +
-        `</select><span class="select-chev">${icon("chevron-down", { size: 16 })}</span></span>`;
+      const rest = store.tasks.filter((t) => !res.has(t.id) && !t.archived);
+      picker = taskPickerHtml({
+        groups: [
+          { label: "En réserve", tasks: inRes.map((t) => pickerTask(t, formatter.clock(res.get(t.id)))) },
+          { label: "En cours", tasks: rest.filter((t) => !t.done).map((t) => pickerTask(t)) },
+        ],
+        more: rest.filter((t) => t.done).map((t) => pickerTask(t)),
+        selected: this.adding.taskId,
+      });
     }
     this.pop.setAttribute("aria-label", `${editing ? "Modifier" : "Compléter"} le ${day}`);
     this.pop.innerHTML =
@@ -496,7 +500,7 @@ export class TimesheetView {
   #submit(forced = null) {
     if (!this.adding) return;
     const editing = this.adding.mode === "edit";
-    const taskId = editing ? this.adding.taskId : this.pop.querySelector("[data-ts-task]")?.value;
+    const taskId = editing ? this.adding.taskId : pickedTask(this.pop) ?? this.adding.taskId;
     const typed = parseDuration(this.pop.querySelector("[data-ts-min]")?.value ?? "");
     const raw = forced ?? typed;
     if (!taskId || raw == null || (!editing && raw === 0)) {

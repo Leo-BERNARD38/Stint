@@ -517,20 +517,34 @@
 .fill-create-btn.open .o-chev { transform: rotate(180deg); }
 .fill-create { display: flex; flex-direction: column; gap: 5px; padding: 2px 2px 0; }
 .fill-create-lab { font-size: 11px; color: var(--text-faint); font-weight: 600; padding: 2px 2px 4px; }
-.fill-task { display: flex; align-items: center; gap: 10px; border: none; background: var(--ctl); color: var(--text);
-  border-radius: 11px; padding: 9px 12px; text-align: left; width: 100%; cursor: pointer; font-weight: 600; font-size: 13px;
-  transition: background-color .15s var(--ease); }
-.fill-task:hover { background: var(--surface-2); }
-.fill-task .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-.fill-task-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fill-done-toggle { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--text-faint);
+/* ---------- Sélecteur de tâche des popovers (TaskPicker) ----------
+   Une recherche, les tâches en cours par groupes, les terminées repliées. La
+   sélection est un choix unique : lavis + anneau. La valeur (réserve) est la
+   dernière piste, collée à droite comme toute durée. */
+.tp { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tp .tp-search { flex: none; min-width: 0; width: 100%; }
+.tp-list { display: flex; flex-direction: column; gap: 5px; max-height: 240px; overflow-y: auto; overflow-x: hidden;
+  padding: 3px; margin: -3px; overscroll-behavior: contain; }
+.tp-group { display: flex; flex-direction: column; gap: 5px; }
+.tp-lab { font-family: var(--font-data); font-size: 10px; text-transform: uppercase; letter-spacing: .14em;
+  color: var(--text-faint); padding: 4px 2px 1px; }
+.tp-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; border: none;
+  background: var(--ctl); color: var(--text); border-radius: 11px; padding: 9px 12px; text-align: left; width: 100%;
+  cursor: pointer; font-weight: 600; font-size: 13px; transition: background-color .15s var(--ease); }
+.tp-item:hover { background: var(--ctl-hover); }
+.tp-item.is-sel { background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.tp-item .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.tp-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-extra { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.tp-more { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--text-faint);
   padding: 6px 4px 4px; width: 100%; cursor: pointer; font-weight: 600; font-size: 11px; }
-.fill-done-lab { flex: 1; text-align: left; }
-.fill-done-toggle .o-chev { flex-shrink: 0; transition: transform .2s var(--ease); }
-.fill-done-toggle.open .o-chev { transform: rotate(180deg); }
-.fill-done-list { display: flex; flex-direction: column; gap: 5px; }
+.tp-more-lab { flex: 1; text-align: left; }
+.tp-more .o-chev { flex-shrink: 0; transition: transform .2s var(--ease); }
+.tp-more.open .o-chev { transform: rotate(180deg); }
+.tp-more-list { display: flex; flex-direction: column; gap: 5px; }
+.tp-empty { font-size: 12.5px; color: var(--text-faint); padding: 6px 2px; }
 /* Hors tâche dans le popover : les épinglés en pilules, l'exceptionnel au champ. */
-.fill-opt .o-dot.off, .fill-task .o-dot.off, .o-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
+.fill-opt .o-dot.off, .o-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
 .fill-off-btn .o-ic .o-dot { width: 10px; height: 10px; border-radius: 3px; }
 .fill-off-btn .o-k-inline { font-size: 11px; color: var(--text-soft); font-weight: 600; }
 .fill-off-btn.open .o-chev { transform: rotate(180deg); }
@@ -1903,7 +1917,6 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 .ts-pop { width: 320px; }
 @media (max-width: 760px) { .ts-pop { width: 100%; } } /* feuille basse, comme `.fill-pop` */
 .ts-pop-body { display: flex; flex-direction: column; gap: var(--sp-3); }
-.ts-pop .select-wrap, .ts-pop .select-wrap select { width: 100%; }
 .ts-pop-head { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .ts-pop-task { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; font-size: 14px; font-weight: 600; }
 /* La copie de la case : les deux boutons de Journée, la valeur copiée lisible. */

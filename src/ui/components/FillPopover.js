@@ -1,5 +1,6 @@
 import { createEl, escapeHtml } from "../../utils/dom.js";
 import { icon } from "../icons.js";
+import { taskPickerHtml, bindTaskPicker, pickedTask } from "./TaskPicker.js";
 
 /**
  * Popover de remplissage d'un trou (temps non tracé). Carte flottante ancrée au
@@ -85,24 +86,13 @@ export function createFillPopover({ parent }) {
         `<span class="o-create">Créer un segment</span>` +
         `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span></button>` +
       `<div class="fill-create" hidden><span class="fill-create-lab">Sur quelle tâche ?</span>`;
-    const taskBtn = (t) =>
-      `<button class="fill-task" data-task="${t.id}">` +
-      `<span class="o-dot" style="background:${t.color}"></span>` +
-      `<span class="fill-task-name">${escapeHtml(t.name)}</span></button>`;
-    const active = o.tasks.filter((t) => !t.done);
-    const done = o.tasks.filter((t) => t.done);
-    for (const t of active) html += taskBtn(t);
-    // Les tâches terminées sont masquées par défaut (dépliées via le bouton) pour
-    // éviter une liste interminable.
-    if (done.length) {
-      html +=
-        `<button class="fill-done-toggle" data-act="toggle-done" data-count="${done.length}">` +
-        `<span class="fill-done-lab">Afficher les tâches terminées (${done.length})</span>` +
-        `<span class="o-chev">${icon("chevron-down", { size: 16 })}</span></button>` +
-        `<div class="fill-done-list" hidden>`;
-      for (const t of done) html += taskBtn(t);
-      html += `</div>`;
-    }
+    // Le sélecteur commun (cf. `TaskPicker`) : recherche, tâches en cours, les
+    // terminées repliées. Un clic crée le segment ; Entrée dans la recherche
+    // crée celui de la ligne sélectionnée.
+    html += taskPickerHtml({
+      groups: [{ label: "En cours", tasks: o.tasks.filter((t) => !t.done) }],
+      more: o.tasks.filter((t) => t.done),
+    });
     html += `</div>`;
     // Hors tâche : le vide est justifié, pas travaillé. Les motifs ÉPINGLÉS en
     // pilules (un clic), et un champ pour l'exceptionnel — qui ne rejoint la
@@ -136,13 +126,20 @@ export function createFillPopover({ parent }) {
   }
   pop.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.classList.contains("fill-off-input")) { e.preventDefault(); submitOff(); }
+    if (e.key === "Enter" && e.target.classList.contains("tp-search")) {
+      e.preventDefault();
+      const id = pickedTask(pop);
+      if (id) { close(); cbs.onCreate?.(id); }
+    }
+  });
+  bindTaskPicker(pop, {
+    onSelect: (id, { click }) => { if (click) { close(); cbs.onCreate?.(id); } },
   });
 
   // Délégation des clics dans le popover.
   pop.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-act], [data-task], [data-off-label]");
+    const btn = e.target.closest("[data-act], [data-off-label]");
     if (!btn) return;
-    if (btn.dataset.task != null) { close(); cbs.onCreate?.(btn.dataset.task); return; }
     if (btn.dataset.offLabel != null) { close(); cbs.onCreateOff?.(btn.dataset.offLabel, false); return; }
     const act = btn.dataset.act;
     if (act === "close") { close(); }
@@ -159,14 +156,7 @@ export function createFillPopover({ parent }) {
       const open2 = box.hasAttribute("hidden");
       box.toggleAttribute("hidden", !open2);
       pop.querySelector(".fill-create-btn").classList.toggle("open", open2);
-    }
-    else if (act === "toggle-done") {
-      const list = pop.querySelector(".fill-done-list");
-      const open2 = list.hasAttribute("hidden");
-      list.toggleAttribute("hidden", !open2);
-      btn.classList.toggle("open", open2);
-      const lab = btn.querySelector(".fill-done-lab");
-      if (lab) lab.textContent = `${open2 ? "Masquer" : "Afficher"} les tâches terminées (${btn.dataset.count})`;
+      if (open2) pop.querySelector(".tp-search")?.focus();
     }
   });
   backdrop.addEventListener("click", close);
