@@ -1,8 +1,11 @@
 /** Petites aides DOM partagées par les vues. */
 
+/** L'élément d'identifiant `id` (tout `el("x")` est vérifié par checks/statique.mjs). */
 export const el = (id) => document.getElementById(id);
+/** `querySelectorAll` rendu en tableau. */
 export const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+/** Échappe un texte pour l'injecter dans du HTML : TOUT texte saisi passe par là avant un `innerHTML`. */
 export function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",

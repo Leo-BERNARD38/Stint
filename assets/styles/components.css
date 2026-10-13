@@ -1182,13 +1182,13 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    Actif = couleurs inversées, comme le sélecteur de jour. */
 .switch-mini {
   align-self: center; font-family: var(--font-data); font-size: 10px; font-weight: 500;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-soft);
   gap: 8px; padding: 5px 12px 5px 10px; background: var(--ctl);
   border-radius: var(--radius-pill);
   transition: background .18s var(--ease), color .18s var(--ease);
 }
 .switch-mini input { width: 14px; height: 14px; }
-.switch-mini:hover { color: var(--text-soft); }
+.switch-mini:hover { color: var(--text); }
 .switch-mini.on { background: var(--accent-wash); color: var(--accent);
   box-shadow: inset 0 0 0 1.5px var(--accent); }
 .switch-mini.on input { accent-color: var(--accent); }
@@ -1198,8 +1198,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* État « terminé » */
 .badge-done { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; background: var(--type-badge-bg); color: var(--type-badge-text); }
-.task-row.done { opacity: .62; }
-.task-row.done .task-dur { color: var(--text-soft); }
+/* Une tâche terminée s'efface par l'ENCRE, jamais par l'opacité (§7) : une
+   ligne à .62 faisait tomber sa durée à 3:1 et ses badges sous 3:1. Seuls les
+   aplats sans texte (pastille, barre de part) se fanent. */
+.task-row.done .task-name, .task-row.done .task-dur { color: var(--text-soft); }
+.task-row.done .swatch, .task-row.done .task-share span { opacity: .62; }
 
 /* ---------- Toast ---------- */
 .toast { position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%) translateY(20px) scale(.96); background: var(--inverse-bg); color: var(--inverse-fg); padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-pop); opacity: 0; pointer-events: none; transition: opacity .22s var(--ease), transform .3s var(--ease-spring); z-index: 200; display: inline-flex; align-items: center; gap: 9px; max-width: 90vw; }

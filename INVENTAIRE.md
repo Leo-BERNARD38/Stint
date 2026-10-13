@@ -80,7 +80,7 @@ Héritent de `Modal` (ouverture, `[data-close]`, clic hors carte).
 |---|---|---|
 | `ui/App.js` | Contrôleur racine : assemble modèle (Store), services (calc, formatter), vues et modales | `App` |
 | `ui/BgDots.js` | Fond dot-matrix « spotlight » (easter-egg, désactivé par défaut) | `BgDots` |
-| `ui/Chime.js` | Bip du repos des yeux — synthèse **WebAudio**, aucun fichier audio | `Chime` |
+| `ui/Chime.js` | Le bip du repos des yeux : deux notes de synthèse, montantes à l'appel, descendantes à la fin (§13) | `Chime` |
 | `ui/DayGlyphAnimator.js` | Anime le glyphe « moment de la journée » (Total journée) **image par image** : fait défiler les frames du glyphe à bas FPS en réécrivant ses points | `DayGlyphAnimator` |
 | `ui/EyeBreak.js` | Rappel « repos des yeux » (règle 20-20-20) | `EyeBreak` |
 | `ui/Reminders.js` | Rappels de la journée : pause déjeuner, fin de journée, et les pauses qu'on pose soi-même (« 10:00 pause café », « 14:00 réunion » le 8 septembre) | `Reminders` |
@@ -107,7 +107,7 @@ Purs, testés dans `checks/domaine.mjs`.
 | `services/DataTransfer.js` | Import / export (§6.9) | `DataTransfer` |
 | `services/Formatter.js` | Conversions d'affichage : décimal (§9.2), Jira `w d h m` (§9.3) et horloge h:mm:ss | `Formatter` |
 | `services/Notifier.js` | Notifications système — le canal qui sort de l'onglet | `Notifier` |
-| `services/Persistence.js` | Persistance à deux zones : - IndexedDB : zone primaire, historique complet, fiable, gros quota. - localStorage : miroir des 30 derniers jours, … | `Persistence` |
+| `services/Persistence.js` | Stockage à deux zones de l'état complet : IndexedDB (fait foi) + miroir localStorage des 30 derniers jours (§6) | `Persistence` |
 | `services/StatsAggregator.js` | Agrégats rétrospectifs de l'onglet Stats : la période choisie, son historique de contexte, son découpage interne, ses tâches et ses indicateurs | `STATS_GRAINS`, `CONTINUITY_MAX_DAYS`, `allUnit()`, `periodStart()`, `stepPeriod()`, `StatsAggregator` |
 | `services/StorageInfo.js` | Estimation de l'espace de stockage occupé | `storageSnapshot()`, `refreshStorage()`, `formatBytes()` |
 | `services/TimeCalculator.js` | Calcule les durées ouvrées et les agrégats journaliers à partir des segments et des réglages (§9.1) | `TimeCalculator` |
@@ -174,19 +174,19 @@ Sections de chaque feuille (titres `/* ---------- … ---------- */`). Chercher 
   - l. 1076 — Exceptions d'horaires (jour de semaine / date)
   - l. 1123 — Modales (surfaces flottantes : ombre autorisée)
   - l. 1162 — Icônes
-  - l. 1204 — Toast
-  - l. 1212 — Page Guide
-  - l. 1290 — Convertisseur
-  - l. 1327 — Calcul brut / net
-  - l. 1437 — Navigation : le grain à gauche, la période à droite
-  - l. 1513 — Évolution · Volume : 12 périodes de contexte
-  - l. 1553 — Évolution · Continuité : une ligne par jour
-  - l. 1573 — Détail : répartitions, hors tâche, découpage
-  - l. 1605 — Détail · Par tâche
-  - l. 1632 — Détail · Découpage (jours, semaines ou mois de la période)
-  - l. 1685 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
-  - l. 1828 — La feuille : tâches × jours
-  - l. 1927 — Popover d'une case / d'un manque
+  - l. 1207 — Toast
+  - l. 1215 — Page Guide
+  - l. 1293 — Convertisseur
+  - l. 1330 — Calcul brut / net
+  - l. 1440 — Navigation : le grain à gauche, la période à droite
+  - l. 1516 — Évolution · Volume : 12 périodes de contexte
+  - l. 1556 — Évolution · Continuité : une ligne par jour
+  - l. 1576 — Détail : répartitions, hors tâche, découpage
+  - l. 1608 — Détail · Par tâche
+  - l. 1635 — Détail · Découpage (jours, semaines ou mois de la période)
+  - l. 1688 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
+  - l. 1831 — La feuille : tâches × jours
+  - l. 1930 — Popover d'une case / d'un manque
 - `assets/styles/fonts.css` — sans sections
 - `assets/styles/layout.css`
   - l. 5 — En-tête (flat : pas de bordure, juste un fond translucide)

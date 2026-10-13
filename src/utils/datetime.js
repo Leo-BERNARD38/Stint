@@ -13,12 +13,14 @@ export function toMin(hhmm) {
   return h * 60 + (m || 0);
 }
 
+/** Minuit local du jour de `d` (nouvelle Date). */
 export function startOfDay(d) {
   const n = new Date(d);
   n.setHours(0, 0, 0, 0);
   return n;
 }
 
+/** `d` décalée de `n` jours CALENDAIRES (par `setDate` : juste aux changements d'heure, contrairement à `+ DAY_MS`). */
 export function addDays(d, n) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
@@ -31,6 +33,7 @@ export function isoDow(d) {
   return g === 0 ? 7 : g;
 }
 
+/** `true` si `a` et `b` tombent le même jour local. */
 export function sameDay(a, b) {
   return startOfDay(a).getTime() === startOfDay(b).getTime();
 }
@@ -43,14 +46,17 @@ export function atTime(dayDate, hhmm) {
   return d;
 }
 
+/** Heure locale « HH:MM ». */
 export function fmtClock(d) {
   return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
 }
 
+/** Clé de jour « YYYY-MM-DD » (valeur d'un <input type="date">, clé de `dateHours`). */
 export function fmtDateInput(d) {
   return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
 }
 
+/** Inverse de `fmtDateInput` : minuit LOCAL du jour « YYYY-MM-DD ». */
 export function parseDateInput(str) {
   const [y, m, dd] = str.split("-").map(Number);
   return new Date(y, m - 1, dd);
@@ -61,6 +67,7 @@ export function fmtDateTimeLocal(d) {
   return fmtDateInput(d) + "T" + fmtClock(d);
 }
 
+/** Inverse de `fmtDateTimeLocal` : « YYYY-MM-DDTHH:MM » en Date locale. */
 export function parseDateTimeLocal(str) {
   const [datePart, timePart] = String(str).split("T");
   const [y, m, dd] = datePart.split("-").map(Number);
@@ -80,6 +87,7 @@ export function toLocalISO(d) {
   );
 }
 
+/** Date longue française : « mardi 13 octobre 2026 ». */
 export function formatLongDate(d) {
   return d.toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",

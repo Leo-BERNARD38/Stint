@@ -46,7 +46,9 @@ const css = Object.fromEntries(cssFiles.map((f) => [rel(f), readFileSync(f, "utf
 {
   const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
   const probs = [];
-  for (const [f, src] of Object.entries(js)) {
+  for (const [f, raw] of Object.entries(js)) {
+    // Les commentaires citent des exemples (`el("x")`) : seul le code compte.
+    const src = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'])\/\/.*$/gm, "$1");
     for (const m of src.matchAll(/\b(?:el|super)\("([A-Za-z][\w-]*)"\)/g)) {
       if (!ids.has(m[1])) probs.push(`${f} : #${m[1]} absent d'index.html`);
     }

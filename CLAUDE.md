@@ -24,6 +24,9 @@ Contraintes fortes (ne pas casser) :
 - Le service worker ne s'active qu'en HTTP(S).
 - **Après toute modif de fichier servi : bumper `CACHE` dans `sw.js`**
   (`stint-vN` → `stint-vN+1`). (Valeur actuelle : voir `sw.js`.)
+  `node checks/cache.mjs --fix` le fait, **une fois par livraison** : il compare
+  à `origin/master` (la version en ligne), donc le relancer ne rebumpe pas. Le
+  hook de fin de tour l'appelle, celui d'avant push refuse un push sans bump.
   **C'est le seul chemin vers une nouvelle version** : la navigation elle-même est
   servie depuis le précache (voir plus bas), donc un `CACHE` non bumpé = un
   déploiement invisible, quoi qu'on ait poussé.
@@ -72,7 +75,8 @@ src/
     components/  COMPOSANTS PARTAGÉS (factories) — voir ci-dessous
     views/       une vue = bind() (1×, optionnel) + render(viewDay) + anchor
     modals/      Modal (base) + une classe par modale
-checks/          domaine.mjs · statique.mjs · inventaire.mjs (§9)
+checks/          tout.mjs (tout en un) · domaine · statique · inventaire · cache ·
+                 capture · contraste (§9) — hooks et skills Claude : .claude/ (§18)
 ```
 
 **Le détail fichier par fichier — rôle et exports — est dans `INVENTAIRE.md`,
@@ -412,7 +416,10 @@ Notes :
 
 ## 9. Vérifications avant commit (pas de framework de test)
 
-Lancer ces contrôles (rapides, en Node) :
+**`node checks/tout.mjs --fix` fait tout ce qui suit sans navigateur** (≈ 2 s) :
+syntaxe, contrôles statiques, domaine en UTC puis en Europe/Paris, inventaire
+régénéré, `CACHE` bumpé si besoin. Les hooks de `.claude/` le lancent d'eux-mêmes
+(§18). Le détail, pour lire une sortie ou lancer un contrôle seul :
 - **Syntaxe** : `for f in $(find src -name '*.js'); do node --check "$f"; done`
 - **Contrôles statiques** : `node checks/statique.mjs` — IDs (`el("x")` ↔
   `id="x"`), icônes (`data-icon`, `icon("x")` ↔ `ICONS`/`DOT_GLYPHS`), CSS
@@ -424,7 +431,7 @@ Lancer ces contrôles (rapides, en Node) :
   échoue sinon). Son contenu vient des `/** … */` : **tout export porte une doc
   dont la première phrase dit son rôle** — c'est elle que liront les sessions
   suivantes.
-- **Contraste** : à faire **sur le DOM rendu**, pas sur les jetons — le fond réel
+- **Contraste** : `node checks/contraste.mjs [écrans] [--mobile]` — à faire **sur le DOM rendu**, pas sur les jetons — le fond réel
   d'un texte dépend des surfaces empilées au-dessus, des opacités d'ancêtres et
   parfois d'un pseudo-élément (le curseur d'onglets). Recette : une page qui
   charge `index.html` dans une `<iframe>`, attend la fin du démarrage, injecte
@@ -436,7 +443,12 @@ Lancer ces contrôles (rapides, en Node) :
   n'accepter un `::before`/`::after` comme fond que s'il **couvre** l'élément
   mesuré ; tenir compte de son `transform` (sinon la pilule d'onglet est
   attribuée aux quatre onglets). Seuil : 4,5:1, ou 3:1 au-delà de 24 px.
-  **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
+  **Attendu : zéro défaut**, sur les huit écrans et dans les deux thèmes.
+  Le script applique ces trois pièges (Playwright directement, pas d'iframe ;
+  couleurs résolues par un canvas, donc `light-dark`/`color-mix` compris). Sa
+  première passe a trouvé `.task-row.done { opacity: .62 }` — une tâche
+  terminée dont la durée tombait à 3:1 : on s'efface par l'encre, jamais par
+  l'opacité.
 - **Logique métier** : `node checks/domaine.mjs`, **puis `TZ=Europe/Paris node checks/domaine.mjs`**
   (le conteneur tourne en UTC, qui n'a pas de changement d'heure : sans ce second
   passage, les contrôles de bornes de jour et de période ne prouvent rien) — Node ESM,
@@ -451,7 +463,11 @@ Lancer ces contrôles (rapides, en Node) :
   et on photographie la variante tactile en croyant voir le bureau. Ajouter
   `--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4`
   à **toutes** les captures et à l'audit de contraste.
-- **Rendu** : servir en HTTP et capturer avec le Chromium préinstallé
+- **Rendu** : `node checks/capture.mjs [écrans] [--mobile] [--vide]` → PNG clair
+  + sombre dans `captures/` (ignoré par git), avec une semaine de données de
+  démonstration, et sortie non nulle si une erreur JS apparaît. Le script sert
+  lui-même le dépôt, bloque le service worker, simule le survol et coupe les
+  animations (aides communes : `checks/navigateur.mjs`). À la main : servir en HTTP et capturer avec le Chromium préinstallé
   (`--headless --hide-scrollbars --force-prefers-reduced-motion
   --virtual-time-budget`), en **clair et en sombre**. Attention : le service
   worker sert **cache d'abord** — repartir d'un profil vierge, sinon la capture
@@ -900,3 +916,35 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
 - ← → changent de **semaine** sur cet onglet ; le sélecteur de jour y est masqué.
 - Guide : `g-6`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
   changements d'heure).
+
+## 18. Outillage Claude (`.claude/`)
+
+Ce qui se vérifie par une machine n'est plus confié à la mémoire d'une session.
+Tout est versionné : chaque session — cloud ou locale — en hérite.
+
+- **Hooks** (`.claude/settings.json`, scripts Node dans `.claude/hooks/`) :
+  - `debut-session.mjs` (SessionStart) : état des lieux injecté dans le contexte
+    — branche, commits non déployés, fichiers en cours, `CACHE`, derniers
+    commits — et les réflexes du projet (inventaire, contrôles, skills) ;
+  - `apres-edition.mjs` (après Edit/Write) : contrôle **immédiat** du fichier
+    écrit — syntaxe JS, JSON, accolades et couleurs en dur du CSS, nouveau
+    fichier servi absent de `CORE` (bloquant : Claude corrige tout de suite) ;
+    export sans doc `/** … */` (simple rappel) ;
+  - `avant-push.mjs` (avant `git push`) : refuse le push si `checks/tout.mjs`
+    échoue — un push sur master **est** un déploiement — et tout push forcé
+    vers master ;
+  - `fin-de-tour.mjs` (Stop) : si le tour a touché au code, `tout.mjs --fix` ;
+    un échec, ou une réparation automatique à committer, rend la main à Claude
+    au lieu de le laisser conclure. Une seule reprise (`stop_hook_active`), pour
+    ne jamais boucler.
+- **Skills** (`.claude/skills/`) : `/verifier` (tous les contrôles + contraste),
+  `/capture` (rendu clair/sombre à lire et à montrer), `/livrer` (contrôles,
+  commit en français, push sur master).
+- **Permissions** : les contrôles et la lecture git sont pré-autorisés ;
+  `npm install` est refusé — l'app n'a aucune dépendance, et Playwright (pour
+  les captures) se trouve là où l'environnement l'a installé, jamais dans le
+  dépôt.
+- **Ajouter un contrôle** : dans `checks/statique.mjs` s'il se lit dans les
+  fichiers, `checks/domaine.mjs` s'il porte sur le domaine, puis l'appeler depuis
+  `checks/tout.mjs` s'il est nouveau. Un hook n'appelle que `tout.mjs` : la
+  règle vit à un seul endroit.

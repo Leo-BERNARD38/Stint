@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(node checks/*)",
+      "Bash(TZ=Europe/Paris node checks/*)",
+      "Bash(node --check *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(python3 -m http.server*)"
+    ],
+    "deny": [
+      "Bash(npm install*)",
+      "Bash(npm i *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/debut-session.mjs\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/apres-edition.mjs\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/avant-push.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Contrôles avant déploiement…"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/fin-de-tour.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Contrôles de fin de tour…"
+          }
+        ]
+      }
+    ]
+  }
+}

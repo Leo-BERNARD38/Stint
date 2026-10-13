@@ -64,6 +64,7 @@ function idbClear(db) {
   });
 }
 
+/** Stockage à deux zones de l'état complet : IndexedDB (fait foi) + miroir localStorage des 30 derniers jours (§6). */
 export class Persistence {
   constructor() {
     this.db = null;

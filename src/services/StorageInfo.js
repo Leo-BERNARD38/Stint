@@ -9,10 +9,12 @@ const FALLBACK_BUDGET = 5 * 1024 * 1024;
 
 let snap = null; // { used, quota, percent } — dernière mesure connue
 
+/** Dernière mesure connue `{ used, quota, percent }`, ou `null` avant la première. */
 export function storageSnapshot() {
   return snap;
 }
 
+/** Mesure l'occupation (estimate(), sinon taille du miroir localStorage) et la mémorise. */
 export async function refreshStorage() {
   let used = 0;
   let quota = 0;
@@ -40,6 +42,7 @@ function localStorageBytes() {
   }
 }
 
+/** Taille lisible en octets français : « 512 o », « 1.2 Mo ». */
 export function formatBytes(n) {
   if (n < 1024) return n + " o";
   if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10 * 1024 ? 1 : 0) + " Ko";

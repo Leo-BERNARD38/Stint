@@ -31,6 +31,7 @@ const GAP_S = 0.11;
 /** En dessous, la note est inaudible : autant ne pas réveiller le contexte. */
 const SILENT = 0.0005;
 
+/** Le bip du repos des yeux : deux notes de synthèse, montantes à l'appel, descendantes à la fin (§13). */
 export class Chime {
   #ctx = null;
 
