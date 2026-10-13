@@ -64,6 +64,8 @@
   --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
   /* Ombre réservée aux surfaces flottantes (modale, toast, menus). */
+  /* Voile sous une modale ou une feuille basse : du noir, dosé à l'emploi. */
+  --scrim: #000;
   --shadow-pop: 0 12px 40px light-dark(rgba(19, 26, 32, .16), rgba(0, 0, 0, .6)),
                 0 2px 8px light-dark(rgba(19, 26, 32, .08), rgba(0, 0, 0, .45));
   /* Ombre de carte : un cheveu, juste de quoi décoller la carte du papier. */

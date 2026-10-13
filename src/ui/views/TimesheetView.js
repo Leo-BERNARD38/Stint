@@ -2,7 +2,7 @@ import { el, escapeHtml, createEl } from "../../utils/dom.js";
 import { icon } from "../icons.js";
 import { parseDuration } from "../../utils/datetime.js";
 import { toggleLine, setAllDone, addToLine, setLine } from "../../models/TimesheetLines.js";
-import { taskPickerHtml, bindTaskPicker, pickedTask, pickerTask } from "../components/TaskPicker.js";
+import { taskPickerHtml, bindTaskPicker, pickedTask, pickerTask, pickerTasks } from "../components/TaskPicker.js";
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAY_LONG = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
@@ -327,7 +327,7 @@ export class TimesheetView {
   #openPop(anchor, key, taskId = null, mode = "add", from = mode === "edit" ? "cell" : "gap") {
     const { store } = this.app;
     const first = this.week.reserve[0]?.taskId ?? store.openTasks()[0]?.id ?? store.tasks[0]?.id;
-    if (!taskId && !first) { this.app.toast.show("Aucune tâche à déclarer"); return; }
+    if (!taskId && !first) { this.app.toast.show("Aucune tâche à déclarer", { kind: "info" }); return; }
     this.#closePop();
     this.adding = { key, taskId: taskId ?? first, mode, from };
     // Le focus revient à l'ouvreur à la fermeture — retrouvé après re-rendu.
@@ -415,13 +415,13 @@ export class TimesheetView {
       // cours, les terminées repliées ; une recherche porte sur toutes.
       const res = new Map(this.week.reserve.map((r) => [r.taskId, r.min]));
       const inRes = this.week.reserve.map((r) => store.taskById(r.taskId)).filter(Boolean);
-      const rest = store.tasks.filter((t) => !res.has(t.id) && !t.archived);
+      const rest = pickerTasks(store, { exclude: new Set(res.keys()) });
       picker = taskPickerHtml({
         groups: [
           { label: "En réserve", tasks: inRes.map((t) => pickerTask(t, formatter.clock(res.get(t.id)))) },
-          { label: "En cours", tasks: rest.filter((t) => !t.done).map((t) => pickerTask(t)) },
+          { label: "En cours", tasks: rest.open },
         ],
-        more: rest.filter((t) => t.done).map((t) => pickerTask(t)),
+        more: rest.done,
         selected: this.adding.taskId,
       });
     }
@@ -504,14 +504,14 @@ export class TimesheetView {
     const typed = parseDuration(this.pop.querySelector("[data-ts-min]")?.value ?? "");
     const raw = forced ?? typed;
     if (!taskId || raw == null || (!editing && raw === 0)) {
-      this.app.toast.show("Choisissez une tâche et une durée (ex. 1:30)");
+      this.app.toast.show("Choisissez une tâche et une durée (ex. 1:30)", { kind: "error" });
       return;
     }
     // Par blocs, toujours : une saisie hors bloc est ramenée au plus proche
     // (en modification, 0 reste 0 — il retire la ligne).
     const step = this.app.timesheet.stepFor(taskId);
     const min = editing && raw === 0 ? 0 : this.#snap(Math.min(MAX_MIN, raw), step);
-    if (min !== raw) this.app.toast.show(`Ramené à ${this.app.formatter.clock(min)} (blocs de ${step} min)`);
+    if (min !== raw) this.app.toast.show(`Ramené à ${this.app.formatter.clock(min)} (blocs de ${step} min)`, { kind: "info" });
     const key = this.adding.key;
     this.refocus = min === 0 ? null : this.opener;
     this.#closePop();
@@ -522,7 +522,7 @@ export class TimesheetView {
   #placeReserve(anchor, taskId) {
     const days = this.week.days.filter((d) => d.visible && !d.future && d.worked);
     const target = days.find((d) => d.gap > 0) ?? days.find((d) => d.today) ?? days.at(-1);
-    if (!target) { this.app.toast.show("Aucun jour à compléter cette semaine"); return; }
+    if (!target) { this.app.toast.show("Aucun jour à compléter cette semaine", { kind: "info" }); return; }
     this.#openPop(anchor, target.key, taskId, "add", "res");
   }
 

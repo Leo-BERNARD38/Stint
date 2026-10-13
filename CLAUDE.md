@@ -57,46 +57,56 @@ commande UI ─▶ Store (mutation + persist + emit "change") ─▶ App.render(
 ```
 
 ```
-index.html              squelette + points de montage ; charge src/main.js (module)
-manifest.webmanifest, sw.js, .nojekyll, assets/icon*.png|svg
-assets/styles/          fonts · variables · base · layout · components   (CSS, voir §7)
-assets/fonts/           9 woff2 auto-hébergés (Bitcount · Archivo · Plex Sans · Plex Mono)
+index.html · manifest.webmanifest · sw.js · .nojekyll      coquille + PWA
+assets/styles/   fonts · variables · base · layout · components   (CSS, voir §7)
+assets/fonts/    woff2 auto-hébergés
 src/
-  main.js               point d'entrée : instancie App, app.start(), enregistre le SW
-  core/
-    constants.js        STORAGE_KEY, SCHEMA_VERSION, DAY_MS, PALETTE, DEFAULT_SETTINGS, THEMES…
-    EventEmitter.js     on/off/emit (base du Store)
-  utils/                datetime · intervals · dom (el/qsa/escapeHtml/createEl) · clipboard · curve · color
-  models/               DOMAINE
-    Settings.js         réglages + résolution horaires 3 niveaux (voir §5)
-    Task.js  Segment.js modèles (fromJSON/toJSON) ; Segment porte une tâche OU un motif (§15)
-    Memo.js             mémo : texte, tâche optionnelle, fait (§16)
-    TimesheetLines.js   lignes d'un jour de saisie : normalisation + retouches pures (§17)
-    Store.js            SOURCE DE VÉRITÉ : état + commandes + persistance + events
-  services/
-    Persistence.js      stockage 2 zones : IndexedDB (complet) + miroir localStorage 30 j (§6)
-    TimeCalculator.js   temps ouvré (workRangesBetween/workedMs), planifié, agrégats, timeline, trous
-    StatsAggregator.js  agrégats rétrospectifs de l'onglet Stats (§10)
-    Timesheet.js        saisie lissée : semaine déclarée, blocs par type, réserve (§17)
-    Formatter.js        décimal / Jira / clock(H:mm) / hms ; unités Jira auto (§5)
-    DataTransfer.js     export/import JSON, export CSV
-    StorageInfo.js      estimation d'occupation (navigator.storage.estimate)
-  ui/
-    App.js              CONTRÔLEUR : assemble tout, détient l'état d'UI (viewDay, screen), routage
-    Timer.js            tick 1 s (EventEmitter)
-    DayGlyphAnimator.js anime le glyphe « moment de la journée » image par image
-    EyeBreak.js         « repos des yeux » (20-20-20) : état + notification (§13)
-    icons.js            pack d'icônes Lucide inline + glyphes dot-matrix (§8)
-    components/         Toast · CopyButton · ScheduleEditor · TimelineTip · FillPopover · MemoList (factories)
-    views/              une vue = bind() (1×, optionnel) + render(viewDay) ; voir liste ci-dessous
-    modals/             Modal (base) · NewTask · Resume · EditTask
+  main.js        point d'entrée : instancie App, app.start(), enregistre le SW
+  core/          constantes (SCHEMA_VERSION, DEFAULT_SETTINGS…), EventEmitter
+  utils/         fonctions pures : dates, intervalles, DOM, recherche, couleur…
+  models/        DOMAINE : Settings (horaires §5), Task, Segment (§15), Memo (§16),
+                 TimesheetLines (§17), Store (SOURCE DE VÉRITÉ)
+  services/      calculs (TimeCalculator, StatsAggregator §10, Timesheet §17),
+                 Formatter, Persistence (§6), DataTransfer, Notifier…
+  ui/            App (CONTRÔLEUR), boucles (Timer, EyeBreak, Reminders), icons (§8)
+    components/  COMPOSANTS PARTAGÉS (factories) — voir ci-dessous
+    views/       une vue = bind() (1×, optionnel) + render(viewDay) + anchor
+    modals/      Modal (base) + une classe par modale
+checks/          domaine.mjs · statique.mjs · inventaire.mjs (§9)
 ```
 
-Vues (toutes ajoutées à `App.views`) :
-`HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView, TotalsView,
-TaskListView, SegmentTableView, StatsView, StatsTrendView, StatsHeatmapView,
-StatsWeeksView, StatsBreakdownView, StatsTimelineView, AllTasksView,
-TimesheetView, SettingsView, StorageView, ToolsView, MemoPanelView`.
+**Le détail fichier par fichier — rôle et exports — est dans `INVENTAIRE.md`,
+généré depuis le code** (`node checks/inventaire.mjs`). Ne pas recopier de liste
+de fichiers ici : celle qui y vivait citait cinq vues disparues depuis des mois
+et ignorait `TaskPicker`, ce qui a suffi pour qu'on écrive trois sélecteurs de
+tâche différents. Lire l'inventaire **avant** de créer un fichier ou un motif.
+
+### Composants partagés — réutiliser avant d'écrire
+
+Une même intention se dit d'une seule façon dans toute l'app. Avant d'écrire un
+widget, chercher ici (et dans `INVENTAIRE.md`) ; s'il manque une variante,
+**étendre le composant**, ne pas en faire un second à côté.
+
+| Besoin | Composant | Ne pas faire |
+|---|---|---|
+| Choisir une tâche dans une liste (popover, modale) | `TaskPicker` (`taskPickerHtml` + `bindTaskPicker`, ordre commun `pickerTasks`) | une liste maison, un `<select>` de tâches |
+| Champ « Tâche » d'un formulaire | `TaskField` (déclencheur + `TaskPicker` déplié en place, option « sans tâche ») | un `<select>` |
+| Filtrer des tâches par texte | `utils/search.js` (`matchesQuery` : casse/accents ignorés, tous les mots) | `name.toLowerCase().includes(q)` |
+| Carte flottante ancrée (choix sur place) | `.fill-pop` (FillPopover, popover de la Saisie) : `role="dialog"`, focus à l'ouverture, Échap, clic extérieur, feuille basse sur téléphone | un menu positionné dans une modale (elle défile et le rognerait) |
+| Message éphémère | `app.toast.show(msg, { kind })` — `ok` (coche), `info` (sans pictogramme), `error` (croix, plus long) | une coche devant un refus |
+| Oui / non | `input.sw` (interrupteur), dans `.switch-row` s'il porte son libellé | une case native (réservée à cocher un élément d'une liste) |
+| Copier une valeur | `createCopyButton` / `app.copy` | — |
+| Infobulle d'une marque de graphique | `attachTimelineTip` (contrat `data-name/range/dur/color`) | un `title` |
+| Planning d'une journée | `createScheduleEditor` (§5) | — |
+| Liste de mémos | `createMemoList` / `memoBadge` (§16) | — |
+
+Écarts connus, **pas encore unifiés** (à traiter plutôt qu'à reproduire) :
+saisie de durée (`parseDuration` de la Saisie vs parseurs du convertisseur — un
+« 90 » nu n'y vaut pas la même chose), confirmations (`confirm()` natif ici,
+suppression sans retour là), ligne de tâche et ses actions (reconstruite dans
+cinq vues), états vides (`.empty` vs `.ov-empty`/`.at-empty`/`.ts-empty`…),
+pastilles de couleur (huit classes), contrôles de choix (`.seg-control` vs
+`.chip-group`).
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
 - Constructeur `(app)` ; récupère ses éléments via `el("id")`.
@@ -404,12 +414,16 @@ Notes :
 
 Lancer ces contrôles (rapides, en Node) :
 - **Syntaxe** : `for f in $(find src -name '*.js'); do node --check "$f"; done`
-- **IDs** : tout `el("x")` du JS doit avoir un `id="x"` dans `index.html`.
-- **Icônes** : tout `data-icon="x"` doit exister dans la map `ICONS` (ou dans
-  `DOT_GLYPHS` si `data-dot="true"`).
-- **CSS** : accolades équilibrées par fichier ; tout `var(--x)` utilisé est défini
-  dans `variables.css` ; **aucune couleur en dur** hors `variables.css`.
-- **Plancher Bitcount** : aucune règle `--font-display` sous 16 px.
+- **Contrôles statiques** : `node checks/statique.mjs` — IDs (`el("x")` ↔
+  `id="x"`), icônes (`data-icon`, `icon("x")` ↔ `ICONS`/`DOT_GLYPHS`), CSS
+  (accolades, `var(--x)` définies, **aucune couleur en dur** hors
+  `variables.css`, plancher de 16 px sur Bitcount), `CORE` du service worker ↔
+  fichiers servis, et inventaire à jour. Sortie non nulle si l'un échoue.
+- **Inventaire** : après avoir ajouté, renommé ou documenté un module,
+  `node checks/inventaire.mjs` réécrit `INVENTAIRE.md` (le contrôle statique
+  échoue sinon). Son contenu vient des `/** … */` : **tout export porte une doc
+  dont la première phrase dit son rôle** — c'est elle que liront les sessions
+  suivantes.
 - **Contraste** : à faire **sur le DOM rendu**, pas sur les jetons — le fond réel
   d'un texte dépend des surfaces empilées au-dessus, des opacités d'ancêtres et
   parfois d'un pseudo-élément (le curseur d'onglets). Recette : une page qui
@@ -423,8 +437,6 @@ Lancer ces contrôles (rapides, en Node) :
   mesuré ; tenir compte de son `transform` (sinon la pilule d'onglet est
   attribuée aux quatre onglets). Seuil : 4,5:1, ou 3:1 au-delà de 24 px.
   **Attendu : zéro défaut**, sur les six écrans et dans les deux thèmes.
-- **Service worker** : tout fichier servi est dans `CORE`, et `CORE` ne référence
-  aucun fichier disparu.
 - **Logique métier** : `node checks/domaine.mjs`, **puis `TZ=Europe/Paris node checks/domaine.mjs`**
   (le conteneur tourne en UTC, qui n'a pas de changement d'heure : sans ce second
   passage, les contrôles de bornes de jour et de période ne prouvent rien) — Node ESM,

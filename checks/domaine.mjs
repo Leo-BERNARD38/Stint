@@ -14,6 +14,7 @@ import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
 import { Timesheet } from "../src/services/Timesheet.js";
 import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine, setLine } from "../src/models/TimesheetLines.js";
+import { searchKey, matchesQuery } from "../src/utils/search.js";
 import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput, parseDuration } from "../src/utils/datetime.js";
 
 let failed = 0, total = 0;
@@ -1148,6 +1149,17 @@ section("Stats : écart d'arrondi (le même que Journée) et vue « Tout »");
   const e = new StatsAggregator(empty, new TimeCalculator(empty)).snapshot("all");
   eq(e.days.length, 1, "Tout sur un store vide : un jour, aujourd'hui");
   eq(e.rounding.lines, 0, "…et aucune ligne arrondie");
+}
+
+/* ------------------------------------------------------------------ §18 */
+section("recherche de tâche : une règle pour toutes les listes");
+{
+  eq(searchKey("  Réunion   Équipe "), "reunion equipe", "casse, accents et espaces normalisés");
+  ok(matchesQuery("Réunion d'équipe", "reunion"), "« reunion » trouve « Réunion »");
+  ok(matchesQuery("MOD-123 Support client", "client 12"), "les mots dans n'importe quel ordre");
+  ok(!matchesQuery("MOD-123 Support client", "client 45"), "chaque mot doit apparaître");
+  ok(matchesQuery("MOD-123", "   "), "une requête vide garde tout");
+  ok(matchesQuery(searchKey("Été"), "ete"), "un texte déjà normalisé reste comparable");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

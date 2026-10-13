@@ -1217,10 +1217,7 @@
     </div>
     <div class="memo-add">
       <input type="text" id="memoText" class="memo-input" maxlength="200" placeholder="Noter… (Entrée)" autocomplete="off" spellcheck="false" aria-label="Nouveau mémo">
-      <div class="select-wrap">
-        <select id="memoTask" aria-label="Tâche du mémo"></select>
-        <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
-      </div>
+      <div id="memoTask"></div>
     </div>
     <div class="memo-list" id="memoList"></div>
   </aside>
@@ -1258,8 +1255,7 @@
     <div class="modal">
       <button class="modal-close" data-close data-icon="x" aria-label="Fermer" title="Fermer"></button>
       <h3>Reprendre une tâche</h3>
-      <p class="modal-sub">Reprend la tâche choisie (arrête l'active, relance un segment).</p>
-      <input type="search" id="resumeSearch" class="at-search resume-search" placeholder="Filtrer… (↑ ↓ puis Entrée)" autocomplete="off" spellcheck="false" aria-label="Filtrer les tâches">
+      <p class="modal-sub">Reprend la tâche choisie (arrête l'active, relance un segment). ↑ ↓ puis Entrée.</p>
       <div class="resume-list" id="resumeList"></div>
     </div>
   </div>
@@ -1315,10 +1311,7 @@
       <p class="modal-sub" id="segmentModalSub">Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».</p>
       <div class="field" id="smTaskField" style="margin-bottom:12px;">
         <label>Tâche</label>
-        <div class="select-wrap">
-          <select id="smTask" aria-label="Tâche"></select>
-          <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
-        </div>
+        <div id="smTask"></div>
       </div>
       <!-- Vide justifié : le motif est un TEXTE (un exceptionnel se corrige),
            les épinglés ne sont que des suggestions. -->
@@ -1332,7 +1325,7 @@
         <div class="field"><label>Fin</label><input type="datetime-local" id="smEnd"></div>
       </div>
       <label class="switch-row" id="smRawRow" style="margin-bottom:4px;">
-        <input type="checkbox" id="smRaw">
+        <input type="checkbox" id="smRaw" class="sw">
         Temps brut (sans rognage sur les horaires de travail)
       </label>
       <!-- Outils d'édition (masqués en création) : couper le segment en deux à

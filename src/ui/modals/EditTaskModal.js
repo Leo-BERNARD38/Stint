@@ -3,7 +3,7 @@ import { el } from "../../utils/dom.js";
 import { createMemoList } from "../components/MemoList.js";
 
 /** Édition d'une tâche : nom (qui porte la clé Jira), type (chips), couleur
- *  (color picker libre), lien externe (ex. URL Jira), archiver, supprimer. */
+ *  (color picker libre), lien externe (une URL Jira, par exemple), archiver, supprimer. */
 export class EditTaskModal extends Modal {
   constructor(app) {
     super("editTaskModal");

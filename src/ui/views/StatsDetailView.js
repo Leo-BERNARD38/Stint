@@ -71,6 +71,19 @@ export class StatsDetailView {
       const row = e.target.closest("[data-task]");
       if (row) this.app.openEditTask(row.dataset.task);
     });
+    // Une tranche se déplie au clavier comme au clic (patron `.at-head` de
+    // l'onglet Tâches) : `role="button"` promet Entrée et Espace. Le rendu
+    // reconstruit la liste, le focus est donc reposé sur la même tranche.
+    this.el.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const head = e.target.closest(".sp-head[data-sp]");
+      if (!head) return;
+      e.preventDefault();
+      const k = head.dataset.sp;
+      this.expanded.has(k) ? this.expanded.delete(k) : this.expanded.add(k);
+      this.render();
+      this.el.querySelector(`.sp-head[data-sp="${CSS.escape(k)}"]`)?.focus();
+    });
   }
 
   render() {
@@ -458,7 +471,7 @@ export class StatsDetailView {
       const item = createEl("div", { className: "sp" + (open ? " open" : "") + (sp.ms > 0 ? "" : " is-empty") });
       const head = createEl("div", {
         className: "sp-head",
-        attrs: { "data-sp": sp.key, role: "button", tabindex: "0" },
+        attrs: { "data-sp": sp.key, role: "button", tabindex: "0", "aria-expanded": String(open) },
         html:
           `<span class="sp-chev">${icon("chevron-right", { size: 15 })}</span>` +
           `<span class="sp-id"><b>${escapeHtml(sp.label)}</b><em>${escapeHtml(sp.sub)}</em></span>` +

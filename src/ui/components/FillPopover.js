@@ -1,6 +1,6 @@
 import { createEl, escapeHtml } from "../../utils/dom.js";
 import { icon } from "../icons.js";
-import { taskPickerHtml, bindTaskPicker, pickedTask } from "./TaskPicker.js";
+import { taskPickerHtml, bindTaskPicker } from "./TaskPicker.js";
 
 /**
  * Popover de remplissage d'un trou (temps non tracé). Carte flottante ancrée au
@@ -13,12 +13,15 @@ import { taskPickerHtml, bindTaskPicker, pickedTask } from "./TaskPicker.js";
  */
 export function createFillPopover({ parent }) {
   const backdrop = createEl("div", { className: "fill-backdrop" });
-  const pop = createEl("div", { className: "fill-pop" });
+  // Même contrat que le popover de la Saisie : un dialogue, focalisé à
+  // l'ouverture, qui rend le focus à son déclencheur et se ferme à Échap.
+  const pop = createEl("div", { className: "fill-pop", attrs: { role: "dialog", "aria-label": "Temps non tracé", tabindex: "-1" } });
   parent.append(backdrop, pop);
 
   let isOpen = false;
   let cbs = {};
   let onDocDown = null;
+  let opener = null;
 
   function close() {
     if (!isOpen) return;
@@ -26,15 +29,20 @@ export function createFillPopover({ parent }) {
     pop.classList.remove("show");
     backdrop.classList.remove("show");
     if (onDocDown) { document.removeEventListener("pointerdown", onDocDown, true); onDocDown = null; }
+    // Le focus revient d'où il venait, s'il était resté dans la carte.
+    if (pop.contains(document.activeElement)) opener?.focus?.({ preventScroll: true });
+    opener = null;
   }
 
   function open(opts) {
     cbs = opts;
+    opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     pop.innerHTML = render(opts);
     isOpen = true;
     pop.classList.add("show");
     backdrop.classList.add("show");
     position(opts);
+    pop.focus({ preventScroll: true });
     // Clic hors du popover → fermeture (posé au tick suivant pour ne pas
     // capter le clic d'ouverture lui-même).
     onDocDown = (e) => { if (!pop.contains(e.target)) close(); };
@@ -90,8 +98,8 @@ export function createFillPopover({ parent }) {
     // terminées repliées. Un clic crée le segment ; Entrée dans la recherche
     // crée celui de la ligne sélectionnée.
     html += taskPickerHtml({
-      groups: [{ label: "En cours", tasks: o.tasks.filter((t) => !t.done) }],
-      more: o.tasks.filter((t) => t.done),
+      groups: [{ label: "En cours", tasks: o.tasks.open }],
+      more: o.tasks.done,
     });
     html += `</div>`;
     // Hors tâche : le vide est justifié, pas travaillé. Les motifs ÉPINGLÉS en
@@ -125,15 +133,13 @@ export function createFillPopover({ parent }) {
     cbs.onCreateOff?.(label, pin);
   }
   pop.addEventListener("keydown", (e) => {
+    // Échap ferme la carte, et seulement elle (pas l'écran, pas les mémos).
+    if (e.key === "Escape") { e.stopPropagation(); close(); return; }
     if (e.key === "Enter" && e.target.classList.contains("fill-off-input")) { e.preventDefault(); submitOff(); }
-    if (e.key === "Enter" && e.target.classList.contains("tp-search")) {
-      e.preventDefault();
-      const id = pickedTask(pop);
-      if (id) { close(); cbs.onCreate?.(id); }
-    }
   });
   bindTaskPicker(pop, {
     onSelect: (id, { click }) => { if (click) { close(); cbs.onCreate?.(id); } },
+    onSubmit: (id) => { close(); cbs.onCreate?.(id); },
   });
 
   // Délégation des clics dans le popover.

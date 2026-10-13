@@ -327,7 +327,7 @@ export class SettingsView {
   }
 
   #removeDates(keys) {
-    if (!keys || keys.length === 0) { this.app.toast.show("Aucune exception sur ces dates"); return; }
+    if (!keys || keys.length === 0) { this.app.toast.show("Aucune exception sur ces dates", { kind: "info" }); return; }
     let n = 0;
     this.app.store.updateSettings((s) => { n = s.removeDateRange(keys); });
     this.#resetDateForm();
@@ -344,7 +344,7 @@ export class SettingsView {
     day[key] = value;
     const bad = validateDay(day);
     if (bad) {
-      this.app.toast.show(DAY_ERRORS[bad]);
+      this.app.toast.show(DAY_ERRORS[bad], { kind: "error" });
       el(id).value = s[key];
       return;
     }
@@ -361,14 +361,14 @@ export class SettingsView {
     const to = el("dateTo").value;
     const bad = validateDay(this.dateEditor.readValue());
     if (bad) {
-      this.app.toast.show(DAY_ERRORS[bad]);
+      this.app.toast.show(DAY_ERRORS[bad], { kind: "error" });
       return;
     }
     const blocks = this.dateEditor.getValue();
     const replacing = this.editingDates || [];
     const dry = new Settings(this.settings.toJSON()).setDateRange(from, to, blocks, { replacing });
     if (typeof dry === "string") {
-      this.app.toast.show(RANGE_ERRORS[dry]);
+      this.app.toast.show(RANGE_ERRORS[dry], { kind: "error" });
       el(dry === "range" ? "dateTo" : "dateFrom").focus();
       return;
     }
@@ -480,7 +480,7 @@ export class SettingsView {
         duplicate: "Un rappel existe déjà à cette heure-là",
         full: "Liste pleine : retirez un rappel avant d'en ajouter un",
       }[dry];
-      this.app.toast.show(said);
+      this.app.toast.show(said, { kind: "error" });
       el(dry === "full" ? "breakLabel" : "breakTime").focus();
       return;
     }
@@ -504,7 +504,7 @@ export class SettingsView {
         invalid: "Il faut un intitulé",
         duplicate: "Ce motif est déjà épinglé",
         full: "Liste pleine : retirez un motif avant d'en épingler un autre",
-      }[dry]);
+      }[dry], { kind: "error" });
       el("offLabel").focus();
       return;
     }

@@ -1,5 +1,6 @@
 import { Modal } from "./Modal.js";
 import { el, escapeHtml } from "../../utils/dom.js";
+import { createTaskField } from "../components/TaskField.js";
 import { fmtDateTimeLocal, parseDateTimeLocal, toLocalISO, sameDay, atTime, pad2 } from "../../utils/datetime.js";
 
 /* Une raison par cause, comme partout : un bouton impossible est désactivé et
@@ -29,17 +30,13 @@ export class SegmentModal extends Modal {
 
   bind() {
     this.bindDismiss();
+    // Le champ de tâche commun (recherche, terminées repliées), pas un <select>.
+    this.taskField = createTaskField({ app: this.app, root: el("smTask") });
     el("smSave").addEventListener("click", () => this.#save());
     el("smDelete").addEventListener("click", () => this.#delete());
     el("smSplit").addEventListener("click", () => this.#split());
     el("smMergePrev").addEventListener("click", () => this.#merge("prev"));
     el("smMergeNext").addEventListener("click", () => this.#merge("next"));
-  }
-
-  #fillTasks(selectedId) {
-    el("smTask").innerHTML = this.app.store.tasks.map((t) =>
-      `<option value="${t.id}"${t.id === selectedId ? " selected" : ""}>${escapeHtml(t.displayName)}</option>`
-    ).join("");
   }
 
   open(segId = null) {
@@ -60,7 +57,7 @@ export class SegmentModal extends Modal {
         el("segmentModalSub").textContent = "Un vide justifié : il explique le trou, il ne compte ni dans le travaillé ni dans Jira.";
         el("segmentModalTitle").textContent = "Modifier le vide justifié";
       } else {
-        this.#fillTasks(seg.taskId);
+        this.taskField.value = seg.taskId;
         el("segmentModalSub").textContent = "Choisis la tâche et les horaires. Laisse la fin vide pour un segment « en cours ».";
         el("segmentModalTitle").textContent = "Modifier le segment";
       }
@@ -75,7 +72,7 @@ export class SegmentModal extends Modal {
         ? new Date()
         : atTime(this.app.viewDay, store.settings.arrival);
       base.setSeconds(0, 0);
-      this.#fillTasks(store.lastUsedTask()?.id ?? store.tasks[0]?.id);
+      this.taskField.value = store.lastUsedTask()?.id ?? store.tasks[0]?.id;
       el("smStart").value = fmtDateTimeLocal(base);
       el("smEnd").value = fmtDateTimeLocal(new Date(base.getTime() + 3_600_000));
       el("smRaw").checked = false;
@@ -137,8 +134,9 @@ export class SegmentModal extends Modal {
       this.close();
       return;
     }
-    const taskId = el("smTask").value;
-    if (!taskId || !startV) return;
+    const taskId = this.taskField.value;
+    if (!taskId) { this.taskField.focus(); return; }
+    if (!startV) return;
     const start = parseDateTimeLocal(startV);
     const end = endV ? parseDateTimeLocal(endV) : null;
     const raw = el("smRaw").checked;

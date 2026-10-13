@@ -4,6 +4,7 @@ import { startOfDay, sameDay, fmtClock, pad2 } from "../../utils/datetime.js";
 import { attachTimelineTip } from "../components/TimelineTip.js";
 import { onColorClass } from "../../utils/color.js";
 import { createFillPopover } from "../components/FillPopover.js";
+import { pickerTasks } from "../components/TaskPicker.js";
 
 const SNAP_MS = 300_000; // calage par pas de 5 minutes
 const HOUR_MS = 3_600_000;
@@ -355,7 +356,7 @@ export class TimelineView {
       dur: formatter.clock((ge - gs) / 60000),
       left: leftSeg ? nameColor(leftSeg) : null,
       right: rightSeg ? nameColor(rightSeg) : null,
-      tasks: store.tasks.filter((t) => !t.archived).map((t) => ({ id: t.id, name: t.displayName, color: t.color, done: t.done })),
+      tasks: pickerTasks(store),
       reasons: store.settings.offReasons,
       canPin: store.settings.offReasons.length < OFF_REASON_MAX,
       onExtendLeft: () => this.app.extendLeftIntoGap(leftSeg.id, new Date(ge)),

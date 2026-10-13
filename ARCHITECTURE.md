@@ -7,60 +7,25 @@ nette **domaine → services → UI**, pour rester lisible et faciliter les évo
 ## Arborescence
 
 ```
-index.html                 Squelette + points de montage, charge src/main.js (type=module)
-manifest.webmanifest       PWA : installable (icônes, nom, couleurs)
-sw.js                      Service worker : précache versionné, hors-ligne, mises à jour cohérentes
-.nojekyll                  Désactive Jekyll sur GitHub Pages
-assets/fonts/              9 woff2 auto-hébergés (Bitcount · Archivo · Plex Sans · Plex Mono)
-assets/styles/
-  fonts.css                @font-face des quatre familles
-  variables.css            Jetons de design — chaque couleur via light-dark(clair, sombre)
-  base.css                 Reset + typographie
-  layout.css               Mise en page (header, sections, grilles)
-  components.css           Composants (boutons, cartes, timelines, modales, toast)
+index.html, manifest.webmanifest, sw.js, .nojekyll   coquille + PWA
+assets/styles/   fonts · variables · base · layout · components
+assets/fonts/    woff2 auto-hébergés
 src/
-  main.js                  Point d'entrée : instancie et démarre App, enregistre le SW
-  core/
-    constants.js           Constantes + valeurs par défaut (aucune dépendance)
-    EventEmitter.js        Bus d'évènements minimal (on/off/emit)
-  utils/
-    datetime.js            Dates/heures, ISO local, jour ISO, toMin, cap
-    intervals.js           intersection / union / soustraction / découpe ouvrée d'intervalles
-    color.js               Luminance d'une couleur de tâche → texte clair ou sombre par-dessus
-    dom.js                 Sélecteurs, escapeHtml, createEl
-    curve.js               Chemins SVG : polyligne, spline monotone, aire fermée
-    clipboard.js           Copie presse-papier (avec repli)
-  models/                  DOMAINE
-    Settings.js            Réglages (horaires 3 niveaux, Jira, arrondi)
-    Task.js                Tâche (nom, type, couleur, état terminé/archivé)
-    Segment.js             Segment horodaté (start/end ISO, raw, timestamps mémoïsés)
-    Store.js               Source de vérité : état + commandes + persistance + events
-  services/                LOGIQUE TRANSVERSE
-    Persistence.js         Stockage double zone : IndexedDB (complet) + miroir localStorage (30 j)
-    TimeCalculator.js      Temps ouvré, agrégats, fenêtre timeline, trous
-    StatsAggregator.js     Agrégats rétrospectifs de Stats (séries, semaines, rythme, KPI)
-    Formatter.js           Décimal, Jira, arrondi, horloge
-    DataTransfer.js        Export/import JSON, export CSV, téléchargement
-    StorageInfo.js         Estimation d'occupation (navigator.storage.estimate)
-  ui/                      PRÉSENTATION
-    App.js                 Contrôleur racine : assemble tout, orchestre les flux
-    Timer.js               Tick 1 s (EventEmitter)
-    DayGlyphAnimator.js    Anime la scène « moment de la journée » image par image
-    icons.js               Pack Lucide inline + glyphes dot-matrix + scène dayGlyph
-    components/
-      Toast.js             Notification éphémère
-      CopyButton.js        Fabrique de bouton « copier »
-      ScheduleEditor.js    Éditeur de planning d'une journée (créneaux)
-      TimelineTip.js       Infobulle partagée des timelines (.tl-tip)
-    views/                 Une vue = une région du DOM (bind optionnel + render + anchor)
-      HeaderView, ThemeView, HeroView, TabsView, DayNavView, TimelineView,
-      TotalsView, TaskListView, SegmentTableView, StatsView, StatsTrendView,
-      StatsHeatmapView, StatsWeeksView, StatsBreakdownView, StatsTimelineView,
-      AllTasksView, SettingsView, StorageView, ToolsView
-    modals/
-      Modal.js             Base (ouverture/fermeture)
-      NewTaskModal, ResumeModal, EditTaskModal
+  main.js        point d'entrée
+  core/          constantes, EventEmitter
+  utils/         fonctions pures (dates, intervalles, DOM, recherche…)
+  models/        DOMAINE : Settings, Task, Segment, Memo, Store…
+  services/      logique transverse : calculs, stats, saisie, persistance…
+  ui/            PRÉSENTATION : App (contrôleur), boucles, icônes
+    components/  composants partagés (factories) — à réutiliser
+    views/       une vue = une région du DOM
+    modals/      modales (base `Modal`)
+checks/          contrôles Node : domaine, statique, inventaire
 ```
+
+**Le détail fichier par fichier est dans [`INVENTAIRE.md`](INVENTAIRE.md)**, généré
+depuis le code (`node checks/inventaire.mjs`) : une liste tenue à la main ici
+dérivait à chaque ajout de fichier.
 
 ## Flux de données (unidirectionnel)
 

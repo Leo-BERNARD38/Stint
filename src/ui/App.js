@@ -379,7 +379,7 @@ export class App {
         this.render();
         this.toast.show("Données importées");
       })
-      .catch(() => this.toast.show("Import impossible : fichier invalide"));
+      .catch(() => this.toast.show("Import impossible : fichier invalide", { kind: "error" }));
   }
   resetAll() {
     if (!confirm("Tout effacer (tâches, segments, réglages) ? Pensez à exporter avant.")) return;
@@ -396,7 +396,7 @@ export class App {
   purgeOld(days) {
     if (!confirm(`Supprimer les segments terminés il y a plus de ${days} jours ?`)) return;
     const n = this.store.purgeSegmentsOlderThan(days);
-    this.toast.show(n ? `${n} segment(s) supprimé(s)` : "Aucun segment assez ancien");
+    this.toast.show(n ? `${n} segment(s) supprimé(s)` : "Aucun segment assez ancien", { kind: n ? "ok" : "info" });
   }
 
   /* ----------------- liaisons privées ----------------- */

@@ -3,6 +3,7 @@ import { TASK_TYPES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 import { createCopyButton } from "../components/CopyButton.js";
 import { memoBadge } from "../components/MemoList.js";
+import { matchesQuery, queryTerms } from "../../utils/search.js";
 import {
   sameDay, addDays, mondayOf, startOfDay, fmtClock, fmtDateInput, pad2, cap,
 } from "../../utils/datetime.js";
@@ -19,7 +20,7 @@ export class AllTasksView {
     this.root = el("allTasks");
     this.anchor = this.root;
     this.expanded = new Set();
-    this.filter = { q: "", types: new Set(TASK_TYPES), state: "all", group: "day" };
+    this.filter = { q: [], types: new Set(TASK_TYPES), state: "all", group: "day" };
   }
 
   bind() {
@@ -42,7 +43,7 @@ export class AllTasksView {
     });
 
     // --- contrôles (câblés une seule fois ; ne touchent qu'à `filter` puis re-rendu) ---
-    el("atSearch").addEventListener("input", (e) => { this.filter.q = e.target.value.trim().toLowerCase(); this.render(); });
+    el("atSearch").addEventListener("input", (e) => { this.filter.q = queryTerms(e.target.value); this.render(); });
     el("atTypes").addEventListener("click", (e) => {
       const b = e.target.closest("[data-type]");
       if (!b) return;
@@ -85,7 +86,7 @@ export class AllTasksView {
       if (f.state === "open" && (t.done || t.archived)) return false;
       if (f.state === "done" && !t.done) return false;
       if (f.state === "archived" && !t.archived) return false;
-      if (f.q && !t.displayName.toLowerCase().includes(f.q)) return false;
+      if (!matchesQuery(t.displayName, f.q)) return false;
       return true;
     };
 

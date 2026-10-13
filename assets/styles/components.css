@@ -68,7 +68,6 @@
 .memo-add { display: flex; flex-direction: column; gap: 6px; }
 .memo-input { border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-sm); padding: 10px 11px; font-size: 14px; width: 100%; }
 .memo-input:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
-.memo-add .select-wrap select { width: 100%; }
 .memo-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; flex: 1; padding: 2px; }
 .memo-item { display: flex; align-items: flex-start; gap: var(--sp-2); padding: 9px 10px 9px 12px; background: var(--surface-2); border-radius: var(--radius-sm); }
 /* Un mémo fait se barre et passe en encre douce — jamais en opacité, qui
@@ -536,6 +535,8 @@
 .tp-item .o-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .tp-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-extra { font-family: var(--font-data); font-size: 12px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+/* La durée de la tâche qui tourne : le nombre qui bouge, désigné parmi d'autres (N1). */
+.tp-extra.is-hot { color: var(--stop-ink); font-weight: 700; }
 .tp-more { display: flex; align-items: center; gap: 8px; border: none; background: transparent; color: var(--text-faint);
   padding: 6px 4px 4px; width: 100%; cursor: pointer; font-weight: 600; font-size: 11px; }
 .tp-more-lab { flex: 1; text-align: left; }
@@ -543,6 +544,22 @@
 .tp-more.open .o-chev { transform: rotate(180deg); }
 .tp-more-list { display: flex; flex-direction: column; gap: 5px; }
 .tp-empty { font-size: 12.5px; color: var(--text-faint); padding: 6px 2px; }
+/* ---------- Champ « Tâche » d'un formulaire (TaskField) ----------
+   Le déclencheur a la grammaire du select maison (pilule teintée + chevron) ;
+   il déplie EN PLACE le sélecteur commun — pas de liste flottante : une modale
+   défile (`overflow: auto`) et rognerait un menu positionné. */
+.tf { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tf-trigger { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  width: 100%; border: none; background: var(--ctl); color: var(--text); border-radius: var(--radius-pill);
+  padding: 9px 12px 9px 16px; font-family: var(--font-body); font-size: 13.5px; font-weight: 600; text-align: left; cursor: pointer;
+  transition: background-color .15s var(--ease); }
+.tf-trigger:hover { background: var(--ctl-hover); }
+.tf-trigger:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+.tf-trigger .o-dot { width: 10px; height: 10px; border-radius: 3px; }
+.tf-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tf-name.is-empty { color: var(--text-soft); font-weight: 500; }
+.tf-trigger .o-chev { display: grid; place-items: center; color: var(--text-faint); transition: transform .2s var(--ease); }
+.tf-trigger[aria-expanded="true"] .o-chev { transform: rotate(180deg); }
 /* Hors tâche dans le popover : les épinglés en pilules, l'exceptionnel au champ. */
 .fill-opt .o-dot.off, .o-dot.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); }
 .fill-off-btn .o-ic .o-dot { width: 10px; height: 10px; border-radius: 3px; }
@@ -559,7 +576,7 @@
 @media (max-width: 760px) {
   .fill-pop { position: fixed; left: 0; right: 0; bottom: 0; top: auto !important; transform: none; width: 100%; max-width: 100%;
     border-radius: 20px 20px 0 0; padding-bottom: 26px; }
-  .fill-backdrop.show { display: block; position: fixed; inset: 0; background: color-mix(in srgb, #000 50%, transparent); z-index: 19; }
+  .fill-backdrop.show { display: block; position: fixed; inset: 0; background: color-mix(in srgb, var(--scrim) 50%, transparent); z-index: 19; }
 }
 
 /* ---------- Bloc « Temps non tracé » (aside Journée) ---------- */
@@ -716,7 +733,10 @@
 /* Le groupe des terminées se démarque par l'ESPACE : le filet est le même que
    partout, c'est la respiration au-dessus qui dit qu'on change de groupe. */
 .task-row.done-sep { margin-top: var(--sp-4); padding-top: 18px; }
-.swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: pointer; padding: 0; }
+.swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; border: none; cursor: inherit; padding: 0; }
+/* Une pastille ne promet un clic (main, grossissement) que là où elle EST un
+   déclencheur — « Éditer la tâche ». Ailleurs (Stats, mémos) elle légende. */
+button.swatch, .swatch[title], .seg-swatch[data-edit-task] { cursor: pointer; }
 .task-main { flex: 1; min-width: 0; }
 .task-name { font-weight: 600; display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; overflow-wrap: anywhere; }
 .type-badge { font-family: var(--font-data); font-size: 9px; font-weight: 500; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .1em; }
@@ -830,8 +850,8 @@
 .seg-table tbody tr.hl td { background: color-mix(in srgb, var(--accent) 11%, transparent); }
 .seg-clickable { cursor: pointer; }
 .seg-task-cell { display: inline-flex; align-items: center; gap: 9px; min-width: 0; max-width: 100%; }
-.seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; cursor: pointer; }
-.seg-swatch:hover { transform: scale(1.18); }
+.seg-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.seg-swatch[data-edit-task]:hover { transform: scale(1.18); }
 .seg-swatch.off { background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring-hover); cursor: default; }
 .seg-swatch.off:hover { transform: none; }
 .seg-task-cell .raw-tag { margin-left: 6px; }
@@ -1101,7 +1121,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .sched input[type="time"]:focus { outline: none; box-shadow: 0 0 0 2px var(--ring); }
 
 /* ---------- Modales (surfaces flottantes : ombre autorisée) ---------- */
-.modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, #000 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
+.modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, var(--scrim) 42%, transparent); z-index: 100; display: none; align-items: center; justify-content: center; padding: var(--sp-5); backdrop-filter: blur(2px); }
 .modal-backdrop.open { display: flex; }
 .modal { position: relative; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-pop); width: 100%; max-width: 460px; padding: var(--sp-5); max-height: 86vh; overflow: auto; }
 .modal h3 { font-family: var(--font-head); margin: 0 0 4px; font-size: 21px; font-weight: 700; letter-spacing: -.02em; padding-right: 34px; }
@@ -1121,16 +1141,8 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
    Le title dit pourquoi. */
 .sm-tool .mini-btn[disabled] { color: var(--text-faint); background: transparent; box-shadow: inset 0 0 0 1px var(--gap-ring); cursor: not-allowed; }
 .sm-tool .mini-btn[disabled]:hover { background: transparent; color: var(--text-faint); }
-.resume-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; overflow-x: hidden; padding: 2px; }
-.resume-item { display: flex; align-items: center; gap: var(--sp-3); padding: 12px 14px; border: none; border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; width: 100%; }
-.resume-item:hover { background: var(--surface-hover); }
-.resume-item .nm { flex: 1; font-weight: 600; }
-.resume-item .du { color: var(--text-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
-.resume-item.is-running .du { color: var(--stop-ink); font-weight: 700; }
-/* Le curseur clavier de la liste : lavis + anneau, le marquage du choix UNIQUE
-   (même rendu que `.ov-item.editing`) — jamais une bordure, jamais le minium. */
-.resume-item.is-cursor { background: var(--accent-wash); box-shadow: inset 0 0 0 1.5px var(--accent); }
-.resume-search { display: block; width: 100%; margin-bottom: var(--sp-3); }
+/* Reprise : le sélecteur commun (TaskPicker), sur une liste plus haute. */
+.resume-list .tp-list { max-height: 50vh; }
 
 /* Sélecteur de couleur libre (modale d'édition) : carré plein. */
 .color-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -1160,9 +1172,11 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .btn-back:hover { background: var(--surface-hover); color: var(--text); }
 .btn-back:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
-/* Interrupteur (case + libellé) */
+/* Interrupteur + libellé. Un oui/non se dessine partout en `input.sw` (le même
+   que les réglages) : la case native n'existe plus que pour cocher un élément
+   d'une liste (mémo fait, case saisie). */
 .switch-row { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; user-select: none; }
-.switch-row input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+.switch-row input:not(.sw) { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
 
 /* Variante compacte, en pilule, posée à droite d'un titre de bloc (ex. « Arrondi »).
    Actif = couleurs inversées, comme le sélecteur de jour. */
@@ -1235,7 +1249,7 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 
 /* Transitions douces sur tout ce qui réagit */
 .mini-btn, .btn, .icon-btn, .daynav button, .btn-ghost, .btn-back, .weekdays button,
-.tab, .backup-pill, .swatch, .resume-item, .total-line {
+.tab, .backup-pill, .swatch, .total-line {
   transition: background-color .15s var(--ease), color .15s var(--ease),
               transform .12s var(--ease), box-shadow .15s var(--ease);
 }
@@ -1248,9 +1262,8 @@ input.sw:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
 .btn-back:active, .weekdays button:active,
 .backup-pill:active { transform: scale(.92); }
 .tab:active { transform: scale(.96); }
-.resume-item:active { transform: scale(.99); }
 .task-row { transition: background-color .15s var(--ease); }
-.swatch:hover { transform: scale(1.18); }
+button.swatch:hover, .swatch[title]:hover { transform: scale(1.18); }
 
 /* Petites récompenses */
 .mini-btn.copied { animation: pop .35s var(--ease-spring); }

@@ -14,7 +14,7 @@ import { blocksFromDay, dayFromBlocks } from "../../models/Settings.js";
 export function createScheduleEditor() {
   const root = createEl("div", { className: "sched" });
   root.innerHTML = `
-    <label class="switch-row"><input type="checkbox" class="se-on"><span>Jour travaillé</span></label>
+    <label class="switch-row"><input type="checkbox" class="sw se-on"><span>Jour travaillé</span></label>
     <div class="se-body">
       <div class="se-line">
         <span class="se-lab">Arrivée</span>
@@ -22,7 +22,7 @@ export function createScheduleEditor() {
         <span class="se-lab se-lab2">Départ</span>
         <input type="time" class="se-dep">
       </div>
-      <label class="switch-row"><input type="checkbox" class="se-lunch"><span>Pause déjeuner</span></label>
+      <label class="switch-row"><input type="checkbox" class="sw se-lunch"><span>Pause déjeuner</span></label>
       <div class="se-line se-lline">
         <span class="se-lab">Pause</span>
         <input type="time" class="se-l1"><span class="se-dash">–</span><input type="time" class="se-l2">

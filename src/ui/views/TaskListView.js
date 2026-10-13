@@ -112,7 +112,8 @@ export class TaskListView {
     } else if (isActive) {
       actions.appendChild(this.#iconBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
       actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
-    } else {
+    } else if (!task.archived) {
+      // Une archivée reprise tournerait masquée de toutes les listes (même règle que l'onglet Tâches).
       actions.appendChild(this.#iconBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
       actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
     }

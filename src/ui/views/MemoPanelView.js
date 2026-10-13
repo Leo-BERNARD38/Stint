@@ -1,5 +1,6 @@
-import { el, escapeHtml } from "../../utils/dom.js";
+import { el } from "../../utils/dom.js";
 import { createMemoList } from "../components/MemoList.js";
+import { createTaskField } from "../components/TaskField.js";
 
 /**
  * Panneau latéral des mémos : « pour demain », général ou rattaché à une
@@ -13,7 +14,9 @@ export class MemoPanelView {
     this.panel = el("memoPanel");
     this.anchor = this.panel;
     this.text = el("memoText");
-    this.task = el("memoTask");
+    // Le champ de tâche commun, avec un choix « sans tâche » (mémo général).
+    this.task = createTaskField({ app, root: el("memoTask"), none: "Sans tâche (mémo général)", label: "Tâche du mémo",
+      onChange: () => this.text.focus() });
     this.list = createMemoList({ app, root: el("memoList"), showTask: true });
   }
 
@@ -23,7 +26,7 @@ export class MemoPanelView {
     this.text.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      const res = this.app.store.addMemo({ text: this.text.value, taskId: this.task.value || null });
+      const res = this.app.store.addMemo({ text: this.text.value, taskId: this.task.value });
       if (res === "invalid") return;
       this.text.value = "";
       this.text.focus();
@@ -38,6 +41,7 @@ export class MemoPanelView {
     this.panel.hidden = false;
     this.render();
     if (taskId && this.app.store.taskById(taskId)) this.task.value = taskId;
+    else this.task.close();
     setTimeout(() => this.text.focus(), 50);
   }
 
@@ -45,14 +49,10 @@ export class MemoPanelView {
 
   render() {
     const { store } = this.app;
-    // Le select des tâches ouvertes, jamais réécrit sous le focus.
-    if (document.activeElement !== this.task) {
-      const cur = this.task.value;
-      const tasks = store.openTasks().slice().sort((a, b) => a.displayName.localeCompare(b.displayName, "fr"));
-      this.task.innerHTML = `<option value="">— sans tâche —</option>` +
-        tasks.map((t) => `<option value="${t.id}">${escapeHtml(t.displayName)}</option>`).join("");
-      if (tasks.some((t) => t.id === cur)) this.task.value = cur;
-    }
+    // Le déclencheur seulement : la liste dépliée n'est jamais réécrite sous
+    // les doigts. Une tâche supprimée entre-temps retombe sur « sans tâche ».
+    if (this.task.value && !store.taskById(this.task.value)) this.task.value = null;
+    else this.task.refresh();
     this.list.render(store.allMemos(), { empty: "Aucun mémo. Note ici ce que tu veux retrouver demain." });
   }
 }
