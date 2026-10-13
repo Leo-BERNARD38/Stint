@@ -2,6 +2,7 @@ import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { TASK_TYPES } from "../../core/constants.js";
 import { icon } from "../icons.js";
 import { createCopyButton } from "../components/CopyButton.js";
+import { taskActions, taskBadgesHtml } from "../components/TaskActions.js";
 
 const TASKS_SHOWN = 12; // au-delà, replié derrière « + N autres »
 
@@ -145,26 +146,14 @@ export class StatsDetailView {
       className: "tt-main",
       html:
         `<div class="tt-name"><span class="tt-label">${escapeHtml(task?.displayName ?? "(tâche supprimée)")}</span>` +
-        (task ? `<span class="type-badge type-${task.type}">${task.type}</span>` : "") +
-        (task?.done ? '<span class="badge-done">terminé</span>' : "") + "</div>" +
+        (task ? taskBadgesHtml(task) : "") + "</div>" +
         `<div class="stat-bar-track"><div class="stat-bar" style="width:${Math.max(2, (ms / max) * 100)}%;background:${task?.color ?? "var(--text-faint)"}"></div></div>`,
     }));
     row.appendChild(createEl("span", { className: "tt-share", text: Math.round(share * 100) + " %" }));
     row.appendChild(createEl("span", { className: "tt-dur", text: formatter.clock(mins) }));
-    const actions = createEl("div", { className: "tt-actions" });
-    actions.append(
-      createCopyButton(this.app, formatter.decimal(mins), "Déc."),
-      createCopyButton(this.app, formatter.jira(mins), "Jira"),
-    );
-    if (task?.link) {
-      actions.appendChild(createEl("a", {
-        className: "mini-btn icon-only link-btn",
-        html: icon("external-link", { size: 15 }),
-        attrs: { href: task.link, target: "_blank", rel: "noopener noreferrer", title: "Ouvrir le lien" },
-        on: { click: (e) => e.stopPropagation() },
-      }));
-    }
-    row.appendChild(actions);
+    // Les actions communes, sans cycle de vie (une rétrospective ne relance
+    // rien) ni crayon (la ligne entière édite la tâche).
+    row.appendChild(taskActions(this.app, task, mins, { className: "tt-actions", lifecycle: false, edit: false }));
     return row;
   }
 
@@ -509,7 +498,8 @@ export class StatsDetailView {
     }
     for (const { task, ms } of sp.tasks) {
       const mins = ms / 60000;
-      const row = createEl("div", { className: "sp-task" });
+      // La ligne édite sa tâche au clic, comme les autres lignes de tâche des Stats.
+      const row = createEl("div", { className: "sp-task", attrs: task ? { "data-task": task.id, title: "Éditer la tâche" } : {} });
       row.appendChild(createEl("span", {
         className: "seg-swatch",
         attrs: { style: `background:${task?.color ?? "var(--text-faint)"}` },
@@ -517,28 +507,14 @@ export class StatsDetailView {
       row.appendChild(createEl("span", {
         className: "sp-task-name",
         html: escapeHtml(task?.displayName ?? "(tâche supprimée)")
-          + (task ? `<span class="type-badge type-${task.type}">${task.type}</span>` : "")
-          + (task?.done ? '<span class="badge-done">terminé</span>' : ""),
+          + (task ? taskBadgesHtml(task) : ""),
       }));
       row.appendChild(createEl("span", {
         className: "sp-task-share",
         text: sp.ms > 0 ? Math.round((ms / sp.ms) * 100) + " %" : "",
       }));
       row.appendChild(createEl("span", { className: "sp-task-dur", text: formatter.clock(mins) }));
-      const actions = createEl("div", { className: "sp-task-actions" });
-      actions.append(
-        createCopyButton(this.app, formatter.decimal(mins), "Déc."),
-        createCopyButton(this.app, formatter.jira(mins), "Jira"),
-      );
-      if (task?.link) {
-        actions.appendChild(createEl("a", {
-          className: "mini-btn icon-only link-btn",
-          html: icon("external-link", { size: 14 }),
-          attrs: { href: task.link, target: "_blank", rel: "noopener noreferrer", title: "Ouvrir le lien" },
-          on: { click: (e) => e.stopPropagation() },
-        }));
-      }
-      row.appendChild(actions);
+      row.appendChild(taskActions(this.app, task, mins, { className: "sp-task-actions", lifecycle: false, edit: false }));
       list.appendChild(row);
     }
     return list;

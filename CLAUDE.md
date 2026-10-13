@@ -97,7 +97,11 @@ widget, chercher ici (et dans `INVENTAIRE.md`) ; s'il manque une variante,
 | Champ « Tâche » d'un formulaire | `TaskField` (déclencheur + `TaskPicker` déplié en place, option « sans tâche ») | un `<select>` |
 | Filtrer des tâches par texte | `utils/search.js` (`matchesQuery` : casse/accents ignorés, tous les mots) | `name.toLowerCase().includes(q)` |
 | Carte flottante ancrée (choix sur place) | `.fill-pop` (FillPopover, popover de la Saisie) : `role="dialog"`, focus à l'ouverture, Échap, clic extérieur, feuille basse sur téléphone | un menu positionné dans une modale (elle défile et le rognerait) |
-| Message éphémère | `app.toast.show(msg, { kind })` — `ok` (coche), `info` (sans pictogramme), `error` (croix, plus long) | une coche devant un refus |
+| Message éphémère | `app.toast.show(msg, { kind, action })` — `ok` (coche), `info` (sans pictogramme), `error` (croix, plus long) ; `action` = un bouton | une coche devant un refus |
+| Supprimer UN élément (segment, tâche, mémo, motif, rappel, exception, case) | `app.undoable(message, () => store.…)` : immédiat, « Annuler » dans le toast, Ctrl+Z | `confirm()`, ou une suppression sans retour |
+| Effacer en MASSE (tout effacer, vider, purger) | `confirm()` natif, en disant quoi exporter avant | — |
+| Lire une durée tapée | `app.formatter.parse(text)` (`parseDuration` : « 1:30 », « 1h30 », « 1.5 » = heures, « 2d 3h ») | un parseur local |
+| Actions d'une ligne de tâche | `TaskActions` : `taskActions()` (cycle de vie, copie, lien, édition), `taskBadgesHtml()`, `linkButtonHtml()`, `editButtonHtml()` | des boutons recopiés dans la vue |
 | Oui / non | `input.sw` (interrupteur), dans `.switch-row` s'il porte son libellé | une case native (réservée à cocher un élément d'une liste) |
 | Copier une valeur | `createCopyButton` / `app.copy` | — |
 | Infobulle d'une marque de graphique | `attachTimelineTip` (contrat `data-name/range/dur/color`) | un `title` |
@@ -105,12 +109,12 @@ widget, chercher ici (et dans `INVENTAIRE.md`) ; s'il manque une variante,
 | Liste de mémos | `createMemoList` / `memoBadge` (§16) | — |
 
 Écarts connus, **pas encore unifiés** (à traiter plutôt qu'à reproduire) :
-saisie de durée (`parseDuration` de la Saisie vs parseurs du convertisseur — un
-« 90 » nu n'y vaut pas la même chose), confirmations (`confirm()` natif ici,
-suppression sans retour là), ligne de tâche et ses actions (reconstruite dans
-cinq vues), états vides (`.empty` vs `.ov-empty`/`.at-empty`/`.ts-empty`…),
-pastilles de couleur (huit classes), contrôles de choix (`.seg-control` vs
-`.chip-group`).
+le balisage de la ligne de tâche elle-même (nom, barre, durée : chaque vue a
+encore sa grille — seules ses actions et ses pastilles sont communes), états
+vides (`.empty` vs `.ov-empty`/`.at-empty`/`.ts-empty`…), pastilles de couleur
+(huit classes), contrôles de choix (`.seg-control` vs `.chip-group`),
+navigateurs de période (jour / semaine / Stats : trois règles pour « on est
+déjà à maintenant »).
 
 ### Conventions de vue (à respecter pour toute nouvelle vue)
 - Constructeur `(app)` ; récupère ses éléments via `el("id")`.
@@ -912,7 +916,8 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   la feuille : fermé par un `pointerdown` extérieur, un tableau reconstruit sous
   le pointeur avalerait le clic qui ouvre la case suivante. La durée s'y dit en
   `H:mm` avec − / + d'un bloc (flèches ↑ ↓ aussi) ; une frappe libre passe par
-  `parseDuration` (`utils/datetime.js` : « 1:30 », « 1h30 », « 90 » = minutes).
+  `Formatter.parse` (la grammaire commune, `parseDuration` : « 1:30 », « 1h30 »,
+  « 1.5 » — un nombre seul compte en HEURES, comme le décimal que l'app copie).
 - ← → changent de **semaine** sur cet onglet ; le sélecteur de jour y est masqué.
 - Guide : `g-6`. Testé dans `checks/domaine.mjs` §15 (dont les semaines des deux
   changements d'heure).

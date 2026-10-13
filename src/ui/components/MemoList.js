@@ -12,7 +12,7 @@ export function createMemoList({ app, root, showTask = true }) {
     const toggle = e.target.closest("[data-toggle-memo]");
     if (toggle) { app.store.toggleMemo(toggle.dataset.toggleMemo); return; }
     const rm = e.target.closest("[data-rm-memo]");
-    if (rm) { app.store.deleteMemo(rm.dataset.rmMemo); return; }
+    if (rm) { app.undoable("Mémo supprimé", () => app.store.deleteMemo(rm.dataset.rmMemo)); return; }
     const task = e.target.closest("[data-memo-task]");
     if (task) app.openEditTask(task.dataset.memoTask);
   });
@@ -35,7 +35,7 @@ export function createMemoList({ app, root, showTask = true }) {
                   `<span class="swatch" style="background:${task.color}"></span>${escapeHtml(task.displayName)}</button>`
               : "") +
           `</div>` +
-          `<button class="ov-rm" data-rm-memo="${escapeHtml(m.id)}" title="Supprimer" aria-label="Supprimer">×</button>`,
+          `<button class="ov-rm" data-rm-memo="${escapeHtml(m.id)}" title="Supprimer" aria-label="Supprimer">${icon("x", { size: 14 })}</button>`,
       }));
     }
   }

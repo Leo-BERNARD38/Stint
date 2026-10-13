@@ -156,8 +156,8 @@ export class SegmentModal extends Modal {
 
   #delete() {
     if (!this.segId) return;
-    if (!confirm("Supprimer ce segment ?")) return;
-    this.app.store.deleteSegment(this.segId);
+    const id = this.segId;
     this.close();
+    this.app.undoable("Segment supprimé", () => this.app.store.deleteSegment(id));
   }
 }

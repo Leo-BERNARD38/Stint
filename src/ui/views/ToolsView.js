@@ -23,7 +23,6 @@ export class ToolsView {
     this.app = app;
     this.anchor = el("toolsScreen");
     this.convInput = el("convInput");
-    this.convUnit = el("convUnit");
     this.convOut = el("convOut");
     this.bnStart = el("bnStart");
     this.bnEnd = el("bnEnd");
@@ -34,7 +33,6 @@ export class ToolsView {
 
   bind() {
     this.convInput.addEventListener("input", () => this.#renderConv());
-    this.convUnit.addEventListener("change", () => this.#renderConv());
     this.bnStart.addEventListener("input", () => this.#renderBrutNet());
     this.bnEnd.addEventListener("input", () => this.#renderBrutNet());
     this.#setDefaults();
@@ -62,7 +60,9 @@ export class ToolsView {
   /* ----------------- convertisseur ----------------- */
   #renderConv() {
     const fmt = this.app.formatter;
-    const ms = this.#parseToMs(this.convInput.value, this.convUnit.value);
+    // La grammaire commune (`Formatter.parse`) : aucun format à choisir.
+    const min = fmt.parse(this.convInput.value);
+    const ms = min == null ? null : Math.round(min * 60_000);
     this.convOut.innerHTML = "";
     if (ms == null) {
       this.convOut.appendChild(createEl("div", {
@@ -88,39 +88,6 @@ export class ToolsView {
       card.appendChild(copy);
       this.convOut.appendChild(card);
     }
-  }
-
-  /** Saisie d'un format → millisecondes (null si non reconnu). */
-  #parseToMs(value, unit) {
-    const v = (value || "").trim().replace(",", ".");
-    if (!v) return null;
-    if (unit === "decimal") {
-      const n = parseFloat(v);
-      return Number.isFinite(n) && n >= 0 ? Math.round(n * 3_600_000) : null;
-    }
-    if (unit === "clock" || unit === "hms") {
-      if (!/^\d+(:\d{1,2}){0,2}$/.test(v)) return null;
-      const [h = 0, m = 0, s = 0] = v.split(":").map((p) => parseInt(p, 10));
-      if (m >= 60 || s >= 60) return null;
-      return ((h * 60 + m) * 60 + s) * 1000;
-    }
-    if (unit === "jira") return this.#parseJiraToMs(v);
-    return null;
-  }
-
-  /** « 1w 2d 3h 4m » → ms, en suivant les unités Jira effectives (w/d). */
-  #parseJiraToMs(v) {
-    const fmt = this.app.formatter;
-    const hours = { w: fmt.effHoursPerDay() * fmt.effDaysPerWeek(), d: fmt.effHoursPerDay(), h: 1, m: 1 / 60 };
-    const re = /(\d+(?:\.\d+)?)\s*(w|d|h|m)/gi;
-    let total = 0, matched = false, mt;
-    while ((mt = re.exec(v))) { matched = true; total += parseFloat(mt[1]) * hours[mt[2].toLowerCase()]; }
-    if (!matched) {
-      const n = parseFloat(v); // un nombre seul est interprété en heures
-      if (!Number.isFinite(n)) return null;
-      total = n;
-    }
-    return total >= 0 ? Math.round(total * 3_600_000) : null;
   }
 
   /* ----------------- brut / net ----------------- */

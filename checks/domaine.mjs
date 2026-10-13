@@ -1028,17 +1028,28 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
 }
 
 /* ------------------------------------------------------------------ §16 */
-section("durée tapée dans le popover de la Saisie (parseDuration)");
+section("durée tapée : une grammaire pour la Saisie et le convertisseur (parseDuration)");
 {
+  const J = { hoursPerDay: 7, daysPerWeek: 5 };
   eq(parseDuration("1:30"), 90, "H:mm");
   eq(parseDuration("0:45"), 45, "0:mm");
+  eq(parseDuration("1:30:30"), 90.5, "H:mm:ss");
   eq(parseDuration("1h30"), 90, "1h30");
+  eq(parseDuration("1h 30m"), 90, "1h 30m (Jira)");
   eq(parseDuration("2 h"), 120, "2 h (espaces)");
   eq(parseDuration("1,5h"), 90, "1,5h (virgule décimale)");
   eq(parseDuration("45m"), 45, "45m");
-  eq(parseDuration("90"), 90, "nombre nu = minutes");
+  eq(parseDuration("90 min"), 90, "90 min");
+  eq(parseDuration("1.5"), 90, "nombre seul = heures (le décimal que l'app copie)");
+  eq(parseDuration("1,5"), 90, "…virgule comprise");
+  eq(parseDuration("7"), 420, "« 7 » = une journée de 7 h");
+  eq(parseDuration("2d 3h", J), 17 * 60, "jours Jira (1d = 7 h)");
+  eq(parseDuration("1w", J), 35 * 60, "semaine Jira (5 × 7 h)");
+  eq(parseDuration("1j", J), 420, "« j » = jour");
+  eq(parseDuration("1d"), null, "un jour sans unités Jira ne se lit pas");
   eq(parseDuration("1:75"), null, "minutes ≥ 60 : illisible");
   eq(parseDuration("1:5"), null, "H:m sans zéro : illisible (ambigu)");
+  eq(parseDuration("30 1h"), null, "un nombre sans unité ailleurs qu'après des heures");
   eq(parseDuration(""), null, "vide");
   eq(parseDuration("abc"), null, "texte");
 }
@@ -1160,6 +1171,26 @@ section("recherche de tâche : une règle pour toutes les listes");
   ok(!matchesQuery("MOD-123 Support client", "client 45"), "chaque mot doit apparaître");
   ok(matchesQuery("MOD-123", "   "), "une requête vide garde tout");
   ok(matchesQuery(searchKey("Été"), "ete"), "un texte déjà normalisé reste comparable");
+}
+
+/* ------------------------------------------------------------------ §19 */
+section("suppression annulable : snapshot / restore du Store");
+{
+  const store = new Store(fakePersistence());
+  store.hydrate({ version: SCHEMA_VERSION, settings: {}, tasks: [], segments: [], meta: {} });
+  store.startNew({ name: "MOD-1", type: "dev" });
+  const t = store.activeTask();
+  store.pause();
+  store.addSegment({ taskId: t.id, start: new Date(2026, 8, 21, 9), end: new Date(2026, 8, 21, 11) });
+  store.addMemo({ text: "relire", taskId: t.id });
+  store.setTimesheetDay("2026-09-21", [{ taskId: t.id, min: 120, done: true }]);
+  const before = store.snapshot();
+  store.deleteTask(t.id);
+  eq([store.tasks.length, store.memos.length, store.timesheetDay("2026-09-21")?.length ?? 0], [0, 0, 0], "la cascade emporte tâche, mémos et saisie");
+  const rev = store.rev;
+  store.restore(before);
+  ok(store.rev > rev, "restaurer est un commit (rendu + persistance)");
+  eq(store.snapshot(), before, "restaurer rend l'état exact d'avant, cascade comprise");
 }
 
 console.log(`\n${total - failed}/${total} contrôles passés`);

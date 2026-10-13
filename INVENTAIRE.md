@@ -4,7 +4,7 @@
 > `node checks/inventaire.mjs --check` échoue s'il est périmé (§9 de CLAUDE.md).
 > Le rôle d'un fichier est la première phrase de la doc de son premier export.
 
-64 modules JS.
+65 modules JS.
 
 ## Composants partagés — à réutiliser avant d'en écrire un
 
@@ -16,10 +16,11 @@ Factories et fonctions appelées par plusieurs vues. Un besoin qui ressemble à 
 | `ui/components/FillPopover.js` | Popover de remplissage d'un trou (temps non tracé) | `createFillPopover()` |
 | `ui/components/MemoList.js` | Liste de mémos (factory, comme `FillPopover`) : une case « fait », le texte, la tâche rattachée (puce + nom, clic = éditer la tâche) et une croix | `createMemoList()`, `memoBadge()` |
 | `ui/components/ScheduleEditor.js` | Éditeur de planning d'une journée, dans la seule grammaire de l'application : **arrivée, départ, et une pause déjeuner ou non** | `createScheduleEditor()`, `describeBlocks()` |
+| `ui/components/TaskActions.js` | Les actions d'une tâche dans une liste — les mêmes partout où une ligne de tâche les porte (Tâches du jour, onglet Tâches, Stats, Saisie) | `taskBadgesHtml()`, `linkButtonHtml()`, `linkButton()`, `editButtonHtml()`, `lifecycleButtons()`, `taskActions()` |
 | `ui/components/TaskField.js` | Champ « Tâche » d'un formulaire (modale de segment, panneau des mémos) : un déclencheur qui dit la tâche choisie et déplie EN PLACE le sélecteur … | `createTaskField()` |
 | `ui/components/TaskPicker.js` | LE sélecteur de tâche — la même liste partout où l'on choisit une tâche : combler un trou de la timeline, compléter un jour de la Saisie, reprendre … | `taskPickerHtml()`, `pickedTask()`, `bindTaskPicker()`, `pickerTask`, `pickerTasks()` |
 | `ui/components/TimelineTip.js` | Infobulle maison des timelines (`.tl-tip`) : suit le curseur au-dessus des blocs `.tl-seg` et affiche nom / plage / durée lus dans leurs `data-*`. … | `attachTimelineTip()` |
-| `ui/components/Toast.js` | Notification éphémère en bas d'écran : `show(message, { kind })`, `kind` = `ok` (coche, défaut), `info` (sans pictogramme) ou `error` (croix, plus … | `Toast` |
+| `ui/components/Toast.js` | Notification éphémère en bas d'écran : `show(message, { kind, action })`, `kind` = `ok` (coche, défaut), `info` (sans pictogramme) ou `error` … | `Toast` |
 
 API détaillée :
 
@@ -29,6 +30,13 @@ API détaillée :
 - **ScheduleEditor.js**
   - `createScheduleEditor()` — Éditeur de planning d'une journée, dans la seule grammaire de l'application : **arrivée, départ, et une pause déjeuner ou non**
   - `describeBlocks()` — Résumé lisible d'un planning, pour les listes
+- **TaskActions.js**
+  - `taskBadgesHtml()` — Pastilles de la tâche à côté de son nom : type, « terminé », « archivé »
+  - `linkButtonHtml()` — Le bouton « ouvrir le lien » (la fiche Jira), en balisage — pour les vues qui construisent en chaîne
+  - `linkButton()` — Le bouton « ouvrir le lien », en élément ; son clic ne remonte pas (une ligne cliquable ne s'ouvre pas avec)
+  - `editButtonHtml()` — Le bouton « Éditer la tâche », en balisage ; `attrs` = les `data-*` de la délégation de la vue
+  - `lifecycleButtons()` — Les contrôles de cycle de vie : Rouvrir (terminée) ; Pause + Terminer (en cours) ; Reprendre + Terminer (ouverte)
+  - `taskActions()` — Le groupe d'actions complet d'une ligne de tâche
 - **TaskPicker.js**
   - `taskPickerHtml()` — Le balisage du sélecteur (recherche + groupes + terminées repliées)
   - `pickedTask()` — L'identifiant de la tâche sélectionnée dans `root` (`""` = sans tâche), ou `null`
@@ -175,18 +183,18 @@ Sections de chaque feuille (titres `/* ---------- … ---------- */`). Chercher 
   - l. 1123 — Modales (surfaces flottantes : ombre autorisée)
   - l. 1162 — Icônes
   - l. 1207 — Toast
-  - l. 1215 — Page Guide
-  - l. 1293 — Convertisseur
-  - l. 1330 — Calcul brut / net
-  - l. 1440 — Navigation : le grain à gauche, la période à droite
-  - l. 1516 — Évolution · Volume : 12 périodes de contexte
-  - l. 1556 — Évolution · Continuité : une ligne par jour
-  - l. 1576 — Détail : répartitions, hors tâche, découpage
-  - l. 1608 — Détail · Par tâche
-  - l. 1635 — Détail · Découpage (jours, semaines ou mois de la période)
-  - l. 1688 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
-  - l. 1831 — La feuille : tâches × jours
-  - l. 1930 — Popover d'une case / d'un manque
+  - l. 1223 — Page Guide
+  - l. 1301 — Convertisseur
+  - l. 1337 — Calcul brut / net
+  - l. 1447 — Navigation : le grain à gauche, la période à droite
+  - l. 1523 — Évolution · Volume : 12 périodes de contexte
+  - l. 1563 — Évolution · Continuité : une ligne par jour
+  - l. 1583 — Détail : répartitions, hors tâche, découpage
+  - l. 1615 — Détail · Par tâche
+  - l. 1642 — Détail · Découpage (jours, semaines ou mois de la période)
+  - l. 1695 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
+  - l. 1838 — La feuille : tâches × jours
+  - l. 1937 — Popover d'une case / d'un manque
 - `assets/styles/fonts.css` — sans sections
 - `assets/styles/layout.css`
   - l. 5 — En-tête (flat : pas de bordure, juste un fond translucide)

@@ -605,6 +605,21 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
+  /**
+   * Un instantané de tout l'état (JSON figé), pour `restore` : c'est ce qui rend
+   * une suppression annulable (`App.undoable`) sans écrire l'inverse de chaque
+   * commande — la cascade d'une tâche supprimée (segments, mémos, saisie)
+   * revient d'un bloc.
+   */
+  snapshot() {
+    return JSON.stringify(this.toJSON());
+  }
+
+  /** Revient à un instantané de `snapshot()` (commit + persistance + rendu). */
+  restore(snap) {
+    this.replaceAll(JSON.parse(snap));
+  }
+
   replaceAll(raw) {
     this.hydrate(raw);
     this.#commit();

@@ -1,7 +1,6 @@
 import { el, createEl, escapeHtml } from "../../utils/dom.js";
 import { sameDay } from "../../utils/datetime.js";
-import { createCopyButton } from "../components/CopyButton.js";
-import { icon } from "../icons.js";
+import { taskActions, taskBadgesHtml } from "../components/TaskActions.js";
 import { memoBadge } from "../components/MemoList.js";
 
 /**
@@ -92,64 +91,20 @@ export class TaskListView {
       className: "task-row" + (isActive ? " active" : "") + (task.done ? " done" : "") + (task.archived ? " archived" : ""),
       attrs: { "data-task": task.id },
       html:
-        `<button class="swatch" style="background:${task.color}" title="Éditer"></button>` +
-        `<div class="task-main"><div class="task-name">${escapeHtml(task.displayName)}` +
-          `<span class="type-badge type-${task.type}">${task.type}</span>` +
-          (task.done ? `<span class="badge-done">terminé</span>` : "") +
+        `<button class="swatch" style="background:${task.color}" title="Éditer la tâche" aria-label="Éditer la tâche"></button>` +
+        `<div class="task-main"><div class="task-name">${escapeHtml(task.displayName)}` + taskBadgesHtml(task) +
         `</div>` +
         `<div class="task-share"><span style="width:${share}%;background:${task.color}"></span></div>` +
         `</div>` +
         `<div class="task-dur">${fmt.clock(minutes)}</div>`,
     });
 
-    const actions = createEl("div", { className: "task-actions" });
-    const store = this.app.store;
-    // Contrôles de cycle de vie d'abord — eux seuls restent visibles au repos
-    // (classes `ctrl-*`, cf. components.css) ; copie, lien et édition se
-    // révèlent au survol, sinon la ligne compte six cibles pour quatre nombres.
-    if (task.done) {
-      actions.appendChild(this.#iconBtn("rotate-ccw", "Rouvrir", () => store.reopenTask(task.id), "ctrl-play"));
-    } else if (isActive) {
-      actions.appendChild(this.#iconBtn("pause", "Pause", () => store.pause(), "ctrl-pause"));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
-    } else if (!task.archived) {
-      // Une archivée reprise tournerait masquée de toutes les listes (même règle que l'onglet Tâches).
-      actions.appendChild(this.#iconBtn("play", "Reprendre", () => store.resume(task.id), "ctrl-play"));
-      actions.appendChild(this.#iconBtn("check", "Terminer", () => store.closeTask(task.id), "ctrl-finish"));
-    }
-    actions.append(
-      createCopyButton(this.app, fmt.decimal(minutes), "Déc."),
-      createCopyButton(this.app, fmt.jira(minutes), "Jira"),
-    );
-    if (task.link) actions.appendChild(this.#linkBtn(task.link));
-    actions.appendChild(this.#iconBtn("pencil", "Éditer", () => this.app.openEditTask(task.id)));
-
+    // Les actions communes (`TaskActions`) : cycle de vie, copie, lien, édition.
+    const actions = taskActions(this.app, task, minutes);
     row.appendChild(actions);
     row.querySelector(".swatch").addEventListener("click", () => this.app.openEditTask(task.id));
     const badge = memoBadge(this.app, task.id);
     if (badge) row.querySelector(".task-name").appendChild(badge);
     return row;
-  }
-
-  #iconBtn(name, title, onClick, extra = "") {
-    return createEl("button", {
-      className: "mini-btn icon-only" + (extra ? " " + extra : ""),
-      html: icon(name, { size: 15 }),
-      attrs: { title, "aria-label": title },
-      on: { click: onClick },
-    });
-  }
-
-  /** Petit bouton discret : ouvre le lien de la tâche dans un nouvel onglet. */
-  #linkBtn(link) {
-    return createEl("a", {
-      className: "mini-btn icon-only link-btn",
-      html: icon("external-link", { size: 15 }),
-      attrs: {
-        href: link, target: "_blank", rel: "noopener noreferrer",
-        title: "Ouvrir le lien", "aria-label": "Ouvrir le lien",
-      },
-      on: { click: (e) => e.stopPropagation() },
-    });
   }
 }

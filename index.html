@@ -1105,7 +1105,8 @@
           <h3>Outils <kbd>calculatrice</kbd></h3>
           <p>
             Depuis le header : un <b>convertisseur de durée</b> (décimal ⇄ Jira ⇄ horloge ⇄ H:mm:ss,
-            copie en un clic) et un <b>calcul brut / net</b> entre deux dates — le temps réel et le
+            copie en un clic — tape la durée comme tu veux : <code>1:30</code>, <code>1h30</code>,
+            <code>1.5</code>, <code>2d 3h</code>) et un <b>calcul brut / net</b> entre deux dates — le temps réel et le
             temps ouvré, pratique pour vérifier ou saisir un report a posteriori.
           </p>
         </div>
@@ -1163,22 +1164,13 @@
               <input type="text" id="convInput" class="conv-in" placeholder="1:30"
                      autocomplete="off" spellcheck="false" inputmode="text">
             </div>
-            <div class="conv-field">
-              <label for="convUnit">Format saisi</label>
-              <span class="select-wrap">
-                <select id="convUnit">
-                  <option value="decimal">Décimal (heures)</option>
-                  <option value="jira">Jira (1h 30m)</option>
-                  <option value="clock">Horloge (H:mm)</option>
-                  <option value="hms">H:mm:ss</option>
-                </select>
-                <span class="select-chev" data-icon="chevron-down" data-icon-size="16"></span>
-              </span>
-            </div>
           </div>
           <div class="conv-out" id="convOut"></div>
           <p class="muted conv-note">
-            Les unités Jira (<code>1d</code>, <code>1w</code>) suivent vos horaires.
+            Tout format se lit, sans rien choisir : <code>1:30</code>, <code>1h30</code>,
+            <code>1.5</code> (un nombre seul compte en heures), <code>2d 3h</code> — les
+            unités Jira (<code>1d</code>, <code>1w</code>) suivent vos réglages. La même
+            saisie vaut dans le popover de l'onglet Saisie.
           </p>
         </div>
 

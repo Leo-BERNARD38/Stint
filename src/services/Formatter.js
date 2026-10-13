@@ -1,4 +1,4 @@
-import { pad2 } from "../utils/datetime.js";
+import { pad2, parseDuration } from "../utils/datetime.js";
 
 /**
  * Conversions d'affichage : décimal (§9.2), Jira `w d h m` (§9.3) et horloge
@@ -64,6 +64,15 @@ export class Formatter {
   }
 
   /** Horloge live h:mm:ss à partir d'une durée en ms. */
+  /**
+   * Une durée TAPÉE → minutes, ou `null` : la grammaire unique de l'app
+   * (`parseDuration`), avec les unités Jira effectives pour `d` et `w`. Tout
+   * champ de durée passe par ici — Saisie comme convertisseur.
+   */
+  parse(text) {
+    return parseDuration(text, { hoursPerDay: this.effHoursPerDay(), daysPerWeek: this.effDaysPerWeek() });
+  }
+
   hms(ms) {
     const total = Math.floor(ms / 1000);
     const h = Math.floor(total / 3600);

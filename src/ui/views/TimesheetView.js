@@ -1,7 +1,7 @@
 import { el, escapeHtml, createEl } from "../../utils/dom.js";
 import { icon } from "../icons.js";
-import { parseDuration } from "../../utils/datetime.js";
 import { toggleLine, setAllDone, addToLine, setLine } from "../../models/TimesheetLines.js";
+import { linkButtonHtml, editButtonHtml } from "../components/TaskActions.js";
 import { taskPickerHtml, bindTaskPicker, pickedTask, pickerTask, pickerTasks } from "../components/TaskPicker.js";
 
 const DAY_NAMES = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -122,10 +122,11 @@ export class TimesheetView {
     this.pop.addEventListener("pointerdown", (e) => {
       if (e.target.closest('[data-act="dec"], [data-act="inc"]')) e.preventDefault();
     });
-    // La durée tapée à la main se relit au blur : « 1h30 », « 1:30 », « 90 ».
+    // La durée tapée à la main se relit au blur, dans la grammaire commune
+    // (`Formatter.parse` : « 1:30 », « 1h30 », « 1.5 » = heures).
     this.pop.addEventListener("focusout", (e) => {
       if (!this.adding || !e.target.matches("[data-ts-min]")) return;
-      const min = parseDuration(e.target.value);
+      const min = this.app.formatter.parse(e.target.value);
       if (min != null) this.#setMin(min);
     });
   }
@@ -294,16 +295,10 @@ export class TimesheetView {
     return `<tr><th class="ts-tk" scope="row"><span class="ts-tkw">` +
         `<span class="ts-name" title="${name}"><i class="o-dot" style="background:${escapeHtml(t.color)}"></i><span class="ts-nt">${name}</span></span>` +
         '<span class="ts-tacts">' +
-          (t.link ? this.#linkBtn(t.link) : "") +
-          `<button class="mini-btn icon-only" data-act="task" data-task="${id}" title="Éditer la tâche" aria-label="Éditer ${name}">${icon("pencil", { size: 15 })}</button>` +
+          (t.link ? linkButtonHtml(t.link) : "") +
+          editButtonHtml(t, `data-act="task" data-task="${id}"`) +
         "</span>" +
       "</span></th>" + cells + `<td class="ts-rcell">${resCell}</td></tr>`;
-  }
-
-  /** Ouvrir le lien de la tâche (Jira) : le bouton de Journée. */
-  #linkBtn(link) {
-    return `<a class="mini-btn icon-only link-btn" href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer" ` +
-      `title="Ouvrir le lien" aria-label="Ouvrir le lien">${icon("external-link", { size: 15 })}</a>`;
   }
 
   #gapCell(d) {
@@ -406,7 +401,7 @@ export class TimesheetView {
       picker = '<div class="ts-pop-head">' +
           `<span class="ts-pop-task"><i class="o-dot" style="background:${escapeHtml(t?.color ?? "")}"></i>` +
           `<span>${escapeHtml(t?.displayName ?? "")}</span></span>` +
-          (t?.link ? this.#linkBtn(t.link) : "") +
+          (t?.link ? linkButtonHtml(t.link) : "") +
         "</div>" +
         '<div class="ts-pop-copy">' + copy("Déc.", formatter.decimal(cur)) + copy("Jira", formatter.jira(cur)) + "</div>";
     } else {
@@ -484,7 +479,7 @@ export class TimesheetView {
   #bump(dir) {
     if (!this.adding) return;
     const input = this.pop.querySelector("[data-ts-min]");
-    const typed = parseDuration(input?.value ?? "");
+    const typed = this.app.formatter.parse(input?.value ?? "");
     const step = this.app.timesheet.stepFor(this.adding.taskId);
     const cur = Math.round((typed ?? this.adding.min ?? 0) / step) * step;
     const floor = this.adding.mode === "edit" ? 0 : step;
@@ -501,7 +496,7 @@ export class TimesheetView {
     if (!this.adding) return;
     const editing = this.adding.mode === "edit";
     const taskId = editing ? this.adding.taskId : pickedTask(this.pop) ?? this.adding.taskId;
-    const typed = parseDuration(this.pop.querySelector("[data-ts-min]")?.value ?? "");
+    const typed = this.app.formatter.parse(this.pop.querySelector("[data-ts-min]")?.value ?? "");
     const raw = forced ?? typed;
     if (!taskId || raw == null || (!editing && raw === 0)) {
       this.app.toast.show("Choisissez une tâche et une durée (ex. 1:30)", { kind: "error" });
@@ -515,7 +510,10 @@ export class TimesheetView {
     const key = this.adding.key;
     this.refocus = min === 0 ? null : this.opener;
     this.#closePop();
-    this.#edit(key, (l) => (editing ? setLine(l, taskId, min) : addToLine(l, taskId, min)));
+    const apply = () => this.#edit(key, (l) => (editing ? setLine(l, taskId, min) : addToLine(l, taskId, min)));
+    // Retirer une case est une suppression : annulable, comme partout (`App.undoable`).
+    if (editing && min === 0) this.app.undoable("Case retirée — sa durée retourne en réserve", apply);
+    else apply();
   }
 
   /** Une réserve cliquée : sur le premier jour à compléter (ou aujourd'hui). */

@@ -168,17 +168,50 @@ export function formatDateRange(fromKey, toKey) {
 }
 
 /**
- * Une durée tapée : « 1:30 », « 1h30 », « 1h », « 45m », « 1,5h » — ou un
- * nombre nu, lu en MINUTES (« 90 »). `null` si rien ne se lit.
+ * Une durée tapée → minutes (fractionnaires si des secondes sont saisies),
+ * `null` si rien ne se lit. LA grammaire de toute l'app : popover de la
+ * Saisie, convertisseur des Outils. Deux parseurs avaient divergé — « 90 » y
+ * valait 90 minutes d'un côté, 90 heures de l'autre, « 1h30 » ne passait que
+ * dans l'un.
+ *
+ * - horloge : « 1:30 », « 1:30:15 » (minutes et secondes sur deux chiffres :
+ *   « 1:5 » est ambigu, donc refusé) ;
+ * - unités : « 1h30 », « 1h 30m », « 45m », « 90 min », « 30s », « 2d 3h »,
+ *   « 1w », « 1j » — `w`/`d` (`sem`/`j`) suivent les unités Jira passées en
+ *   option, sans elles ils ne se lisent pas ;
+ * - nombre seul, virgule ou point : des HEURES (« 1.5 » = 1:30). C'est le
+ *   format décimal que l'app copie elle-même : ce qu'elle écrit, elle doit
+ *   pouvoir le relire.
+ *
+ * @param {string} text
+ * @param {{ hoursPerDay?: number, daysPerWeek?: number }} [jira]
  */
-export function parseDuration(text) {
-  const s = String(text).trim().toLowerCase().replace(",", ".").replace(/\s+/g, "");
+export function parseDuration(text, { hoursPerDay, daysPerWeek } = {}) {
+  const s = String(text ?? "").trim().toLowerCase().replace(/,/g, ".").replace(/\s+/g, " ");
   if (!s) return null;
-  let m = s.match(/^(\d+):(\d{2})$/);
-  if (m) return +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
-  m = s.match(/^(\d+(?:\.\d+)?)h(?:(\d{1,2})(?:m|min)?)?$/);
-  if (m) return m[2] && +m[2] >= 60 ? null : Math.round(+m[1] * 60) + (m[2] ? +m[2] : 0);
-  m = s.match(/^(\d+)(?:m|min)?$/);
-  if (m) return +m[1];
-  return null;
+  let m = s.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);
+  if (m) return +m[2] < 60 && (m[3] == null || +m[3] < 60) ? +m[1] * 60 + +m[2] + (m[3] ? +m[3] / 60 : 0) : null;
+  if (/^\d+(\.\d+)?$/.test(s)) return +s * 60;
+  const perUnit = {
+    w: hoursPerDay && daysPerWeek ? hoursPerDay * daysPerWeek * 60 : null,
+    d: hoursPerDay ? hoursPerDay * 60 : null,
+    h: 60, m: 1, s: 1 / 60,
+  };
+  const alias = { sem: "w", j: "d", min: "m", mn: "m", sec: "s" };
+  const re = /(\d+(?:\.\d+)?) ?(sem|min|mn|sec|w|d|j|h|m|s)?/y;
+  let total = 0, i = 0, last = null;
+  while (i < s.length) {
+    if (s[i] === " ") { i++; continue; }
+    re.lastIndex = i;
+    m = re.exec(s);
+    if (!m) return null;
+    let unit = m[2] ? (alias[m[2]] ?? m[2]) : null;
+    // « 1h30 » : un nombre sans unité APRÈS des heures, ce sont des minutes.
+    if (!unit) { if (last !== "h" || re.lastIndex !== s.length) return null; unit = "m"; }
+    if (perUnit[unit] == null) return null;
+    total += +m[1] * perUnit[unit];
+    last = unit;
+    i = re.lastIndex;
+  }
+  return last ? total : null;
 }

@@ -85,10 +85,15 @@ export class EditTaskModal extends Modal {
   #delete() {
     const t = this.app.store.taskById(this.taskId);
     if (!t) return;
+    // Supprimée tout de suite, annulable (`App.undoable`) : le toast dit ce
+    // que la cascade emporte, « Annuler » le rend d'un bloc.
     const count = this.app.store.segmentCountFor(this.taskId);
     const memos = this.app.store.memosFor(this.taskId).length;
-    if (!confirm(`Supprimer « ${t.displayName} », ses ${count} segment(s)${memos ? ` et ses ${memos} mémo(s)` : ""} ?`)) return;
-    this.app.store.deleteTask(this.taskId);
+    const id = this.taskId;
     this.close();
+    this.app.undoable(
+      `« ${t.displayName} » supprimée (${count} segment${count > 1 ? "s" : ""}${memos ? `, ${memos} mémo${memos > 1 ? "s" : ""}` : ""})`,
+      () => this.app.store.deleteTask(id),
+    );
   }
 }

@@ -51,6 +51,8 @@ import { startOfDay, addDays, sameDay, parseDateInput, toLocalISO } from "../uti
  */
 export class App {
   #ticksSinceRefresh = 0;
+  /** L'annulation de la dernière suppression (`undoable`), ou null. */
+  #undo = null;
 
   constructor() {
     this.store = new Store(new Persistence());
@@ -274,13 +276,14 @@ export class App {
   /**
    * Libère un jour figé : il redevient une proposition. Des lignes déjà
    * cochées « saisi » seraient recalculées — donc peut-être plus ce qui est
-   * dans Jira : on le demande.
+   * dans Jira : le toast le dit, et « Annuler » rend le jour figé tel quel
+   * (c'était un `confirm()`, cf. `undoable`).
    */
   recalcTimesheetDay(key) {
     const lines = this.store.timesheetDay(key) ?? [];
-    if (lines.some((l) => l.done) &&
-        !confirm("Des lignes de ce jour sont cochées « saisi ». Les recalculer peut les faire diverger de Jira. Continuer ?")) return;
-    this.store.clearTimesheetDay(key);
+    const done = lines.some((l) => l.done);
+    this.undoable(done ? "Jour recalculé — il contenait des cases cochées « saisi »" : "Jour recalculé",
+      () => this.store.clearTimesheetDay(key));
   }
 
   /** Depuis « Tâches » : ouvre un jour ("YYYY-MM-DD") dans l'onglet Segments. */
@@ -346,6 +349,42 @@ export class App {
   createSegmentInGap(taskId, start, end) {
     this.store.addSegment({ taskId, start, end });
     this.toast.show("Segment créé");
+  }
+
+  /* ----------------- suppressions annulables ----------------- */
+  /**
+   * LA façon de supprimer un élément (segment, tâche, mémo, motif, rappel,
+   * exception d'horaire, case de la Saisie) : tout de suite, sans `confirm()`,
+   * avec « Annuler » dans le toast — et Ctrl+Z tant que rien d'autre n'a
+   * changé. Avant, certaines suppressions demandaient confirmation et
+   * d'autres partaient d'un clic, sans retour possible. Seuls les effacements
+   * de MASSE (tout effacer, vider, purger) gardent leur confirmation.
+   *
+   * L'annulation restaure un instantané complet (`Store.snapshot`) : elle n'a
+   * de sens que si rien n'a bougé depuis — d'où la garde sur `store.rev`.
+   * @param {string} message  ce qui vient d'être fait (« Segment supprimé »)
+   * @param {() => any} mutate  la suppression, par une commande du Store
+   */
+  undoable(message, mutate) {
+    const snap = this.store.snapshot();
+    const res = mutate();
+    const rev = this.store.rev;
+    this.#undo = () => {
+      this.#undo = null;
+      if (this.store.rev !== rev) {
+        this.toast.show("Trop tard pour annuler : d'autres changements ont suivi", { kind: "info" });
+        return;
+      }
+      this.store.restore(snap);
+      this.toast.show("Rétabli");
+    };
+    this.toast.show(message, { action: { label: "Annuler", run: () => this.#undo?.() } });
+    return res;
+  }
+
+  /** Ctrl+Z : annule la dernière suppression, si elle est encore annulable. */
+  undoLast() {
+    if (this.#undo) this.#undo();
   }
 
   /* ----------------- presse-papier ----------------- */
@@ -439,6 +478,11 @@ export class App {
       }
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "select" || tag === "textarea" || e.target.isContentEditable) return;
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        this.undoLast();
+        return;
+      }
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (qsa(".modal-backdrop.open").length) return;
       // Les mémos vivent sur tous les écrans : M aussi.

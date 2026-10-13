@@ -96,7 +96,7 @@ export class SettingsView {
     });
     el("offList").addEventListener("click", (e) => {
       const rm = e.target.closest("[data-rm-off]");
-      if (rm) store.updateSettings((set) => set.removeOffReason(rm.dataset.rmOff));
+      if (rm) this.app.undoable(`« ${rm.dataset.rmOff} » retiré des motifs`, () => store.updateSettings((set) => set.removeOffReason(rm.dataset.rmOff)));
     });
 
     // --- seuils du chrono ---
@@ -173,7 +173,7 @@ export class SettingsView {
         // On supprimait la ligne qu'on était en train d'éditer sans sortir du
         // mode : le formulaire visait alors un rappel disparu.
         if (this.editingBreak === rm.dataset.rmBreak) this.#resetBreakForm();
-        store.updateSettings((set) => set.removeBreak(rm.dataset.rmBreak));
+        this.app.undoable("Rappel retiré", () => store.updateSettings((set) => set.removeBreak(rm.dataset.rmBreak)));
         return;
       }
       const row = e.target.closest("[data-break]");
@@ -199,12 +199,16 @@ export class SettingsView {
     });
     el("wdayReset").addEventListener("click", () => {
       const dow = Number(wdaySelect.value);
-      store.updateSettings((s) => s.setWeekdayHours(dow, null));
+      this.app.undoable(`Exception du ${WEEKDAY_FULL[dow - 1]} retirée`, () => store.updateSettings((s) => s.setWeekdayHours(dow, null)));
       this.#loadWeekday();
     });
     el("weekdayOvList").addEventListener("click", (e) => {
       const rm = e.target.closest("[data-rm-wday]");
-      if (rm) { store.updateSettings((s) => s.setWeekdayHours(Number(rm.dataset.rmWday), null)); return; }
+      if (rm) {
+        const dow = Number(rm.dataset.rmWday);
+        this.app.undoable(`Exception du ${WEEKDAY_FULL[dow - 1]} retirée`, () => store.updateSettings((s) => s.setWeekdayHours(dow, null)));
+        return;
+      }
       const row = e.target.closest("[data-wday]");
       if (row) { wdaySelect.value = row.dataset.wday; this.#loadWeekday(); }
     });
@@ -328,10 +332,12 @@ export class SettingsView {
 
   #removeDates(keys) {
     if (!keys || keys.length === 0) { this.app.toast.show("Aucune exception sur ces dates", { kind: "info" }); return; }
-    let n = 0;
-    this.app.store.updateSettings((s) => { n = s.removeDateRange(keys); });
+    // Le nombre se compte à blanc, sur une copie : le toast d'annulation doit
+    // le dire avant que la suppression n'ait lieu.
+    const n = new Settings(this.settings.toJSON()).removeDateRange(keys);
+    this.app.undoable(n > 1 ? `${n} dates retirées` : "Date retirée",
+      () => this.app.store.updateSettings((s) => s.removeDateRange(keys)));
     this.#resetDateForm();
-    this.app.toast.show(n > 1 ? `${n} dates retirées` : "Date retirée");
   }
 
   /** Une heure de la base, refusée plutôt qu'appliquée en silence si elle est absurde. */
@@ -521,7 +527,7 @@ export class SettingsView {
       ? items.map((r) =>
           `<div class="ov-item brk off-item">` +
             `<span class="ov-name">${escapeHtml(r)}</span>` +
-            `<button class="ov-rm" data-rm-off="${escapeHtml(r)}" title="Retirer" aria-label="Retirer">×</button>` +
+            `<button class="ov-rm" data-rm-off="${escapeHtml(r)}" title="Retirer" aria-label="Retirer">${icon("x", { size: 14 })}</button>` +
           `</div>`).join("")
       : '<div class="ov-empty">Aucun motif épinglé — chaque vide se justifiera à la volée.</div>';
   }
@@ -607,7 +613,7 @@ export class SettingsView {
       `<div class="ov-item brk${editing ? " editing" : ""}" data-break="${escapeHtml(b.id)}" title="Modifier">` +
         `<span class="ov-name">${escapeHtml(b.label)}</span>` +
         `<span class="ov-sum${dead ? " off" : ""}">${escapeHtml(b.time)} · ${escapeHtml(when)}</span>` +
-        `<button class="ov-rm" data-rm-break="${escapeHtml(b.id)}" title="Retirer" aria-label="Retirer">×</button>` +
+        `<button class="ov-rm" data-rm-break="${escapeHtml(b.id)}" title="Retirer" aria-label="Retirer">${icon("x", { size: 14 })}</button>` +
       `</div>`
     );
   }
@@ -715,7 +721,7 @@ export class SettingsView {
       `<div class="ov-item rng${editing ? " editing" : ""}" data-range="${bounds}">` +
         `<span class="ov-name">${escapeHtml(label)}</span>` +
         `<span class="ov-sum${off ? " off" : ""}">${escapeHtml(describeBlocks(g.blocks))}</span>` +
-        `<button class="ov-rm" data-rm-range="${bounds}" title="Retirer" aria-label="Retirer">×</button>` +
+        `<button class="ov-rm" data-rm-range="${bounds}" title="Retirer" aria-label="Retirer">${icon("x", { size: 14 })}</button>` +
       `</div>`
     );
   }
@@ -726,7 +732,7 @@ export class SettingsView {
       `<div class="ov-item" data-${kind}="${escapeHtml(String(id))}">` +
         `<span class="ov-name">${escapeHtml(label)}</span>` +
         `<span class="ov-sum${off ? " off" : ""}">${escapeHtml(describeBlocks(blocks))}</span>` +
-        `<button class="ov-rm" data-rm-${kind}="${escapeHtml(String(id))}" title="Retirer" aria-label="Retirer">×</button>` +
+        `<button class="ov-rm" data-rm-${kind}="${escapeHtml(String(id))}" title="Retirer" aria-label="Retirer">${icon("x", { size: 14 })}</button>` +
       `</div>`
     );
   }

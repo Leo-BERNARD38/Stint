@@ -10,8 +10,11 @@ const KINDS = {
 };
 
 /**
- * Notification éphémère en bas d'écran : `show(message, { kind })`, `kind` =
- * `ok` (coche, défaut), `info` (sans pictogramme) ou `error` (croix, plus long).
+ * Notification éphémère en bas d'écran : `show(message, { kind, action })`,
+ * `kind` = `ok` (coche, défaut), `info` (sans pictogramme) ou `error` (croix,
+ * plus long). `action` = `{ label, run }` : un bouton dans le toast (« Annuler »
+ * d'une suppression, cf. `App.undoable`) — le toast reste alors plus longtemps
+ * et devient cliquable.
  */
 export class Toast {
   constructor() {
@@ -19,12 +22,23 @@ export class Toast {
     this.timer = null;
   }
 
-  show(message, { kind = "ok" } = {}) {
+  show(message, { kind = "ok", action = null } = {}) {
     const k = KINDS[kind] ?? KINDS.ok;
-    this.node.innerHTML = (k.icon ? icon(k.icon, { size: 15 }) : "") + `<span>${escapeHtml(message)}</span>`;
+    this.node.innerHTML = (k.icon ? icon(k.icon, { size: 15 }) : "") + `<span>${escapeHtml(message)}</span>` +
+      (action ? `<button type="button" class="toast-act">${escapeHtml(action.label)}</button>` : "");
     this.node.setAttribute("role", kind === "error" ? "alert" : "status");
+    this.node.classList.toggle("has-action", !!action);
     this.node.classList.add("show");
+    if (action) {
+      this.node.querySelector(".toast-act").addEventListener("click", () => { this.hide(); action.run(); }, { once: true });
+    }
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.node.classList.remove("show"), k.ms);
+    // Un bouton se lit, se vise et se clique : on lui laisse le temps.
+    this.timer = setTimeout(() => this.hide(), action ? 6000 : k.ms);
+  }
+
+  hide() {
+    clearTimeout(this.timer);
+    this.node.classList.remove("show", "has-action");
   }
 }
