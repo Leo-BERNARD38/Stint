@@ -1851,7 +1851,7 @@ thead .ts-tk, .ts-rcol, .ts-gaps .ts-tk { font-family: var(--font-data); font-si
   text-transform: uppercase; color: var(--text-faint); }
 thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 /* Assez large pour la copie, la coche et la durée côte à côte. */
-.ts-dcol { min-width: 138px; }
+.ts-dcol { min-width: 146px; }
 .ts-dh { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 26px; }
 .ts-dn { font-family: var(--font-head); font-weight: 700; font-size: 14.5px; color: var(--text); white-space: nowrap; }
 .ts-dcol.is-off .ts-dn { color: var(--text-soft); }
@@ -1892,7 +1892,7 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
    la durée du jour précédent. La copie est le `mini-btn` de Journée, révélé
    au survol de la case À SA PLACE (`visibility`) : rien ne bouge, et le
    « ✓ Copié » qui la remplace un instant grandit vers la gauche. */
-.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 52px; align-items: center; gap: 4px; }
+.ts-c { display: grid; grid-template-columns: minmax(0, 1fr) 15px 60px; align-items: center; gap: 4px; }
 .ts-copy { justify-self: end; padding: 5px 9px; gap: 4px; white-space: nowrap; }
 @media (hover: hover) { .ts-cell:not(:hover):not(:focus-within) .ts-copy { visibility: hidden; } }
 .ts-c input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; cursor: pointer; }
@@ -1903,6 +1903,11 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
   font-family: var(--font-data); font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;
   text-align: right; color: var(--text); border-radius: var(--radius-pill); }
 .ts-dur:hover { background: var(--ctl-hover); }
+/* Fixée à la main : une punaise devant la durée, qui ne suit plus le pointage.
+   Elle pousse vers la gauche — la durée reste collée au bord droit. */
+.ts-dur { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.ts-pin { display: inline-flex; color: var(--text-soft); }
+.ts-pin svg { transform: rotate(35deg); }
 .ts-cell.done .ts-dur { color: var(--text-soft); font-weight: 500; }
 .ts-cell.is-open .ts-dur, .ts-res.is-open { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 
@@ -1923,6 +1928,7 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
 .ts-gap.is-open { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .ts-more { padding: 5px; background: transparent; color: var(--text-soft); }
 .ts-more.is-open { background: var(--accent-wash); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ts-pop-note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-soft); }
 .ts-foot { margin: var(--sp-3) 0 0; padding: 0 var(--sp-2); font-family: var(--font-data); font-size: 10.5px;
   color: var(--text-faint); line-height: 1.6; }
 @media (max-width: 640px) {

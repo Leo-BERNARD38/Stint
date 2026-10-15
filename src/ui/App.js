@@ -274,10 +274,10 @@ export class App {
     this.render();
   }
   /**
-   * Libère un jour figé : il redevient une proposition. Des lignes déjà
-   * cochées « saisi » seraient recalculées — donc peut-être plus ce qui est
-   * dans Jira : le toast le dit, et « Annuler » rend le jour figé tel quel
-   * (c'était un `confirm()`, cf. `undoable`).
+   * Oublie les cases fixées d'un jour : il redevient entièrement une
+   * proposition. Des cases déjà cochées « saisi » seraient recalculées — donc
+   * peut-être plus ce qui est dans Jira : le toast le dit, et « Annuler » rend
+   * les cases telles quelles (c'était un `confirm()`, cf. `undoable`).
    */
   recalcTimesheetDay(key) {
     const lines = this.store.timesheetDay(key) ?? [];

@@ -265,7 +265,7 @@
       <div class="dot-card ts-sheet" id="tsSheet">
         <div class="block-title">
           Feuille de la semaine
-          <span class="hint">cochez une case une fois saisie dans Jira · cliquez une durée pour la modifier · cliquez un manque pour compléter</span>
+          <span class="hint">les cases suivent votre pointage · cochez celles saisies dans Jira · cliquez une durée pour la fixer à la main</span>
         </div>
         <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
         <p class="ts-foot" id="tsFoot"></p>
@@ -966,8 +966,11 @@
             <li><b>La saisie en deux clics</b> — au survol d'une case, <b>Jira</b> copie sa durée
               (<code>3h 30m</code>) ; au bout de la ligne, ↗ ouvre le lien de la tâche. Colle,
               puis <b>coche</b> la case (le bouton ✓ de l'en-tête coche tout le jour).</li>
-            <li><b>Un jour que tu touches est figé</b> : il ne se recalcule plus, pour que ce que
-              tu as coché reste ce qui est dans Jira. <b>Recalculer</b> (↺) le libère.</li>
+            <li><b>Seule la case que tu touches se fixe</b> — le reste du jour continue de suivre
+              ton pointage, même si tu as coché ou modifié une case à midi. Une case
+              <b>cochée</b> garde sa durée (c'est ce qui est dans Jira) ; une case <b>modifiée</b>
+              porte une punaise et ne suit plus le pointage. Dans la case, <b>Recalculer</b>
+              la rend au calcul ; ↺ dans l'en-tête d'un jour oublie toutes ses retouches.</li>
           </ul>
           <p>Le bon rythme : <b>chaque soir</b>, tu recopies le jour dans Jira et tu le coches.
             Le surplus attend en réserve et le vendredi le reprend : à la fin, jours travaillés

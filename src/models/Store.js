@@ -5,7 +5,7 @@ import { Task } from "./Task.js";
 import { Segment } from "./Segment.js";
 import { Memo } from "./Memo.js";
 import { normalizeLines } from "./TimesheetLines.js";
-import { startOfDay, toLocalISO } from "../utils/datetime.js";
+import { startOfDay, toLocalISO, addDays, mondayOf, parseDateInput } from "../utils/datetime.js";
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,7 +27,7 @@ export class Store extends EventEmitter {
     this.tasks = [];
     this.segments = [];
     this.memos = [];
-    // Saisie (v15) : SEULS les jours figés sont stockés, `{ "YYYY-MM-DD": [lignes] }`.
+    // Saisie (v15, v18) : SEULES les cases fixées sont stockées, `{ "YYYY-MM-DD": [cases] }`.
     // Un jour absent est une proposition, recalculée à chaque rendu (§17).
     this.timesheet = {};
     this.meta = { lastExport: null };
@@ -69,7 +69,9 @@ export class Store extends EventEmitter {
     // Saisie : même normalisation — une ligne dont la tâche manque tombe.
     this.timesheet = {};
     for (const [key, lines] of Object.entries(data.timesheet ?? {})) {
-      if (DATE_KEY.test(key) && Array.isArray(lines)) this.timesheet[key] = normalizeLines(lines, (id) => ids.has(id));
+      if (!DATE_KEY.test(key) || !Array.isArray(lines)) continue;
+      const pins = normalizeLines(lines, (id) => ids.has(id));
+      if (pins.length) this.timesheet[key] = pins;
     }
     this.meta = { lastExport: null, ...(data.meta ?? {}) };
     this.rev += 1;
@@ -119,9 +121,35 @@ export class Store extends EventEmitter {
    * Journée) est retiré — Journée arrondit désormais au bloc du type de chaque
    * tâche, les blocs de la Saisie (`timesheet.steps`). Même traitement : ignoré
    * à la lecture, plus réécrit.
+   * v17 → v18 : la saisie ne fige plus un jour EN BLOC mais case par case
+   * (`TimesheetLines`) : un jour stocké ne liste plus que ses cases fixées, le
+   * reste se propose. Un jour figé d'avant gardait TOUT tel quel — y compris
+   * l'absence d'une tâche : on la rend explicite (`min: 0`, retirée) pour toute
+   * tâche pointée cette semaine-là jusqu'à ce jour, et ses cases deviennent
+   * choisies à la main (`set`). Ce qui a été déclaré ne bouge donc pas.
    */
   #migrate(raw) {
     if (!raw) return {};
+    if ((raw.version ?? 0) < 18 && raw.timesheet && typeof raw.timesheet === "object") {
+      const segs = (Array.isArray(raw.segments) ? raw.segments : [])
+        .filter((s) => s && s.taskId && !s.reason)
+        .map((s) => ({ taskId: s.taskId, a: new Date(s.start).getTime(), b: s.end ? new Date(s.end).getTime() : Infinity }));
+      for (const [key, lines] of Object.entries(raw.timesheet)) {
+        if (!DATE_KEY.test(key) || !Array.isArray(lines)) continue;
+        const day = parseDateInput(key);
+        const from = mondayOf(day).getTime();
+        const to = addDays(day, 1).getTime();
+        const listed = new Set(lines.map((l) => l?.taskId));
+        const out = lines.map((l) => ({ ...l, set: true }));
+        for (const s of segs) {
+          if (s.a < to && s.b > from && !listed.has(s.taskId)) {
+            listed.add(s.taskId);
+            out.push({ taskId: s.taskId, min: 0, done: false, set: true });
+          }
+        }
+        raw.timesheet[key] = out;
+      }
+    }
     if (Array.isArray(raw.tasks)) {
       for (const t of raw.tasks) {
         if (!t || !t.jiraKey) continue;
@@ -354,6 +382,7 @@ export class Store extends EventEmitter {
     this.memos = this.memos.filter((m) => m.taskId !== id);
     for (const key of Object.keys(this.timesheet)) {
       this.timesheet[key] = this.timesheet[key].filter((l) => l.taskId !== id);
+      if (!this.timesheet[key].length) delete this.timesheet[key];
     }
     this.tasks = this.tasks.filter((t) => t.id !== id);
     this.#commit();
@@ -422,26 +451,27 @@ export class Store extends EventEmitter {
     this.#commit();
   }
 
-  /* ----------------- saisie (jours figés) ----------------- */
-  /** Les lignes figées d'un jour ("YYYY-MM-DD"), ou `null` s'il n'est pas figé. */
+  /* ----------------- saisie (cases fixées) ----------------- */
+  /** Les cases fixées d'un jour ("YYYY-MM-DD"), ou `null` s'il n'en a aucune. */
   timesheetDay(key) {
     return this.timesheet[key] ?? null;
   }
 
   /**
-   * Fige un jour avec ces lignes (normalisées : tâches connues, doublons
-   * fusionnés). Une liste vide fige un jour VIDE — ce n'est pas la même chose
-   * qu'un jour non figé, qui se recalcule. Renvoie `"invalid"` sur une clé mal
-   * formée.
+   * Remplace les cases fixées d'un jour (normalisées : tâches connues, doublons
+   * fusionnés, retraits `min: 0` gardés — cf. `TimesheetLines`). Une liste vide
+   * libère le jour. Renvoie `"invalid"` sur une clé mal formée.
    */
   setTimesheetDay(key, lines) {
     if (!DATE_KEY.test(String(key))) return "invalid";
-    this.timesheet[key] = normalizeLines(lines, (id) => !!this.taskById(id));
+    const pins = normalizeLines(lines, (id) => !!this.taskById(id));
+    if (pins.length) this.timesheet[key] = pins;
+    else delete this.timesheet[key];
     this.#commit();
     return key;
   }
 
-  /** Libère un jour figé : il redevient une proposition. */
+  /** Oublie les cases fixées d'un jour : il redevient entièrement une proposition. */
   clearTimesheetDay(key) {
     if (!(key in this.timesheet)) return;
     delete this.timesheet[key];

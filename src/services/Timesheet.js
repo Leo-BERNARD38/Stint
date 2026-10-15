@@ -31,11 +31,15 @@ const EPS = 1e-6;
  * date tant qu'il tient, et seul le surplus glisse. L'ordre inverse décalait
  * toute la semaine d'un cran.
  *
- * Un jour **figé** (coché, retouché) garde ses lignes stockées ; la réserve en
- * tient compte (cagnotte − déclaré, éventuellement négative : du temps déclaré
- * d'avance sur une tâche). Un jour **à venir** ne propose rien : il ne doit pas
- * aspirer une réserve que la journée d'aujourd'hui n'a pas encore fini de
- * remplir. La réserve repart de zéro chaque semaine.
+ * Ce qu'on touche est **fixé case par case**, jamais le jour entier (cf.
+ * `TimesheetLines`) : les cases fixées passent d'abord, le reste du jour reste
+ * une proposition qui suit le pointage, dans ce qui reste de la cible. Figer le
+ * jour au premier geste envoyait en réserve tout ce qu'on pointait ensuite —
+ * « ça part en réserve alors que je ne suis pas à 7 h ». La réserve tient
+ * compte des cases fixées (cagnotte − déclaré, éventuellement négative : du
+ * temps déclaré d'avance sur une tâche). Un jour **à venir** ne propose rien :
+ * il ne doit pas aspirer une réserve que la journée d'aujourd'hui n'a pas
+ * encore fini de remplir. La réserve repart de zéro chaque semaine.
  *
  * Service pur : il lit le Store et le calculateur, ne mute rien.
  */
@@ -85,8 +89,10 @@ export class Timesheet {
    * La semaine (lundi → dimanche) qui contient `ref`. Renvoie :
    *   { monday, key, label, sub, current, workedDays, days[], reserve[], totals }
    * avec pour chaque jour :
-   *   { key, date, dow, target, real, lines[{taskId,min,done}], declared, done,
-   *     gap, over, frozen, future, today, worked, leave, visible }
+   *   { key, date, dow, target, real, lines[{taskId,min,done,pinned}], pins,
+   *     declared, done, gap, over, touched, future, today, worked, leave, visible }
+   * où `pins` = les cases fixées stockées (retraits compris) et `pinned` dit
+   * d'une ligne qu'elle est fixée (sinon : proposée, elle suit le pointage).
    * et `reserve` = [{ taskId, min }], la réserve À CE JOUR, en blocs entiers du
    * type de la tâche. `real` (jour et total) est le pointé ARRONDI de Journée.
    */
@@ -95,7 +101,7 @@ export class Timesheet {
     const today = startOfDay(new Date(now)).getTime();
     const reserve = new Map(); // taskId → minutes ; l'ordre d'insertion = ancienneté
     const days = [];
-    const totals = { target: 0, real: 0, declared: 0, done: 0, reserve: 0 };
+    const totals = { target: 0, real: 0, declared: 0, done: 0, reserve: 0, upcoming: 0 };
 
     for (let i = 0; i < 7; i++) {
       const date = addDays(monday, i);
@@ -111,10 +117,13 @@ export class Timesheet {
       const pool = new Map(reserve);
       for (const [id, min] of real) pool.set(id, (pool.get(id) ?? 0) + min);
 
-      let lines;
-      if (stored) lines = stored.map((l) => ({ ...l }));
-      else if (future) lines = [];
-      else lines = this.#propose(pool, real, target);
+      // Les cases fixées d'abord (retraits exclus), puis la proposition dans ce
+      // qui reste de la cible — sans les tâches fixées ou retirées ce jour-là.
+      const pins = stored ? stored.map((l) => ({ ...l })) : [];
+      const fixed = pins.filter((p) => p.min > 0).map((p) => ({ taskId: p.taskId, min: p.min, done: p.done, pinned: true }));
+      const room = target - fixed.reduce((a, l) => a + l.min, 0);
+      const skip = new Set(pins.map((p) => p.taskId));
+      const lines = future ? fixed : [...fixed, ...this.#propose(pool, real, room, skip)];
 
       // La réserve après ce jour : cagnotte − déclaré. Une tâche soldée sort de
       // la file et y rentrera en queue (elle redevient la plus récente).
@@ -128,10 +137,11 @@ export class Timesheet {
       const dow = isoDow(date);
       const worked = target > 0;
       days.push({
-        key, date, dow, target, real: realMin, lines, declared, done,
-        gap: Math.max(0, target - declared),
+        key, date, dow, target, real: realMin, lines, pins, declared, done,
+        // Un jour à venir ne manque de rien : il n'a pas encore commencé.
+        gap: future ? 0 : Math.max(0, target - declared),
         over: Math.max(0, declared - target),
-        frozen: !!stored, future, today: dayStart === today, worked,
+        touched: pins.length > 0, future, today: dayStart === today, worked,
         // Un jour ouvré de semaine qu'une exception par date a vidé : des congés.
         leave: !worked && Array.isArray(this.settings.dateHours[key]),
         // Lundi → vendredi toujours ; le week-end seulement s'il porte quelque chose.
@@ -141,6 +151,7 @@ export class Timesheet {
       totals.real += realMin;
       totals.declared += declared;
       totals.done += done;
+      if (future) totals.upcoming += Math.max(0, target - declared);
     }
 
     // La réserve se dit en blocs. Le pointé arrivant arrondi et les retouches
@@ -154,7 +165,9 @@ export class Timesheet {
       })
       .filter((r) => r.min > 0);
     totals.reserve = res.reduce((a, r) => a + r.min, 0);
-    totals.gap = Math.max(0, totals.target - totals.declared);
+    // Ce qui manque aux jours COMMENCÉS : les jours à venir ne sont pas un
+    // manque (`upcoming`), on ne peut rien y compléter.
+    totals.gap = Math.max(0, totals.target - totals.declared - totals.upcoming);
 
     const sunday = addDays(monday, 6);
     const fr = (d, o) => d.toLocaleDateString("fr-FR", o);
@@ -174,15 +187,18 @@ export class Timesheet {
   }
 
   /**
-   * Proposition d'un jour non figé : les tâches du jour dans l'ordre, puis la
-   * réserve, par blocs entiers de leur type et sans dépasser la cible.
+   * Proposition d'un jour : les tâches du jour dans l'ordre, puis la réserve,
+   * par blocs entiers de leur type et sans dépasser `target` (ce que les cases
+   * fixées laissent de la cible). Les tâches de `skip` (fixées ou retirées ce
+   * jour-là) ne sont pas proposées.
    */
-  #propose(pool, real, target) {
+  #propose(pool, real, target, skip = new Set()) {
     const order = [...real.keys()];
     for (const id of pool.keys()) if (!real.has(id)) order.push(id);
     const lines = [];
     let cap = target;
     for (const id of order) {
+      if (skip.has(id)) continue;
       if (cap <= 0) break;
       const avail = pool.get(id) ?? 0;
       if (avail <= 0) continue;
@@ -191,7 +207,7 @@ export class Timesheet {
       const room = Math.floor((cap + EPS) / step) * step;
       const take = Math.min(blocks, room);
       if (take <= 0) continue;
-      lines.push({ taskId: id, min: take, done: false });
+      lines.push({ taskId: id, min: take, done: false, pinned: false });
       cap -= take;
     }
     return lines;

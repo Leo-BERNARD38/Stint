@@ -142,11 +142,11 @@ déjà à maintenant »).
   `body.booting`) → `await store.ready()` (IndexedDB + migration) → câblage des
   interactions → re-render. Voir §6.
 
-## 4. Modèle de données (schéma v17)
+## 4. Modèle de données (schéma v18)
 
 ```jsonc
 {
-  "version": 17,
+  "version": 18,
   "settings": {
     "appName": "Stint", "theme": "system",          // system|light|dark
     "workDays": [1,2,3,4,5],                          // 1=lun … 7=dim
@@ -199,9 +199,10 @@ déjà à maintenant »).
   // tâche ; `done` la barre sans l'effacer (§16)
   "memos": [{ "id":"m_…", "text":"…", "taskId":"t_…|null",
               "done":false, "createdAt":"ISO" }],
-  // saisie (v15) : SEULS les jours figés (cochés, retouchés) ; un jour absent
-  // est une proposition recalculée (§17). `done` = saisi dans Jira.
-  "timesheet": { "2026-09-21": [{ "taskId":"t_…", "min":180, "done":true }] },
+  // saisie (v15, v18) : SEULES les cases fixées (cochées, retouchées) ; le
+  // reste du jour est une proposition recalculée (§17). `done` = saisi dans
+  // Jira, `set` = durée choisie à la main, `min: 0` = retirée ce jour-là.
+  "timesheet": { "2026-09-21": [{ "taskId":"t_…", "min":180, "done":true, "set":false }] },
   "meta": { "lastExport": null }
 }
 ```
@@ -852,10 +853,10 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   un autre jour). Elle repart de zéro chaque lundi. **Elle n'est faite que de
   blocs entiers** : le pointé arrive arrondi, les retouches sont ramenées au
   bloc — aucune miette cachée (test « aucune miette cachée »).
-  Elle peut être **négative** après un jour figé qui a déclaré plus que le réel
+  Elle peut être **négative** après une case fixée qui a déclaré plus que le réel
   d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
 - **L'usage réel : une saisie CHAQUE SOIR.** On coche le jour (✓ de l'en-tête) le
-  soir même, ce qui le fige ; son surplus part en réserve et le vendredi — court
+  soir même, ce qui fixe ses cases ; son surplus part en réserve et le vendredi — court
   — la reprend. La cible de la semaine est **jours travaillés × cible du jour**
   (« 5 j × 7:00 » sous le total) : les horaires ne disent que si un jour est
   travaillé, jamais combien il vaut. Couvert par un test « chaque soir » (§15).
@@ -873,13 +874,23 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   veut. C'est une demande explicite.
 - **Un jour à venir ne propose rien** : il aspirerait une réserve que la journée
   en cours n'a pas fini de remplir.
-- **Figé = stocké.** Seuls les jours touchés (coche, retrait, ajout) sont
-  persistés dans `store.timesheet` ; les autres se recalculent à chaque rendu.
-  C'est ce qui garantit que ce qu'on a coché « saisi » reste ce qui est dans Jira
-  même si l'on corrige un segment après coup. « Recalculer » libère un jour, avec
-  confirmation s'il a des lignes cochées. Une retouche part **des lignes
-  affichées** (la proposition si le jour n'était pas figé) et passe par une
-  fonction pure de `TimesheetLines` avant `Store.setTimesheetDay`.
+- **On fixe une CASE, jamais le jour (v18).** Seules les cases touchées sont
+  persistées dans `store.timesheet` : cochée (`done`, sa durée est dans Jira),
+  choisie à la main (`set` : modifiée, ajoutée) ou **retirée** (`min: 0` : la
+  tâche n'est pas déclarée ce jour-là). Le reste du jour reste une
+  **proposition** qui suit le pointage, dans ce que les cases fixées laissent de
+  la cible. Jusqu'en v17, le premier geste figeait le jour **entier** : cocher ou
+  retoucher une case à midi gelait la journée, et tout ce qu'on pointait ensuite
+  partait en réserve alors qu'on n'était pas à 7 h — c'est le bug que l'utilisateur
+  a signalé (test « LE BUG » en §15). Décocher une case seulement cochée la rend à
+  la proposition ; une case choisie à la main garde sa durée et porte une
+  **punaise** (son « Recalculer », dans le popover, la libère). ↺ dans l'en-tête
+  oublie toutes les cases fixées d'un jour (annulable). Un geste passe par une
+  fonction pure de `TimesheetLines(cases fixées, lignes affichées)` avant
+  `Store.setTimesheetDay`. La migration v17 → v18 rend explicites les tâches
+  absentes d'un ancien jour figé (`min: 0`) : ce qui était déclaré ne bouge pas.
+- **Un jour à venir n'est pas un manque** : `totals.gap` ne compte que les jours
+  commencés, `totals.upcoming` dit le reste (« à venir », fin de piste vide).
 - **Une tâche = une ligne par jour** : `normalizeLines` fusionne les doublons (une
   ligne fusionnée n'est saisie que si toutes ses parts l'étaient), écarte les
   tâches inconnues ; `deleteTask` emporte ses lignes, `hydrate` écarte celles

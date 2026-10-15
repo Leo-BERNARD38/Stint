@@ -1,6 +1,6 @@
 import { el, escapeHtml, createEl } from "../../utils/dom.js";
 import { icon } from "../icons.js";
-import { toggleLine, setAllDone, addToLine, setLine } from "../../models/TimesheetLines.js";
+import { toggleLine, setAllDone, addToLine, setLine, releaseLine } from "../../models/TimesheetLines.js";
 import { linkButtonHtml, editButtonHtml } from "../components/TaskActions.js";
 import { taskPickerHtml, bindTaskPicker, pickedTask, pickerTask, pickerTasks } from "../components/TaskPicker.js";
 
@@ -20,10 +20,11 @@ const MAX_MIN = 720; // une case ne déclare jamais plus de 12 h
  * pose dans Jira, ticket ouvert : « qu'est-ce que je loggue sur celui-ci, et
  * quel jour ? ».
  *
- * Tout se lit dans `app.timesheetWeek()` ; la vue ne calcule rien. Une retouche
- * part des lignes AFFICHÉES du jour (la proposition s'il n'est pas figé), les
- * transforme par une fonction pure de `TimesheetLines` et les confie au Store —
- * c'est ce qui fige le jour.
+ * Tout se lit dans `app.timesheetWeek()` ; la vue ne calcule rien. Un geste
+ * transforme les cases FIXÉES du jour par une fonction pure de `TimesheetLines`
+ * (qui lit les lignes affichées pour la durée d'une case proposée) et les
+ * confie au Store. Seule la case touchée se fixe : le reste du jour continue de
+ * suivre le pointage. Une case fixée à la main porte une punaise.
  *
  * Un POPOVER ancré à ce qu'on a cliqué — même carte que celle qui comble un trou
  * de la timeline — a deux emplois : COMPLÉTER un jour (clic sur un manque :
@@ -63,7 +64,7 @@ export class TimesheetView {
       // (Échappé : un identifiant importé peut contenir n'importe quoi, et un
       // sélecteur invalide ferait lever `querySelector` au milieu du rendu.)
       this.refocus = `[data-ts-check="${CSS.escape(box.dataset.tsCheck)}"][data-day="${CSS.escape(box.dataset.day)}"]`;
-      this.#edit(box.dataset.day, (l) => toggleLine(l, box.dataset.tsCheck));
+      this.#edit(box.dataset.day, (p, shown) => toggleLine(p, shown, box.dataset.tsCheck));
     });
     this.table.addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
@@ -73,7 +74,7 @@ export class TimesheetView {
         case "all": {
           const day = this.#day(key);
           const all = day.lines.length > 0 && day.lines.every((l) => l.done);
-          this.#edit(key, (l) => setAllDone(l, !all));
+          this.#edit(key, (p, shown) => setAllDone(p, shown, !all));
           break;
         }
         case "task": this.app.openEditTask(b.dataset.task); break;
@@ -106,6 +107,7 @@ export class TimesheetView {
         case "dec": this.#bump(-1); break;
         case "inc": this.#bump(1); break;
         case "remove": this.#submit(0); break;
+        case "release": this.#release(); break;
         case "submit": this.#submit(); break;
       }
     });
@@ -154,17 +156,21 @@ export class TimesheetView {
   #rule(week) {
     const st = this.app.store.settings.timesheet.steps;
     const c = (m) => this.app.formatter.clock(m);
-    return `${week.workedDays} j × ${c(this.app.timesheet.dayTarget())} (1d Jira) · blocs dev ${st.dev} · support ${st.support} · autre ${st.autre} min`;
+    return `cible ${week.workedDays} j × ${c(this.app.timesheet.dayTarget())} · blocs : dev ${st.dev} min, support ${st.support}, autre ${st.autre}`;
   }
 
   #renderLead(week) {
     const c = (m) => this.app.formatter.clock(m);
     const t = week.totals;
     const pending = t.declared - t.done;
+    // Les jours à venir ne sont pas un manque : la fin de piste reste vide et
+    // se dit « à venir », au lieu de grossir les hachures de ce qu'on ne peut
+    // pas encore compléter.
     const legend = [
       `${c(t.done)} saisies`,
       pending > 0 ? `${c(pending)} à saisir` : "",
       t.gap > 0 ? `${c(t.gap)} à compléter` : "",
+      t.upcoming > 0 ? `${c(t.upcoming)} à venir` : "",
     ].filter(Boolean).join(" · ");
     this.lead.innerHTML =
       '<div class="ts-lead">' +
@@ -240,16 +246,15 @@ export class TimesheetView {
     const off = !d.worked && d.lines.length === 0;
     const state = d.leave ? "congé" : off ? "non travaillé" : d.future ? "à venir" : d.today ? "aujourd’hui" : "";
     const all = d.lines.length > 0 && d.lines.every((l) => l.done);
-    const cls = "ts-dcol" + (d.today ? " is-today" : "") + (off ? " is-off" : "") + (d.frozen ? " is-frozen" : "");
+    const cls = "ts-dcol" + (d.today ? " is-today" : "") + (off ? " is-off" : "");
     const actions = off || (d.future && !d.lines.length) ? "" :
       '<span class="ts-dact">' +
-        (d.frozen ? `<button class="mini-btn icon-only" data-act="recalc" data-day="${key}" title="Recalculer ce jour (il est figé)" aria-label="Recalculer le ${long}">${icon("rotate-ccw", { size: 15 })}</button>` : "") +
+        (d.touched ? `<button class="mini-btn icon-only" data-act="recalc" data-day="${key}" title="Tout recalculer : oublier les cases fixées de ce jour" aria-label="Tout recalculer le ${long}">${icon("rotate-ccw", { size: 15 })}</button>` : "") +
         (d.lines.length ? `<button class="mini-btn icon-only ts-all${all ? " on" : ""}" data-act="all" data-day="${key}" aria-pressed="${all}" title="${all ? "Tout décocher" : "Tout cocher : le jour est saisi"}" aria-label="${all ? "Tout décocher" : "Tout cocher"} le ${long}">${icon("check", { size: 15 })}</button>` : "") +
       "</span>";
     // « Aujourd'hui » est le repère « maintenant » de la feuille : le tampon,
     // comme le filet de la timeline (§7, N1).
-    const sub = [d.today ? '<span class="ts-now">aujourd’hui</span>' : state, d.frozen ? "figé" : ""]
-      .filter(Boolean).join(" · ");
+    const sub = d.today ? '<span class="ts-now">aujourd’hui</span>' : state;
     // Un jour à venir n'a encore rien de déclaré ni de pointé : une barre vide
     // et deux zéros ne disent rien de plus que sa cible.
     const idle = d.future && !d.lines.length;
@@ -274,21 +279,27 @@ export class TimesheetView {
       if (!l) return '<td class="ts-cell is-empty"></td>';
       const key = escapeHtml(d.key);
       const open = this.adding?.mode === "edit" && this.adding.key === d.key && this.adding.taskId === taskId;
+      // Fixée à la main (et pas encore saisie) : la punaise dit qu'elle ne suit
+      // plus le pointage. Une case cochée le dit déjà par sa coche.
+      const pinned = l.pinned && !l.done;
+      const state = l.done ? "saisie" : pinned ? "fixée" : "proposée";
       // Une case : la copie Jira (révélée au survol), la coche, la durée. La
       // saisie du soir se fait en DEUX clics — copier ici, puis ouvrir le lien
       // au bout de la ligne. Le reste (décimal, durée, retirer) est dans le
       // popover que la durée ouvre.
       const jira = escapeHtml(formatter.jira(l.min));
-      return `<td class="ts-cell${l.done ? " done" : ""}${open ? " is-open" : ""}"><span class="ts-c">` +
+      return `<td class="ts-cell${l.done ? " done" : ""}${pinned ? " is-pinned" : ""}${open ? " is-open" : ""}"><span class="ts-c">` +
         `<button class="mini-btn ts-copy" data-act="copy" data-value="${jira}" title="Copier « ${jira} »" aria-label="Copier ${jira} (${name}, ${DAY_LONG[d.dow - 1]})">${icon("copy", { size: 14 })} Jira</button>` +
         `<input type="checkbox" data-ts-check="${id}" data-day="${key}"${l.done ? " checked" : ""} aria-label="${name}, ${DAY_LONG[d.dow - 1]} : saisi dans Jira">` +
-        `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="Copier, modifier ou retirer" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)} — copier, modifier">${formatter.clock(l.min)}</button>` +
+        `<button class="ts-dur" data-act="edit" data-day="${key}" data-task="${id}" title="${pinned ? "Fixée à la main — " : l.done ? "" : "Proposée : suit le pointage — "}copier, modifier ou retirer" aria-label="${name}, ${DAY_LONG[d.dow - 1]} : ${formatter.clock(l.min)}, ${state} — copier, modifier">` +
+          (pinned ? `<span class="ts-pin" aria-hidden="true">${icon("pin", { size: 11 })}</span>` : "") +
+          `${formatter.clock(l.min)}</button>` +
         "</span></td>";
     }).join("");
     // La réserve de la tâche, en blocs entiers de son type (cf. `Timesheet.week`).
     const resOpen = this.adding?.from === "res" && this.adding.taskId === taskId ? " is-open" : "";
     const resCell = reserveMin > 0
-      ? `<button class="ts-res${resOpen}" data-act="res" data-task="${id}" title="Poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
+      ? `<button class="ts-res${resOpen}" data-act="res" data-task="${id}" title="Pointé qui dépasse la cible des jours : cliquez pour le poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
       : "";
     // Les actions de la TÂCHE (lien, édition) : celles des lignes de Journée,
     // mêmes boutons, révélées au survol de la ligne — à leur place, rien ne bouge.
@@ -307,7 +318,10 @@ export class TimesheetView {
     const long = DAY_LONG[d.dow - 1];
     const open = this.adding?.from === "gap" && this.adding.key === d.key ? " is-open" : "";
     if (d.gap > 0) {
-      return `<button class="ts-gap${open}" data-act="open" data-day="${key}" title="Compléter le ${long}">` +
+      // Aujourd'hui, le manque n'est pas une faute : la journée continue, et
+      // ce qu'on pointe d'ici ce soir viendra le remplir de lui-même.
+      const title = d.today ? `Il manque ${this.app.formatter.clock(d.gap)} pour l’instant : ce que vous pointez d’ici ce soir le remplira. Cliquez pour compléter à la main.` : `Compléter le ${long}`;
+      return `<button class="ts-gap${open}" data-act="open" data-day="${key}" title="${title}">` +
         `${this.app.formatter.clock(d.gap)}</button>`;
     }
     return `<button class="mini-btn icon-only ts-more${open}" data-act="open" data-day="${key}" title="Ajouter une ligne au ${long}" aria-label="Ajouter une ligne au ${long}">${icon("plus", { size: 15 })}</button>`;
@@ -394,7 +408,8 @@ export class TimesheetView {
       // copie de la durée DÉCLARÉE, en décimal ou au format Jira — les deux
       // boutons de Journée, avec la valeur qu'ils copient sous les yeux.
       const t = store.taskById(this.adding.taskId);
-      const cur = d.lines.find((l) => l.taskId === this.adding.taskId)?.min ?? 0;
+      const line = d.lines.find((l) => l.taskId === this.adding.taskId);
+      const cur = line?.min ?? 0;
       const copy = (label, value) =>
         `<button class="mini-btn" data-act="copy" data-value="${escapeHtml(value)}" title="Copier « ${escapeHtml(value)} »">` +
           `${icon("copy", { size: 14 })} ${label} <b>${escapeHtml(value)}</b></button>`;
@@ -403,7 +418,11 @@ export class TimesheetView {
           `<span>${escapeHtml(t?.displayName ?? "")}</span></span>` +
           (t?.link ? linkButtonHtml(t.link) : "") +
         "</div>" +
-        '<div class="ts-pop-copy">' + copy("Déc.", formatter.decimal(cur)) + copy("Jira", formatter.jira(cur)) + "</div>";
+        '<div class="ts-pop-copy">' + copy("Déc.", formatter.decimal(cur)) + copy("Jira", formatter.jira(cur)) + "</div>" +
+        // D'où vient la durée : proposée (elle suit le pointage) ou fixée.
+        `<p class="ts-pop-note">${line?.done ? "Cochée « saisie » : sa durée ne bouge plus."
+          : line?.pinned ? "Fixée à la main : elle ne suit plus le pointage."
+          : "Proposée : elle suit le pointage tant que vous ne la changez pas."}</p>`;
     } else {
       // Le sélecteur commun (cf. `TaskPicker`, celui de la timeline) : la
       // réserve d'abord — c'est elle qu'on vient poser —, puis les tâches en
@@ -438,7 +457,8 @@ export class TimesheetView {
           '<span class="prec-sep" data-ts-step></span>' +
         "</div>" +
         '<div class="ts-pop-acts">' +
-          (editing ? '<button class="btn" data-act="remove" title="Retirer la case : elle retourne en réserve">Retirer</button>' : "") +
+          (editing ? '<button class="btn" data-act="remove" title="Ne pas déclarer cette tâche ce jour-là : son temps attend en réserve">Retirer</button>' : "") +
+          (editing && this.#pinnedLine(d, this.adding.taskId) ? '<button class="btn" data-act="release" title="Oublier la durée fixée : la case suit de nouveau le pointage">Recalculer</button>' : "") +
           `<button class="btn primary" data-act="submit">${editing ? "Enregistrer" : "Ajouter"}</button>` +
         "</div>" +
       "</div>";
@@ -510,10 +530,25 @@ export class TimesheetView {
     const key = this.adding.key;
     this.refocus = min === 0 ? null : this.opener;
     this.#closePop();
-    const apply = () => this.#edit(key, (l) => (editing ? setLine(l, taskId, min) : addToLine(l, taskId, min)));
+    const apply = () => this.#edit(key, (p, shown) => (editing ? setLine(p, taskId, min) : addToLine(p, shown, taskId, min)));
     // Retirer une case est une suppression : annulable, comme partout (`App.undoable`).
     if (editing && min === 0) this.app.undoable("Case retirée — sa durée retourne en réserve", apply);
     else apply();
+  }
+
+  /** Rend la case ouverte à la proposition (popover « Recalculer »). */
+  #release() {
+    if (!this.adding) return;
+    const { key, taskId } = this.adding;
+    this.refocus = this.opener;
+    this.#closePop();
+    this.#edit(key, (p) => releaseLine(p, taskId));
+  }
+
+  /** La case d'une tâche ce jour-là est-elle fixée (stockée, et non cochée) ? */
+  #pinnedLine(day, taskId) {
+    const l = day.lines.find((x) => x.taskId === taskId);
+    return !!l?.pinned && !l.done;
   }
 
   /** Une réserve cliquée : sur le premier jour à compléter (ou aujourd'hui). */
@@ -532,7 +567,7 @@ export class TimesheetView {
     let text;
     if (!t.reserve) text = "Réserve vide : aucun bloc en attente.";
     else if (ended) text = `${c(t.reserve)} pointées mais jamais déclarées cette semaine — la réserve repart de zéro chaque lundi.`;
-    else text = `Réserve : ${c(t.reserve)} pointées qui n’ont pas encore de jour. Cliquez un temps de la colonne Réserve pour le poser sur le premier jour à compléter.`;
+    else text = `Réserve : ${c(t.reserve)} pointées au-delà de la cible des jours, ou retirées d’un jour. Les jours suivants les reprennent d’eux-mêmes ; cliquez un temps de la colonne Réserve pour le poser sur le premier jour à compléter.`;
     this.foot.textContent = text;
   }
 
@@ -541,10 +576,14 @@ export class TimesheetView {
     return this.week?.days.find((d) => d.key === key) ?? null;
   }
 
-  /** Retouche un jour : part de ses lignes affichées, et le fige. */
+  /**
+   * Un geste sur un jour : `fn(cases fixées, lignes affichées)` rend les
+   * nouvelles cases fixées. Seule la case touchée se fixe, le reste du jour
+   * suit toujours le pointage.
+   */
   #edit(key, fn) {
     const day = this.#day(key);
     if (!day) return;
-    this.app.store.setTimesheetDay(key, fn(day.lines.map((l) => ({ ...l }))));
+    this.app.store.setTimesheetDay(key, fn(day.pins.map((p) => ({ ...p })), day.lines.map((l) => ({ ...l }))));
   }
 }

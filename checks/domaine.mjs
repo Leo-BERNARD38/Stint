@@ -13,7 +13,7 @@ import { TimeCalculator } from "../src/services/TimeCalculator.js";
 import { Formatter } from "../src/services/Formatter.js";
 import { Reminders } from "../src/ui/Reminders.js";
 import { Timesheet } from "../src/services/Timesheet.js";
-import { normalizeLines, toggleLine, setAllDone, removeLine, addToLine, setLine } from "../src/models/TimesheetLines.js";
+import { normalizeLines, toggleLine, setAllDone, releaseLine, addToLine, setLine } from "../src/models/TimesheetLines.js";
 import { searchKey, matchesQuery } from "../src/utils/search.js";
 import { countDays, eachDateKey, formatDateRange, parseDateInput, atTime, toLocalISO, fmtDateInput, parseDuration } from "../src/utils/datetime.js";
 
@@ -753,7 +753,7 @@ section("Stats calendaires (période, historique, découpage)");
 }
 
 /* ----------------------------------------------------------------- §15 */
-section("saisie lissée : blocs par type, réserve, jours figés (v15)");
+section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
 {
   // Semaine du lundi 21 au dimanche 27 septembre 2026. Horaires larges et
   // continus : on teste la saisie, pas le rognage.
@@ -863,37 +863,95 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     ok(w.days[1].today, "mardi est aujourd'hui");
   }
 
-  // --- jours figés : lignes stockées, la réserve en tient compte ---
+  // --- cases fixées : stockées, la réserve en tient compte ---
   {
     const st = mk();
     seg(st, "tA", 21, 8, 0, 450);
     seg(st, "tA", 22, 8, 0, 450);
-    eq(st.setTimesheetDay("2026-09-21", [{ taskId: "tA", min: 480, done: true }]), "2026-09-21", "figer un jour");
+    eq(st.setTimesheetDay("2026-09-21", [{ taskId: "tA", min: 480, done: true }]), "2026-09-21", "fixer une case");
     const w = plan(st);
-    ok(w.days[0].frozen && w.days[0].done === 480, "lundi figé, saisi");
+    ok(w.days[0].touched && w.days[0].done === 480, "lundi retouché, saisi");
     eq(linesOf(w.days[1]), [["tA", 420]], "mardi : l'avance de lundi est reprise sur la cagnotte");
     eq(w.totals.reserve, 0, "plus rien en réserve");
-    // Un jour figé VIDE reste figé : tout part en réserve.
-    st.setTimesheetDay("2026-09-22", []);
-    eq(plan(st).days[1].declared, 0, "jour figé vide");
+    // Une case RETIRÉE (min 0) : la tâche n'est pas déclarée ce jour-là.
+    st.setTimesheetDay("2026-09-22", setLine([], "tA", 0));
+    eq(plan(st).days[1].declared, 0, "mardi : A retirée, rien de déclaré");
     eq(plan(st, D(22, 18).getTime()).reserve, [{ taskId: "tA", min: 420 }], "…et son réel attend en réserve");
     eq(linesOf(plan(st).days[2]), [["tA", 420]], "…que le mercredi reprend");
     st.clearTimesheetDay("2026-09-22");
-    ok(!plan(st).days[1].frozen, "libérer un jour le rend à la proposition");
+    ok(!plan(st).days[1].touched, "oublier les retouches rend le jour à la proposition");
+    st.setTimesheetDay("2026-09-22", []);
+    eq(st.timesheetDay("2026-09-22"), null, "aucune case fixée : le jour n'est pas stocké");
     eq(st.setTimesheetDay("21/09", []), "invalid", "clé mal formée refusée");
 
     // Cascade et persistance.
     st.setTimesheetDay("2026-09-22", [{ taskId: "tA", min: 60 }, { taskId: "tS", min: 30 }, { taskId: "zz", min: 30 }]);
     eq(st.timesheetDay("2026-09-22").map((l) => l.taskId), ["tA", "tS"], "tâche inconnue écartée");
     st.deleteTask("tS");
-    eq(st.timesheetDay("2026-09-22").map((l) => l.taskId), ["tA"], "supprimer une tâche emporte ses lignes");
+    eq(st.timesheetDay("2026-09-22").map((l) => l.taskId), ["tA"], "supprimer une tâche emporte ses cases");
     const back = new Store(fakePersistence());
     back.hydrate(JSON.parse(JSON.stringify(st.toJSON())));
     eq(back.timesheet, st.timesheet, "aller-retour JSON");
     back.hydrate({ ...st.toJSON(), tasks: [] });
-    eq(back.timesheet["2026-09-21"], [], "import sans la tâche : ligne écartée");
+    eq(back.timesheet["2026-09-21"], undefined, "import sans la tâche : case écartée, jour libéré");
     st.clearEntries();
     eq(st.timesheet, {}, "clearEntries vide la saisie");
+  }
+
+  // --- LE BUG : retoucher une case à midi ne gèle plus la journée ---
+  {
+    const st = mk();
+    const ts = new Timesheet(st, new TimeCalculator(st));
+    const today = (h) => ts.week(D(23, 12).getTime(), D(23, h).getTime()).days[2];
+    seg(st, "tA", 23, 8, 0, 180);  // mercredi matin : 3 h de A
+    seg(st, "tS", 23, 11, 0, 60);  // 1 h de support
+    const noon = today(12);
+    eq(linesOf(noon), [["tA", 180], ["tS", 60]], "midi : la proposition suit le pointage");
+    // À midi on coche A (déjà loggué) et on fixe S à 0:45.
+    st.setTimesheetDay(noon.key, toggleLine(noon.pins, noon.lines, "tA"));
+    const n2 = today(12);
+    st.setTimesheetDay(n2.key, setLine(n2.pins, "tS", 45));
+    // L'après-midi : 2 h de B, puis 30 min de plus sur A.
+    seg(st, "tB", 23, 13, 0, 120);
+    seg(st, "tA", 23, 15, 0, 30);
+    const eve = ts.week(D(23, 12).getTime(), D(23, 18).getTime());
+    eq(linesOf(eve.days[2]), [["tA", 180], ["tS", 45], ["tB", 120]],
+       "le soir : B, pointé APRÈS les retouches, est déclaré le jour même");
+    ok(eve.days[2].lines.find((l) => l.taskId === "tB").pinned === false, "…en case proposée");
+    eq(eve.days[2].gap, 75, "il manque encore 1 h 15 : rien ne part en réserve pour rien");
+    eq(eve.reserve, [{ taskId: "tA", min: 30 }, { taskId: "tS", min: 15 }],
+       "seul part en réserve ce qui dépasse une case fixée (A cochée, S fixée)");
+    // Décocher une case SEULEMENT cochée la rend à la proposition…
+    const d = eve.days[2];
+    const un = toggleLine(d.pins, d.lines, "tA");
+    ok(!un.some((p) => p.taskId === "tA"), "décocher une case cochée : elle redevient proposée");
+    // …décocher une case choisie à la main garde sa durée.
+    const fixedDone = toggleLine(d.pins, d.lines, "tS");
+    eq(toggleLine(fixedDone, d.lines, "tS").find((p) => p.taskId === "tS"),
+       { taskId: "tS", min: 45, done: false, set: true }, "décocher une case fixée : sa durée reste");
+    eq(releaseLine(d.pins, "tS").map((p) => p.taskId), ["tA"], "« Recalculer » une case la rend au pointage");
+  }
+
+  // --- v17 → v18 : un jour figé d'avant ne bouge pas ---
+  {
+    const st = new Store(fakePersistence());
+    const iso = (day, h) => `2026-09-${day}T${String(h).padStart(2, "0")}:00:00`;
+    st.hydrate({ version: 17, settings: {
+      workDays: [1, 2, 3, 4, 5], arrival: "07:00", departure: "20:00", lunch: false,
+      jira: { auto: false, hoursPerDay: 7, daysPerWeek: 5 },
+    }, tasks: [
+      { id: "tA", name: "MOD-1", type: "dev", color: "#000" },
+      { id: "tB", name: "MOD-2", type: "dev", color: "#000" },
+    ], segments: [
+      { id: "s1", taskId: "tA", start: iso(21, 8), end: iso(21, 12) },
+      { id: "s2", taskId: "tB", start: iso(21, 13), end: iso(21, 16) },
+    ], timesheet: { "2026-09-21": [{ taskId: "tA", min: 240, done: true }] }, meta: {} });
+    eq(st.timesheetDay("2026-09-21"), [
+      { taskId: "tA", min: 240, done: true, set: true },
+      { taskId: "tB", min: 0, done: false, set: true },
+    ], "la tâche absente d'un ancien jour figé y devient retirée");
+    eq(linesOf(new Timesheet(st, new TimeCalculator(st)).week(D(21, 12).getTime(), D(21, 18).getTime()).days[0]),
+       [["tA", 240]], "…donc le lundi déclare exactement ce qu'il déclarait");
   }
 
   // --- la Saisie part du pointé ARRONDI de Journée : aucune miette cachée ---
@@ -922,9 +980,9 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     const mon = ts.week(D(21, 12).getTime(), D(21, 18).getTime()).days[0];
     eq(linesOf(mon), [["tA", 300], ["tB", 120]], "proposition : A d'abord, B plafonné");
     // On préfère déclarer toute la B aujourd'hui : A cède une heure.
-    st.setTimesheetDay(mon.key, setLine(setLine(mon.lines, "tA", 240), "tB", 180));
+    st.setTimesheetDay(mon.key, setLine(setLine(mon.pins, "tA", 240), "tB", 180));
     const w = ts.week(D(21, 12).getTime(), D(21, 18).getTime());
-    eq(linesOf(w.days[0]), [["tA", 240], ["tB", 180]], "le choix est tenu (jour figé)");
+    eq(linesOf(w.days[0]), [["tA", 240], ["tB", 180]], "le choix est tenu (cases fixées)");
     eq(w.reserve, [{ taskId: "tA", min: 60 }], "c'est A qui attend en réserve");
   }
 
@@ -957,21 +1015,24 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
        "…et 0 dans la Saisie : ni ligne, ni réserve — la même réponse des deux côtés");
   }
 
-  // --- lignes : fonctions pures ---
+  // --- cases : fonctions pures ---
   {
-    const L = [{ taskId: "a", min: 60, done: true }, { taskId: "b", min: 30, done: false }];
-    eq(normalizeLines([{ taskId: "a", min: 30, done: true }, { taskId: "a", min: 15, done: false }, { taskId: "b", min: 0 }]),
-       [{ taskId: "a", min: 45, done: false }], "doublons fusionnés (saisi seulement si toutes les parts l'étaient), durées nulles écartées");
-    eq(toggleLine(L, "b")[1].done, true, "cocher une ligne");
-    eq(setAllDone(L, false).map((l) => l.done), [false, false], "tout décocher");
-    eq(removeLine(L, "a").map((l) => l.taskId), ["b"], "retirer une ligne");
-    eq(addToLine(L, "a", 15)[0], { taskId: "a", min: 75, done: false }, "ajouter à une ligne saisie la repasse à saisir");
-    eq(addToLine(L, "c", 15).at(-1), { taskId: "c", min: 15, done: false }, "nouvelle ligne en fin");
-    eq(setLine(L, "a", 30)[0], { taskId: "a", min: 30, done: false }, "changer une durée cochée la repasse à saisir");
-    eq(setLine(L, "a", 60)[0].done, true, "…la même durée ne décoche pas");
-    eq(setLine(L, "b", 0).map((l) => l.taskId), ["a"], "0 retire la ligne");
-    eq(setLine(L, "c", 15).at(-1), { taskId: "c", min: 15, done: false }, "fixer une tâche absente crée sa ligne");
-    eq(L[0].min, 60, "aucune fonction ne mute son entrée");
+    const P = [{ taskId: "a", min: 60, done: true, set: false }, { taskId: "b", min: 30, done: false, set: true }];
+    const shown = [...P, { taskId: "c", min: 90, done: false }];
+    eq(normalizeLines([{ taskId: "a", min: 30, done: true }, { taskId: "a", min: 15, done: false, set: true }, { taskId: "b", min: 0 }, { taskId: "d", min: -5 }]),
+       [{ taskId: "a", min: 45, done: false, set: true }, { taskId: "b", min: 0, done: false, set: false }],
+       "doublons fusionnés (saisi seulement si toutes les parts l'étaient), retrait gardé, négatif écarté");
+    eq(toggleLine(P, shown, "c").at(-1), { taskId: "c", min: 90, done: true, set: false }, "cocher une case proposée la fixe à sa durée");
+    eq(toggleLine(P, shown, "b")[1].done, true, "cocher une case fixée");
+    eq(setAllDone(P, shown, true).map((p) => [p.taskId, p.done]), [["a", true], ["b", true], ["c", true]], "tout cocher");
+    eq(setAllDone(P, shown, false), [{ taskId: "b", min: 30, done: false, set: true }], "tout décocher : seules les durées choisies restent");
+    eq(setLine(P, "a", 0)[0], { taskId: "a", min: 0, done: false, set: true }, "0 retire la case (la tâche n'est pas déclarée ce jour-là)");
+    eq(addToLine(P, shown, "a", 15)[0], { taskId: "a", min: 75, done: false, set: true }, "ajouter à une case saisie la repasse à saisir");
+    eq(addToLine(P, shown, "c", 15).at(-1), { taskId: "c", min: 105, done: false, set: true }, "ajouter part de la durée proposée");
+    eq(addToLine(P, shown, "z", 15).at(-1), { taskId: "z", min: 15, done: false, set: true }, "nouvelle case en fin");
+    eq(setLine(P, "a", 30)[0], { taskId: "a", min: 30, done: false, set: true }, "changer une durée cochée la repasse à saisir");
+    eq(setLine(P, "a", 60)[0].done, true, "…la même durée ne décoche pas");
+    eq(P[0].min, 60, "aucune fonction ne mute son entrée");
   }
 
   // --- le vrai usage : une saisie CHAQUE SOIR, le vendredi boucle la semaine ---
@@ -983,20 +1044,20 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     seg(st, "tA", 25, 8, 0, 250);
     const evening = (d) => {
       const day = ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
-      st.setTimesheetDay(day.key, setAllDone(day.lines, true)); // « tout cocher » le soir même
+      st.setTimesheetDay(day.key, setAllDone(day.pins, day.lines, true)); // « tout cocher » le soir même
       return ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
     };
     const mon = evening(21);
     eq([mon.declared, mon.gap], [405, 15], "lundi soir : 6 h 45 en blocs, 15 min à compléter (miettes en réserve)");
-    st.setTimesheetDay(mon.key, addToLine(mon.lines, "tR", 15)); // la réunion, à la main
+    st.setTimesheetDay(mon.key, addToLine(mon.pins, mon.lines, "tR", 15)); // la réunion, à la main
     for (const d of [22, 23, 24]) {
       const day = evening(d);
-      if (day.gap) st.setTimesheetDay(day.key, addToLine(day.lines, "tR", day.gap));
+      if (day.gap) st.setTimesheetDay(day.key, addToLine(day.pins, day.lines, "tR", day.gap));
     }
     const fri = ts.week(D(23, 12).getTime(), D(25, 18).getTime()).days[4];
     ok(fri.declared <= 420 && fri.lines.some((l) => l.taskId === "tA"), "vendredi soir : son travail d'abord");
     ok(fri.lines.some((l) => l.taskId !== "tA"), "…puis la réserve de la semaine");
-    st.setTimesheetDay(fri.key, addToLine(fri.lines, "tR", fri.gap));
+    st.setTimesheetDay(fri.key, addToLine(fri.pins, fri.lines, "tR", fri.gap));
     const w = ts.week(D(23, 12).getTime(), D(27, 12).getTime());
     eq(w.days.slice(0, 5).map((d) => d.declared), [420, 420, 420, 420, 420], "chaque soir 7 h, vendredi compris");
     eq([w.workedDays, w.totals.declared, w.totals.target], [5, 2100, 2100], "5 jours × 7 h = 35 h déclarées");
@@ -1009,7 +1070,7 @@ section("saisie lissée : blocs par type, réserve, jours figés (v15)");
     seg(s2, "tA", 22, 8, 0, 480);
     const m = t2.week(D(21, 12).getTime(), D(21, 18).getTime()).days[0];
     eq(m.gap, 60, "lundi de 6 h : 1 h à compléter");
-    s2.setTimesheetDay(m.key, addToLine(m.lines, "tA", 60));
+    s2.setTimesheetDay(m.key, addToLine(m.pins, m.lines, "tA", 60));
     const tu = t2.week(D(21, 12).getTime(), D(22, 18).getTime());
     eq(linesOf(tu.days[1]), [["tA", 420]], "mardi de 8 h : 7 h, l'heure d'avance est reprise");
     eq(tu.reserve, [], "réserve à zéro");

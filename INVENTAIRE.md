@@ -106,7 +106,7 @@ Purs, testés dans `checks/domaine.mjs`.
 | `models/Settings.js` | Réglages de l'application | `clampEyeMinutes()`, `clampEyeRest()`, `clampMergeGap()`, `clampMinSegment()`, `normalizeTimesheetStep()`, `clampVolume()`, `normalizeBreak()`, `mergeBlocks()`, `blocksFromDay()`, `dayFromBlocks()`, `validateDay()`, `normalizeOffLabel()`, `offKey()`, `Settings` |
 | `models/Store.js` | Source de vérité unique | `Store` |
 | `models/Task.js` | Une tâche : nom (qui porte la clé Jira si c'en est une), type (dev/support/ autre), couleur, lien externe optionnel (ex | `Task` |
-| `models/TimesheetLines.js` | Lignes d'un jour de SAISIE (§17) : ce qu'on déclare dans Jira ce jour-là, tâche par tâche — `{ taskId, min, done }`. `done` = « saisi dans Jira » | `normalizeLines()`, `toggleLine()`, `setAllDone()`, `removeLine()`, `setLine()`, `addToLine()` |
+| `models/TimesheetLines.js` | Cases FIXÉES d'un jour de SAISIE (§17) | `normalizeLines()`, `toggleLine()`, `setAllDone()`, `setLine()`, `addToLine()`, `releaseLine()` |
 
 ## Services
 
@@ -194,7 +194,7 @@ Sections de chaque feuille (titres `/* ---------- … ---------- */`). Chercher 
   - l. 1642 — Détail · Découpage (jours, semaines ou mois de la période)
   - l. 1695 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
   - l. 1838 — La feuille : tâches × jours
-  - l. 1937 — Popover d'une case / d'un manque
+  - l. 1943 — Popover d'une case / d'un manque
 - `assets/styles/fonts.css` — sans sections
 - `assets/styles/layout.css`
   - l. 5 — En-tête (flat : pas de bordure, juste un fond translucide)
