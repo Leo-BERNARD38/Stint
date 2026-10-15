@@ -1867,6 +1867,10 @@ thead .ts-tk, thead .ts-rcol { line-height: 26px; }
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ts-dt b { font-family: var(--font-display); font-weight: 400; font-size: 20px; color: var(--text); margin-right: 3px; }
 .ts-dt-idle { margin-top: 6px; color: var(--text-faint); }
+/* Un jour (ou une semaine) qui dépasse la cible : le tampon, sur le nombre
+   seulement (N1) — c'est à l'utilisateur de choisir quoi réduire. */
+.ts-dcol.is-over .ts-dt b { color: var(--stop-ink); }
+.ts-over { color: var(--stop-ink); font-weight: 600; }
 .ts-track-day { margin: 6px 0 4px; }
 .ts-dreal { display: block; font-family: var(--font-data); font-size: 10px; color: var(--text-faint);
   font-variant-numeric: tabular-nums; white-space: nowrap; }

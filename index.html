@@ -265,7 +265,7 @@
       <div class="dot-card ts-sheet" id="tsSheet">
         <div class="block-title">
           Feuille de la semaine
-          <span class="hint">les cases suivent votre pointage · cochez celles saisies dans Jira · cliquez une durée pour la fixer à la main</span>
+          <span class="hint">les cases suivent votre pointage · un jour en rouge dépasse : réduisez la case de votre choix · cochez ce qui est saisi dans Jira</span>
         </div>
         <div class="table-scroll"><table class="ts-table" id="tsTable"></table></div>
         <p class="ts-foot" id="tsFoot"></p>
@@ -952,8 +952,9 @@
               proche) : c'est ce pointé arrondi que la Saisie répartit.</li>
             <li><b>La réserve</b> — le pointé qui n'a pas encore de jour, attaché à sa tâche,
               <b>en blocs</b> entiers.
-              Un jour qui dépasse 7 h y verse son surplus ; un jour court y puise, bloc par
-              bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
+              Rien n'est coupé d'office : un jour qui dépasse 7 h passe <b>en rouge</b>, et c'est
+              toi qui choisis quelle case réduire — ce que tu enlèves part en réserve. Un jour
+              court y puise tout seul, bloc par bloc. Pour Jira, reporter veut dire logguer le même ticket un autre jour. Elle
               repart de zéro chaque lundi.</li>
             <li><b>À compléter</b> — ce qui manque encore à un jour, en hachures. Clique-le pour
               poser ce que tu veux (une réserve, une réunion…). Un temps de la colonne

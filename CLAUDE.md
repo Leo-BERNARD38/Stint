@@ -843,11 +843,15 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   horaires** ; un jour non travaillé (congés via Horaires › Par date) vise 0 —
   c'est ainsi que les congés retirent 7 h, sans rien saisir de plus. Chaque tâche
   a une cagnotte = réserve + **pointé ARRONDI du jour**, celui de Journée
-  (`totalsForDay(day, true)`, hors tâche exclu) ; on en déclare des blocs
-  entiers jusqu'à la cible : **les tâches du jour d'abord** (par premier segment), **puis
-  la réserve** (la plus ancienne d'abord). L'ordre inverse décalait toute la
-  semaine d'un cran : le travail d'un jour doit rester déclaré à sa date tant
-  qu'il tient, seul le surplus glisse.
+  (`totalsForDay(day, true)`, hors tâche exclu). Le jour propose **tout son
+  pointé, sans le couper** ; au-delà de la cible il est en **dépassement**
+  (`over`, au tampon dans l'en-tête du jour et dans la tête : « à réduire »),
+  et **c'est l'utilisateur qui choisit quelle case réduire** — demande
+  explicite : couper d'office suivait l'ordre des segments et tombait sur la
+  dernière tâche du jour, pas forcément la bonne. Un jour **court** prend
+  ensuite dans la réserve (la plus ancienne d'abord), par blocs entiers,
+  jusqu'à la cible. L'ordre inverse (réserve d'abord) décalait toute la
+  semaine d'un cran : le travail d'un jour reste déclaré à sa date.
 - **La réserve n'est pas stockée, elle se déduit** : cagnotte − déclaré, par
   tâche, attachée à sa tâche (reporter, pour Jira, c'est logguer le même ticket
   un autre jour). Elle repart de zéro chaque lundi. **Elle n'est faite que de
@@ -855,9 +859,11 @@ font 7 h 30 ou 4 h 10. `services/Timesheet.js` porte **la règle** (pur, testé)
   bloc — aucune miette cachée (test « aucune miette cachée »).
   Elle peut être **négative** après une case fixée qui a déclaré plus que le réel
   d'une tâche : du temps déclaré d'avance, repris sur les jours suivants.
-- **L'usage réel : une saisie CHAQUE SOIR.** On coche le jour (✓ de l'en-tête) le
-  soir même, ce qui fixe ses cases ; son surplus part en réserve et le vendredi — court
-  — la reprend. La cible de la semaine est **jours travaillés × cible du jour**
+- **L'usage réel : une saisie CHAQUE SOIR.** Toute la journée on pointe sans
+  penser à la saisie. Le soir, on **réduit** les cases en trop jusqu'à 7 h (ce
+  qu'on enlève part en réserve), on **comble** un manque à la main (souvent une
+  « Réunion »), on copie case par case dans Jira et on coche. Le vendredi —
+  court — reprend la réserve ; ce qui reste lundi n'est jamais saisi. La cible de la semaine est **jours travaillés × cible du jour**
   (« 5 j × 7:00 » sous le total) : les horaires ne disent que si un jour est
   travaillé, jamais combien il vaut. Couvert par un test « chaque soir » (§15).
 - **La copie d'une case passe par `Formatter.jira`**, comme partout : 7 h s'y

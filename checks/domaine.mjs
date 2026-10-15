@@ -779,6 +779,8 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
   const SUN = D(27, 12).getTime();
   const plan = (st, now = SUN) => new Timesheet(st, new TimeCalculator(st)).week(D(23, 12).getTime(), now);
   const linesOf = (day) => day.lines.map((l) => [l.taskId, l.min]);
+  // Le geste du soir : RÉDUIRE une case à la main (le reste part en réserve).
+  const cut = (st, day, taskId, min) => st.setTimesheetDay(day.key, setLine(day.pins, taskId, min));
 
   // --- réglages : défauts, bornes, migration v14 ---
   const st0 = mk();
@@ -807,9 +809,16 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     const st = mk();
     for (const d of [21, 22, 23, 24]) seg(st, "tA", d, 8, 0, 450);
     seg(st, "tA", 25, 8, 0, 250);
+    const raw = plan(st);
+    eq(raw.days.map((d) => d.declared).slice(0, 4), [450, 450, 450, 450], "rien n'est coupé d'office : 7 h 30 proposées…");
+    eq(raw.days.map((d) => d.over).slice(0, 4), [30, 30, 30, 30], "…en dépassement de 30 min, à réduire à la main");
+    eq(raw.totals.over, 120, "dépassement de la semaine");
+    // Chaque soir, on ramène soi-même à 7 h : 30 min de A partent en réserve.
+    for (let i = 0; i < 4; i++) cut(st, plan(st).days[i], "tA", 420);
     const w = plan(st);
     eq(w.label, "S39", "semaine ISO 39");
     eq(w.days.map((d) => d.declared), [420, 420, 420, 420, 360, 0, 0], "7 h par jour, le vendredi puise dans la réserve");
+    eq(w.totals.over, 0, "plus de dépassement");
     eq(w.days.map((d) => d.gap).slice(0, 5), [0, 0, 0, 0, 60], "vendredi : 1 h reste à compléter à la main");
     eq(w.totals.target, 2100, "cible 35 h");
     eq(w.totals.real, 2040, "pointé 34 h 10, arrondi comme Journée : 34 h (vendredi 4 h 10 → 4 h)");
@@ -824,10 +833,12 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     seg(st, "tS", 21, 11, 10, 140); // 2 h 20 support
     seg(st, "tB", 21, 13, 30, 120); // 2 h dev
     seg(st, "tS", 22, 8, 0, 435);   // mardi : 7 h 15 de support
+    eq(linesOf(plan(st).days[0]), [["tA", 180], ["tS", 135], ["tB", 120]], "lundi : blocs de 30 / 15, tout le pointé (7 h 15)");
+    cut(st, plan(st).days[0], "tB", 90);   // lundi soir : on choisit de couper B
+    cut(st, plan(st).days[1], "tS", 420);  // mardi soir : S ramené à 7 h
     const w = plan(st);
-    eq(linesOf(w.days[0]), [["tA", 180], ["tS", 135], ["tB", 90]], "lundi : blocs de 30 / 15, plafonnés à 7 h");
     eq(w.days[0].gap, 15, "lundi : un quart d'heure à compléter");
-    eq(linesOf(w.days[1]), [["tS", 420]], "mardi : le travail du jour d'abord");
+    eq(linesOf(w.days[1]), [["tS", 420]], "mardi : réduit à la main");
     // Mercredi, passé et vide, puise dans la réserve : le bloc entier de B et
     // un quart d'heure de S ; les miettes (A 10, S 5) ne font plus de bloc.
     // B attend depuis lundi, S depuis mardi : l'ancienneté décide.
@@ -845,6 +856,7 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     const st = mk();
     seg(st, "tA", 21, 8, 0, 480);  // lundi 8 h
     seg(st, "tS", 22, 8, 0, 360);  // mardi 6 h de support
+    cut(st, plan(st).days[0], "tA", 420);
     const w = plan(st);
     eq(linesOf(w.days[1]), [["tS", 360], ["tA", 60]], "mardi : 6 h du jour + 1 h de réserve dev");
     eq(w.totals.reserve, 0, "réserve soldée");
@@ -966,6 +978,9 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     eq(at(21).days[0].real, calc.totalsForDay(D(21, 12), true).total / 60000, "pointé du jour = total arrondi de Journée");
     eq(at(21).reserve, [], "lundi : 7 h 10 → 7 h, rien en réserve");
     eq(at(22).days[1].real, 450 + 30, "mardi : 7 h 30 + 0:30, comme Journée");
+    eq(at(22).days[1].declared, 480, "…proposé en entier : 1 h de dépassement");
+    const tue = at(22).days[1];
+    st.setTimesheetDay(tue.key, setLine(setLine(tue.pins, "tA", 420), "tR", 0));
     eq(at(22).reserve, [{ taskId: "tA", min: 30 }, { taskId: "tR", min: 30 }],
        "mardi soir : 1 h en réserve, en blocs visibles — la tâche de 28 min n'a pas disparu");
     ok(at(22).reserve.every((r) => r.min % ts.stepFor(r.taskId) === 0), "toute réserve est un multiple du bloc");
@@ -978,7 +993,8 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     seg(st, "tB", 21, 13, 0, 180); // 3 h de B : 1 h déborde
     const ts = new Timesheet(st, new TimeCalculator(st));
     const mon = ts.week(D(21, 12).getTime(), D(21, 18).getTime()).days[0];
-    eq(linesOf(mon), [["tA", 300], ["tB", 120]], "proposition : A d'abord, B plafonné");
+    eq(linesOf(mon), [["tA", 300], ["tB", 180]], "proposition : tout le pointé, 1 h de dépassement");
+    ok(mon.over === 60, "…à réduire à la main");
     // On préfère déclarer toute la B aujourd'hui : A cède une heure.
     st.setTimesheetDay(mon.key, setLine(setLine(mon.pins, "tA", 240), "tB", 180));
     const w = ts.week(D(21, 12).getTime(), D(21, 18).getTime());
@@ -1043,13 +1059,18 @@ section("saisie lissée : blocs par type, réserve, cases fixées (v15, v18)");
     for (const d of [21, 22, 23, 24]) { seg(st, "tA", d, 8, 0, 190); seg(st, "tS", d, 11, 10, 80); seg(st, "tB", d, 13, 0, 180); }
     seg(st, "tA", 25, 8, 0, 250);
     const evening = (d) => {
-      const day = ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
+      let day = ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
+      // Le soir : on ramène à 7 h en réduisant la dernière tâche, puis on coche.
+      if (day.over) {
+        const last = day.lines.at(-1);
+        st.setTimesheetDay(day.key, setLine(day.pins, last.taskId, last.min - day.over));
+        day = ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
+      }
       st.setTimesheetDay(day.key, setAllDone(day.pins, day.lines, true)); // « tout cocher » le soir même
       return ts.week(D(23, 12).getTime(), D(d, 18).getTime()).days.find((x) => x.date.getDate() === d);
     };
     const mon = evening(21);
-    eq([mon.declared, mon.gap], [405, 15], "lundi soir : 6 h 45 en blocs, 15 min à compléter (miettes en réserve)");
-    st.setTimesheetDay(mon.key, addToLine(mon.pins, mon.lines, "tR", 15)); // la réunion, à la main
+    eq([mon.declared, mon.gap, mon.over], [420, 0, 0], "lundi soir : ramené à 7 h, coché");
     for (const d of [22, 23, 24]) {
       const day = evening(d);
       if (day.gap) st.setTimesheetDay(day.key, addToLine(day.pins, day.lines, "tR", day.gap));

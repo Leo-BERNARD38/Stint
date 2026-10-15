@@ -172,6 +172,10 @@ export class TimesheetView {
       t.gap > 0 ? `${c(t.gap)} à compléter` : "",
       t.upcoming > 0 ? `${c(t.upcoming)} à venir` : "",
     ].filter(Boolean).join(" · ");
+    // Un dépassement exige le regard : c'est l'utilisateur qui choisit quoi
+    // réduire (rien n'est coupé d'office), il doit donc le voir d'en haut — au
+    // tampon (§7, N1), comme sur l'en-tête du jour concerné.
+    const over = t.over > 0 ? ` · <span class="ts-over">${c(t.over)} à réduire</span>` : "";
     this.lead.innerHTML =
       '<div class="ts-lead">' +
         '<div class="ts-lead-l">' +
@@ -189,7 +193,7 @@ export class TimesheetView {
       // La barre sous le chiffre, pleine largeur : la couverture des Stats.
       '<div class="coverage ts-cover">' +
         this.#bar(t.target, t.declared, t.done, t.gap, "ts-track", legend) +
-        `<div class="cov-lab"><span>${escapeHtml(legend)}</span><span>cible ${c(t.target)}</span></div>` +
+        `<div class="cov-lab"><span>${escapeHtml(legend)}${over}</span><span>cible ${c(t.target)}</span></div>` +
       "</div>";
   }
 
@@ -246,7 +250,7 @@ export class TimesheetView {
     const off = !d.worked && d.lines.length === 0;
     const state = d.leave ? "congé" : off ? "non travaillé" : d.future ? "à venir" : d.today ? "aujourd’hui" : "";
     const all = d.lines.length > 0 && d.lines.every((l) => l.done);
-    const cls = "ts-dcol" + (d.today ? " is-today" : "") + (off ? " is-off" : "");
+    const cls = "ts-dcol" + (d.today ? " is-today" : "") + (off ? " is-off" : "") + (d.over > 0 ? " is-over" : "");
     const actions = off || (d.future && !d.lines.length) ? "" :
       '<span class="ts-dact">' +
         (d.touched ? `<button class="mini-btn icon-only" data-act="recalc" data-day="${key}" title="Tout recalculer : oublier les cases fixées de ce jour" aria-label="Tout recalculer le ${long}">${icon("rotate-ccw", { size: 15 })}</button>` : "") +
@@ -265,7 +269,11 @@ export class TimesheetView {
         ? `<span class="ts-dt ts-dt-idle">cible ${c(d.target)}</span>`
         : `<span class="ts-dt"><b>${c(d.declared)}</b>/ ${c(d.target)}</span>` +
           this.#bar(d.target, d.declared, d.done, d.future ? 0 : d.gap, "ts-track-day") +
-          `<span class="ts-dreal">${d.future ? " " : "pointé " + c(d.real)}</span>`) +
+          // Au-delà de la cible : le jour le dit au tampon, et c'est à
+          // l'utilisateur de réduire la case de son choix.
+          `<span class="ts-dreal">${d.future ? " " : d.over > 0
+            ? `<span class="ts-over">+${c(d.over)} à réduire</span>`
+            : "pointé " + c(d.real)}</span>`) +
       "</th>";
   }
 
@@ -299,7 +307,7 @@ export class TimesheetView {
     // La réserve de la tâche, en blocs entiers de son type (cf. `Timesheet.week`).
     const resOpen = this.adding?.from === "res" && this.adding.taskId === taskId ? " is-open" : "";
     const resCell = reserveMin > 0
-      ? `<button class="ts-res${resOpen}" data-act="res" data-task="${id}" title="Pointé qui dépasse la cible des jours : cliquez pour le poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
+      ? `<button class="ts-res${resOpen}" data-act="res" data-task="${id}" title="Temps réduit ou retiré d’un jour : cliquez pour le poser sur un jour à compléter">${formatter.clock(reserveMin)}</button>`
       : "";
     // Les actions de la TÂCHE (lien, édition) : celles des lignes de Journée,
     // mêmes boutons, révélées au survol de la ligne — à leur place, rien ne bouge.
@@ -567,7 +575,7 @@ export class TimesheetView {
     let text;
     if (!t.reserve) text = "Réserve vide : aucun bloc en attente.";
     else if (ended) text = `${c(t.reserve)} pointées mais jamais déclarées cette semaine — la réserve repart de zéro chaque lundi.`;
-    else text = `Réserve : ${c(t.reserve)} pointées au-delà de la cible des jours, ou retirées d’un jour. Les jours suivants les reprennent d’eux-mêmes ; cliquez un temps de la colonne Réserve pour le poser sur le premier jour à compléter.`;
+    else text = `Réserve : ${c(t.reserve)} pointées puis réduites ou retirées d’un jour. Un jour court les reprend de lui-même ; cliquez un temps de la colonne Réserve pour le poser sur le premier jour à compléter.`;
     this.foot.textContent = text;
   }
 

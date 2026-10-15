@@ -18,18 +18,22 @@ const EPS = 1e-6;
  *      arrondissait vers le bas : une tâche de 28 min (0:30 dans Journée)
  *      disparaissait alors dans des miettes invisibles de la réserve ;
  *   3. chaque tâche a une **cagnotte** = sa réserve des jours précédents + son
- *      pointé arrondi du jour (hors tâche exclu : ce n'est pas du travail) ; on
- *      en déclare des blocs entiers dans l'ordre : les tâches du jour d'abord
- *      (par premier segment), puis la réserve (la plus ancienne d'abord),
- *      jusqu'à la cible ;
- *   4. ce qui n'est pas déclaré reste en **réserve**, attaché à sa tâche —
- *      reporter, pour Jira, c'est logguer MOD-123 un autre jour ;
+ *      pointé arrondi du jour (hors tâche exclu : ce n'est pas du travail). Le
+ *      jour propose **tout son pointé, sans le couper** : au-delà de la cible
+ *      il est en DÉPASSEMENT (rouge), et c'est l'utilisateur qui choisit quoi
+ *      réduire — « je préfère ramener à 7 h moi-même, savoir quoi couper ».
+ *      Couper d'office suivait l'ordre des segments, donc tombait sur la
+ *      dernière tâche de la journée, qui n'était pas forcément la bonne ;
+ *   4. un jour COURT prend dans la réserve (la plus ancienne d'abord), par
+ *      blocs entiers, jusqu'à la cible ; ce qui n'est pas déclaré (réduit à la
+ *      main) reste en **réserve**, attaché à sa tâche — reporter, pour Jira,
+ *      c'est logguer MOD-123 un autre jour ;
  *   5. ce qui manque à la cible reste un **vide** que l'utilisateur comble à la
  *      main (aucune tâche bouche-trou n'est inventée).
  *
  * Aujourd'hui d'abord, réserve ensuite : le travail d'un jour reste déclaré à sa
- * date tant qu'il tient, et seul le surplus glisse. L'ordre inverse décalait
- * toute la semaine d'un cran.
+ * date, et seul ce qu'on réduit glisse. L'ordre inverse décalait toute la
+ * semaine d'un cran.
  *
  * Ce qu'on touche est **fixé case par case**, jamais le jour entier (cf.
  * `TimesheetLines`) : les cases fixées passent d'abord, le reste du jour reste
@@ -101,7 +105,7 @@ export class Timesheet {
     const today = startOfDay(new Date(now)).getTime();
     const reserve = new Map(); // taskId → minutes ; l'ordre d'insertion = ancienneté
     const days = [];
-    const totals = { target: 0, real: 0, declared: 0, done: 0, reserve: 0, upcoming: 0 };
+    const totals = { target: 0, real: 0, declared: 0, done: 0, reserve: 0, upcoming: 0, over: 0 };
 
     for (let i = 0; i < 7; i++) {
       const date = addDays(monday, i);
@@ -151,6 +155,7 @@ export class Timesheet {
       totals.real += realMin;
       totals.declared += declared;
       totals.done += done;
+      totals.over += Math.max(0, declared - target);
       if (future) totals.upcoming += Math.max(0, target - declared);
     }
 
@@ -187,27 +192,37 @@ export class Timesheet {
   }
 
   /**
-   * Proposition d'un jour : les tâches du jour dans l'ordre, puis la réserve,
-   * par blocs entiers de leur type et sans dépasser `target` (ce que les cases
-   * fixées laissent de la cible). Les tâches de `skip` (fixées ou retirées ce
-   * jour-là) ne sont pas proposées.
+   * Proposition d'un jour : son pointé ENTIER (rien n'est coupé, un dépassement
+   * se voit et se réduit à la main), puis — s'il reste de la place sous
+   * `target`, ce que les cases fixées laissent de la cible — la réserve, par
+   * blocs entiers de son type, la plus ancienne d'abord. Les tâches de `skip`
+   * (fixées ou retirées ce jour-là) ne sont pas proposées.
    */
   #propose(pool, real, target, skip = new Set()) {
-    const order = [...real.keys()];
-    for (const id of pool.keys()) if (!real.has(id)) order.push(id);
     const lines = [];
+    const byTask = new Map();
+    const floor = (m, step) => Math.floor((m + EPS) / step) * step;
     let cap = target;
-    for (const id of order) {
+    for (const [id, min] of real) {
       if (skip.has(id)) continue;
-      if (cap <= 0) break;
-      const avail = pool.get(id) ?? 0;
-      if (avail <= 0) continue;
-      const step = this.stepFor(id);
-      const blocks = Math.floor((avail + EPS) / step) * step;
-      const room = Math.floor((cap + EPS) / step) * step;
-      const take = Math.min(blocks, room);
+      // Une avance déclarée plus tôt (réserve négative) se reprend ici.
+      const take = floor(Math.min(min, pool.get(id) ?? 0), this.stepFor(id));
       if (take <= 0) continue;
-      lines.push({ taskId: id, min: take, done: false, pinned: false });
+      const line = { taskId: id, min: take, done: false, pinned: false };
+      lines.push(line);
+      byTask.set(id, line);
+      cap -= take;
+    }
+    for (const [id, avail] of pool) {
+      if (cap <= 0) break;
+      if (skip.has(id)) continue;
+      const step = this.stepFor(id);
+      const left = avail - (byTask.get(id)?.min ?? 0);
+      const take = Math.min(floor(left, step), floor(cap, step));
+      if (take <= 0) continue;
+      const line = byTask.get(id);
+      if (line) line.min += take;
+      else lines.push({ taskId: id, min: take, done: false, pinned: false });
       cap -= take;
     }
     return lines;

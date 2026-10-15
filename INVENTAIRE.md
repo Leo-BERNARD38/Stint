@@ -194,7 +194,7 @@ Sections de chaque feuille (titres `/* ---------- … ---------- */`). Chercher 
   - l. 1642 — Détail · Découpage (jours, semaines ou mois de la période)
   - l. 1695 — Détail · Arrondi (l'écart que fait l'arrondi de Journée)
   - l. 1838 — La feuille : tâches × jours
-  - l. 1943 — Popover d'une case / d'un manque
+  - l. 1947 — Popover d'une case / d'un manque
 - `assets/styles/fonts.css` — sans sections
 - `assets/styles/layout.css`
   - l. 5 — En-tête (flat : pas de bordure, juste un fond translucide)
